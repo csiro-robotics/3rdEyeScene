@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3esExamplePlugin", "3esExam
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3esPluginTest", "3esPluginTest\3esPluginTest.csproj", "{C7622A88-DB9D-439A-AC34-8FDDEDD9AB2E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3esManyTest", "3esManyTest\3esManyTest.csproj", "{198E6177-C01F-4BD0-845B-671ACF27D8A6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{C7622A88-DB9D-439A-AC34-8FDDEDD9AB2E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C7622A88-DB9D-439A-AC34-8FDDEDD9AB2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C7622A88-DB9D-439A-AC34-8FDDEDD9AB2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{198E6177-C01F-4BD0-845B-671ACF27D8A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{198E6177-C01F-4BD0-845B-671ACF27D8A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{198E6177-C01F-4BD0-845B-671ACF27D8A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{198E6177-C01F-4BD0-845B-671ACF27D8A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

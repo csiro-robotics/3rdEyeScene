@@ -26,7 +26,8 @@ namespace Tes.Server
       {
         ServerSettings settings = new ServerSettings();
         settings.ListenPort = 33500;
-        settings.Flags = ServerFlag.Collate;
+        // FIXME: packet collation isn't working under C#.
+        //settings.Flags = ServerFlag.Collate;
         return settings;
       }
     }
