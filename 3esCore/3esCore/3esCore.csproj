@@ -1,0 +1,143 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{91D3C546-37EF-4EF1-A48A-487A1F367A33}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Tes</RootNamespace>
+    <AssemblyName>3esCore</AssemblyName>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <Optimize>false</Optimize>
+    <OutputPath>..\build\Debug\</OutputPath>
+    <WarningLevel>4</WarningLevel>
+    <DebugSymbols>true</DebugSymbols>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\build\Release\</OutputPath>
+    <WarningLevel>4</WarningLevel>
+    <DocumentationFile>..\build\Release\3esCore.XML</DocumentationFile>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="IO\Compression\readme.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="IO\Compression\BlockType.cs" />
+    <Compile Include="IO\Compression\CompressionMode.cs" />
+    <Compile Include="IO\Compression\CopyEncoder.cs" />
+    <Compile Include="IO\Compression\Crc32Helper.cs" />
+    <Compile Include="IO\Compression\DeflateInput.cs" />
+    <Compile Include="IO\Compression\DeflaterManaged.cs" />
+    <Compile Include="IO\Compression\DeflateStream.cs" />
+    <Compile Include="IO\Compression\DeflateStreamAsyncResult.cs" />
+    <Compile Include="IO\Compression\FastEncoder.cs" />
+    <Compile Include="IO\Compression\FastEncoderStatics.cs" />
+    <Compile Include="IO\Compression\FastEncoderWindow.cs" />
+    <Compile Include="IO\Compression\FileFormats.cs" />
+    <Compile Include="IO\Compression\GZipDecoder.cs" />
+    <Compile Include="IO\Compression\GZipStream.cs" />
+    <Compile Include="IO\Compression\GZipUtils.cs" />
+    <Compile Include="IO\Compression\HuffmanTree.cs" />
+    <Compile Include="IO\Compression\IDeflater.cs" />
+    <Compile Include="IO\Compression\Inflater.cs" />
+    <Compile Include="IO\Compression\InflaterState.cs" />
+    <Compile Include="IO\Compression\InputBuffer.cs" />
+    <Compile Include="IO\Compression\InvalidDataException.cs" />
+    <Compile Include="IO\Compression\Match.cs" />
+    <Compile Include="IO\Compression\MatchState.cs" />
+    <Compile Include="IO\Compression\OutputBuffer.cs" />
+    <Compile Include="IO\Compression\OutputWindow.cs" />
+    <Compile Include="IO\Compression\SR.cs" />
+    <Compile Include="Maths\IntUtil.cs" />
+    <Compile Include="Maths\Matrix4.cs" />
+    <Compile Include="Maths\Quaternion.cs" />
+    <Compile Include="Maths\Vector3.cs" />
+    <Compile Include="Net\CategoryNameMessage.cs" />
+    <Compile Include="Net\CategoryMessageID.cs" />
+    <Compile Include="Net\CoordinateFrame.cs" />
+    <Compile Include="Net\IConnection.cs" />
+    <Compile Include="Net\MeshShapeFlag.cs" />
+    <Compile Include="Net\TcpClientUtil.cs" />
+    <Compile Include="Server\ConnectionMonitor.cs" />
+    <Compile Include="Server\IConnectionMonitor.cs" />
+    <Compile Include="Server\IServer.cs" />
+    <Compile Include="Server\ServerFlag.cs" />
+    <Compile Include="Server\ServerSettings.cs" />
+    <Compile Include="Server\TcpConnection.cs" />
+    <Compile Include="Server\TcpServer.cs" />
+    <Compile Include="Shapes\Arrow.cs" />
+    <Compile Include="Shapes\Box.cs" />
+    <Compile Include="Shapes\Capsule.cs" />
+    <Compile Include="Shapes\Cone.cs" />
+    <Compile Include="Shapes\Cylinder.cs" />
+    <Compile Include="Shapes\Resource.cs" />
+    <Compile Include="Shapes\MeshSet.cs" />
+    <Compile Include="Shapes\MeshResource.cs" />
+    <Compile Include="Shapes\Plane.cs" />
+    <Compile Include="Shapes\PointCloud.cs" />
+    <Compile Include="Shapes\PointCloudShape.cs" />
+    <Compile Include="Shapes\Shape.cs" />
+    <Compile Include="Shapes\Sphere.cs" />
+    <Compile Include="Shapes\Star.cs" />
+    <Compile Include="Shapes\Text2D.cs" />
+    <Compile Include="Shapes\Text3D.cs" />
+    <Compile Include="Util\CollatedPacketDecoder.cs" />
+    <Compile Include="IO\Endian.cs" />
+    <Compile Include="IO\NetworkReader.cs" />
+    <Compile Include="IO\NetworkWriter.cs" />
+    <Compile Include="IO\Crc16.cs" />
+    <Compile Include="Net\CameraMessage.cs" />
+    <Compile Include="Net\CollatedPacketFlag.cs" />
+    <Compile Include="Net\CollatedPacketMessage.cs" />
+    <Compile Include="Net\ControlMessage.cs" />
+    <Compile Include="Net\MeshBuildFlags.cs" />
+    <Compile Include="Net\MeshFinaliseMessage.cs" />
+    <Compile Include="Net\MeshComponentMessage.cs" />
+    <Compile Include="Net\MeshCreateMessage.cs" />
+    <Compile Include="Net\MeshDestroyMessage.cs" />
+    <Compile Include="Net\MeshDrawType.cs" />
+    <Compile Include="Net\MeshMessageType.cs" />
+    <Compile Include="Net\MeshRedefineMessage.cs" />
+    <Compile Include="Net\ObjectAttributes.cs" />
+    <Compile Include="Net\CreateMessage.cs" />
+    <Compile Include="Net\ObjectMessageID.cs" />
+    <Compile Include="Net\ObjectFlag.cs" />
+    <Compile Include="Net\ServerInfoMessage.cs" />
+    <Compile Include="Net\ShapeID.cs" />
+    <Compile Include="Net\RoutingID.cs" />
+    <Compile Include="Net\ControlMessageID.cs" />
+    <Compile Include="Net\PointsAttributeFlag.cs" />
+    <Compile Include="Net\Text2DFlag.cs" />
+    <Compile Include="Net\Text3DFlag.cs" />
+    <Compile Include="Net\UpdateFlag.cs" />
+    <Compile Include="Net\DataMessage.cs" />
+    <Compile Include="Net\UpdateMessage.cs" />
+    <Compile Include="Net\DestroyMessage.cs" />
+    <Compile Include="Thread\SpinLock.cs" />
+    <Compile Include="Collections\Queue.cs" />
+    <Compile Include="IO\PacketHeader.cs" />
+    <Compile Include="IO\PacketBuffer.cs" />
+    <Compile Include="Util\CollatedPacketEncoder.cs" />
+    <Compile Include="Maths\Matrix3.cs" />
+    <Compile Include="Maths\Rotation.cs" />
+    <Compile Include="Shapes\SimpleMesh.cs" />
+    <Compile Include="Maths\Vector2.cs" />
+    <Compile Include="Shapes\MeshShape.cs" />
+    <Compile Include="Maths\FloatUtil.cs" />
+    <Compile Include="Shapes\MeshBase.cs" />
+    <Compile Include="Maths\Colour.cs" />
+  </ItemGroup>
+</Project>

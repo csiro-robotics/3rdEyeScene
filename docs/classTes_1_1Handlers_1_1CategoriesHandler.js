@@ -1,0 +1,28 @@
+var classTes_1_1Handlers_1_1CategoriesHandler =
+[
+    [ "Category", "classTes_1_1Handlers_1_1CategoriesHandler_1_1Category.html", "classTes_1_1Handlers_1_1CategoriesHandler_1_1Category" ],
+    [ "CategoriesHandler", "classTes_1_1Handlers_1_1CategoriesHandler.html#a5f01b8da554bd42c4403cd783ec806d3", null ],
+    [ "ActivationChangeDelegate", "classTes_1_1Handlers_1_1CategoriesHandler.html#a0c49fc29d10d082c43a30eeb804abbe6", null ],
+    [ "AddCategory", "classTes_1_1Handlers_1_1CategoriesHandler.html#a4e3769c32851b2c20b0197df6483e61e", null ],
+    [ "BeginFrame", "classTes_1_1Handlers_1_1CategoriesHandler.html#acb61c91fcb8f75c52e2c220e62952f95", null ],
+    [ "ChildCategories", "classTes_1_1Handlers_1_1CategoriesHandler.html#ab59daa91593031a690a23bfbb482cebc", null ],
+    [ "ClearCategoriesDelegate", "classTes_1_1Handlers_1_1CategoriesHandler.html#a0fa9c2e6e950c9412903ce8b899887cc", null ],
+    [ "EndFrame", "classTes_1_1Handlers_1_1CategoriesHandler.html#a049bc30d17e9ba5bb830bafde29b850b", null ],
+    [ "Initialise", "classTes_1_1Handlers_1_1CategoriesHandler.html#a14306dd2b25f6fd4702e0d66dea2da0a", null ],
+    [ "IsActive", "classTes_1_1Handlers_1_1CategoriesHandler.html#aab773e9bc53e1b7f11274a9757d9b219", null ],
+    [ "Lookup", "classTes_1_1Handlers_1_1CategoriesHandler.html#ae82d3453bf3b49faf931991d94d33196", null ],
+    [ "NewCategoryDelegate", "classTes_1_1Handlers_1_1CategoriesHandler.html#a2a04f65563ac33f9e4122737ceff59e9", null ],
+    [ "NotifyNewCategory", "classTes_1_1Handlers_1_1CategoriesHandler.html#a581a3834f59e2a3619b69a2047a91128", null ],
+    [ "OnCategoryChange", "classTes_1_1Handlers_1_1CategoriesHandler.html#ab97a364df6fb5667f5cf990c5b582d21", null ],
+    [ "ReadMessage", "classTes_1_1Handlers_1_1CategoriesHandler.html#a9071bd69f5101508f2d324dc833a18d2", null ],
+    [ "Reset", "classTes_1_1Handlers_1_1CategoriesHandler.html#aa326dd0c0500c958ae59539ebfde10c9", null ],
+    [ "Serialise", "classTes_1_1Handlers_1_1CategoriesHandler.html#ab7d5542d8a55488a3cd74d5acde0e676", null ],
+    [ "SetActive", "classTes_1_1Handlers_1_1CategoriesHandler.html#ab83a4f34485489496a80823bced82a33", null ],
+    [ "UpdateServerInfo", "classTes_1_1Handlers_1_1CategoriesHandler.html#a38c6ad9068901f5c28dd8707314fc7e4", null ],
+    [ "Categories", "classTes_1_1Handlers_1_1CategoriesHandler.html#a607e14fe32c9443f832a2e3b4f189797", null ],
+    [ "Name", "classTes_1_1Handlers_1_1CategoriesHandler.html#a7215115b8cc502bea420cab0fefdace6", null ],
+    [ "RoutingID", "classTes_1_1Handlers_1_1CategoriesHandler.html#a605e591967abbdb50a3c87e5d6e5c000", null ],
+    [ "OnActivationChange", "classTes_1_1Handlers_1_1CategoriesHandler.html#acde24af73f9a4583b287c09a983ba3fa", null ],
+    [ "OnClearCategories", "classTes_1_1Handlers_1_1CategoriesHandler.html#a321d2ccd499aa6efcc67f1057ec08645", null ],
+    [ "OnNewCategory", "classTes_1_1Handlers_1_1CategoriesHandler.html#a827381fe2d62f915e21253f786dbdf5e", null ]
+];

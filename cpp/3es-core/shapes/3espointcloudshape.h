@@ -1,0 +1,115 @@
+//
+// author: Kazys Stepanas
+//
+#ifndef _3ESPOINTS_H_
+#define _3ESPOINTS_H_
+
+#include "3es-core.h"
+
+#include "3esshape.h"
+#include "3esmeshset.h"
+
+namespace tes
+{
+  /// A @c Shape which renders a set of points as in a point cloud.
+  ///
+  /// The points are contained in a @c MeshResource (e.g., @c PointCloud)
+  /// and may be shared between @c PointCloudShape shapes. The @c MeshResource should
+  /// have a @c MeshResource.drawType() of @c DtPoints or the behaviour may
+  /// be undefined.
+  ///
+  /// The @c PointCloudShape shape supports limiting the view into the @c MeshResource
+  /// by having its own set of indices (see @c setIndices()).
+  class _3es_coreAPI PointCloudShape : public Shape
+  {
+  public:
+    PointCloudShape(const MeshResource *mesh, uint32_t id = 0, uint16_t category = 0, uint8_t pointSize = 1);
+
+    ~PointCloudShape();
+
+    inline uint8_t pointSize() const { return _pointSize; }
+    inline void setPointSize(uint8_t size) { _pointSize = size; }
+
+    /// Sets the (optional) indices for this @c PointCloudShape @c Shape.
+    /// This shape will only visualise the indexed points from its @c PointSource.
+    /// This allows multiple @c PointCloudShape shapes to reference the same cloud, but reveal
+    /// sub-sets of the cloud.
+    ///
+    /// This method is designed to copy any iterable sequence between @p begin and @p end,
+    /// however the number of elements must be provided in @p indexCount.
+    ///
+    /// @tparam I An iterable item. Must support dereferencing to an unsigned integer and
+    ///   an increment operator.
+    /// @param iter The index iterator.
+    /// @param indexCount The number of elements to copy from @p iter.
+    /// @return This.
+    template <typename I>
+    PointCloudShape &setIndices(I begin, uint32_t indexCount);
+
+    inline const MeshResource *mesh() const { return _mesh; }
+
+    /// Writes the standard create message and appends the point cloud ID (@c uint32_t).
+    /// @param stream The stream to write to.
+    /// @return True on success.
+    virtual bool writeCreate(PacketWriter &stream) const override;
+    virtual int writeData(PacketWriter &stream, unsigned &progressMarker) const override;
+
+    virtual inline bool isComplex() const override { return true; }
+
+    int enumerateResources(const Resource **resources, int capacity, int fetchOffset) const override;
+
+    /// Deep copy clone. The source is only cloned if @c ownSource() is true.
+    /// It is shared otherwise.
+    /// @return A deep copy.
+    Shape *clone() const override;
+
+  private:
+    void onClone(PointCloudShape *copy) const;
+
+    uint32_t *allocateIndices(uint32_t count);
+    void freeIndices(const uint32_t *indices);
+
+    const MeshResource *_mesh;
+    uint32_t *_indices;
+    uint32_t _indexCount;
+    uint8_t _pointSize;
+  };
+
+
+  inline PointCloudShape::PointCloudShape(const MeshResource *mesh, uint32_t id, uint16_t category, uint8_t pointSize)
+    : Shape(SIdPointCloud, id, category)
+    , _mesh(mesh)
+    , _indices(nullptr)
+    , _indexCount(0)
+    , _pointSize(pointSize)
+  {
+  }
+
+
+  inline PointCloudShape::~PointCloudShape()
+  {
+    freeIndices(_indices);
+  }
+
+
+  template <typename I>
+  PointCloudShape &PointCloudShape::setIndices(I iter, uint32_t indexCount)
+  {
+    freeIndices(_indices);
+    _indices = nullptr;
+    _indexCount = indexCount;
+    if (indexCount)
+    {
+      _indices = allocateIndices(indexCount);
+      uint32_t *ind = _indices;
+      for (uint32_t i = 0; i < indexCount; ++i, ++ind, ++iter)
+      {
+        *ind = *iter;
+      }
+    }
+
+    return *this;
+  }
+}
+
+#endif // _3ESPOINTS_H_
