@@ -28,12 +28,6 @@ namespace Tes.IO
   [StructLayout(LayoutKind.Sequential, Pack = 1)]
   public struct PacketHeader
   {
-    //-------------------------------------------------------------------------
-    // Important:
-    // If you modify this data structure the static offset members must also
-    // be suitably updated. Namely; PayloadSizeOffset, FlagsOffset
-    //-------------------------------------------------------------------------
-
     /// <summary>
     /// Marker bytes. Identifies the packet start.
     /// </summary>
@@ -84,13 +78,13 @@ namespace Tes.IO
     /// Returns the byte offset to the PayloadSize member.
     /// </summary>
     /// <value>The byte offset to the payload size member.</value>
-    public static int PayloadSizeOffset { get { return 12; } }
+    public static int PayloadSizeOffset { get { return Marshal.OffsetOf(typeof(PacketHeader), "PayloadSize").ToInt32(); } }
 
     /// <summary>
     /// Returns the byte offset to the Flags member.
     /// </summary>
     /// <value>The byte offset to the packet flags member.</value>
-    public static int FlagsOffset { get { return 15; } }
+    public static int FlagsOffset { get { return Marshal.OffsetOf(typeof(PacketHeader), "Flags").ToInt32(); } }
 
     /// <summary>
     /// Create a new header with the default values set. This includes the

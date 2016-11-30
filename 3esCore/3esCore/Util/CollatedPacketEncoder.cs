@@ -54,7 +54,7 @@ namespace Tes.Util
     public CollatedPacketEncoder(bool compress, int initialBufferSize = 64 * 1024)
     {
       CollatedBytes = 0;
-      _collationStream = _dataStream = new MemoryStream(initialBufferSize);
+      _collationStream = _dataStream = new CompressionBuffer(initialBufferSize);
       _packet = new PacketBuffer();
 
       // Prime the output stream, writing the initial header.
@@ -71,10 +71,10 @@ namespace Tes.Util
 
       _resetPosition = (int)_dataStream.Position;
 
+      CompressionEnabled = compress;
       if (compress)
       {
         _collationStream = new GZipStream(_dataStream, CompressionMode.Compress);
-        CompressionEnabled = true;
       }
     }
 
@@ -93,7 +93,7 @@ namespace Tes.Util
     /// 
     /// Use with care.
     /// </remarks>
-    public byte[] Buffer { get { return _dataStream.GetBuffer(); } }
+    public byte[] Buffer { get { return _dataStream.BaseStream.GetBuffer(); } }
     /// <summary>
     /// The total number of bytes written to <see cref="Buffer"/>.
     /// </summary>
@@ -113,12 +113,12 @@ namespace Tes.Util
         Finalise();
       }
       _finalised = false;
+      CollatedBytes = 0;
       SetPayloadSize(0);
       SetUncompressedBytesSize(0);
       _dataStream.Seek(_resetPosition, SeekOrigin.Begin);
       if (CompressionEnabled)
       {
-        // FIXME: try to avoid reallocating the zip stream.
         _collationStream = new GZipStream(_dataStream, CompressionMode.Compress);
       }
     }
@@ -174,6 +174,9 @@ namespace Tes.Util
     /// Finalise the collated packet before sending.
     /// </summary>
     /// <returns>True on successful finalisation, false if already finalised</returns>
+    /// <remarks>
+    /// This is poorly named given the .Net meaning of "Finalize()"
+    /// </remarks>
     public bool Finalise()
     {
       if (_finalised)
@@ -182,13 +185,16 @@ namespace Tes.Util
       }
 
       // Finalise compression.
-      _collationStream.Flush();
-      SetPayloadSize((ushort)(CollatedBytes + CollatedPacketMessage.Size));
+      _collationStream.Close();
+      // Ensure a valid state.
+      _collationStream = _dataStream;
+      //SetPayloadSize((ushort)(Count + CollatedPacketMessage.Size));
+      SetPayloadSize((ushort)(Count - PacketHeader.Size));
       // Update the payload and uncompressed sizes.
       SetUncompressedBytesSize((ushort)CollatedBytes);
 
       // Calculate the CRC
-      ushort crc = Crc16.Crc.Calculate(_dataStream.GetBuffer(), (uint)_dataStream.Position);
+      ushort crc = Crc16.Crc.Calculate(_dataStream.BaseStream.GetBuffer(), (uint)_dataStream.Position);
       new NetworkWriter(_dataStream).Write(crc);
       _finalised = true;
       return true;
@@ -371,7 +377,7 @@ namespace Tes.Util
     protected void SetUncompressedBytesSize(uint size)
     {
       // Write to the uncompressed size bytes.
-      int offset = PacketHeader.PayloadSizeOffset + CollatedPacketMessage.UncompressedBytesOffset;
+      int offset = PacketHeader.Size + CollatedPacketMessage.UncompressedBytesOffset;
       WriteHeaderData(offset, BitConverter.GetBytes(Endian.ToNetwork(size)));
     }
 
@@ -399,7 +405,7 @@ namespace Tes.Util
     /// <summary>
     /// Internal memory buffer.
     /// </summary>
-    private MemoryStream _dataStream = null;
+    private CompressionBuffer _dataStream = null;
     /// <summary>
     /// Buffer used in methods implementing the <see cref="IConnection"/> interface.
     /// </summary>

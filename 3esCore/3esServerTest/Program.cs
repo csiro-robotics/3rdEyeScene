@@ -413,10 +413,8 @@ namespace Tes
       ServerSettings serverSettings = ServerSettings.Default;
       ServerInfoMessage info = ServerInfoMessage.Default;
       info.CoordinateFrame = CoordinateFrame.XYZ;
-      serverSettings.Flags &= ~ServerFlag.Collate;
       if (HaveOption("compress", args))
       {
-        serverSettings.Flags |= ServerFlag.Collate;
         serverSettings.Flags |= ServerFlag.Compress;
       }
 

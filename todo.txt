@@ -1,6 +1,4 @@
 Bugs:
-- Fix C# packet collation.
-  - Collated packets seem to go missing.
 - Custom socket bugs (workaround using Qt sockets):
   - On OSX there is sporadic lag.
   - Large packets go missing.

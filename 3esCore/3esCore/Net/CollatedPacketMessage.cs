@@ -39,7 +39,7 @@ namespace Tes.Net
     /// </remarks>
     public static int UncompressedBytesOffset
     {
-      get { return 8; }
+      get { return Marshal.OffsetOf(typeof(CollatedPacketMessage), "UncompressedBytes").ToInt32(); }
     }
 
     /// <summary>

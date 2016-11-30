@@ -139,5 +139,6 @@
     <Compile Include="Maths\FloatUtil.cs" />
     <Compile Include="Shapes\MeshBase.cs" />
     <Compile Include="Maths\Colour.cs" />
+    <Compile Include="Util\CompressionBuffer.cs" />
   </ItemGroup>
 </Project>

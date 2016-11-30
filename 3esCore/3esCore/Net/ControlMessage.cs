@@ -53,7 +53,11 @@ namespace Tes.Net
     /// <returns>True on success.</returns>
     public bool Peek(PacketBuffer packet)
     {
-      int offset = PacketHeader.Size; // FIXME: This doesn't account for the payload offset.
+      int offset = PacketHeader.Size;
+      if (packet.ValidHeader)
+      {
+        offset += packet.Header.PayloadOffset;
+      }
       ControlFlags = packet.PeekUInt32(offset);
       offset += 4;
       Value32 = packet.PeekUInt32(offset);

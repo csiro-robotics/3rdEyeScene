@@ -25,7 +25,7 @@ namespace Tes.Server
       _client = socket;
       EndPoint = _client.Client.RemoteEndPoint as IPEndPoint;
       ServerFlags = serverFlags;
-      _collator = new CollatedPacketEncoder((serverFlags & ServerFlag.Collate) == ServerFlag.Collate);
+      _collator = new CollatedPacketEncoder((serverFlags & ServerFlag.Compress) == ServerFlag.Compress);
       _collator.Reset();
       _currentResourceProgress.Reset();
     }
