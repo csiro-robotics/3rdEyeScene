@@ -26,3 +26,5 @@ Use Cases
     - AI logic and constructs
 - QA testing
   - Record test sessions and attach 3es files to bug reports.
+
+Additional documentation can be found at [https://data61.github.io/3rdEyeScene/](https://data61.github.io/3rdEyeScene/)
