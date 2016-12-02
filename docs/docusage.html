@@ -107,7 +107,14 @@ $(document).ready(function(){initNavTree('docusage.html','');});
 <p>The most important thing to remember about 3es is that it allows you to visualise data which would otherwise be opaque. 3es supports the software development tenant "make it visible". It is very difficult to debug something you cannot see. 3es server code essentially allows you insert render commands at arbitrary points in your code to remotely visualise, <em>record</em> and <em>playback</em> the result. Visualisation itself is not enough as things can happen too fast to see. 3es really shines when it is used to record and step through stepping through the playback to visualise what are otherwise single frame events.</p>
 <h1><a class="anchor" id="secusecases"></a>
 Example Use Cases</h1>
-<h2><a class="anchor" id="subusecase1"></a>
+<h2><a class="anchor" id="subusecase0"></a>
+Geometry Processing Visualisation</h2>
+<p>3<sup>rd</sup> Eye Scene can be used to debug and visualise geometry processing algorithms. The C++ example "3es-sphere-view" shows 3es being used to visualise the progressive tesselation of a sphere from an icosahedron. This is a non-real time algorithm, so the term "frame" is used to loosely decribe a single step in the algorithm. Each frame outlines the face being considered in red and the tesselation to be effected in cyan. Once each face has been processed, the higher resolution sphere is shown before starting on the next iteration.</p>
+<div class="image">
+<img src="sphere-anim.gif" alt="sphere-anim.gif"/>
+<div class="caption">
+Sphere Tessellation</div></div>
+ <h2><a class="anchor" id="subusecase1"></a>
 Algorithm Debugging Usage Case</h2>
 <p>This use case looks at a complex 3D collision and intersection algorithm. Part of the algorithm involves intersecting sets of tetrahedra against a triangle mesh. Due to the high numbers of elements involved, this code was ported to GPU from code previously validated on CPU. The initial GPU results did not agree with the CPU code, so 3<sup>rd</sup> Eye Scene was used to visualise the data set being operated on and the results. The image below shows one such frame from the recorded output.</p>
 <div class="image">

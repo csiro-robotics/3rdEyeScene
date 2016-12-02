@@ -1,5 +1,7 @@
 var interfaceDialogs_1_1FileDialogView =
 [
+    [ "OnShow", "interfaceDialogs_1_1FileDialogView.html#a0f098abb1eb91466f529776e9e4b6203", null ],
+    [ "OnShow", "interfaceDialogs_1_1FileDialogView.html#a0f098abb1eb91466f529776e9e4b6203", null ],
     [ "ShowItems", "interfaceDialogs_1_1FileDialogView.html#a611dbdc7d6968298d7d376780eb8939a", null ],
     [ "ShowItems", "interfaceDialogs_1_1FileDialogView.html#a611dbdc7d6968298d7d376780eb8939a", null ],
     [ "ShowLinks", "interfaceDialogs_1_1FileDialogView.html#a97af615cb820b8ce2628886956ea3abf", null ],

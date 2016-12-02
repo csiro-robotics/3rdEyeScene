@@ -6,6 +6,11 @@ This page outlines how to use 3es server code to good effect either in debugging
 The most important thing to remember about 3es is that it allows you to visualise data which would otherwise be opaque. 3es supports the software development tenant "make it visible". It is very difficult to debug something you cannot see. 3es server code essentially allows you insert render commands at arbitrary points in your code to remotely visualise, @em record and @em playback the result. Visualisation itself is not enough as things can happen too fast to see. 3es really shines when it is used to record and step through stepping through the playback to visualise what are otherwise single frame events.
 
 @section secusecases Example Use Cases
+@subsection subusecase0 Geometry Processing Visualisation
+3<sup>rd</sup> Eye Scene can be used to debug and visualise geometry processing algorithms. The C++ example "3es-sphere-view" shows 3es being used to visualise the progressive tesselation of a sphere from an icosahedron. This is a non-real time algorithm, so the term "frame" is used to loosely decribe a single step in the algorithm. Each frame outlines the face being considered in red and the tesselation to be effected in cyan. Once each face has been processed, the higher resolution sphere is shown before starting on the next iteration.    
+
+@image html images/usecase/sphere-anim.gif "Sphere Tessellation"
+
 @subsection subusecase1 Algorithm Debugging Usage Case
 This use case looks at a complex 3D collision and intersection algorithm. Part of the algorithm involves intersecting sets of tetrahedra against a triangle mesh. Due to the high numbers of elements involved, this code was ported to GPU from code previously validated on CPU. The initial GPU results did not agree with the CPU code, so 3<sup>rd</sup> Eye Scene was used to visualise the data set being operated on and the results. The image below shows one such frame from the recorded output.
 

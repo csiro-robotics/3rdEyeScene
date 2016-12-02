@@ -124,8 +124,8 @@ Inheritance diagram for Dialogs.FileDialogView:</div>
  <div class="center">
   <img src="interfaceDialogs_1_1FileDialogView.png" usemap="#Dialogs.FileDialogView_map" alt=""/>
   <map id="Dialogs.FileDialogView_map" name="Dialogs.FileDialogView_map">
-<area href="classDialogs_1_1FileDialogUI.html" title="The default implementation for the FileDialogView used to provde a GUI to the user. " alt="Dialogs.FileDialogUI" shape="rect" coords="0,56,143,80"/>
-<area href="classDialogs_1_1FileDialogUI.html" title="The default implementation for the FileDialogView used to provde a GUI to the user. " alt="Dialogs.FileDialogUI" shape="rect" coords="153,56,296,80"/>
+<area href="classDialogs_1_1FileDialogUI.html" title="The default implementation for the FileDialogView used to provide a GUI to the user. " alt="Dialogs.FileDialogUI" shape="rect" coords="0,56,143,80"/>
+<area href="classDialogs_1_1FileDialogUI.html" title="The default implementation for the FileDialogView used to provide a GUI to the user. " alt="Dialogs.FileDialogUI" shape="rect" coords="153,56,296,80"/>
 </map>
  </div></div>
 <table class="memberdecls">
@@ -137,12 +137,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a611dbdc7d6968298d7d376780eb8939a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceDialogs_1_1FileDialogView.html#a611dbdc7d6968298d7d376780eb8939a">ShowItems</a> (<a class="el" href="structDialogs_1_1FileSystemEntry.html">FileSystemEntry</a> location, IEnumerable&lt; <a class="el" href="structDialogs_1_1FileSystemEntry.html">FileSystemEntry</a> &gt; items)</td></tr>
 <tr class="memdesc:a611dbdc7d6968298d7d376780eb8939a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called to the main view to display the given items.  <a href="#a611dbdc7d6968298d7d376780eb8939a">More...</a><br /></td></tr>
 <tr class="separator:a611dbdc7d6968298d7d376780eb8939a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f098abb1eb91466f529776e9e4b6203"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceDialogs_1_1FileDialogView.html#a0f098abb1eb91466f529776e9e4b6203">OnShow</a> ()</td></tr>
+<tr class="memdesc:a0f098abb1eb91466f529776e9e4b6203"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called once finished setting up <a class="el" href="namespaceUI.html">UI</a> to finalise showing the <a class="el" href="namespaceUI.html">UI</a>.  <a href="#a0f098abb1eb91466f529776e9e4b6203">More...</a><br /></td></tr>
+<tr class="separator:a0f098abb1eb91466f529776e9e4b6203"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a97af615cb820b8ce2628886956ea3abf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceDialogs_1_1FileDialogView.html#a97af615cb820b8ce2628886956ea3abf">ShowLinks</a> (IEnumerable&lt; <a class="el" href="structDialogs_1_1FileSystemEntry.html">FileSystemEntry</a> &gt; locations)</td></tr>
 <tr class="memdesc:a97af615cb820b8ce2628886956ea3abf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called to update the links view to display the given items.  <a href="#a97af615cb820b8ce2628886956ea3abf">More...</a><br /></td></tr>
 <tr class="separator:a97af615cb820b8ce2628886956ea3abf"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a611dbdc7d6968298d7d376780eb8939a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceDialogs_1_1FileDialogView.html#a611dbdc7d6968298d7d376780eb8939a">ShowItems</a> (<a class="el" href="structDialogs_1_1FileSystemEntry.html">FileSystemEntry</a> location, IEnumerable&lt; <a class="el" href="structDialogs_1_1FileSystemEntry.html">FileSystemEntry</a> &gt; items)</td></tr>
 <tr class="memdesc:a611dbdc7d6968298d7d376780eb8939a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called to the main view to display the given items.  <a href="#a611dbdc7d6968298d7d376780eb8939a">More...</a><br /></td></tr>
 <tr class="separator:a611dbdc7d6968298d7d376780eb8939a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f098abb1eb91466f529776e9e4b6203"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="interfaceDialogs_1_1FileDialogView.html#a0f098abb1eb91466f529776e9e4b6203">OnShow</a> ()</td></tr>
+<tr class="memdesc:a0f098abb1eb91466f529776e9e4b6203"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called once finished setting up <a class="el" href="namespaceUI.html">UI</a> to finalise showing the <a class="el" href="namespaceUI.html">UI</a>.  <a href="#a0f098abb1eb91466f529776e9e4b6203">More...</a><br /></td></tr>
+<tr class="separator:a0f098abb1eb91466f529776e9e4b6203"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
 Properties</h2></td></tr>
@@ -195,6 +201,46 @@ RectTransform&#160;</td><td class="memItemRight" valign="bottom"><b>UI</b><code>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Provides an abstraction layer between the <a class="el" href="classDialogs_1_1FileDialog.html" title="The base class for the OpenFileDialog and SaveFileDialog. ">FileDialog</a> and its GUI components. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
+<a class="anchor" id="a0f098abb1eb91466f529776e9e4b6203"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Dialogs.FileDialogView.OnShow </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Called once finished setting up <a class="el" href="namespaceUI.html">UI</a> to finalise showing the <a class="el" href="namespaceUI.html">UI</a>. </p>
+<p>Example usage is to set the initial focus. </p>
+
+<p>Implemented in <a class="el" href="classDialogs_1_1FileDialogUI.html#acc90e1763919b281fe2aca91c8291d6d">Dialogs.FileDialogUI</a>, and <a class="el" href="classDialogs_1_1FileDialogUI.html#acc90e1763919b281fe2aca91c8291d6d">Dialogs.FileDialogUI</a>.</p>
+
+</div>
+</div>
+<a class="anchor" id="a0f098abb1eb91466f529776e9e4b6203"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Dialogs.FileDialogView.OnShow </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Called once finished setting up <a class="el" href="namespaceUI.html">UI</a> to finalise showing the <a class="el" href="namespaceUI.html">UI</a>. </p>
+<p>Example usage is to set the initial focus. </p>
+
+<p>Implemented in <a class="el" href="classDialogs_1_1FileDialogUI.html#acc90e1763919b281fe2aca91c8291d6d">Dialogs.FileDialogUI</a>, and <a class="el" href="classDialogs_1_1FileDialogUI.html#acc90e1763919b281fe2aca91c8291d6d">Dialogs.FileDialogUI</a>.</p>
+
+</div>
+</div>
 <a class="anchor" id="a611dbdc7d6968298d7d376780eb8939a"></a>
 <div class="memitem">
 <div class="memproto">

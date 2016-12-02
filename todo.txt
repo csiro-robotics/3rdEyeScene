@@ -2,7 +2,6 @@ Bugs:
 - Custom socket bugs (workaround using Qt sockets):
   - On OSX there is sporadic lag.
   - Large packets go missing.
-- Clicking Select/Open in file browser sometimes does nothing.
 - Large steps often render before the catching the target frame.
   - Add a check to Router.Update() on whether the thread is at the target frame. Keep looping while not.
     - Also include a time limit to prevent deadlock.

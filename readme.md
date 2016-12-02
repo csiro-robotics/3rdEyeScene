@@ -1,7 +1,7 @@
 
 3rd Eye Scene
 =============
-3rd Eye Scene is a visual debugger and debugging aid in the vain of [rviz](http://wiki.ros.org/rviz) or physics engine viewers such as [Havok Visual Debugger](https://www.havok.com/physics/) or [PhysX Visual Debugger](https://developer.nvidia.com/physx-visual-debugger). Whereas those tools are tightly bound to their respective SDKs, 3rd Eye Scene can be used to remotely visualise and debug any real time or non real time 3D algorithm. Conceptually, it can be thought of as a simple remote rendering application. A 3es server may be embedded into any program, then 3es render commands may be interspersed throughout the program. The 3es viewer client application is then used to view, record and playback these render commands.
+3rd Eye Scene is a visual debugger and debugging aid in the vein of [rviz](http://wiki.ros.org/rviz) or physics engine viewers such as [Havok Visual Debugger](https://www.havok.com/physics/) or [PhysX Visual Debugger](https://developer.nvidia.com/physx-visual-debugger). Whereas those tools are tightly bound to their respective SDKs, 3rd Eye Scene can be used to remotely visualise and debug any real time or non real time 3D algorithm. Conceptually, it can be thought of as a remote rendering application. A 3es server may be embedded into any program, then 3es render commands may be interspersed throughout that program. The 3es viewer client application is then used to view, record and playback these render commands.
 
 Features
 --------

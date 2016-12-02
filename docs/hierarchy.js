@@ -149,8 +149,8 @@ var hierarchy =
     [ "tes::MeshCreateMessage", "structtes_1_1MeshCreateMessage.html", [
       [ "tes::MeshRedefineMessage", "structtes_1_1MeshRedefineMessage.html", null ]
     ] ],
-    [ "tes::MeshDestroyMessage", "structtes_1_1MeshDestroyMessage.html", null ],
     [ "Tes.Net.MeshDestroyMessage", "structTes_1_1Net_1_1MeshDestroyMessage.html", null ],
+    [ "tes::MeshDestroyMessage", "structtes_1_1MeshDestroyMessage.html", null ],
     [ "Tes.Handlers.MeshCache.MeshEntry", "classTes_1_1Handlers_1_1MeshCache_1_1MeshEntry.html", null ],
     [ "Tes.Net.MeshFinaliseMessage", "structTes_1_1Net_1_1MeshFinaliseMessage.html", null ],
     [ "tes::MeshFinaliseMessage", "structtes_1_1MeshFinaliseMessage.html", null ],
@@ -228,8 +228,8 @@ var hierarchy =
       [ "UI.TreeView", "classUI_1_1TreeView.html", null ],
       [ "ViewCamera", "classViewCamera.html", null ]
     ] ],
-    [ "tes::ObjectAttributes", "structtes_1_1ObjectAttributes.html", null ],
     [ "Tes.Net.ObjectAttributes", "structTes_1_1Net_1_1ObjectAttributes.html", null ],
+    [ "tes::ObjectAttributes", "structtes_1_1ObjectAttributes.html", null ],
     [ "Tes.IO.PacketBuffer", "classTes_1_1IO_1_1PacketBuffer.html", null ],
     [ "tes::PacketBuffer", "classtes_1_1PacketBuffer.html", null ],
     [ "Tes.IO.PacketHeader", "structTes_1_1IO_1_1PacketHeader.html", null ],
@@ -272,8 +272,8 @@ var hierarchy =
     [ "Tes.Runtime.SerialiseInfo", "structTes_1_1Runtime_1_1SerialiseInfo.html", null ],
     [ "Tes.Net.ServerInfoMessage", "structTes_1_1Net_1_1ServerInfoMessage.html", null ],
     [ "tes::ServerInfoMessage", "structtes_1_1ServerInfoMessage.html", null ],
-    [ "tes::ServerSettings", "structtes_1_1ServerSettings.html", null ],
     [ "Tes.Server.ServerSettings", "structTes_1_1Server_1_1ServerSettings.html", null ],
+    [ "tes::ServerSettings", "structtes_1_1ServerSettings.html", null ],
     [ "tes::Shape", "classtes_1_1Shape.html", [
       [ "tes::Arrow", "classtes_1_1Arrow.html", null ],
       [ "tes::Box", "classtes_1_1Box.html", null ],
@@ -299,7 +299,8 @@ var hierarchy =
     [ "Tes.Thread.SpinLock", "classTes_1_1Thread_1_1SpinLock.html", null ],
     [ "Stream", null, [
       [ "Tes.IO.Compression.DeflateStream", "classTes_1_1IO_1_1Compression_1_1DeflateStream.html", null ],
-      [ "Tes.IO.Compression.GZipStream", "classTes_1_1IO_1_1Compression_1_1GZipStream.html", null ]
+      [ "Tes.IO.Compression.GZipStream", "classTes_1_1IO_1_1Compression_1_1GZipStream.html", null ],
+      [ "Tes.Util.CompressionBuffer", "classTes_1_1Util_1_1CompressionBuffer.html", null ]
     ] ],
     [ "SystemException", null, [
       [ "Tes.IO.Compression.InvalidDataException", "classTes_1_1IO_1_1Compression_1_1InvalidDataException.html", null ]

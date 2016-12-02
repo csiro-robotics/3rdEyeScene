@@ -36,6 +36,7 @@ var index =
     ] ],
     [ "Using 3rd Eye Scene Server Code", "docusage.html", [
       [ "Example Use Cases", "docusage.html#secusecases", [
+        [ "Geometry Processing Visualisation", "docusage.html#subusecase0", null ],
         [ "Algorithm Debugging Usage Case", "docusage.html#subusecase1", null ],
         [ "Debugging Games", "docusage.html#subusecase2", null ]
       ] ]

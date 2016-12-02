@@ -46,6 +46,8 @@ var classDialogs_1_1FileDialogUI =
     [ "OnSelectFile", "classDialogs_1_1FileDialogUI.html#af41b92e975155105b6d05aedafec1e33", null ],
     [ "OnSelectLocation", "classDialogs_1_1FileDialogUI.html#a60c63dab654c316e829aaba023681af9", null ],
     [ "OnSelectLocation", "classDialogs_1_1FileDialogUI.html#a60c63dab654c316e829aaba023681af9", null ],
+    [ "OnShow", "classDialogs_1_1FileDialogUI.html#acc90e1763919b281fe2aca91c8291d6d", null ],
+    [ "OnShow", "classDialogs_1_1FileDialogUI.html#acc90e1763919b281fe2aca91c8291d6d", null ],
     [ "PopulateScrollRect", "classDialogs_1_1FileDialogUI.html#aba855a2703a287d2d56bf909e806ef2b", null ],
     [ "PopulateScrollRect", "classDialogs_1_1FileDialogUI.html#aba855a2703a287d2d56bf909e806ef2b", null ],
     [ "ProcessSelection", "classDialogs_1_1FileDialogUI.html#af07cf3bae72e744db1373f22c5eebf69", null ],
