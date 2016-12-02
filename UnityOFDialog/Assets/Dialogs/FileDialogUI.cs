@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,10 +10,10 @@ using System.Text;
 namespace Dialogs
 {
 	/// <summary>
-	/// The default implementation for the <see cref="FileDialogView"/> used to provde a GUI to the user.
+	/// The default implementation for the <see cref="FileDialogView"/> used to provide a GUI to the user.
 	/// </summary>
 	/// <remarks>
-	/// The default implementation is modeled on the Windows file browser, which is very similary
+	/// The default implementation is modeled on the Windows file browser, which is very similarly
 	/// to the Ubuntu Unity browser. This script is attached to the GUI object and various members
 	/// must be correctly bound to their respective GUI object. The system as a whole uses the uGUI
 	/// system.
@@ -232,10 +233,10 @@ namespace Dialogs
       if (Input.GetKey(KeyCode.Return) && _lastInputFocus != null)
       {
         if (_filenameInput == _lastInputFocus && _filenameInput.text.Length > 0)
-        { 
+        {
           // Confirm the selection.
           if (OnFilenameInputChanged())
-          { 
+          {
             OnConfirm();
           }
         }
@@ -325,6 +326,7 @@ namespace Dialogs
       _selectedFiles.Clear();
       if (Observer != null && !SuppressEvents)
       {
+        _pendingSelection = FilenameDisplay;
         return Observer.SetFileDialogLocation(FilenameDisplay);
       }
       return false;
@@ -430,26 +432,48 @@ namespace Dialogs
 			SuppressEvents = false;
       FilenameDisplay = string.Empty;
       int itemCount = PopulateScrollRect(_filesView, _iconItem, items, _iconSet);
-			if (_filesView != null)
+      if (_filesView != null)
 			{
-				// Bind selection events. Can't be done easily in static code.
-				for (int i = 0; i < _filesView.content.childCount; ++i)
+        FileEntryComponent initialSelection = null;
+        // Bind selection events. Can't be done easily in static code.
+        for (int i = 0; i < _filesView.content.childCount; ++i)
 				{
 					FileEntryComponent itemUI = _filesView.content.GetChild(i).GetComponent<FileEntryComponent>();
 					foreach (Button button in itemUI.GetComponentsInChildren<Button>())
 					{
 						button.onClick.AddListener(delegate() { this.OnSelectFile(itemUI); });
+            if (!string.IsNullOrEmpty(_pendingSelection) &&
+                itemUI.Entry.FullName.CompareTo(_pendingSelection) == 0)
+            {
+              initialSelection = itemUI;
+            }
 					}
 				}
-			}
 
-      if (itemCount != 0)
+        // Make initial selection.
+        if (initialSelection)
+        {
+          OnSelectFile(initialSelection);
+        }
+      }
+
+      if (itemCount != 0 && isActiveAndEnabled)
       {
         StartCoroutine(FixSizeAtEndOfFrame(_filesView, _iconItem));
       }
-		}
 
-		public static void ClearScrollRect(ScrollRect scroll)
+      _pendingSelection = null;
+    }
+
+    public void OnShow()
+    {
+      if (_filenameInput != null)
+      {
+        EventSystem.current.SetSelectedGameObject(_filenameInput.gameObject);
+      }
+    }
+
+    public static void ClearScrollRect(ScrollRect scroll)
 		{
 			for (int i = 0; i < scroll.content.childCount; ++i)
 			{
@@ -851,5 +875,12 @@ namespace Dialogs
 		private float _lastSelectTime;
 		protected bool SuppressEvents { get; set; }
     private InputField _lastInputFocus = null;
+    /// <summary>
+    /// Pending file selection to resolve in <see cref="ShowItems(FileSystemEntry, IEnumerable{FileSystemEntry})"/>.
+    /// </summary>
+    /// <remarks>
+    /// Supports entering a full file name in the file name input box.
+    /// </remarks>
+    private string _pendingSelection = null;
   }
 }

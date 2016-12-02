@@ -82,7 +82,7 @@ namespace Dialogs
 					{
 						return CreateEntry(drive);
 					}
-					UnityEngine.Debug.Log(string.Format("Path: {0} => {1}", path, new DirectoryInfo(path)));
+					//UnityEngine.Debug.Log(string.Format("Path: {0} => {1}", path, new DirectoryInfo(path)));
 					return CreateEntry(new DirectoryInfo(path));
 				}
 				if (File.Exists(path))

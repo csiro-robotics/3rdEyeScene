@@ -102,6 +102,14 @@ namespace Dialogs
 		/// </summary>
 		/// <param name="items">The items to display.</param>
 		void ShowItems(FileSystemEntry location, IEnumerable<FileSystemEntry> items);
+
+    /// <summary>
+    /// Called once finished setting up UI to finalise showing the UI.
+    /// </summary>
+    /// <remarks>
+    /// Example usage is to set the initial focus.
+    /// </remarks>
+    void OnShow();
 	}
 }
 

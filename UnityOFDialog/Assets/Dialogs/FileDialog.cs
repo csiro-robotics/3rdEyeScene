@@ -189,6 +189,11 @@ namespace Dialogs
           filter.Expression = new Regex(rexstr);
           _filters.Add(filter);
         }
+
+        if (UI != null)
+        {
+          UI.FileFilter = Filter;
+        }
       }
     }
 
@@ -198,7 +203,7 @@ namespace Dialogs
     public int FilterIndex
     {
       get { return UI != null ? UI.FileFilterIndex : 0; }
-      set { if (UI != null) UI.FileFilterIndex = value; }
+      set { if (UI != null) { UI.FileFilterIndex = value; } }
     }
 
     /// <summary>
@@ -268,9 +273,8 @@ namespace Dialogs
         Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*";
       }
       UI.ShowLinks(FileSystem.GetRoots());
-      UI.ShowItems(entry, FileSystem.ListChildren(entry, _filters[0].Expression));
-      UI.FileFilter = Filter;
-      FilterIndex = 0;
+      UI.ShowItems(entry, FileSystem.ListChildren(entry, _filters[FilterIndex].Expression));
+      UI.OnShow();
     }
 
     /// <summary>
@@ -397,7 +401,7 @@ namespace Dialogs
 
       if (Directory.Exists(fullPath))
       {
-        // Just a directory. Nagivate to that directory.
+        // Just a directory. Navigate to that directory.
         NavigateTo(FileSystem.FromPath(fullPath));
         return true;
       }
