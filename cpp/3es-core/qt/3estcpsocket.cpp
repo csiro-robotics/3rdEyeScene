@@ -164,7 +164,7 @@ int TcpSocket::sendBufferSize() const
 
 int TcpSocket::read(char *buffer, int bufferLength) const
 {
-  if (_detail->socket && _detail->socket->waitForReadyRead(_detail->readTimeout))
+  if (isConnected() && _detail->socket->waitForReadyRead(_detail->readTimeout))
   {
     return _detail->socket->read(buffer, bufferLength);
   }
@@ -175,7 +175,7 @@ int TcpSocket::read(char *buffer, int bufferLength) const
 
 int TcpSocket::readAvailable(char *buffer, int bufferLength) const
 {
-  if (!_detail->socket)
+  if (!isConnected())
   {
     return -1;
   }
@@ -194,7 +194,7 @@ int TcpSocket::write(const char *buffer, int bufferLength) const
 
   int wrote = -1;
   int totalWritten = 0;
-  while (wrote < 0 && bufferLength > 0)
+  while (isConnected() && wrote < 0 && bufferLength > 0)
   {
     wrote = _detail->socket->write(buffer, bufferLength);
     if (wrote > 0)
@@ -209,7 +209,10 @@ int TcpSocket::write(const char *buffer, int bufferLength) const
     }
   }
 
-  _detail->socket->waitForBytesWritten(0);
+  if (isConnected())
+  {
+    _detail->socket->waitForBytesWritten(0);
+  }
 
   return wrote >= 0 ? totalWritten : -1;
 }
