@@ -14,6 +14,16 @@ namespace Tes.Shapes
     public static Vector3 DefaultDirection = Vector3.AxisZ;
 
     /// <summary>
+    /// Default length when not otherwise specified.
+    /// </summary>
+    public const float DefaultLength = 1.0f;
+
+    /// <summary>
+    /// Default radius when not otherwise specified.
+    /// </summary>
+    public const float DefaultRadius = 0.025f;
+
+    /// <summary>
     /// Construct an arrow shape.
     /// </summary>
     /// <param name="id">ID of the shape. Zero for transient.</param>
@@ -21,7 +31,7 @@ namespace Tes.Shapes
     /// <param name="dir">Unit vector away from the <paramref name="origin"/>.</param>
     /// <param name="length">Length of the arrow along <paramref name="dir"/>.</param>
     /// <param name="radius">Arrow radius.</param>
-    public Arrow(uint id, Vector3 origin, Vector3 dir, float length = 1.0f, float radius = 0.025f)
+    public Arrow(uint id, Vector3 origin, Vector3 dir, float length, float radius)
       : base((ushort)Tes.Net.ShapeID.Arrow, id)
     {
       Position = origin;
@@ -30,20 +40,26 @@ namespace Tes.Shapes
       Radius = radius;
     }
 
+
     /// <summary>
     /// Construct an arrow shape.
     /// </summary>
-    /// <remarks>
-    /// Points along the <see cref="DefaultDirection"/>.
-    /// </remarks>
     /// <param name="id">ID of the shape. Zero for transient.</param>
     /// <param name="origin">Position of the arrow base.</param>
-    public Arrow(uint id, Vector3 origin) : this(id, origin, DefaultDirection) { }
+    /// <param name="endPoint">Position of the arrow tip.</param>
+    /// <param name="radius">Arrow radius.</param>
+    public Arrow(uint id, Vector3 origin, Vector3 endPoint, float radius)
+      : this(id, 0, origin, endPoint, radius)
+    {
+    }
+
     /// <summary>
     /// Construct an arrow shape at the origin.
     /// </summary>
     /// <param name="id">ID of the shape. Zero for transient.</param>
-    public Arrow(uint id = 0u) : this(id, Vector3.Zero, DefaultDirection) { }
+    /// <param name="category">Category to which the shape belongs.</param>
+    public Arrow(uint id = 0u, ushort category = 0)
+      : this(id, category, Vector3.Zero, DefaultDirection, DefaultLength, DefaultRadius) { }
 
     /// <summary>
     /// Construct an arrow shape.
@@ -54,7 +70,7 @@ namespace Tes.Shapes
     /// <param name="dir">Unit vector away from the <paramref name="origin"/>.</param>
     /// <param name="length">Length of the arrow along <paramref name="dir"/>.</param>
     /// <param name="radius">Arrow radius.</param>
-    public Arrow(uint id, ushort category, Vector3 origin, Vector3 dir, float length = 1.0f, float radius = 0.025f)
+    public Arrow(uint id, ushort category, Vector3 origin, Vector3 dir, float length, float radius)
       : base((ushort)Tes.Net.ShapeID.Arrow, id, category)
     {
       Position = origin;
@@ -69,14 +85,17 @@ namespace Tes.Shapes
     /// <param name="id">ID of the shape. Zero for transient.</param>
     /// <param name="category">Category to which the shape belongs.</param>
     /// <param name="origin">Position of the arrow base.</param>
-    public Arrow(uint id, ushort category, Vector3 origin) : this(id, category, origin, DefaultDirection) { }
-
-    /// <summary>
-    /// Construct an arrow shape.
-    /// </summary>
-    /// <param name="id">ID of the shape. Zero for transient.</param>
-    /// <param name="category">Category to which the shape belongs.</param>
-    public Arrow(uint id, ushort category) : this(id, category, Vector3.Zero, DefaultDirection) { }
+    /// <param name="endPoint">Position of the arrow tip.</param>
+    /// <param name="radius">Arrow radius.</param>
+    public Arrow(uint id, ushort category, Vector3 origin, Vector3 endPoint, float radius)
+      : base((ushort)Tes.Net.ShapeID.Arrow, id, category)
+    {
+      Vector3 axis = endPoint - origin;
+      Position = origin;
+      Length = axis.Magnitude;
+      Direction = (Length > 1e-6f) ? axis / Length : DefaultDirection;
+      Radius = radius;
+    }
 
     /// <summary>
     /// Access the arrow cylinder radius. The arrow head widens by about 25%.

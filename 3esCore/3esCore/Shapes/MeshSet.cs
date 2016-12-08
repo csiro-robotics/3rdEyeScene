@@ -120,7 +120,7 @@ namespace Tes.Shapes
     }
 
     /// <summary>
-    /// Overriden to copy mesh parts.
+    /// Overridden to copy mesh parts.
     /// </summary>
     /// <param name="copy">The clone object.</param>
     protected void OnClone(MeshSet copy)

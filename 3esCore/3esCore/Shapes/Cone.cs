@@ -17,6 +17,16 @@ namespace Tes.Shapes
     public static Vector3 DefaultDirection = Vector3.AxisZ;
 
     /// <summary>
+    /// Default angle when not otherwise specified.
+    /// </summary>
+    public const float DefaultAngle = 45.0f / 180.0f * (float)Math.PI;
+
+    /// <summary>
+    /// Default length when not otherwise specified.
+    /// </summary>
+    public const float DefaultLength = 1.0f;
+
+    /// <summary>
     /// Create a new cone.
     /// </summary>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
@@ -24,13 +34,9 @@ namespace Tes.Shapes
     /// <param name="dir">The major axis.</param>
     /// <param name="angle">The cone angle (radians).</param>
     /// <param name="length">The length of the cone.</param>
-    public Cone(uint id, Vector3 origin, Vector3 dir, float angle = 45.0f / 180.0f * (float)Math.PI, float length = 1.0f)
-      : base((ushort)Tes.Net.ShapeID.Cone, id)
+    public Cone(uint id, Vector3 origin, Vector3 dir, float angle, float length)
+      : this(id, 0, origin, dir, angle, length)
     {
-      Position = origin;
-      Direction = dir;
-      Angle = angle;
-      Length = length;
     }
 
     /// <summary>
@@ -38,12 +44,20 @@ namespace Tes.Shapes
     /// </summary>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
     /// <param name="origin">The apex of the cone.</param>
-    public Cone(uint id, Vector3 origin) : this(id, origin, DefaultDirection) { }
+    /// <param name="basePoint">The position of the centre of the cone base.</param>
+    /// <param name="radius">The cone radius at the base.</param>
+    public Cone(uint id, Vector3 origin, Vector3 basePoint, float radius)
+      : base((ushort)Tes.Net.ShapeID.Cone, id, 0)
+    {
+    }
+
     /// <summary>
     /// Create a new cone.
     /// </summary>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    public Cone(uint id = 0u) : this(id, Vector3.Zero, DefaultDirection) { }
+    /// <param name="category">Category to which the shape belongs.</param>
+    public Cone(uint id = 0u, ushort category = 0)
+      : this(id, category, Vector3.Zero, DefaultDirection, DefaultAngle, DefaultLength) { }
 
     /// <summary>
     /// Create a new cone.
@@ -54,7 +68,7 @@ namespace Tes.Shapes
     /// <param name="dir">The major axis.</param>
     /// <param name="angle">The cone angle (radians).</param>
     /// <param name="length">The length of the cone.</param>
-    public Cone(uint id, ushort category, Vector3 origin, Vector3 dir, float angle = 45.0f / 180.0f * (float)Math.PI, float length = 1.0f)
+    public Cone(uint id, ushort category, Vector3 origin, Vector3 dir, float angle, float length)
       : base((ushort)Tes.Net.ShapeID.Cone, id, category)
     {
       Position = origin;
@@ -69,13 +83,17 @@ namespace Tes.Shapes
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
     /// <param name="category">Category to which the shape belongs.</param>
     /// <param name="origin">The apex of the cone.</param>
-    public Cone(uint id, ushort category, Vector3 origin) : this(id, category, origin, DefaultDirection) { }
-    /// <summary>
-    /// Create a new cone.
-    /// </summary>
-    /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    /// <param name="category">Category to which the shape belongs.</param>
-    public Cone(uint id, ushort category) : this(id, category, Vector3.Zero, DefaultDirection) { }
+    /// <param name="basePoint">The position of the centre of the cone base.</param>
+    /// <param name="radius">The cone radius at the base.</param>
+    public Cone(uint id, ushort category, Vector3 origin, Vector3 basePoint, float radius)
+      : base((ushort)Tes.Net.ShapeID.Cone, id, category)
+    {
+      Vector3 axis = basePoint - origin;
+      Position = origin;
+      Length = axis.Magnitude;
+      Direction = (Length > 1e-6f) ? axis / Length : DefaultDirection;
+      Angle = (Length > 1e-6f) ? (float)Math.Atan(radius / Length) : 0;
+    }
 
     /// <summary>
     /// Access the cone angle (radians).

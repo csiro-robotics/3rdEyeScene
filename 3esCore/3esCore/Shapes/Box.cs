@@ -31,19 +31,19 @@ namespace Tes.Shapes
     /// </summary>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
     /// <param name="pos">Defines the centre of the shape.</param>
-    /// <param name="rot">A quaternion rotation applied to the shape.</param>
-    public Box(uint id, Vector3 pos, Quaternion rot) : this(id, pos, new Vector3(1, 1, 1), rot) { }
+    /// <param name="scale">The box edge lengths or extents.</param>
+    public Box(uint id, Vector3 pos, Vector3 scale)
+      : this(id, pos, scale, Quaternion.Identity)
+    {
+    }
+
     /// <summary>
     /// Construct a box shape.
     /// </summary>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    /// <param name="pos">Defines the centre of the shape.</param>
-    public Box(uint id, Vector3 pos) : this(id, pos, new Vector3(1, 1, 1), Quaternion.Identity) { }
-    /// <summary>
-    /// Construct a box shape.
-    /// </summary>
-    /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    public Box(uint id = 0u) : this(id, Vector3.Zero, new Vector3(1, 1, 1), Quaternion.Identity) { }
+    /// <param name="category">Category to which the shape belongs.</param>
+    public Box(uint id = 0u, ushort category = 0)
+      : this(id, category, Vector3.Zero, new Vector3(1, 1, 1), Quaternion.Identity) { }
 
     /// <summary>
     /// Construct a box shape.
@@ -67,21 +67,12 @@ namespace Tes.Shapes
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
     /// <param name="category">Category to which the shape belongs.</param>
     /// <param name="pos">Defines the centre of the shape.</param>
+    /// <param name="scale">The box edge lengths or extents.</param>
     /// <param name="rot">A quaternion rotation applied to the shape.</param>
-    public Box(uint id, ushort category, Vector3 pos, Quaternion rot) : this(id, category, pos, new Vector3(1, 1, 1), rot) { }
-    /// <summary>
-    /// Construct a box shape.
-    /// </summary>
-    /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    /// <param name="category">Category to which the shape belongs.</param>
-    /// <param name="pos">Defines the centre of the shape.</param>
-    public Box(uint id, ushort category, Vector3 pos) : this(id, category, pos, new Vector3(1, 1, 1), Quaternion.Identity) { }
-    /// <summary>
-    /// Construct a box shape.
-    /// </summary>
-    /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    /// <param name="category">Category to which the shape belongs.</param>
-    public Box(uint id, ushort category) : this(id, category, Vector3.Zero, new Vector3(1, 1, 1), Quaternion.Identity) { }
+    public Box(uint id, ushort category, Vector3 pos, Vector3 scale)
+    : this(id, category, pos, scale, Quaternion.Identity)
+    {
+    }
 
     /// <summary>
     /// Clone this shape.

@@ -25,7 +25,8 @@ namespace Tes.Shapes
     /// Create a sphere shape.
     /// </summary>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    public Sphere(uint id = 0u) : this(id, Vector3.Zero) { }
+    /// <param name="category">Category to which the shape belongs.</param>
+    public Sphere(uint id = 0u, ushort category = 0) : this(id, 0, Vector3.Zero) { }
 
     /// <summary>
     /// Create a sphere shape.
@@ -40,13 +41,6 @@ namespace Tes.Shapes
       Position = position;
       Radius = radius;
     }
-
-    /// <summary>
-    /// Create a sphere shape.
-    /// </summary>
-    /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    /// <param name="category">Category to which the shape belongs.</param>
-    public Sphere(uint id, ushort category) : this(id, category, Vector3.Zero) { }
 
     /// <summary>
     /// Access the sphere radius.

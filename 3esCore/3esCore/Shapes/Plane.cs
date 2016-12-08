@@ -38,14 +38,8 @@ namespace Tes.Shapes
     /// Construct a plane shape.
     /// </summary>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    /// <param name="position">Defines the centre of the plane patch.</param>
-    public Plane(uint id, Vector3 position) : this(id, position, DefaultNormal) { }
-
-    /// <summary>
-    /// Construct a plane shape.
-    /// </summary>
-    /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    public Plane(uint id = 0u) : this(id, Vector3.Zero, DefaultNormal) { }
+    /// <param name="category">Category to which the shape belongs.</param>
+    public Plane(uint id = 0u, ushort category = 0) : this(id, 0, Vector3.Zero, DefaultNormal) { }
 
     /// <summary>
     /// Construct a plane shape.
@@ -64,21 +58,6 @@ namespace Tes.Shapes
       Scale = scale;
       NormalLength = normalLength;
     }
-
-    /// <summary>
-    /// Construct a plane shape.
-    /// </summary>
-    /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    /// <param name="category">Category to which the shape belongs.</param>
-    /// <param name="position">Defines the centre of the plane patch.</param>
-    public Plane(uint id, ushort category, Vector3 position) : this(id, category, position, DefaultNormal) { }
-
-    /// <summary>
-    /// Construct a plane shape.
-    /// </summary>
-    /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    /// <param name="category">Category to which the shape belongs.</param>
-    public Plane(uint id, ushort category) : this(id, category, Vector3.Zero, DefaultNormal) { }
 
     /// <summary>
     /// Access the plane quad scale.
