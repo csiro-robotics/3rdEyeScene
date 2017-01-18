@@ -55,9 +55,10 @@ public:
   int transfer(tes::PacketWriter &packet, int byteLimit, tes::TransferProgress &progress) const override;
 
   /// Updates noted changes to the debug view.
-  /// @param newlyOccupied Keys of voxels which have become occupied from free or uncertain since the last update.
+  /// @param occupiedChange Keys of voxels which have become occupied from free or uncertain since the last update.
   /// @param newlyFree Keys of voxels which have become free from occupied since the last update.
-  void update(const UnorderedKeySet &newlyOccupied, const UnorderedKeySet &newlyFree);
+  /// @param touchedOccupied Keys of voxels which have changed occupied probability.
+  void update(const UnorderedKeySet &newlyOccupied, const UnorderedKeySet &newlyFree, const UnorderedKeySet &touchedOccupied);
 
 private:
   typedef uint32_t IndexType;

@@ -12,7 +12,8 @@ enum Category
   CAT_Populate,
   CAT_Rays,
   CAT_FreeCells,
-  CAT_OccupiedCells
+  CAT_OccupiedCells,
+  CAT_Info
 };
 
 enum Resource

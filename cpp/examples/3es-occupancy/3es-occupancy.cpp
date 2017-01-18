@@ -138,6 +138,10 @@ int populateMap(const Options &opt)
   // Update map visualisation every N samples.
   const size_t rayBatchSize = opt.batchSize;
 #ifdef TES_ENABLE
+  char timeStrBuffer[256];
+  double timebase = -1;
+  double firstBatchTimestamp = -1;
+  double lastTimestamp = -1;
   // Keys of voxels touched in the current batch.
   UnorderedKeySet becomeOccupied;
   UnorderedKeySet becomeFree;
@@ -157,6 +161,10 @@ int populateMap(const Options &opt)
     ++pointCount;
     TES_STMT(rays.push_back(origin));
     TES_STMT(rays.push_back(sample));
+    if (firstBatchTimestamp < 0)
+    {
+      firstBatchTimestamp = timestamp;
+    }
     // Compute free ray.
     map.computeRayKeys(p2p(origin), p2p(sample), rayKeys);
     // Draw intersected voxels.
@@ -215,6 +223,13 @@ int populateMap(const Options &opt)
       //// Collapse the map.
       //map.isNodeCollapsible()
 #ifdef TES_ENABLE
+      double elapsedTime = (lastTimestamp >= 0) ? timestamp - lastTimestamp : timestamp - firstBatchTimestamp;
+      timebase = (timebase >= 0) ? timebase : firstBatchTimestamp;
+      lastTimestamp = timestamp;
+      firstBatchTimestamp = -1;
+
+      sprintf(timeStrBuffer, "%g", timestamp - timebase);
+      TES_TEXT2D_SCREEN(*g_tesServer, TES_COLOUR(White), timeStrBuffer, 0u, CAT_Info, Vector3f(0.05f, 0.1f, 0.0f));
       if (!rays.empty())
       {
         // Draw sample lines.
@@ -226,15 +241,26 @@ int populateMap(const Options &opt)
       // Render touched voxels in bulk.
       renderVoxels(touchedFree, map, tes::Colour::Colours[tes::Colour::MediumSpringGreen], CAT_FreeCells);
       renderVoxels(touchedOccupied, map, tes::Colour::Colours[tes::Colour::Turquoise], CAT_OccupiedCells);
-      touchedFree.clear();
-      touchedOccupied.clear();
       //TES_SERVER_UPDATE(*g_tesServer, 0.0f);
 
+      // Ensure touchedOccupied does not contain newly occupied nodes for mesh update.
+      for (auto key : becomeOccupied)
+      {
+        auto search = touchedOccupied.find(key);
+        if (search != touchedOccupied.end())
+        {
+          touchedOccupied.erase(search);
+        }
+      }
+
       // Render changes to the map.
-      mapMesh.update(becomeOccupied, becomeFree);
+      mapMesh.update(becomeOccupied, becomeFree, touchedOccupied);
+
+      touchedFree.clear();
+      touchedOccupied.clear();
       becomeOccupied.clear();
       becomeFree.clear();
-      TES_SERVER_UPDATE(*g_tesServer, 0.0f);
+      TES_SERVER_UPDATE(*g_tesServer, float(elapsedTime));
       if (opt.pointLimit && pointCount >= opt.pointLimit || quit)
       {
         break;
@@ -279,6 +305,7 @@ void initialiseDebugCategories()
   TES_CATEGORY(*g_tesServer, "Rays", CAT_Rays, CAT_Populate, true);
   TES_CATEGORY(*g_tesServer, "Free", CAT_FreeCells, CAT_Populate, false);
   TES_CATEGORY(*g_tesServer, "Occupied", CAT_OccupiedCells, CAT_Populate, true);
+  TES_CATEGORY(*g_tesServer, "Info", CAT_Info, 0, true);
 }
 
 int main(int argc, char *argv[])

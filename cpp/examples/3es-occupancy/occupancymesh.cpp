@@ -37,6 +37,15 @@ namespace
     }
     return true;
   }
+
+
+  uint32_t nodeColour(const octomap::OcTree::NodeType *node, const octomap::OcTree &map)
+  {
+    const float intensity = float((node->getOccupancy() - map.getOccupancyThres()) / (1.0 - map.getOccupancyThres()));
+    //const float intensity = (node) ? float(node->getOccupancy()) : 0;
+    const int c = int(255 * intensity);
+    return tes::Colour(c, c, c).c;
+  }
 }
 
 OccupancyMesh::OccupancyMesh(unsigned meshId, octomap::OcTree &map)
@@ -149,7 +158,7 @@ int OccupancyMesh::transfer(tes::PacketWriter & packet, int byteLimit, tes::Tran
         _detail->vertices.push_back(p2p(_map.keyToCoord(node.getKey())));
         // Normals represent voxel half extents.
         _detail->normals.push_back(Vector3f(float(0.5f * _map.getResolution())));
-        _detail->colours.push_back(0xffffffffu);
+        _detail->colours.push_back(nodeColour(&*node, _map));
       }
     }
   }
@@ -159,9 +168,9 @@ int OccupancyMesh::transfer(tes::PacketWriter & packet, int byteLimit, tes::Tran
 
 
 
-void OccupancyMesh::update(const UnorderedKeySet &newlyOccupied, const UnorderedKeySet &newlyFree)
+void OccupancyMesh::update(const UnorderedKeySet &newlyOccupied, const UnorderedKeySet &newlyFree, const UnorderedKeySet &touchedOccupied)
 {
-  if (newlyOccupied.empty() && newlyFree.empty())
+  if (newlyOccupied.empty() && newlyFree.empty() && touchedOccupied.empty())
   {
     // Nothing to do.
     return;
@@ -178,8 +187,6 @@ void OccupancyMesh::update(const UnorderedKeySet &newlyOccupied, const Unordered
     _detail->voxelIndexMap.clear();
     return;
   }
-
-  // Remove already occupied voxels from touchedKeys.
 
   // Start by removing freed nodes.
   size_t initialUnusedVertexCount = _detail->unusedVertexList.size();
@@ -205,13 +212,14 @@ void OccupancyMesh::update(const UnorderedKeySet &newlyOccupied, const Unordered
   {
     const uint32_t vertexIndex = _detail->unusedVertexList.back();
     const octomap::OcTreeKey key = *occupiedIter;
+    const octomap::OcTree::NodeType *node = _map.search(key);
     const bool markAsModified = _detail->unusedVertexList.size() <= initialUnusedVertexCount;
     _detail->unusedVertexList.pop_back();
     ++occupiedIter;
     ++processedOccupiedCount;
     _detail->vertices[vertexIndex] = p2p(_map.keyToCoord(key));
     //validateVertex(_detail->vertices[vertexIndex]);
-    _detail->colours[vertexIndex] = 0xffffffffu;
+    _detail->colours[vertexIndex] = nodeColour(node, _map);
     _detail->voxelIndexMap.insert(std::make_pair(key, vertexIndex));
     // Only mark as modified if this vertex wasn't just invalidate by removal.
     // It will already be on the list otherwise.
@@ -321,6 +329,29 @@ void OccupancyMesh::update(const UnorderedKeySet &newlyOccupied, const Unordered
 
       // Calculate next batch.
       cmpmsg.offset += cmpmsg.count;
+    }
+  }
+
+  // Update colours for touched occupied
+  if (!touchedOccupied.empty())
+  {
+    for (auto key : touchedOccupied)
+    {
+      const octomap::OcTree::NodeType *node = _map.search(key);
+      auto indexSearch = _detail->voxelIndexMap.find(key);
+      if (node && indexSearch != _detail->voxelIndexMap.end())
+      {
+        const unsigned voxelIndex = indexSearch->second;
+        _detail->colours[voxelIndex] = nodeColour(node, _map);
+
+        packet.reset(tes::MtMesh, tes::MmtVertexColour);
+        cmpmsg.offset = voxelIndex;
+        cmpmsg.count = 1;
+        cmpmsg.write(packet);
+        packet.writeArray<uint32_t>(&_detail->colours[voxelIndex], 1);
+        packet.finalise();
+        g_tesServer->send(packet);
+      }
     }
   }
 
