@@ -182,7 +182,7 @@
 /// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
 /// @param colour The colour to apply to the shape.
 /// @param ... Additional arguments follow, passed to @p PointCloudShape() constructor.
-#define TES_POINTCLOUDSHAPE(server, colour, ...) { (server).create(tes::PointCloudShape(__VA_ARGS__)); }
+#define TES_POINTCLOUDSHAPE(server, colour, ...) { (server).create(tes::PointCloudShape(__VA_ARGS__).setColour(colour)); }
 
 /// Render a small set of points.
 /// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
@@ -430,7 +430,7 @@
 /// Destroy point cloud with @p id.
 /// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
 /// @param id The ID of the shape to destroy.
-#define TES_POINTCLOUDSHAPE_END(server, id) { (server).destroy(tes::PointCloudShape(nullptr, static_cast<uint32_t>(id))); }
+#define TES_POINTCLOUDSHAPE_END(server, cloud, id) { (server).destroy(tes::PointCloudShape(cloud, static_cast<uint32_t>(id))); }
 /// Destroy point set with @p id.
 /// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
 /// @param id The ID of the shape to destroy.

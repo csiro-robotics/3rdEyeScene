@@ -1,0 +1,66 @@
+//
+// Project configuration header. This is a generated header; do not modify
+// it directly. Instead, modify the config.h.in version and run CMake again.
+//
+#ifndef __@TARGET_HEADER_GUARD@config_h
+#define __@TARGET_HEADER_GUARD@config_h
+
+#include "3es-core.h"
+
+#define TES_ENABLE
+#ifdef TES_ENABLE
+namespace tes { class Server; }
+extern tes::Server *g_tesServer;
+#endif // TES_ENABLE
+
+#ifndef _USE_MATH_DEFINES
+#define _USE_MATH_DEFINES
+#endif // _USE_MATH_DEFINES
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif // NOMINMAX
+#include <cmath>
+
+#ifdef _MSC_VER
+// Avoid dubious security warnings for plenty of legitimate code
+# ifndef _SCL_SECURE_NO_WARNINGS
+#   define _SCL_SECURE_NO_WARNINGS
+# endif // _SCL_SECURE_NO_WARNINGS
+# ifndef _CRT_SECURE_NO_WARNINGS
+#   define _CRT_SECURE_NO_WARNINGS
+# endif // _CRT_SECURE_NO_WARNINGS
+//#define _CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES 1
+#endif // _MSC_VER
+
+// Shared library import/export configuration:
+#define @TARGET_IDENTIFIER@_DLL @TARGET_SHARED@
+
+#if @TARGET_IDENTIFIER@_DLL
+
+// Built as a shared library/DLL.
+# ifdef WIN32
+#   ifdef @TARGET_IDENTIFIER@_EXPORTS
+#     define @TARGET_IDENTIFIER@API __declspec(dllexport)
+#   else  // @TARGET_IDENTIFIER@_EXPORTS
+#     define @TARGET_IDENTIFIER@API __declspec(dllimport)
+#   endif // @TARGET_IDENTIFIER@_EXPORTS
+#   define @TARGET_IDENTIFIER@_HIDDEN
+# else  // WIN32
+#   ifdef @TARGET_IDENTIFIER@_EXPORTS
+#     define @TARGET_IDENTIFIER@API __attribute__((visibility("default")))
+#     define @TARGET_IDENTIFIER@_HIDDEN __attribute__((visibility("hidden")))
+#   else  // @TARGET_IDENTIFIER@_EXPORTS
+#     define @TARGET_IDENTIFIER@API
+#     define @TARGET_IDENTIFIER@_HIDDEN
+#   endif // @TARGET_IDENTIFIER@_EXPORTS
+#endif // WIN32
+
+#else  // @TARGET_IDENTIFIER@_DLL
+
+// Not built as a shared library/DLL.
+#define @TARGET_IDENTIFIER@API
+#define @TARGET_IDENTIFIER@_HIDDEN
+
+#endif // @TARGET_IDENTIFIER@_DLL
+
+#endif // __@TARGET_HEADER_GUARD@config_h

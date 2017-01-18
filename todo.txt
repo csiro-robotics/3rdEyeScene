@@ -1,4 +1,5 @@
 Bugs:
+- MESHSET_END() macro does not cater for releasing associated resources. Parameterisation needs to change.
 - Custom socket bugs (workaround using Qt sockets):
   - On OSX there is sporadic lag.
   - Large packets go missing.

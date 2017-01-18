@@ -367,7 +367,7 @@ int main(int argc, char **argvNonConst)
 
   std::cout << "Done" << std::endl;
 
-  // Stop and close the server. Point is left non null.
+  // Stop and close the server. Pointer is left non null.
   TES_SERVER_STOP(*tesServer);
 
   return 0;
