@@ -25,6 +25,10 @@ namespace Tes.Handlers.Shape3D
       /// </summary>
       public Vector3[] Vertices;
       /// <summary>
+      /// Mesh normals.
+      /// </summary>
+      public Vector3[] Normals;
+      /// <summary>
       /// Mesh indices. Sequential indices into <see cref="Vertices"/> when no explicit
       /// Indices are provided.
       /// </summary>
@@ -84,7 +88,7 @@ namespace Tes.Handlers.Shape3D
     {
       base.Initialise(root, serverRoot, materials);
     }
-	
+  
     /// <summary>
     /// Overridden to release mesh resources.
     /// </summary>
@@ -184,8 +188,36 @@ namespace Tes.Handlers.Shape3D
       }
 
       uint indexOffset = 0;
-      uint totalItems = (uint)meshData.Vertices.Length;
-      ushort sendCode = 0;  // 0 for vertices, 1 for indices.
+      uint totalItems = (meshData.Normals != null) ? (uint)meshData.Normals.Length : 0;
+      ushort sendCode = (ushort)Shapes.MeshShape.SendDataType.Normals;
+      while (indexOffset < totalItems)
+      {
+        // Very rough maximum limit.
+        const uint maxPacketNormals = ((0xff00u - 256u) / 12);
+        Vector3 n;
+        uint itemCount = (uint)(meshData.Normals.Length - indexOffset);
+        itemCount = (itemCount <= maxPacketNormals) ? itemCount : maxPacketNormals;
+
+        packet.Reset(RoutingID, DataMessage.MessageID);
+        msg.Write(packet);
+        packet.WriteBytes(BitConverter.GetBytes(sendCode), true);
+        packet.WriteBytes(BitConverter.GetBytes(indexOffset), true);
+        packet.WriteBytes(BitConverter.GetBytes(itemCount), true);
+
+        for (int i = 0; i < itemCount; ++i)
+        {
+          n = meshData.Normals[i + indexOffset];
+          packet.WriteBytes(BitConverter.GetBytes(n.x), true);
+          packet.WriteBytes(BitConverter.GetBytes(n.y), true);
+          packet.WriteBytes(BitConverter.GetBytes(n.z), true);
+        }
+        packet.FinalisePacket();
+        packet.ExportTo(writer);
+        indexOffset += itemCount;
+      }
+
+      sendCode = (ushort)Shapes.MeshShape.SendDataType.Vertices;
+      totalItems = (uint)meshData.Vertices.Length;
       while (indexOffset < totalItems)
       {
         // Very rough maximum limit.
@@ -217,7 +249,7 @@ namespace Tes.Handlers.Shape3D
       {
         indexOffset = 0;
         totalItems = (uint)indices.Length;
-        sendCode = 1;  // 0 for vertices, 1 for indices.
+        sendCode = (ushort)Shapes.MeshShape.SendDataType.Indices;
         while (indexOffset < totalItems)
         {
           // Very rough maximum limit.
@@ -261,6 +293,7 @@ namespace Tes.Handlers.Shape3D
 
       meshData.Vertices = new Vector3[vertexCount];
       meshData.Indices = new int[indexCount];
+      meshData.Normals = null;
       meshData.DrawType = (MeshDrawType)reader.ReadByte();
       meshData.CalculateNormals = meshData.DrawType == MeshDrawType.Triangles &&
                                   (msg.Flags & (ushort)MeshShapeFlag.CalculateNormals) != 0;
@@ -313,7 +346,44 @@ namespace Tes.Handlers.Shape3D
       ShapeComponent shape = obj.GetComponent<ShapeComponent>();
       Material mat = SelectMaterial(shape, meshData);
 
-      if (receiveType == 0) // Vertices incoming
+      if (receiveType == (ushort)Shapes.MeshShape.SendDataType.Normals ||
+          receiveType == (ushort)Shapes.MeshShape.SendDataType.UniformNormal)  // Normals incoming
+      {
+        Vector3[] normals = meshData.Normals;
+
+        if (normals == null || normals.Length < meshData.Vertices.Length)
+        {
+          normals = meshData.Normals = new Vector3[meshData.Vertices.Length];
+        }
+
+        // Read new normals.
+        Vector3 n = Vector3.zero;
+        if (receiveType == (ushort)Shapes.MeshShape.SendDataType.Normals)
+        {
+          for (int i = 0; i < itemCount; ++i)
+          {
+            n.x = reader.ReadSingle();
+            n.y = reader.ReadSingle();
+            n.z = reader.ReadSingle();
+            normals[offset + i] = n;
+          }
+        }
+        else
+        {
+          // Single, shared normals. Expand into the array.
+          n.x = reader.ReadSingle();
+          n.y = reader.ReadSingle();
+          n.z = reader.ReadSingle();
+
+          for (int i = 0; i < normals.Length; ++i)
+          {
+            normals[i] = n;
+          }
+        }
+
+        // Can't finalise on normals.
+      }
+      else if (receiveType == (ushort)Shapes.MeshShape.SendDataType.Vertices) // Vertices incoming
       {
         Vector3[] vertices = meshData.Vertices;
 
@@ -333,7 +403,7 @@ namespace Tes.Handlers.Shape3D
           FinaliseMesh(obj, shape, meshData, mat, shape.Colour);
         }
       }
-      else if (receiveType == 1)  // Indices incoming
+      else if (receiveType == (ushort)Shapes.MeshShape.SendDataType.Vertices)  // Indices incoming
       {
         // Receiving indices.
         int[] indices = meshData.Indices;
@@ -390,6 +460,9 @@ namespace Tes.Handlers.Shape3D
       {
       case MeshDrawType.Points:
         mat = Materials[MaterialLibrary.PointsUnlit];
+        break;
+      case MeshDrawType.Voxels:
+        mat = Materials[MaterialLibrary.Voxels];
         break;
       default:
       case MeshDrawType.Lines:
@@ -460,6 +533,8 @@ namespace Tes.Handlers.Shape3D
     {
       MeshFilter meshFilter = obj.GetComponent<MeshFilter>();
       MeshTopology topology = MeshCache.DrawTypeToTopology(meshData.DrawType);
+      bool haveNormals = (meshData.Normals != null && meshData.Vertices != null &&
+                          meshData.Normals.Length == meshData.Vertices.Length);
       if (meshData.Vertices.Length < 65000)
       {
         if (meshFilter == null)
@@ -471,6 +546,14 @@ namespace Tes.Handlers.Shape3D
         obj.GetComponent<MeshFilter>().mesh = mesh;
         mesh.subMeshCount = 1;
         mesh.vertices = meshData.Vertices;
+        if (haveNormals)
+        {
+          mesh.normals = meshData.Normals;
+        }
+        else
+        {
+          mesh.normals = null;
+        }
 
         if (meshData.Indices.Length > 0)
         {
@@ -496,9 +579,9 @@ namespace Tes.Handlers.Shape3D
         }
 
         mesh.RecalculateBounds();
-        if (meshData.CalculateNormals)
+        if (meshData.CalculateNormals && !haveNormals)
         { 
-          mesh.RecalculateNormals();
+          //mesh.RecalculateNormals();
         }
       }
       else
@@ -546,21 +629,30 @@ namespace Tes.Handlers.Shape3D
           elementCount = Math.Min(itemsPerMesh, indices.Length - indexOffset);
 
           Vector3[] partVerts = new Vector3[elementCount];
+          Vector3[] partNorms = (haveNormals) ? new Vector3[elementCount] : null;
           int[] partInds = new int[elementCount];
 
           for (int i = 0; i < elementCount; ++i)
           {
             partVerts[i] = meshData.Vertices[indices[i + indexOffset]];
+            if (partNorms != null)
+            {
+              partNorms[i] = meshData.Normals[indices[i + indexOffset]];
+            }
             partInds[i] = i;
           }
 
           part.transform.SetParent(obj.transform, false);
           partMesh.vertices = partVerts;
+          if (partNorms != null)
+          {
+            partMesh.normals = partNorms;
+          }
           partMesh.SetIndices(partInds, topology, 0);
           partMesh.RecalculateBounds();
-          if (meshData.CalculateNormals)
+          if (meshData.CalculateNormals && !haveNormals)
           {
-            partMesh.RecalculateNormals();
+            //partMesh.RecalculateNormals();
           }
 
           indexOffset += elementCount;

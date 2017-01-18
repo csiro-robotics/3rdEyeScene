@@ -22,6 +22,7 @@ public class TesComponent : Router
   public Material VertexColourTransparent;
   public Material PointsLitMaterial;
   public Material PointsUnlitMaterial;
+  public Material VoxelsMaterial;
   public FileDialogUI FileDialogUI;
 
   private PluginManager _plugins = new PluginManager();
@@ -53,6 +54,7 @@ public class TesComponent : Router
     Materials.Register(MaterialLibrary.VertexColourTransparent, VertexColourTransparent);
     Materials.Register(MaterialLibrary.PointsLit, PointsLitMaterial);
     Materials.Register(MaterialLibrary.PointsUnlit, PointsUnlitMaterial);
+    Materials.Register(MaterialLibrary.Voxels, VoxelsMaterial);
 
     if (Scene != null && Scene.Root != null)
     {

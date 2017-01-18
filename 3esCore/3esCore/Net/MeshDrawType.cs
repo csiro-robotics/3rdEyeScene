@@ -17,9 +17,9 @@
     /// Vertices/indices come in triples, defining connected triangles.
     /// </summary>
     Triangles,
-    //LineLoop,
-    //LineStrip,
-    //TriangleStrip,
-    //TriangleFan
+    /// <summary>
+    /// Geometry shader based voxels. Vertices define voxel centres, the normals define the box half extents.
+    /// </summary>
+    Voxels
   }
 }

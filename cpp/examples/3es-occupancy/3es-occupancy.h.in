@@ -7,12 +7,6 @@
 
 #include "3es-core.h"
 
-#define TES_ENABLE
-#ifdef TES_ENABLE
-namespace tes { class Server; }
-extern tes::Server *g_tesServer;
-#endif // TES_ENABLE
-
 #ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES
 #endif // _USE_MATH_DEFINES
@@ -62,5 +56,13 @@ extern tes::Server *g_tesServer;
 #define @TARGET_IDENTIFIER@_HIDDEN
 
 #endif // @TARGET_IDENTIFIER@_DLL
+
+#define TES_ENABLE
+#ifdef TES_ENABLE
+namespace tes { class Server; }
+extern tes::Server *g_tesServer;
+#endif // TES_ENABLE
+
+#include "debugids.h"
 
 #endif // __@TARGET_HEADER_GUARD@config_h

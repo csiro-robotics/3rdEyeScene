@@ -137,6 +137,8 @@ namespace tes
     DtPoints,
     DtLines,
     DtTriangles,
+    /// Geometry shader based voxels. Vertices define the voxel centres, the normals define half extents.
+    DtVoxels,
     //DtQuads,
     //DtLineLoop,
   };

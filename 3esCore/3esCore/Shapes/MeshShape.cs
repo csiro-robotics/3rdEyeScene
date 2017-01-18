@@ -21,6 +21,20 @@ namespace Tes.Shapes
   public class MeshShape : Shape
   {
     /// <summary>
+    /// Codes for <see cref="WriteData(PacketBuffer, ref uint)"/>.
+    /// </summary>
+    public enum SendDataType : ushort
+    {
+      Vertices,
+      Indices,
+      Normals,
+      /// <summary>
+      /// Sending a single normals for all vertices (voxel extents).
+      /// </summary>
+      UniformNormal
+    };
+
+    /// <summary>
     /// Create a mesh shape.
     /// </summary>
     /// <param name="drawType">Mesh topology.</param>
@@ -320,6 +334,24 @@ namespace Tes.Shapes
     }
 
     /// <summary>
+    /// Optional normals access.
+    /// </summary>
+    public Vector3[] Normals
+    {
+      get { return _normals; }
+      set { _normals = value; if (_normals != null) { CalculateNormals = false; } }
+    }
+
+    /// <summary>
+    /// Set a single normal to be applied to all vertices (e.g. for voxels).
+    /// </summary>
+    /// <param name="normal">The shared normal.</param>
+    public void SetUniformNormal(Vector3 normal)
+    {
+      Normals = new Vector3[] { normal };
+    }
+
+    /// <summary>
     /// Defines the mesh topology.
     /// </summary>
     public MeshDrawType DrawType { get; protected set; }
@@ -358,7 +390,7 @@ namespace Tes.Shapes
     /// <remarks>Call recursively until zero is returned. Packet does not get finalised here.</remarks>
     public static int WriteData(ushort routingID, uint objectID,
                                 PacketBuffer packet, ref uint progressMarker,
-                                Vector3[] vertices, int[] indices)
+                                Vector3[] vertices, Vector3[] normals, int[] indices)
     {
       DataMessage msg = new DataMessage();
       msg.ObjectID = objectID;
@@ -366,18 +398,47 @@ namespace Tes.Shapes
       msg.Write(packet);
 
       int totalVertices = (vertices != null) ? vertices.Length : 0;
+      int totalNormals = (normals != null) ? normals.Length : 0;
       int totalIndices = (indices != null) ? indices.Length : 0;
       uint offset;
       uint itemCount;
       ushort sendCode;  // 0 for vertices, 1 for indices.
 
-      if (progressMarker < totalVertices)
+      // Must send normals before final vertices/indices as those trigger mesh finalisation.
+      if (progressMarker < totalNormals)
+      {
+        // Approximate vertex limit per packet. Packet size maximum is 0xffff.
+        // Take off a bit for overheads (256) and divide by 12 bytes per vertex.
+        const uint maxPacketNormals = ((0xff00u - 256u) / 12);
+        sendCode = (totalNormals != 1) ? (ushort)SendDataType.Normals : (ushort)SendDataType.UniformNormal;
+        offset = (uint)progressMarker;
+        itemCount = (uint)(normals.Length - offset);
+        if (itemCount > maxPacketNormals)
+        {
+          itemCount = (uint)maxPacketNormals;
+        }
+        packet.WriteBytes(BitConverter.GetBytes(sendCode), true);
+        packet.WriteBytes(BitConverter.GetBytes(offset), true);
+        packet.WriteBytes(BitConverter.GetBytes(itemCount), true);
+
+        Vector3 n;
+        for (int i = (int)(progressMarker); i < (itemCount + offset); ++i)
+        {
+          n = normals[i];
+          packet.WriteBytes(BitConverter.GetBytes(n.X), true);
+          packet.WriteBytes(BitConverter.GetBytes(n.Y), true);
+          packet.WriteBytes(BitConverter.GetBytes(n.Z), true);
+        }
+
+        progressMarker += itemCount;
+      }
+      else if (progressMarker < totalNormals + totalVertices)
       {
         // Approximate vertex limit per packet. Packet size maximum is 0xffff.
         // Take off a bit for overheads (256) and divide by 12 bytes per vertex.
         const uint maxPacketVertices = ((0xff00u - 256u) / 12);
-        sendCode = 0; // Vertices
-        offset = (uint)progressMarker;
+        sendCode = (ushort)SendDataType.Vertices; // Vertices
+        offset = (uint)(progressMarker - totalNormals);
         itemCount = (uint)(vertices.Length - offset);
         if (itemCount > maxPacketVertices)
         {
@@ -398,13 +459,13 @@ namespace Tes.Shapes
 
         progressMarker += itemCount;
       }
-      else if (progressMarker < totalVertices + totalIndices)
+      else if (progressMarker < totalNormals + totalVertices + totalIndices)
       {
         // Approximate index limit per packet. Packet size maximum is 0xffff.
         // Take off a bit for overheads (256) and divide by 4 bytes per vertex.
         const uint maxPacketIndices = ((0xff00u - 256u) / 4u);
-        sendCode = 1; // Indices
-        offset = (uint)(progressMarker - indices.Length);
+        sendCode = (ushort)SendDataType.Indices; // Indices
+        offset = (uint)(progressMarker - totalNormals - totalVertices);
         itemCount = (uint)(indices.Length - offset);
         if (itemCount > maxPacketIndices)
         {
@@ -423,7 +484,7 @@ namespace Tes.Shapes
       }
 
       // Return 1 while there are more vertices to process.
-      return (progressMarker < totalVertices + totalIndices) ? 1 : 0;
+      return (progressMarker < totalNormals + totalVertices + totalIndices) ? 1 : 0;
     }
 
     /// <summary>
@@ -434,7 +495,7 @@ namespace Tes.Shapes
     /// <returns>Zero when done, 1 otherwise.</returns>
     public override int WriteData(PacketBuffer packet, ref uint progressMarker)
     {
-      return WriteData(RoutingID, ID, packet, ref progressMarker, _vertices, _indices);
+      return WriteData(RoutingID, ID, packet, ref progressMarker, _vertices, _normals, _indices);
     }
 
     /// <summary>
@@ -452,6 +513,10 @@ namespace Tes.Shapes
     /// Vertex data.
     /// </summary>
     private Vector3[] _vertices;
+    /// <summary>
+    /// Normals data. May contain a single normal, in which case it is applied to all vertices (e.g., for voxels).
+    /// </summary>
+    private Vector3[] _normals;
     /// <summary>
     /// Index data.
     /// </summary>

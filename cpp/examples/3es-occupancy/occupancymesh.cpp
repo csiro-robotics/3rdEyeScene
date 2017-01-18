@@ -14,6 +14,8 @@ using namespace tes;
 struct OccupancyMeshDetail
 {
   std::vector<tes::Vector3f> vertices;
+  // Define the render extents for the voxels.
+  std::vector<tes::Vector3f> normals;
   std::vector<uint32_t> colours;
   //std::vector<uint32_t> indices;
   /// Tracks indices of unused vertices in the vertex array.
@@ -21,6 +23,21 @@ struct OccupancyMeshDetail
   /// Maps voxel keys to their vertex indices.
   KeyToIndexMap voxelIndexMap;
 };
+
+namespace
+{
+  bool validateVertex(const Vector3f &v)
+  {
+    for (int i = 0; i < 3; ++i)
+    {
+      if (std::abs(v[i]) > 1e6f)
+      {
+        return false;
+      }
+    }
+    return true;
+  }
+}
 
 OccupancyMesh::OccupancyMesh(unsigned meshId, octomap::OcTree &map)
   : _map(map)
@@ -58,7 +75,7 @@ uint32_t OccupancyMesh::tint() const
 
 uint8_t OccupancyMesh::drawType(int stream) const
 {
-  return tes::DtPoints;
+  return tes::DtVoxels;
 }
 
 
@@ -91,7 +108,8 @@ const uint8_t * OccupancyMesh::indices(unsigned & stride, unsigned & width, int 
 
 const float * OccupancyMesh::normals(unsigned & stride, int stream) const
 {
-  return nullptr;
+  stride = sizeof(Vector3f);
+  return (!_detail->normals.empty()) ? _detail->normals.data()->v : nullptr;
 }
 
 
@@ -129,6 +147,8 @@ int OccupancyMesh::transfer(tes::PacketWriter & packet, int byteLimit, tes::Tran
         // Add voxel.
         _detail->voxelIndexMap.insert(std::make_pair(node.getKey(), uint32_t(_detail->vertices.size())));
         _detail->vertices.push_back(p2p(_map.keyToCoord(node.getKey())));
+        // Normals represent voxel half extents.
+        _detail->normals.push_back(Vector3f(float(0.5f * _map.getResolution())));
         _detail->colours.push_back(0xffffffffu);
       }
     }
@@ -151,6 +171,7 @@ void OccupancyMesh::update(const UnorderedKeySet &newlyOccupied, const Unordered
   {
     // No-one to send to.
     _detail->vertices.clear();
+    _detail->normals.clear();
     _detail->colours.clear();
     //_detail->indices.clear();
     _detail->unusedVertexList.clear();
@@ -189,6 +210,7 @@ void OccupancyMesh::update(const UnorderedKeySet &newlyOccupied, const Unordered
     ++occupiedIter;
     ++processedOccupiedCount;
     _detail->vertices[vertexIndex] = p2p(_map.keyToCoord(key));
+    //validateVertex(_detail->vertices[vertexIndex]);
     _detail->colours[vertexIndex] = 0xffffffffu;
     _detail->voxelIndexMap.insert(std::make_pair(key, vertexIndex));
     // Only mark as modified if this vertex wasn't just invalidate by removal.
@@ -249,7 +271,7 @@ void OccupancyMesh::update(const UnorderedKeySet &newlyOccupied, const Unordered
     packet.reset(tes::MtMesh, tes::MmtVertex);
     cmpmsg.write(packet);
     // Write the invalid value.
-    packet.writeArray<Vector3f>(&_detail->vertices[vertexIndex], 1);
+    packet.writeArray<float>(_detail->vertices[vertexIndex].v, 3);
     packet.finalise();
     g_tesServer->send(packet);
   }
@@ -262,6 +284,9 @@ void OccupancyMesh::update(const UnorderedKeySet &newlyOccupied, const Unordered
     _detail->voxelIndexMap.insert(std::make_pair(key, vertexIndex));
     //_detail->indices.push_back(uint32_t(_detail->vertices.size()));
     _detail->vertices.push_back(p2p(_map.keyToCoord(key)));
+    //validateVertex(_detail->vertices.back());
+    // Normals represent voxel half extents.
+    _detail->normals.push_back(Vector3f(float(0.5f * _map.getResolution())));
     _detail->colours.push_back(0xffffffffu);
   }
 
@@ -279,6 +304,12 @@ void OccupancyMesh::update(const UnorderedKeySet &newlyOccupied, const Unordered
       packet.reset(tes::MtMesh, tes::MmtVertex);
       cmpmsg.write(packet);
       packet.writeArray<float>(_detail->vertices[cmpmsg.offset].v, cmpmsg.count * 3);
+      packet.finalise();
+      g_tesServer->send(packet);
+
+      packet.reset(tes::MtMesh, tes::MmtNormal);
+      cmpmsg.write(packet);
+      packet.writeArray<float>(_detail->normals[cmpmsg.offset].v, cmpmsg.count * 3);
       packet.finalise();
       g_tesServer->send(packet);
 

@@ -101,7 +101,7 @@ Shader "Points/PointsUnlit"
     // Drop points outside the point size radius.
     // Use 0.25 because point radius has ended up being 0.5 (from uvoffset)
     // and we need radius squared (0.25)
-    if (uvdist2 > 0.25f)
+    if (uvdist2 > 0.25f || input.colour.a == 0)
     {
       discard;
     }
@@ -120,7 +120,7 @@ Shader "Points/PointsUnlit"
     // Drop points outside the point size radius.
     // Use 0.25 because point radius has ended up being 0.5 (from uvoffset)
     // and we need radius squared (0.25)
-    if (uvdist2 > 0.25f)
+    if (uvdist2 > 0.25f || input.colour.a == 0)
     {
       discard;
     }

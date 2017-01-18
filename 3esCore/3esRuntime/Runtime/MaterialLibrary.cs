@@ -43,6 +43,11 @@ namespace Tes.Runtime
     public static string PointsUnlit { get { return "pointsUnlit"; } }
 
     /// <summary>
+    /// The name of a default material for rendering geometry shader based voxels.
+    /// </summary>
+    public static string Voxels { get { return "voxels"; } }
+
+    /// <summary>
     /// Fetch or register a material under <paramref name="key"/>. Will replace
     /// an existing material under <paramref name="key"/>
     /// </summary>

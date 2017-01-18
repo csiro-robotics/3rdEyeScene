@@ -27,6 +27,7 @@ set(SOURCES "${CONFIG_HEADER}")
 list(APPEND SOURCES
   3es-occupancy.h.in
   3es-occupancy.cpp
+  debugids.h
   occupancyloader.cpp
   occupancyloader.h
   occupancymesh.cpp

@@ -20,6 +20,16 @@ namespace tes
     MeshShape();
 
   public:
+    /// Codes for @c writeData(). Note: normals must be sent before completing vertices and indices. Best done first.
+    enum SendDataType
+    {
+      SDT_Vertices,
+      SDT_Indices,
+      SDT_Normals,
+      /// Sending a single normals for all vertices (voxel extents).
+      SDT_UniformNormal
+    };
+
     /// Transient triangle set constructor accepting an iterator and optional positioning.
     /// @param vertices Pointer to the vertex array. Must be at least 3 elements per vertex.
     /// @param vertexCount The number of vertices in @c vertices.
@@ -110,8 +120,30 @@ namespace tes
     /// Mark as complex to ensure @c writeData() is called.
     inline bool isComplex() const override { return true; }
 
+    /// Calculate vertex normals in the viewer?
     bool calculateNormals() const;
+    /// Should normals be calculated for the mesh by the viewer?
+    /// @param calculate True to calculate vertex normals in the viewer.
     MeshShape &setCalculateNormals(bool calculate);
+
+    /// Set (optional) mesh normals. The number of normal elements in @p normals
+    /// must match the @p vertexCount.
+    ///
+    /// The normals array is copied if this object owns its vertex memory such
+    /// as after calling @p expandVertices().
+    ///
+    /// Sets @c calculateNormals() to false.
+    ///
+    /// @param normals The normals array.
+    /// @param normalByteSize the number of bytes between each element of @p normals.
+    /// @return this
+    MeshShape &setNormals(const float *normals, size_t normalByteSize);
+
+    /// Sets a single normal to be shared by all vertices in the mesh.
+    /// Sets @c calculateNormals() to false.
+    /// @param normal The shared normal to set.
+    /// @return this
+    MeshShape &setUniformNormal(const Vector3f &normal);
 
     /// Expand the vertex set into a new block of memory.
     ///
@@ -124,11 +156,15 @@ namespace tes
     /// @return this
     MeshShape &expandVertices();
 
+    inline unsigned vertexCount() const { return _vertexCount; }
     inline const float *vertices() const { return _vertices; }
     /// Vertex stride in float elements.
     inline size_t vertexStride() const { return _vertexStride; }
     inline size_t vertexByteStride() const { return _vertexStride * sizeof(float); }
-    inline unsigned vertexCount() const { return _vertexCount; }
+    inline const float *normals() const { return _normals; }
+    inline size_t normalsStride() const { return _normalsStride; }
+    inline size_t normalsByteStride() const { return _normalsStride * sizeof(float); }
+    inline size_t normalsCount() const { return _normalsCount; }
     inline DrawType drawType() const { return _drawType; }
 
     /// Writes the standard create message and appends mesh data.
@@ -149,18 +185,24 @@ namespace tes
     void onClone(MeshShape *copy) const;
 
     float *allocateVertices(unsigned count);
-    void freeVertices(const float *vertices);
+    void freeVertices(const float *&vertices);
 
     unsigned *allocateIndices(unsigned count);
-    void freeIndices(const unsigned *indices);
+    void freeIndices(const unsigned *&indices);
 
-    const float *_vertices;     ///< triangle vertices, in triples of triples or provide @c _indices.
+    const float *_vertices;     ///< Mesh vertices.
     unsigned _vertexStride;     ///< Stride into _vertices in float elements, not bytes.
-    unsigned _vertexCount;      ///< Number of @c _vertices. Divide by 3 for the triangle count when no @c _indices.
+    unsigned _vertexCount;      ///< Number of @c _vertices.
+    const float *_normals;      ///< Normals array, one per vertex.
+    unsigned _normalsStride;    ///< Stride into _normals in float elements, not bytes.
+    unsigned _normalsCount;     ///< Number of @c _normals. Must be 0, 1 or @c _vertexCount.
+                                ///< 0 indicates no normals, 1 indicates a single, shared normal (for voxels),
+                                ///< otherwise there must be one per normal.
     const unsigned *_indices;   ///< Optional triangle indices.
     unsigned _indexCount;       ///< Number of @c indices. Divide by 3 for the triangle count.
     DrawType _drawType;         ///< The primitive to render.
     bool _ownPointers;          ///< Does this instance own its vertices and indices?
+    bool _ownNormals;           ///< Does this instance own its normals? Always true if @p _ownPointers is true.
   };
 
 
@@ -169,10 +211,14 @@ namespace tes
     , _vertices(nullptr)
     , _vertexStride(3)
     , _vertexCount(0)
+    , _normals(nullptr)
+    , _normalsStride(3)
+    , _normalsCount(0)
     , _indices(nullptr)
     , _indexCount(0)
     , _drawType(DtTriangles)
     , _ownPointers(false)
+    , _ownNormals(false)
   {
   }
 
@@ -185,10 +231,14 @@ namespace tes
     , _vertices(vertices)
     , _vertexStride(unsigned(vertexByteSize / sizeof(float)))
     , _vertexCount(vertexCount)
+    , _normals(nullptr)
+    , _normalsStride(3)
+    , _normalsCount(0)
     , _indices(nullptr)
     , _indexCount(0)
     , _drawType(drawType)
     , _ownPointers(false)
+    , _ownNormals(false)
   {
     setPosition(position);
     setRotation(rotation);
@@ -205,10 +255,14 @@ namespace tes
     , _vertices(vertices)
     , _vertexStride(unsigned(vertexByteSize / sizeof(float)))
     , _vertexCount(vertexCount)
+    , _normals(nullptr)
+    , _normalsStride(3)
+    , _normalsCount(0)
     , _indices(indices)
     , _indexCount(indexCount)
     , _drawType(drawType)
     , _ownPointers(false)
+    , _ownNormals(false)
   {
     setPosition(position);
     setRotation(rotation);
@@ -225,10 +279,14 @@ namespace tes
     , _vertices(vertices)
     , _vertexStride(unsigned(vertexByteSize / sizeof(float)))
     , _vertexCount(vertexCount)
+    , _normals(nullptr)
+    , _normalsStride(3)
+    , _normalsCount(0)
     , _indices(nullptr)
     , _indexCount(0)
     , _drawType(drawType)
     , _ownPointers(false)
+    , _ownNormals(false)
   {
     setPosition(position);
     setRotation(rotation);
@@ -246,10 +304,14 @@ namespace tes
     , _vertices(vertices)
     , _vertexStride(unsigned(vertexByteSize / sizeof(float)))
     , _vertexCount(vertexCount)
+    , _normals(nullptr)
+    , _normalsStride(3)
+    , _normalsCount(0)
     , _indices(indices)
     , _indexCount(indexCount)
     , _drawType(drawType)
     , _ownPointers(false)
+    , _ownNormals(false)
   {
     setPosition(position);
     setRotation(rotation);
@@ -266,10 +328,14 @@ namespace tes
     , _vertices(vertices)
     , _vertexStride(unsigned(vertexByteSize / sizeof(float)))
     , _vertexCount(vertexCount)
+    , _normals(nullptr)
+    , _normalsStride(3)
+    , _normalsCount(0)
     , _indices(nullptr)
     , _indexCount(0)
     , _drawType(drawType)
     , _ownPointers(false)
+    , _ownNormals(false)
   {
     setPosition(position);
     setRotation(rotation);
@@ -287,10 +353,14 @@ namespace tes
     , _vertices(vertices)
     , _vertexStride(unsigned(vertexByteSize / sizeof(float)))
     , _vertexCount(vertexCount)
+    , _normals(nullptr)
+    , _normalsStride(3)
+    , _normalsCount(0)
     , _indices(indices)
     , _indexCount(indexCount)
     , _drawType(drawType)
     , _ownPointers(false)
+    , _ownNormals(false)
   {
     setPosition(position);
     setRotation(rotation);
@@ -304,6 +374,10 @@ namespace tes
     {
       freeVertices(_vertices);
       freeIndices(_indices);
+    }
+    if (_ownNormals)
+    {
+      freeVertices(_normals);
     }
   }
 

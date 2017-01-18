@@ -196,6 +196,13 @@
 /// @param ... Additional arguments follow, passed to @p MeshShape() constructor.
 #define TES_POINTS_E(server, colour, ...) { (server).create(tes::MeshShape(tes::DtPoints, ##__VA_ARGS__).expandVertices().setColour(colour)); }
 
+/// Render a set of voxels. Vertices represent voxel centres, normals are extents.
+/// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
+/// @param colour The colour to apply to the shape.
+/// @param resolution The length of the voxel edge. Only supports cubic voxels.
+/// @param ... Additional arguments follow, passed to @p MeshShape() constructor. Vertices and normals required.
+#define TES_VOXELS(server, colour, resolution, ...) { (server).create(tes::MeshShape(tes::DtVoxels, ##__VA_ARGS__).setUniformNormal(tes::Vector3f(0.5f * resolution)).setColour(colour)); }
+
 /// Solid sphere.
 /// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
 /// @param colour The colour to apply to the shape.
@@ -435,6 +442,10 @@
 /// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
 /// @param id The ID of the shape to destroy.
 #define TES_POINTS_END(server, id) { (server).destroy(tes::MeshShape(tes::DtPoints, nullptr, 0, 0, static_cast<uint32_t>(id))); }
+/// Destroy voxel set with @p id.
+/// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
+/// @param id The ID of the shape to destroy.
+#define TES_VOXELS_END(server, id) { (server).destroy(tes::MeshShape(tes::DtVoxels, nullptr, 0, 0, static_cast<uint32_t>(id))); }
 /// Destroy sphere with @p id.
 /// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
 /// @param id The ID of the shape to destroy.
@@ -662,6 +673,7 @@
 #define TES_PLANE_END(...)
 #define TES_POINTCLOUDSHAPE_END(...)
 #define TES_POINTS_END(...)
+#define TES_VOXELS_END(...)
 #define TES_SPHERE_END(...)
 #define TES_STAR_END(...)
 #define TES_TEXT2D_END(...)

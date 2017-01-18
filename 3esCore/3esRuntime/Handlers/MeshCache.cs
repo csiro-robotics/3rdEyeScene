@@ -127,6 +127,11 @@ namespace Tes.Handlers
     public Material PointsUnlitMaterial { get; protected set; }
 
     /// <summary>
+    /// Material for rendering geometry shader based voxels. Vertices mark the centre, normals the half extents.
+    /// </summary>
+    public Material VoxelsMaterial { get; protected set; }
+
+    /// <summary>
     /// Delegate for various mesh events.
     /// </summary>
     /// <param name="mesh">The mesh changing state.</param>
@@ -157,6 +162,8 @@ namespace Tes.Handlers
       switch (drawType)
       {
       case MeshDrawType.Points:
+        // No break.
+      case MeshDrawType.Voxels:
         return MeshTopology.Points;
       case MeshDrawType.Lines:
         return MeshTopology.Lines;
@@ -177,7 +184,7 @@ namespace Tes.Handlers
     }
 
     /// <summary>
-    /// Initalise, caching the required materials from <paramref name="materials"/>.
+    /// Initialise, caching the required materials from <paramref name="materials"/>.
     /// </summary>
     /// <param name="root"></param>
     /// <param name="serverRoot"></param>
@@ -188,6 +195,7 @@ namespace Tes.Handlers
       UnlitMaterial = materials[MaterialLibrary.VertexColourUnlit];
       PointsLitMaterial = materials[MaterialLibrary.PointsLit];
       PointsUnlitMaterial = materials[MaterialLibrary.PointsUnlit];
+      VoxelsMaterial = materials[MaterialLibrary.Voxels];
     }
 
 
@@ -633,7 +641,9 @@ namespace Tes.Handlers
       switch (msg.DrawType)
       {
       case (byte)MeshDrawType.Points:
-        entry.Topology = MeshTopology.Points;
+        // No break.
+      case (byte)MeshDrawType.Voxels:
+          entry.Topology = MeshTopology.Points;
         break;
       case (byte)MeshDrawType.Lines:
         entry.Topology = MeshTopology.Lines;
@@ -1044,7 +1054,12 @@ namespace Tes.Handlers
         break;
       case MeshTopology.Points:
         generateNormals = false;
-        if (entry.Normals != null)
+        if (entry.DrawType == (byte)MeshDrawType.Voxels)
+        {
+          entry.Material = VoxelsMaterial;
+          generateNormals = entry.Normals == null;
+        }
+        else if (entry.Normals != null)
         {
           entry.Material = PointsLitMaterial;
         }
@@ -1157,7 +1172,7 @@ namespace Tes.Handlers
         mesh.vertices = entry.Vertices;
         if (entry.Normals != null)
         {
-          mesh.normals = entry.Vertices;
+          mesh.normals = entry.Normals;
         }
         if (entry.UVs != null)
         {
@@ -1174,7 +1189,7 @@ namespace Tes.Handlers
 
           if (recalculateNormals)
           {
-            mesh.RecalculateNormals();
+            CalculateNormals(mesh, entry);
           }
           mesh.RecalculateBounds();
         }
@@ -1228,7 +1243,7 @@ namespace Tes.Handlers
 
           if (recalculateNormals)
           {
-            mesh.RecalculateNormals();
+            CalculateNormals(mesh, entry);
           }
           mesh.RecalculateBounds();
 
@@ -1256,6 +1271,34 @@ namespace Tes.Handlers
       }
 
       return new Error();
+    }
+
+    /// <summary>
+    /// (Re)Calculate normals for <paramref name="mesh"/> from <paramref name="entry"/>.
+    /// </summary>
+    /// <param name="mesh"></param>
+    /// <param name="entry"></param>
+    /// <remarks>
+    /// Normally uses <c>mesh.RecalculateNormals()</c> unless rendering voxels, in which
+    /// case all normals are set to (0.5, 0.5, 0.5) to render unit voxels.
+    /// </remarks>
+    private void CalculateNormals(Mesh mesh, MeshEntry entry)
+    {
+      if (entry.DrawType != (byte)MeshDrawType.Voxels)
+      {
+        mesh.RecalculateNormals();
+      }
+      else
+      {
+        // No given for voxels. Make unit voxels.
+        Vector3[] voxelExtents = new Vector3[mesh.vertexCount];
+        Vector3 unitVoxelExt = 0.5f * Vector3.one;
+        for (int i = 0; i < voxelExtents.Length; ++i)
+        {
+          voxelExtents[i] = unitVoxelExt;
+        }
+        mesh.normals = voxelExtents;
+      }
     }
 
     /// <summary>

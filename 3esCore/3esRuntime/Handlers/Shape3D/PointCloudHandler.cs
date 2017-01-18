@@ -443,7 +443,16 @@ namespace Tes.Handlers.Shape3D
           partMesh.AddComponent<MeshFilter>().sharedMesh = mesh;
 
           MeshRenderer renderer = partMesh.AddComponent<MeshRenderer>();
-          renderer.material = mesh.normals.Length > 0 ? _litMaterial : _unlitMaterial;
+          if (meshEntry.Topology == MeshTopology.Points)
+          {
+            // Use mesh material as is.
+            renderer.material = meshEntry.Material;
+          }
+          else
+          {
+            // Rendering a mesh with non-point topology. Set tha points based material.
+            renderer.material = mesh.normals.Length > 0 ? _litMaterial : _unlitMaterial;
+          }
           renderer.material.SetInt("PointSize", points.PointSize);
           renderer.material.color = (shape != null) ? shape.Colour : new Color32(255, 255, 255, 255);
           partMesh.transform.SetParent(points.transform, false);
@@ -482,12 +491,13 @@ namespace Tes.Handlers.Shape3D
           }
 
           // Create this mesh piece.
-          Material material = _unlitMaterial;
+          bool defaultMaterial = meshEntry.Topology == MeshTopology.Points;
+          Material material = (defaultMaterial) ? meshEntry.Material : _unlitMaterial;
           Mesh mesh = new Mesh();
           mesh.subMeshCount = 1;
           mesh.vertices = verts;
           mesh.colors32 = colours;
-          if (meshEntry.Normals != null)
+          if (!defaultMaterial && meshEntry.Normals != null)
           {
             mesh.normals = normals;
             material = _litMaterial;

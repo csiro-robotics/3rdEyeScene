@@ -17,7 +17,7 @@
 #include <sstream>
 #include <unordered_set>
 
-// But ideas:
+// Forced bug ideas to show now 3es highlights the issue(s).
 // 1. Skip inserting the sample voxel key assuming that the ray will do so.
 // 2. call integrateMiss() instead of integrateHit().
 
@@ -90,6 +90,27 @@ namespace
     }
     dst.insert(key);
   }
+
+#ifdef TES_ENABLE
+  void renderVoxels(const UnorderedKeySet &keys, const octomap::OcTree &map, const tes::Colour &colour, uint16_t category)
+  {
+    // Convert to voxel centres.
+    if (!keys.empty())
+    {
+      std::vector<Vector3f> centres(keys.size());
+      size_t index = 0;
+      for (auto key : keys)
+      {
+        centres[index++] = p2p(map.keyToCoord(key));
+      }
+
+      // Render slightly smaller than the actual voxel size.
+      TES_VOXELS(*g_tesServer, colour, 0.95f * float(map.getResolution()),
+                 centres.data()->v, unsigned(centres.size()), sizeof(*centres.data()),
+                 0u, category);
+    }
+  }
+#endif // TES_ENABLE
 }
 
 
@@ -119,22 +140,25 @@ int populateMap(const Options &opt)
   // Keys of voxels touched in the current batch.
   UnorderedKeySet becomeOccupied;
   UnorderedKeySet becomeFree;
-  OccupancyMesh mapMesh(1u, map);
+  UnorderedKeySet touchedFree;
+  UnorderedKeySet touchedOccupied;
+  std::vector<Vector3f> rays;
+  OccupancyMesh mapMesh(RES_MapMesh, map);
 #endif // TES_ENABLE
 
-  TES_POINTCLOUDSHAPE(*g_tesServer, TES_COLOUR(SteelBlue), &mapMesh, 1u, 0, 48);
+  TES_POINTCLOUDSHAPE(*g_tesServer, TES_COLOUR(SteelBlue), &mapMesh, RES_Map, CAT_Map);
   // Ensure mesh is created for later update.
-  TES_SERVER_UPDATE(*g_tesServer, 0.0f)
+  TES_SERVER_UPDATE(*g_tesServer, 0.0f);
 
   printf("Populating map");
   while (loader.nextPoint(sample, origin, &timestamp))
   {
     ++pointCount;
+    TES_STMT(rays.push_back(origin));
+    TES_STMT(rays.push_back(sample));
     // Compute free ray.
     map.computeRayKeys(p2p(origin), p2p(sample), rayKeys);
-    // Draw sample point and line.
-    TES_SPHERE_W(*g_tesServer, TES_COLOUR(RoyalBlue), 0, sample, 0.005f);
-    TES_LINE(*g_tesServer, TES_COLOUR(DarkOrange), origin, sample);
+    //TES_SPHERE_W(*g_tesServer, TES_COLOUR(RoyalBlue), 0, sample, 0.005f, 0u, CAT_OccupiedCells);
     // Draw intersected voxels.
     const size_t rayKeyCount = rayKeys.size();
     keyIndex = 0;
@@ -159,10 +183,8 @@ int populateMap(const Options &opt)
         map.updateNode(key, false, true);
       }
       voxel = p2p(map.keyToCoord(key));
-      TES_BOX_W(*g_tesServer,
-                TES_COLOUR(MediumSpringGreen),
-                //(keyIndex + 1 != rayKeyCount) ? TES_COLOUR(MediumSpringGreen) : TES_COLOUR(SteelBlue),
-                0, voxel, ext);
+      // Collate for render.
+      TES_STMT(touchedFree.insert(key));
       ++keyIndex;
     }
 
@@ -183,19 +205,36 @@ int populateMap(const Options &opt)
     {
       // New node.
       map.updateNode(key, true, true);
+      // Collate for render.
       TES_STMT(shiftToSet(becomeOccupied, becomeFree, key));
     }
-    TES_BOX_W(*g_tesServer, TES_COLOUR(SteelBlue), 0, p2p(map.keyToCoord(key)), ext);
+    TES_STMT(shiftToSet(touchedOccupied, touchedFree, key));
 
     if (pointCount % rayBatchSize == 0 || quit)
     {
       //// Collapse the map.
       //map.isNodeCollapsible()
 #ifdef TES_ENABLE
+      if (!rays.empty())
+      {
+        // Draw sample lines.
+        TES_LINES(*g_tesServer, TES_COLOUR(DarkOrange),
+                  rays.data()->v, unsigned(rays.size()), sizeof(*rays.data()),
+                  0u, CAT_Rays);
+        rays.clear();
+      }
+      // Render touched voxels in bulk.
+      renderVoxels(touchedFree, map, tes::Colour::Colours[tes::Colour::MediumSpringGreen], CAT_FreeCells);
+      renderVoxels(touchedOccupied, map, tes::Colour::Colours[tes::Colour::Turquoise], CAT_OccupiedCells);
+      touchedFree.clear();
+      touchedOccupied.clear();
+      //TES_SERVER_UPDATE(*g_tesServer, 0.0f);
+
+      // Render changes to the map.
       mapMesh.update(becomeOccupied, becomeFree);
       becomeOccupied.clear();
       becomeFree.clear();
-      TES_SERVER_UPDATE(*g_tesServer, 0.0f)
+      TES_SERVER_UPDATE(*g_tesServer, 0.0f);
       if (opt.pointLimit && pointCount >= opt.pointLimit || quit)
       {
         break;
@@ -210,7 +249,7 @@ int populateMap(const Options &opt)
 
   // Save the occupancy map.
   printf("Saving map");
-  map.writeBinary("map.ot");
+  map.writeBinary("map.bt");
 
   return 0;
 }
@@ -231,6 +270,15 @@ void usage(const Options &opt)
   printf("  The voxel resolution of the generated map.\n");
   printf("-r=<resolution> (%g)\n", opt.resolution);
   printf("  The voxel resolution of the generated map.\n");
+}
+
+void initialiseDebugCategories()
+{
+  TES_CATEGORY(*g_tesServer, "Map", CAT_Map, 0, true);
+  TES_CATEGORY(*g_tesServer, "Populate", CAT_Populate, 0, true);
+  TES_CATEGORY(*g_tesServer, "Rays", CAT_Rays, CAT_Populate, true);
+  TES_CATEGORY(*g_tesServer, "Free", CAT_FreeCells, CAT_Populate, true);
+  TES_CATEGORY(*g_tesServer, "Occupied", CAT_OccupiedCells, CAT_Populate, true);
 }
 
 int main(int argc, char *argv[])
@@ -299,6 +347,8 @@ int main(int argc, char *argv[])
 #ifdef TES_ENABLE
   std::cout << "Starting with " << g_tesServer->connectionCount() << " connection(s)." << std::endl;
 #endif // TES_ENABLE
+
+  initialiseDebugCategories();
 
   int res = populateMap(opt);
   TES_SERVER_STOP(*g_tesServer);

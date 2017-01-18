@@ -12,15 +12,9 @@ Bugs:
 TODO:
 - Complete C++ TCP socket support built on POCO
 - "Server" implementation which writes directly to a local file.
-- Revise MeshSet/MeshShape.
-  - Revised MeshSet to support overriding indexing.
-  - Meshes to support instancing topology. Ideal for visualising voxels.
+- Change shape shaders to support GPU instancing.
+- Consider adding batched object creation messages.
 - Consolidate C# shape constructors and improve consistency.
-- When recording on the client: periodically serialise the world state as a key frame.
-  - Serialise after every N bytes written.
-  - During playback, note the file positions on each key frame and use these for faster step back operations.
-  - Post soft reset notification to MessageHandler objects.
-    - Have MeshCache keep its resources, but marked as uncreated to help reduce memory reallocation. 
 - Client log for error messages.
   - Handler options and UI
   - Camera Selection UI
