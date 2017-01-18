@@ -72,8 +72,8 @@ Shader "Hidden/EDL"
           float2 N_rel_pos = uvRadius * _NeighbourAddress[c];
           float2 N_abs_pos = uv + N_rel_pos;
 
-          float neighbourDepth = logToLinear(UNITY_SAMPLE_DEPTH(tex2D(depthTex, N_abs_pos)));
-          // float neighbourDepth = Linear01Depth(UNITY_SAMPLE_DEPTH(tex2D(depthTex, N_abs_pos)));
+          float neighbourDepth = logToLinear(1.0f - UNITY_SAMPLE_DEPTH(tex2D(depthTex, N_abs_pos)));
+          // float neighbourDepth = Linear01Depth(1.0f - UNITY_SAMPLE_DEPTH(tex2D(depthTex, N_abs_pos)));
 
           if (neighbourDepth != 0.0)
           {
@@ -92,8 +92,8 @@ Shader "Hidden/EDL"
       {
         float2 uv = i.uv;
         sampler2D depthTex = _DepthTexture;
-        float depthValue = logToLinear(UNITY_SAMPLE_DEPTH(tex2D(depthTex, uv)));
-        //float depthValue = Linear01Depth(UNITY_SAMPLE_DEPTH(tex2D(depthTex, uv)));
+        float depthValue = logToLinear(1.0f - UNITY_SAMPLE_DEPTH(tex2D(depthTex, uv)));
+        //float depthValue = Linear01Depth(1.0f - UNITY_SAMPLE_DEPTH(tex2D(depthTex, uv)));
 
         // The following code may be required in some instances. If the EDL image is flipped
         // then enable this code and uncomment the uniform declaration of '_MainTex_TexelSize'
