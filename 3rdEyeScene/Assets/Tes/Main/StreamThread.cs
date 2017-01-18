@@ -91,6 +91,31 @@ namespace Tes.Main
       }
     }
 
+    public bool Loop
+    {
+      get { return _loop; }
+      set { _loop = value; }
+    }
+
+    public float PlaybackSpeed
+    {
+      get
+      {
+        lock(this)
+        {
+          return _playbackSpeed;
+        }
+      }
+      
+      set
+      {
+        lock(this)
+        {
+          _playbackSpeed = value;
+        }
+      }
+    }
+
     /// <summary>
     /// Allow use of snapshots?
     /// </summary>
@@ -211,6 +236,8 @@ namespace Tes.Main
           stopwatch.Stop();
           stopwatch.Start();
           elapsedUs = stopwatch.ElapsedTicks / (System.Diagnostics.Stopwatch.Frequency / (1000L * 1000L));
+          // Scale by playback speed.
+          elapsedUs = (long)(elapsedUs * (double)_playbackSpeed);
           if (elapsedUs < _frameDelayUs)
           {
             // Too soon. Yield and wait some more.
@@ -267,7 +294,7 @@ namespace Tes.Main
             bytesRead = _stream.Read(headerBuffer, 0, headerBuffer.Length);
             processedBytes += bytesRead;
             bytesSinceLastSnapshot += bytesRead;
-            _paused = _paused || bytesRead == 0;
+            _paused = _paused || bytesRead == 0 && !_loop;
 
             allowYield = true;
             if (bytesRead == headerBuffer.Length)
@@ -308,6 +335,11 @@ namespace Tes.Main
                 // else notify error.
                 allowYield = _targetFrame == 0 && _frameDelayUs > 0;
               }
+            }
+            else if (bytesRead == 0 && allowYield && _loop)
+            {
+              // Restart
+              TargetFrame = 1;
             }
           }
         }
@@ -835,12 +867,14 @@ namespace Tes.Main
     /// See <see cref="ServerInfoMessage.TimeUnit"/> for semantic details.
     /// </remarks>
     private ulong _timeUnit = ServerInfoMessage.Default.TimeUnit;
+    private float _playbackSpeed;
     private bool _quitFlag = false;
     /// <summary>
     /// Change to compressed stream still allowed? (Until first frame or made switch).
     /// </summary>
     private bool _allowCompressStream = true;
     private volatile bool _paused = false;
+    private volatile bool _loop = false;
     /// <summary>
     /// A list of frame snapshots to improve step back behaviour.
     /// </summary>

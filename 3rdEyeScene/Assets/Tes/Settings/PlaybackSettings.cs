@@ -33,4 +33,12 @@ public class PlaybackSettings : Settings
     get { return PlayerPrefs.GetInt("playback.snapshotFrameSeparation", 5); }
     set { PlayerPrefs.SetInt("playback.snapshotFrameSeparation", value); Notify("SnapshotFrameSeparation"); }
   }
+
+  [Browsable(true),
+    Tooltip("Automatically restart playback at the end of a file stream?")]
+  public bool Looping
+  {
+    get { return PlayerPrefsX.GetBool("playback.looping", false); }
+    set { PlayerPrefsX.SetBool("playback.looping", value); Notify("Looping"); }
+  }
 }

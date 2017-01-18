@@ -19,6 +19,7 @@ TODO:
   - Handler options and UI
   - Camera Selection UI
 - Playback speed control.
+  - Partly implemented. Tended to hang the viewer at higher speeds.
 - Scene Graph UI
 - Make sure modal dialogs work properly blocking input to background layers.
 - Export to PLY file (because PLY is easy).

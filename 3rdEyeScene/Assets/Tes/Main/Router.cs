@@ -120,7 +120,7 @@ namespace Tes.Main
       {
         RouterMode m = Mode;
         return m == RouterMode.Connected || m == RouterMode.Connecting || m == RouterMode.Recording;
-    }
+      }
     }
 
     /// <summary>
@@ -155,6 +155,37 @@ namespace Tes.Main
     /// Access to the scene root.
     /// </summary>
     public Scene Scene { get { return _scene; } }
+
+    public bool Looping
+    {
+      get { return PlaybackSettings.Instance.Looping; }
+      set
+      {
+        PlaybackSettings.Instance.Looping = value;
+        StreamThread streamThread = _dataThread as StreamThread;
+        if (streamThread != null)
+        {
+          streamThread.Loop = value;
+        }
+      }
+    }
+
+    /// <summary>
+    /// Playback speed scaling.
+    /// </summary>
+    public float PlaybackSpeed
+    {
+      get { return _playbackSpeed; }
+      set
+      {
+        _playbackSpeed = value;
+        StreamThread streamThread = _dataThread as StreamThread;
+        if (streamThread != null)
+        {
+          streamThread.PlaybackSpeed = value;
+        }
+      }
+    }
 
     /// Request a handler for the given routing id.
     /// </summary>
@@ -287,6 +318,8 @@ namespace Tes.Main
       StreamThread thread = new StreamThread();
       _dataThread = thread;
       thread.AllowSnapshots = PlaybackSettings.Instance.AllowSnapshots;
+      thread.Loop = PlaybackSettings.Instance.Looping;
+      thread.PlaybackSpeed = PlaybackSpeed;
       Stream inputStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
       if (!thread.Start(inputStream))
       {
@@ -1068,12 +1101,16 @@ namespace Tes.Main
     /// </summary>
     private ServerInfoMessage _serverInfo = ServerInfoMessage.Default;
     /// <summary>
-    /// Tracks the last mode on <see cref="Update()"/> to as to nodify mode changes via <see cref="OnModeChange"/>.
+    /// Tracks the last mode on <see cref="Update()"/> to as to notify mode changes via <see cref="OnModeChange"/>.
     /// </summary>
     private RouterMode _lastMode = RouterMode.Idle;
     /// <summary>
     /// File path to start recording to as soon as a connection is made.
     /// </summary>
     private string _recordOnConnectPath = null;
+    /// <summary>
+    /// Playback speed scaling.
+    /// </summary>
+    private float _playbackSpeed = 1.0f;
   }
 }

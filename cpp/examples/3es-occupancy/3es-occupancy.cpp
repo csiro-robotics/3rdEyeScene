@@ -20,6 +20,7 @@
 // Forced bug ideas to show now 3es highlights the issue(s).
 // 1. Skip inserting the sample voxel key assuming that the ray will do so.
 // 2. call integrateMiss() instead of integrateHit().
+// 3. no trajectory data.
 
 using namespace tes;
 
@@ -158,7 +159,6 @@ int populateMap(const Options &opt)
     TES_STMT(rays.push_back(sample));
     // Compute free ray.
     map.computeRayKeys(p2p(origin), p2p(sample), rayKeys);
-    //TES_SPHERE_W(*g_tesServer, TES_COLOUR(RoyalBlue), 0, sample, 0.005f, 0u, CAT_OccupiedCells);
     // Draw intersected voxels.
     const size_t rayKeyCount = rayKeys.size();
     keyIndex = 0;
@@ -277,7 +277,7 @@ void initialiseDebugCategories()
   TES_CATEGORY(*g_tesServer, "Map", CAT_Map, 0, true);
   TES_CATEGORY(*g_tesServer, "Populate", CAT_Populate, 0, true);
   TES_CATEGORY(*g_tesServer, "Rays", CAT_Rays, CAT_Populate, true);
-  TES_CATEGORY(*g_tesServer, "Free", CAT_FreeCells, CAT_Populate, true);
+  TES_CATEGORY(*g_tesServer, "Free", CAT_FreeCells, CAT_Populate, false);
   TES_CATEGORY(*g_tesServer, "Occupied", CAT_OccupiedCells, CAT_Populate, true);
 }
 
