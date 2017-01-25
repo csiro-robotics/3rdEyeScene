@@ -45,12 +45,20 @@ namespace
     std::string trajectoryFile;
     uint64_t pointLimit;
     float resolution;
+    float probHit;
+    float probMiss;
     unsigned batchSize;
+    bool noRays;
+    bool quiet;
 
     inline Options()
       : pointLimit(0)
-      , resolution(0.05f)
+      , resolution(0.1f)
+      , probHit(0.7f)
+      , probMiss(0.49f)
       , batchSize(1000)
+      , noRays(false)
+      , quiet(false)
     {}
   };
 
@@ -151,6 +159,13 @@ int populateMap(const Options &opt)
   OccupancyMesh mapMesh(RES_MapMesh, map);
 #endif // TES_ENABLE
 
+  map.setProbHit(opt.probHit);
+  map.setProbMiss(opt.probMiss);
+
+  // Prevent ready saturation to free.
+  map.setClampingThresMin(0.01);
+  //printf("min: %g\n", map.getClampingThresMinLog());
+
   TES_POINTCLOUDSHAPE(*g_tesServer, TES_COLOUR(SteelBlue), &mapMesh, RES_Map, CAT_Map);
   // Ensure mesh is created for later update.
   TES_SERVER_UPDATE(*g_tesServer, 0.0f);
@@ -224,6 +239,10 @@ int populateMap(const Options &opt)
       //map.isNodeCollapsible()
 #ifdef TES_ENABLE
       double elapsedTime = (lastTimestamp >= 0) ? timestamp - lastTimestamp : timestamp - firstBatchTimestamp;
+      // Handle time jumps back.
+      elapsedTime = std::max(elapsedTime, 0.0);
+      // Cull large time differences.
+      elapsedTime = std::min(elapsedTime, 1.0);
       timebase = (timebase >= 0) ? timebase : firstBatchTimestamp;
       lastTimestamp = timestamp;
       firstBatchTimestamp = -1;
@@ -233,9 +252,12 @@ int populateMap(const Options &opt)
       if (!rays.empty())
       {
         // Draw sample lines.
-        TES_LINES(*g_tesServer, TES_COLOUR(DarkOrange),
-                  rays.data()->v, unsigned(rays.size()), sizeof(*rays.data()),
-                  0u, CAT_Rays);
+        if (!opt.noRays)
+        {
+          TES_LINES(*g_tesServer, TES_COLOUR(DarkOrange),
+                    rays.data()->v, unsigned(rays.size()), sizeof(*rays.data()),
+                    0u, CAT_Rays);
+        }
         rays.clear();
       }
       // Render touched voxels in bulk.
@@ -266,10 +288,20 @@ int populateMap(const Options &opt)
         break;
       }
 #endif // TES_ENABLE
+
+      if (!opt.quiet)
+      {
+        printf("\r%g        ", lastTimestamp - timebase);
+      }
     }
   }
 
   TES_SERVER_UPDATE(*g_tesServer, 0.0f);
+
+  if (!opt.quiet)
+  {
+    printf("\n");
+  }
 
   printf("Processed %" PRIu64 " points.\n", pointCount);
 
@@ -292,10 +324,18 @@ void usage(const Options &opt)
   printf("Options:\n");
   printf("-b=<batch-size> (%u)\n", opt.batchSize);
   printf("  The number of points to process in each batch. Controls debug display.\n");
+  printf("-h=<hit-probability> (%g)\n", opt.probHit);
+  printf("  The occupancy probability due to a hit. Must be >= 0.5.\n");
+  printf("-m=<miss-probability> (%g)\n", opt.probMiss);
+  printf("  The occupancy probability due to a miss. Must be < 0.5.\n");
   printf("-p=<point-limit> (0)\n");
   printf("  The voxel resolution of the generated map.\n");
+  printf("-q\n");
+  printf("  Run in quiet mode. Suppresses progress messages.\n");
   printf("-r=<resolution> (%g)\n", opt.resolution);
   printf("  The voxel resolution of the generated map.\n");
+  printf("--no-rays\n");
+  printf("  Disable output of sample lines\n");
 }
 
 void initialiseDebugCategories()
@@ -327,11 +367,30 @@ int main(int argc, char *argv[])
       {
       case 'b': // batch size
         ok = optionValue(argv[i] + 2, argc, argv, opt.batchSize);
+        break;
+      case 'h':
+        ok = optionValue(argv[i] + 2, argc, argv, opt.probHit);
+        break;
+      case 'm':
+        ok = optionValue(argv[i] + 2, argc, argv, opt.probMiss);
+        break;
       case 'p': // point limit
         ok = optionValue(argv[i] + 2, argc, argv, opt.pointLimit);
+        break;
+      case 'q': // quiet
+        opt.quiet = true;
+        break;
       case 'r': // resolution
         ok = optionValue(argv[i] + 2, argc, argv, opt.resolution);
         break;
+      case '-':  // Long option name.
+      {
+        if (std::string(&argv[i][2]).compare("no-lines") == 0)
+        {
+          opt.noRays = true;
+        }
+        break;
+      }
       }
 
       if (!ok)
