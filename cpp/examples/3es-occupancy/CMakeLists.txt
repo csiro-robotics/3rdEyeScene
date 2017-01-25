@@ -1,6 +1,13 @@
 include(3es)
 
 find_package(octomap)
+
+# Handle older and newer octomap incldue dir variables.
+# Convert older (1.8) to newer (currently in devel)
+if(DEFINED OCTOMAP_INCLUDE_DIR AND NOT DEFINED OCTOMAP_INCLUDE_DIRS)
+  set(OCTOMAP_INCLUDE_DIRS "${OCTOMAP_INCLUDE_DIR}")
+endif(DEFINED OCTOMAP_INCLUDE_DIR AND NOT DEFINED OCTOMAP_INCLUDE_DIRS)
+
 if(NOT DEFINED OCTOMAP_INCLUDE_DIRS)
   message(STATUS "Octomap not found. Skipping 3es-occupancy example.")
   return()
@@ -21,7 +28,7 @@ tes_32_64()
 tes_endian()
 
 tes_config_file(3es-occupancy 3es-occupancy.h VAR CONFIG_HEADER SHARED)
-include_directories("${CMAKE_CURRENT_BINARY_DIR}")
+include_directories(. "${CMAKE_CURRENT_BINARY_DIR}")
 set(SOURCES "${CONFIG_HEADER}")
 
 list(APPEND SOURCES

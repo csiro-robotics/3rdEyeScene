@@ -65,7 +65,7 @@ namespace tes
     CIdFrame,           ///< Defines a new frame. Value is the delta time in microseconds.
     CIdCoordinateFrame, ///< Specifies the a change in coordinate frame view.
     CIdFrameCount,      ///< Set the total number of frames to expect. More for serialised streams.
-    CIdForceFrameFlush, ///< Forces a frame update (render) without advancing the time. 
+    CIdForceFrameFlush, ///< Forces a frame update (render) without advancing the time.
     CIdReset,           ///< Clear the scene. This drops all existing data.
   };
 
@@ -254,7 +254,7 @@ namespace tes
     uint16_t nameLength;
     /// The name string @em without a null terminator. Must be exactly
     /// @c nameLength bytes.
-    char *name;
+    const char *name;
 
     /// Read message content.
     /// @param reader The stream to read from.
@@ -273,7 +273,7 @@ namespace tes
       {
         return false;
       }
-      
+
       reader.readRaw((uint8_t *)nameBuffer, nameLength);
       nameBuffer[nameLength] = '\0';
 

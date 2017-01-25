@@ -36,7 +36,7 @@ public:
   OccupancyMesh(unsigned meshId, octomap::OcTree &map);
   ~OccupancyMesh();
 
-  uint32_t id() const;
+  uint32_t id() const override;
   tes::Matrix4f transform() const override;
   uint32_t tint() const override;
   uint8_t drawType(int stream) const override;
@@ -50,7 +50,7 @@ public:
   const float *uvs(unsigned &stride, int stream) const override;
   const uint32_t *colours(unsigned &stride, int stream) const override;
 
-  virtual tes::Resource *clone() const;
+  tes::Resource *clone() const override;
 
   int transfer(tes::PacketWriter &packet, int byteLimit, tes::TransferProgress &progress) const override;
 
