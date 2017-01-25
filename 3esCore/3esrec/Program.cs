@@ -135,8 +135,8 @@ This program attempts to connect to and record a Third Eye Scene server.
           }
         }
 
-        // Read while connected.
-        while (!Quit && socket != null && TcpClientUtil.Connected(socket))
+        // Read while connected or data still available.
+        while (!Quit && socket != null && (TcpClientUtil.Connected(socket) || socket.Available > 0))
         {
           // We have a connection. Read messages while we can.
           if (socket.Available > 0)
@@ -150,11 +150,18 @@ This program attempts to connect to and record a Third Eye Scene server.
             {
               if (crcOk)
               {
+                if (packetBuffer.DroppedByteCount != 0)
+                {
+                  Console.Error.WriteLine("Dropped {0} bad bytes", packetBuffer.DroppedByteCount);
+                  packetBuffer.DroppedByteCount = 0;
+                }
+
                 // Decode and decompress collated packets. This will just return the same packet
                 // if not collated.
                 collatedDecoder.SetPacket(completedPacket);
                 while ((completedPacket = collatedDecoder.Next()) != null)
                 {
+                  //Console.WriteLine("Msg: {0} {1}", completedPacket.Header.RoutingID, completedPacket.Header.MessageID);
                   if (completedPacket.Header.RoutingID == (ushort)RoutingID.Control)
                   {
                     ushort controlMessageId = completedPacket.Header.MessageID;
@@ -187,6 +194,12 @@ This program attempts to connect to and record a Third Eye Scene server.
           {
             System.Threading.Thread.Sleep(0);
           }
+        }
+
+        if (packetBuffer.DroppedByteCount != 0)
+        {
+          Console.Error.WriteLine("Dropped {0} bad bytes", packetBuffer.DroppedByteCount);
+          packetBuffer.DroppedByteCount = 0;
         }
 
         if (recordingWriter != null)

@@ -25,8 +25,17 @@ namespace Tes.Shapes
     /// </summary>
     public enum SendDataType : ushort
     {
+      /// <summary>
+      /// Sending vertex data.
+      /// </summary>
       Vertices,
+      /// <summary>
+      /// Sending index data.
+      /// </summary>
       Indices,
+      /// <summary>
+      /// Sending per vertex normals.
+      /// </summary>
       Normals,
       /// <summary>
       /// Sending a single normals for all vertices (voxel extents).
@@ -381,12 +390,13 @@ namespace Tes.Shapes
     /// <summary>
     /// A helper function for writing as many <see cref="DataMessage"/> messsages as required.
     /// </summary>
-    /// <param name="routingID"></param>
-    /// <param name="objectID"></param>
-    /// <param name="packet"></param>
-    /// <param name="progressMarker"></param>
-    /// <param name="vertices"></param>
-    /// <param name="indices"></param>
+    /// <param name="routingID">Routing id for the message being composed.</param>
+    /// <param name="objectID">ID of the object to which the data belong.</param>
+    /// <param name="packet">Data packet to compose in.</param>
+    /// <param name="progressMarker">Progress or pagination marker.</param>
+    /// <param name="vertices">Mesh vertex array.</param>
+    /// <param name="normals">Mesh normal array. One per vertex or just a single normal to apply to all vertices.</param>
+    /// <param name="indices">Mesh indices.</param>
     /// <remarks>Call recursively until zero is returned. Packet does not get finalised here.</remarks>
     public static int WriteData(ushort routingID, uint objectID,
                                 PacketBuffer packet, ref uint progressMarker,

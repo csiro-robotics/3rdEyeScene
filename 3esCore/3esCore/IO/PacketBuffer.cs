@@ -34,7 +34,7 @@ namespace Tes.IO
     /// </remarks>
     Complete,
     /// <summary>
-    /// Packet error has occured.
+    /// Packet error has occurred.
     /// </summary>
     Error,
     /// <summary>
@@ -185,6 +185,16 @@ namespace Tes.IO
     /// Marks the start of the next packet in the buffer.
     /// </summary>
     public int Cursor { get { return _cursor; } }
+
+    /// <summary>
+    /// Tracks the number of dropped bytes.
+    /// </summary>
+    /// <remarks>
+    /// This value is adjusted when the header marker cannot be found an identifies how many bytes are
+    /// removed from the packet before finding valid header marker. The value continually accumulates
+    /// but may be cleared by users of the packet buffer.
+    /// </remarks>
+    public int DroppedByteCount { get; set; }
 
     #region Output usage
     /// <summary>
@@ -578,7 +588,7 @@ namespace Tes.IO
       }
       if (_currentByteCount < totalPacketSize)
       {
-        // Not enough data.
+        // Not enough data to validate yet.
         return null;
       }
 
@@ -735,7 +745,8 @@ namespace Tes.IO
     /// and <see cref="ValidHeader"/> is set to <code>true</code>. Note how this consumes bytes
     /// before the marker.
     /// 
-    /// Bytes are also consumed when the marker cannot be found.
+    /// Bytes are also consumed when the marker cannot be found, appropriately adjusting
+    /// <see cref="DroppedByteCount"/>.
     /// </remarks>
     private void ValidateHeader()
     {
@@ -771,6 +782,7 @@ namespace Tes.IO
       {
         _cursor += offset;
         _currentByteCount -= offset;
+        DroppedByteCount += offset;
       }
 
       //if (_currentByteCount >= _header.PacketSize)
