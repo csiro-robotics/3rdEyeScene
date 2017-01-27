@@ -574,7 +574,8 @@ namespace Tes.Main
         // we will pass all messages on to the appropriate handles to
         // enact.
         PacketBuffer packet = null;
-        while (_dataThread.PacketQueue.TryDequeue(ref packet))
+        bool endFrame = false;
+        while (!endFrame && _dataThread.PacketQueue.TryDequeue(ref packet))
         {
           // Handle record on connect.
           if (!string.IsNullOrEmpty(_recordOnConnectPath))
@@ -635,6 +636,8 @@ namespace Tes.Main
                     WriteCameraPosition(_recordingWriter, Camera.main, 255);
                   }
                 }
+
+                endFrame = packet.Header.MessageID == (ushort)ControlMessageID.EndFrame && _dataThread.TargetFrame == 0;
               }
               else
               {
@@ -846,7 +849,6 @@ namespace Tes.Main
       {
         if (PlaybackSettings.Instance.AllowSnapshots)
         {
-          streamThread.Paused = true;
           BinaryWriter writer = SerialiseScene(snapshotStream, out success);
           WriteFrameFlush(writer);
         }

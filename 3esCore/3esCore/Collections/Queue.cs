@@ -50,6 +50,27 @@ namespace Tes.Collections
     }
 
     /// <summary>
+    /// Clear the queue contents. Thread safe.
+    /// </summary>
+    public void Clear()
+    {
+      bool haveLock = false;
+      try
+      {
+        _lock.Lock();
+        haveLock = true;
+        _internalQueue.Clear();
+      }
+      finally
+      {
+        if (haveLock)
+        {
+          _lock.Unlock();
+        }
+      }
+    }
+
+    /// <summary>
     /// Push <paramref name="item"/> onto the queue tail.
     /// </summary>
     /// <param name="item">The item to enqueue.</param>

@@ -25,7 +25,7 @@ namespace Tes.Handlers
     /// <summary>
     /// Mesh details.
     /// </summary>
-    public class MeshEntry
+    public class MeshDetails
     {
       /// <summary>
       /// Mesh resource ID.
@@ -88,9 +88,22 @@ namespace Tes.Handlers
       /// </summary>
       public MeshTopology Topology { get; internal set; }
       /// <summary>
+      /// The bounds for the entire vertex data.
+      /// </summary>
+      public Bounds VertexBounds;// { get; internal set; }
+      /// <summary>
+      /// The largest vertex normal.
+      /// </summary>
+      /// <remarks>
+      /// This is primarily used for expanding the <see cref="VertexBounds"/> when drawing voxels.
+      /// Remembering that the normal values mark the extents of each voxel, the vertex bounds are
+      /// expanded by the largest normal.
+      /// </remarks>
+      public Vector3 LargestNormal = Vector3.zero;// { get; internal set; }
+      /// <summary>
       /// Array of finalised mesh parts. Valid when <see cref="Finalised"/>.
       /// </summary>
-      public Mesh[] FinalMeshes { get; internal set; }
+      public List<Mesh> FinalMeshes { get; internal set; }
       /// <summary>
       /// True when finalised.
       /// </summary>
@@ -135,7 +148,7 @@ namespace Tes.Handlers
     /// Delegate for various mesh events.
     /// </summary>
     /// <param name="mesh">The mesh changing state.</param>
-    public delegate void MeshNotificationDelegate(MeshEntry mesh);
+    public delegate void MeshNotificationDelegate(MeshDetails mesh);
 
     /// <summary>
     /// Invoked on a new mesh resource being added. The mesh is not finalised.
@@ -215,11 +228,11 @@ namespace Tes.Handlers
     /// </summary>
     /// <param name="meshId">ID of the resource of interest.</param>
     /// <returns>The mesh details, or null when <paramref name="meshId"/> is unknown.</returns>
-    public MeshEntry GetEntry(uint meshId)
+    public MeshDetails GetEntry(uint meshId)
     {
-      MeshEntry entry = null;
-      _meshes.TryGetValue(meshId, out entry);
-      return entry;
+      MeshDetails meshDetails = null;
+      _meshes.TryGetValue(meshId, out meshDetails);
+      return meshDetails;
     }
 
     /// <summary>
@@ -282,7 +295,7 @@ namespace Tes.Handlers
       // Iterate and serialise the meshes.
       PacketBuffer packet = new PacketBuffer();
       info.TransientCount = info.PersistentCount = 0u;
-      foreach (MeshEntry mesh in _meshes.Values)
+      foreach (MeshDetails mesh in _meshes.Values)
       {
         ++info.PersistentCount;
         Error err = Serialise(mesh, packet, writer);
@@ -321,7 +334,7 @@ namespace Tes.Handlers
     /// finalised.</item>
     /// </list>
     /// </remarks>
-    protected Error Serialise(MeshEntry mesh, PacketBuffer packet, BinaryWriter writer)
+    protected Error Serialise(MeshDetails mesh, PacketBuffer packet, BinaryWriter writer)
     {
       // First write a create message.
       MeshCreateMessage msg = new MeshCreateMessage();
@@ -596,14 +609,14 @@ namespace Tes.Handlers
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
 
-      MeshEntry entry = _meshes[msg.MeshID];
+      MeshDetails meshDetails = _meshes[msg.MeshID];
 
-      NotifyMeshRemoved(entry);
+      NotifyMeshRemoved(meshDetails);
 
       _meshes.Remove(msg.MeshID);
-      if (entry.FinalMeshes != null)
+      if (meshDetails.FinalMeshes != null)
       { 
-        foreach (Mesh mesh in entry.FinalMeshes)
+        foreach (Mesh mesh in meshDetails.FinalMeshes)
         {
           Mesh.Destroy(mesh);
         }
@@ -635,21 +648,22 @@ namespace Tes.Handlers
         return new Error(ErrorCode.DuplicateShape, msg.MeshID);
       }
 
-      MeshEntry entry = new MeshEntry();
+      MeshDetails meshDetails = new MeshDetails();
+      meshDetails.VertexBounds = new Bounds();
 
-      entry.DrawType = msg.DrawType;
+      meshDetails.DrawType = msg.DrawType;
       switch (msg.DrawType)
       {
       case (byte)MeshDrawType.Points:
         // No break.
       case (byte)MeshDrawType.Voxels:
-          entry.Topology = MeshTopology.Points;
+          meshDetails.Topology = MeshTopology.Points;
         break;
       case (byte)MeshDrawType.Lines:
-        entry.Topology = MeshTopology.Lines;
+        meshDetails.Topology = MeshTopology.Lines;
         break;
       case (byte)MeshDrawType.Triangles:
-        entry.Topology = MeshTopology.Triangles;
+        meshDetails.Topology = MeshTopology.Triangles;
         break;
       default:
         return new Error(ErrorCode.UnsupportedFeature, msg.DrawType);
@@ -657,24 +671,24 @@ namespace Tes.Handlers
 
       if (msg.VertexCount != 0)
       {
-        entry.VertexCount = (int)msg.VertexCount;
-        entry.Vertices = new Vector3[msg.VertexCount];
+        meshDetails.VertexCount = (int)msg.VertexCount;
+        meshDetails.Vertices = new Vector3[msg.VertexCount];
       }
       if (msg.IndexCount != 0)
       {
-        entry.IndexCount = (int)msg.IndexCount;
-        entry.Indices = new int[msg.IndexCount];
+        meshDetails.IndexCount = (int)msg.IndexCount;
+        meshDetails.Indices = new int[msg.IndexCount];
       }
 
-      entry.ID = msg.MeshID;
-      entry.LocalPosition = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
-      entry.LocalRotation = new Quaternion(msg.Attributes.RotationX, msg.Attributes.RotationY, msg.Attributes.RotationZ, msg.Attributes.RotationW);
-      entry.LocalScale = new Vector3(msg.Attributes.ScaleX, msg.Attributes.ScaleY, msg.Attributes.ScaleZ);
-      entry.Tint = ShapeComponent.ConvertColour(msg.Attributes.Colour);
-      entry.Finalised = false;
-      _meshes.Add(entry.ID, entry);
+      meshDetails.ID = msg.MeshID;
+      meshDetails.LocalPosition = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
+      meshDetails.LocalRotation = new Quaternion(msg.Attributes.RotationX, msg.Attributes.RotationY, msg.Attributes.RotationZ, msg.Attributes.RotationW);
+      meshDetails.LocalScale = new Vector3(msg.Attributes.ScaleX, msg.Attributes.ScaleY, msg.Attributes.ScaleZ);
+      meshDetails.Tint = ShapeComponent.ConvertColour(msg.Attributes.Colour);
+      meshDetails.Finalised = false;
+      _meshes.Add(meshDetails.ID, meshDetails);
 
-      NotifyMeshAdded(entry);
+      NotifyMeshAdded(meshDetails);
 
       return new Error();
     }
@@ -694,8 +708,8 @@ namespace Tes.Handlers
         return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.Vertex);
       }
 
-      MeshEntry entry;
-      if (!_meshes.TryGetValue(msg.MeshID, out entry))
+      MeshDetails meshDetails;
+      if (!_meshes.TryGetValue(msg.MeshID, out meshDetails))
       {
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
@@ -707,7 +721,7 @@ namespace Tes.Handlers
 
       uint voffset = msg.Offset;
       // Bounds check.
-      int vertexCount = entry.VertexCount;
+      int vertexCount = meshDetails.VertexCount;
       if (voffset >= vertexCount || voffset + (int)msg.Count > vertexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Vertex);
@@ -721,7 +735,8 @@ namespace Tes.Handlers
         v.x = reader.ReadSingle();
         v.y = reader.ReadSingle();
         v.z = reader.ReadSingle();
-        entry.Vertices[vInd + voffset] = v;
+        meshDetails.Vertices[vInd + voffset] = v;
+        meshDetails.VertexBounds.Encapsulate(v);
       }
 
       if (!ok)
@@ -747,8 +762,8 @@ namespace Tes.Handlers
         return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.VertexColour);
       }
 
-      MeshEntry entry;
-      if (!_meshes.TryGetValue(msg.MeshID, out entry))
+      MeshDetails meshDetails;
+      if (!_meshes.TryGetValue(msg.MeshID, out meshDetails))
       {
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
@@ -758,14 +773,14 @@ namespace Tes.Handlers
         return new Error();
       }
 
-      if (entry.VertexColours == null)
+      if (meshDetails.VertexColours == null)
       {
-        entry.VertexColours = new Color32[entry.VertexCount];
+        meshDetails.VertexColours = new Color32[meshDetails.VertexCount];
       }
 
       uint voffset = msg.Offset;
       // Bounds check.
-      int vertexCount = entry.VertexCount;
+      int vertexCount = meshDetails.VertexCount;
       if (voffset >= vertexCount || voffset + (int)msg.Count > vertexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.VertexColour);
@@ -777,7 +792,7 @@ namespace Tes.Handlers
       for (int vInd = 0; ok && vInd < (int)msg.Count; ++vInd)
       {
         colour = reader.ReadUInt32();
-        entry.VertexColours[vInd + voffset] = ShapeComponent.ConvertColour(colour);
+        meshDetails.VertexColours[vInd + voffset] = ShapeComponent.ConvertColour(colour);
     }
 
       if (!ok)
@@ -803,8 +818,8 @@ namespace Tes.Handlers
         return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.Index);
       }
 
-      MeshEntry entry;
-      if (!_meshes.TryGetValue(msg.MeshID, out entry))
+      MeshDetails meshDetails;
+      if (!_meshes.TryGetValue(msg.MeshID, out meshDetails))
       {
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
@@ -816,7 +831,7 @@ namespace Tes.Handlers
 
       uint ioffset = msg.Offset;
       // Bounds check.
-      int indexCount = entry.IndexCount;
+      int indexCount = meshDetails.IndexCount;
       if (ioffset >= indexCount || ioffset + (int)msg.Count > indexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Index);
@@ -828,7 +843,7 @@ namespace Tes.Handlers
       for (int iInd = 0; ok && iInd < (int)msg.Count; ++iInd)
       {
         index = reader.ReadInt32();
-        entry.Indices[iInd + ioffset] = index;
+        meshDetails.Indices[iInd + ioffset] = index;
       }
 
       if (!ok)
@@ -854,8 +869,8 @@ namespace Tes.Handlers
         return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.Normal);
       }
 
-      MeshEntry entry;
-      if (!_meshes.TryGetValue(msg.MeshID, out entry))
+      MeshDetails meshDetails;
+      if (!_meshes.TryGetValue(msg.MeshID, out meshDetails))
       {
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
@@ -865,14 +880,14 @@ namespace Tes.Handlers
         return new Error();
       }
 
-      if (entry.Normals == null)
+      if (meshDetails.Normals == null)
       {
-        entry.Normals = new Vector3[entry.VertexCount];
+        meshDetails.Normals = new Vector3[meshDetails.VertexCount];
       }
 
       uint voffset = msg.Offset;
       // Bounds check.
-      int vertexCount = entry.VertexCount;
+      int vertexCount = meshDetails.VertexCount;
       if (voffset >= vertexCount || voffset + (int)msg.Count > vertexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Normal);
@@ -886,7 +901,10 @@ namespace Tes.Handlers
         n.x = reader.ReadSingle();
         n.y = reader.ReadSingle();
         n.z = reader.ReadSingle();
-        entry.Normals[vInd + voffset] = n;
+        meshDetails.Normals[vInd + voffset] = n;
+        meshDetails.LargestNormal.x = Mathf.Max(meshDetails.LargestNormal.x, Mathf.Abs(n.x));
+        meshDetails.LargestNormal.y = Mathf.Max(meshDetails.LargestNormal.y, Mathf.Abs(n.y));
+        meshDetails.LargestNormal.z = Mathf.Max(meshDetails.LargestNormal.z, Mathf.Abs(n.z));
       }
 
       if (!ok)
@@ -912,8 +930,8 @@ namespace Tes.Handlers
         return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.UV);
       }
 
-      MeshEntry entry;
-      if (!_meshes.TryGetValue(msg.MeshID, out entry))
+      MeshDetails meshDetails;
+      if (!_meshes.TryGetValue(msg.MeshID, out meshDetails))
       {
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
@@ -923,14 +941,14 @@ namespace Tes.Handlers
         return new Error();
       }
 
-      if (entry.UVs == null)
+      if (meshDetails.UVs == null)
       {
-        entry.UVs = new Vector2[entry.VertexCount];
+        meshDetails.UVs = new Vector2[meshDetails.VertexCount];
       }
 
       uint voffset = msg.Offset;
       // Bounds check.
-      int vertexCount = entry.VertexCount;
+      int vertexCount = meshDetails.VertexCount;
       if (voffset >= vertexCount || voffset + (int)msg.Count > vertexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.UV);
@@ -943,7 +961,7 @@ namespace Tes.Handlers
       {
         uv.x = reader.ReadSingle();
         uv.y = reader.ReadSingle();
-        entry.UVs[vInd + voffset] = uv;
+        meshDetails.UVs[vInd + voffset] = uv;
       }
 
       if (!ok)
@@ -971,41 +989,41 @@ namespace Tes.Handlers
         return new Error(ErrorCode.MalformedMessage, MeshRedefineMessage.MessageID);
       }
 
-      MeshEntry entry;
-      if (!_meshes.TryGetValue(msg.MeshID, out entry))
+      MeshDetails meshDetails;
+      if (!_meshes.TryGetValue(msg.MeshID, out meshDetails))
       {
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
 
-      entry.Finalised = false;
-      if (msg.VertexCount != entry.VertexCount)
+      meshDetails.Finalised = false;
+      if (msg.VertexCount != meshDetails.VertexCount)
       {
-        entry.VertexCount = (int)msg.VertexCount;
-        entry.Vertices = ResizeMeshArray(entry.Vertices, entry.VertexCount);
-        if (entry.Normals != null)
+        meshDetails.VertexCount = (int)msg.VertexCount;
+        meshDetails.Vertices = ResizeMeshArray(meshDetails.Vertices, meshDetails.VertexCount);
+        if (meshDetails.Normals != null)
         {
-          entry.Normals = ResizeMeshArray(entry.Normals, entry.VertexCount);
+          meshDetails.Normals = ResizeMeshArray(meshDetails.Normals, meshDetails.VertexCount);
         }
-        if (entry.UVs != null)
+        if (meshDetails.UVs != null)
         {
-          entry.UVs = ResizeMeshArray(entry.UVs, entry.VertexCount);
+          meshDetails.UVs = ResizeMeshArray(meshDetails.UVs, meshDetails.VertexCount);
         }
-        if (entry.VertexColours != null)
+        if (meshDetails.VertexColours != null)
         {
-          entry.VertexColours = ResizeMeshArray(entry.VertexColours, entry.VertexCount);
+          meshDetails.VertexColours = ResizeMeshArray(meshDetails.VertexColours, meshDetails.VertexCount);
         }
       }
       if (msg.IndexCount != 0)
       {
-        entry.IndexCount = (int)msg.IndexCount;
-        entry.Indices = ResizeMeshArray(entry.Indices, entry.IndexCount);
+        meshDetails.IndexCount = (int)msg.IndexCount;
+        meshDetails.Indices = ResizeMeshArray(meshDetails.Indices, meshDetails.IndexCount);
       }
 
-      entry.ID = msg.MeshID;
-      entry.LocalPosition = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
-      entry.LocalRotation = new Quaternion(msg.Attributes.RotationX, msg.Attributes.RotationY, msg.Attributes.RotationZ, msg.Attributes.RotationW);
-      entry.LocalScale = new Vector3(msg.Attributes.ScaleX, msg.Attributes.ScaleY, msg.Attributes.ScaleZ);
-      entry.Tint = ShapeComponent.ConvertColour(msg.Attributes.Colour);
+      meshDetails.ID = msg.MeshID;
+      meshDetails.LocalPosition = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
+      meshDetails.LocalRotation = new Quaternion(msg.Attributes.RotationX, msg.Attributes.RotationY, msg.Attributes.RotationZ, msg.Attributes.RotationW);
+      meshDetails.LocalScale = new Vector3(msg.Attributes.ScaleX, msg.Attributes.ScaleY, msg.Attributes.ScaleZ);
+      meshDetails.Tint = ShapeComponent.ConvertColour(msg.Attributes.Colour);
 
       return new Error();
     }
@@ -1027,45 +1045,45 @@ namespace Tes.Handlers
         return new Error(ErrorCode.MalformedMessage, MeshFinaliseMessage.MessageID);
       }
 
-      MeshEntry entry;
-      if (!_meshes.TryGetValue(msg.MeshID, out entry))
+      MeshDetails meshDetails;
+      if (!_meshes.TryGetValue(msg.MeshID, out meshDetails))
       {
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
 
-      if (entry.Finalised)
+      if (meshDetails.Finalised)
       {
-        return new Error(ErrorCode.MeshAlreadyFinalised, entry.ID);
+        return new Error(ErrorCode.MeshAlreadyFinalised, meshDetails.ID);
       }
 
       bool generateNormals = (msg.Flags & (uint)MeshBuildFlags.CalculateNormals) != 0;
-      switch (entry.Topology)
+      switch (meshDetails.Topology)
       {
       case MeshTopology.Triangles:
       case MeshTopology.Quads:
-        if (entry.Normals != null || generateNormals)
+        if (meshDetails.Normals != null || generateNormals)
         {
-          entry.Material = LitMaterial;
+          meshDetails.Material = LitMaterial;
         }
         else
         {
-          entry.Material = UnlitMaterial;
+          meshDetails.Material = UnlitMaterial;
         }
         break;
       case MeshTopology.Points:
         generateNormals = false;
-        if (entry.DrawType == (byte)MeshDrawType.Voxels)
+        if (meshDetails.DrawType == (byte)MeshDrawType.Voxels)
         {
-          entry.Material = VoxelsMaterial;
-          generateNormals = entry.Normals == null;
+          meshDetails.Material = VoxelsMaterial;
+          generateNormals = meshDetails.Normals == null;
         }
-        else if (entry.Normals != null)
+        else if (meshDetails.Normals != null)
         {
-          entry.Material = PointsLitMaterial;
+          meshDetails.Material = PointsLitMaterial;
         }
         else
         {
-          entry.Material = PointsUnlitMaterial;
+          meshDetails.Material = PointsUnlitMaterial;
         }
         //if (entry.VertexColours == null)
         //{
@@ -1080,15 +1098,15 @@ namespace Tes.Handlers
       case MeshTopology.Lines:
       case MeshTopology.LineStrip:
         generateNormals = false;
-        entry.Material = UnlitMaterial;
+        meshDetails.Material = UnlitMaterial;
         break;
       }
 
       // Generate the meshes here!
-      Error err = GenerateMeshes(entry, generateNormals);
+      Error err = GenerateMeshes(meshDetails, generateNormals);
 
-      entry.Finalised = true;
-      NotifyMeshFinalised(entry);
+      meshDetails.Finalised = true;
+      NotifyMeshFinalised(meshDetails);
 
       return err;
     }
@@ -1115,176 +1133,234 @@ namespace Tes.Handlers
     }
 
     /// <summary>
-    /// A helper function to generate the Unit <c>Mesh</c> objects for <paramref name="entry"/>
+    /// A helper function to generate the Unit <c>Mesh</c> objects for <paramref name="meshDetails"/>
     /// </summary>
-    /// <param name="entry">The mesh object details.</param>
+    /// <param name="meshDetails">The mesh object details.</param>
     /// <param name="recalculateNormals">(Re)Calculate normals for the mesh objects?</param>
     /// <returns></returns>
-    protected Error GenerateMeshes(MeshEntry entry, bool recalculateNormals)
+    protected Error GenerateMeshes(MeshDetails meshDetails, bool recalculateNormals)
     {
       int[] meshIndices = null;
-      if (entry.IndexCount > 0)
+      bool sequentialIndexing = false;
+      if (meshDetails.IndexCount > 0)
       {
-        meshIndices = entry.Indices;
+        meshIndices = meshDetails.Indices;
       }
-      else if (entry.Topology == MeshTopology.Points)
+      else if (meshDetails.Topology == MeshTopology.Points)
       {
-        // Points only with no specific index list.
-        // Construct the index list to match the vertices.
-        meshIndices = new int[entry.VertexCount];
-        for (int i = 0; i < entry.VertexCount; ++i)
-        {
-          meshIndices[i] = i;
-        }
+        sequentialIndexing = true;
       }
 
       // Need to break the mesh up to keep under the index limit.
-      if (entry.VertexCount == 0 || meshIndices == null)
+      if (meshDetails.VertexCount == 0 || (meshIndices == null && !sequentialIndexing))
       {
         // No current mesh data. Maybe redefined later.
         // Add an empty mesh.
-        entry.FinalMeshes = new Mesh[] { new Mesh() };
+        meshDetails.FinalMeshes = new List<Mesh> { new Mesh() };
       }
-      else if (meshIndices.Length < IndexCountLimit)
+      else if (sequentialIndexing && meshDetails.VertexCount < IndexCountLimit || meshIndices != null && meshIndices.Length < IndexCountLimit)
       {
         // Easy: single mesh.
         // Handle mesh redefinition by looking at the FinalMeshes array.
         Mesh mesh = null;
-        if (entry.FinalMeshes != null)
+        if (meshDetails.FinalMeshes != null)
         {
-          mesh = entry.FinalMeshes[0];
-          if (entry.FinalMeshes.Length > 1)
+          mesh = meshDetails.FinalMeshes[0];
+          if (meshDetails.FinalMeshes.Count > 1)
           {
-            // Destroy excess meshes.
-            // FIXME: Do we use Mesh.Destroy() or simply null the referenes?
-            // Will Unity clean them up once there are no other references?
-            entry.FinalMeshes = new Mesh[] { mesh };
+            // Do we need to explicitly destroy the meshes or will garbage collection do it?
+            meshDetails.FinalMeshes.RemoveRange(1, meshDetails.FinalMeshes.Count - 1);
           }
         }
 
         if (mesh == null)
         {
           mesh = new Mesh();
-          entry.FinalMeshes = new Mesh[] { mesh };
+          meshDetails.FinalMeshes = new List<Mesh> { mesh };
         }
 
         mesh.subMeshCount = 1;
-        mesh.vertices = entry.Vertices;
-        if (entry.Normals != null)
+        mesh.vertices = meshDetails.Vertices;
+        if (meshDetails.Normals != null)
         {
-          mesh.normals = entry.Normals;
+          mesh.normals = meshDetails.Normals;
         }
-        if (entry.UVs != null)
+        if (meshDetails.UVs != null)
         {
-          mesh.uv = entry.UVs;
+          mesh.uv = meshDetails.UVs;
         }
-        if (entry.VertexColours != null)
+        if (meshDetails.VertexColours != null)
         {
-          mesh.colors32 = entry.VertexColours;
+          mesh.colors32 = meshDetails.VertexColours;
+        }
+
+        if (sequentialIndexing)
+        {
+          // Points only with no specific index list.
+          // Construct the index list to match the vertices.
+          meshIndices = new int[meshDetails.VertexCount];
+          for (int i = 0; i < meshDetails.VertexCount; ++i)
+          {
+            meshIndices[i] = i;
+          }
         }
 
         if (meshIndices != null)
         {
-          mesh.SetIndices(meshIndices, entry.Topology, 0);
+          mesh.SetIndices(meshIndices, meshDetails.Topology, 0);
 
           if (recalculateNormals)
           {
-            CalculateNormals(mesh, entry);
+            CalculateNormals(mesh, meshDetails);
           }
-          mesh.RecalculateBounds();
         }
+
+        // Don't recalculate bounds. Assign directly.
+        Bounds meshBounds = new Bounds();
+        meshBounds.Encapsulate(meshDetails.VertexBounds);
+        if (meshDetails.DrawType == (ushort)MeshDrawType.Voxels)
+        {
+          // See LargestNormal comment.
+          meshBounds.min -= meshDetails.LargestNormal;
+          meshBounds.max += meshDetails.LargestNormal;
+        }
+        mesh.bounds = meshBounds;
       }
       else
       {
-        List<Mesh> meshes = new List<Mesh>();
         List<Vector3> vertices = new List<Vector3>();
-        List<Vector3> normals = entry.Normals != null ? new List<Vector3>() : null;
-        List<Vector2> uvs = entry.UVs != null ? new List<Vector2>() : null;
-        List<Color32> colours = entry.VertexColours != null ? new List<Color32>() : null;
+        List<Vector3> normals = meshDetails.Normals != null ? new List<Vector3>() : null;
+        List<Vector2> uvs = meshDetails.UVs != null ? new List<Vector2>() : null;
+        List<Color32> colours = meshDetails.VertexColours != null ? new List<Color32>() : null;
         List<int> indices = new List<int>();
         // Index mappings from original indices to mesh part indices.
         // Mapping is 1 based, so zero is unmapped and 1 is vertex 0, 2 is vertex 1, etc.
-        List<int> indexMap = new List<int>(meshIndices.Length);
-        int indicesStep = TopologyIndexStep(entry.Topology);
+        List<int> indexMap = null;
+        int indicesStep = TopologyIndexStep(meshDetails.Topology);
+        int meshIndex = 0;
+        int indexCount = 0;
 
-        // Fill indexMap.
-        for (int i = 0; i < meshIndices.Length; ++i)
+        if (sequentialIndexing)
         {
-          indexMap.Add(-1);
+          indexCount = meshDetails.VertexCount;
+        }
+        else
+        {
+          indexCount = meshIndices.Length;
+          indexMap = new List<int>(meshIndices.Length);
+          // Fill indexMap.
+          for (int i = 0; i < meshIndices.Length; ++i)
+          {
+            indexMap.Add(-1);
+          }
         }
 
         // For now, just copy all the vertex data. This would work well if we could share
         // the vertex data between meshes.
         indices.Capacity = IndexCountLimit;
-        for (int iidx = 0; iidx < meshIndices.Length; )
+        for (int iidx = 0; iidx < indexCount; ++meshIndex)
         {
+          Bounds meshBounds = new Bounds();
           vertices.Clear();
           if (normals != null) { normals.Clear(); }
           if (uvs != null) { uvs.Clear(); }
           if (colours != null) { colours.Clear(); }
           indices.Clear();
-          while (indices.Count + indicesStep < IndexCountLimit && iidx < meshIndices.Length)
+
+          if (!sequentialIndexing)
           {
-            for (int i = 0; i < indicesStep; ++i)
+            while (indices.Count + indicesStep < IndexCountLimit && iidx < meshIndices.Length)
             {
-              CopyIndex(iidx++, indexMap, entry, indices, vertices, normals, uvs, colours);
+              for (int i = 0; i < indicesStep; ++i)
+              {
+                CopyIndex(iidx++, indexMap, meshDetails, indices, vertices, normals, uvs, colours, meshBounds);
+              }
             }
+          }
+          else
+          {
+            while (indices.Count + indicesStep < IndexCountLimit && iidx < meshDetails.VertexCount)
+            {
+              for (int i = 0; i < indicesStep; ++i)
+              {
+                indices.Add(indices.Count);
+                vertices.Add(meshDetails.Vertices[iidx]);
+                meshBounds.Encapsulate(meshDetails.Vertices[iidx]);
+                if (normals != null)
+                {
+                  // Support single uniform normal.
+                  if (meshDetails.Normals.Length > 1)
+                  {
+                    normals.Add(meshDetails.Normals[iidx]);
+                  }
+                  else
+                  {
+                    normals.Add(meshDetails.Normals[0]);
+                  }
+                }
+                if (uvs != null) { uvs.Add(meshDetails.UVs[iidx]); }
+                if (colours != null) { colours.Add(meshDetails.VertexColours[iidx]); }
+                ++iidx;
+              }
+            }
+          }
+
+          if (meshDetails.DrawType == (ushort)MeshDrawType.Voxels)
+          {
+            // See comment on LargestNormal.
+            meshBounds.min -= meshDetails.LargestNormal;
+            meshBounds.max += meshDetails.LargestNormal;
           }
 
           // Hit the limit or done. Extract a mesh.
           // Either modify an existing mesh or generate a new one as required.
-          Mesh mesh = NextMesh(meshes.Count, entry.FinalMeshes);
+          Mesh mesh = NextMesh(meshIndex, meshDetails.FinalMeshes);
           mesh.subMeshCount = 1;
           mesh.vertices = vertices.ToArray();
           if (normals != null) { mesh.normals = normals.ToArray(); }
           if (uvs != null) { mesh.uv = uvs.ToArray(); }
           if (colours != null) { mesh.colors32 = colours.ToArray(); }
-          mesh.SetIndices(indices.ToArray(), entry.Topology, 0);
+          mesh.SetIndices(indices.ToArray(), meshDetails.Topology, 0);
 
           if (recalculateNormals)
           {
-            CalculateNormals(mesh, entry);
+            CalculateNormals(mesh, meshDetails);
           }
-          mesh.RecalculateBounds();
-
-          meshes.Add(mesh);
+          // Assign calculated bounds.
+          mesh.bounds = meshBounds;
 
           // Clear the index map.
-          if (iidx + 1 < meshIndices.Length)
+          if (!sequentialIndexing && iidx + 1 < meshIndices.Length)
           {
             for (int i = 0; i < indexMap.Count; ++i)
             {
               indexMap[i] = -1;
             }
+          }
 
-            // Back track to repeat an index for loops.
-            if (entry.Topology == MeshTopology.LineStrip)
-            {
-              --iidx;
-            }
+          // Back track to repeat an index for loops.
+          if (meshDetails.Topology == MeshTopology.LineStrip)
+          {
+            --iidx;
           }
         }
-
-        // FIXME: again, do we need to explicitly delete any excess meshes or will
-        // garbage collection handle it.
-        entry.FinalMeshes = meshes.ToArray();
       }
 
       return new Error();
     }
 
     /// <summary>
-    /// (Re)Calculate normals for <paramref name="mesh"/> from <paramref name="entry"/>.
+    /// (Re)Calculate normals for <paramref name="mesh"/> from <paramref name="meshDetails"/>.
     /// </summary>
     /// <param name="mesh"></param>
-    /// <param name="entry"></param>
+    /// <param name="meshDetails"></param>
     /// <remarks>
     /// Normally uses <c>mesh.RecalculateNormals()</c> unless rendering voxels, in which
     /// case all normals are set to (0.5, 0.5, 0.5) to render unit voxels.
     /// </remarks>
-    private void CalculateNormals(Mesh mesh, MeshEntry entry)
+    private void CalculateNormals(Mesh mesh, MeshDetails meshDetails)
     {
-      if (entry.DrawType != (byte)MeshDrawType.Voxels)
+      if (meshDetails.DrawType != (byte)MeshDrawType.Voxels)
       {
         mesh.RecalculateNormals();
       }
@@ -1308,25 +1384,27 @@ namespace Tes.Handlers
     /// <param name="existingMeshes">The mesh array</param>
     /// <returns>The <paramref name="existingMeshes"/> element at <paramref name="index"/>
     /// if valid, or a new <c>Mesh</c> object.</returns>
-    private Mesh NextMesh(int index, Mesh[] existingMeshes)
+    private Mesh NextMesh(int index, List<Mesh> existingMeshes)
     {
-      if (existingMeshes != null && index < existingMeshes.Length)
+      if (existingMeshes != null && index < existingMeshes.Count)
       {
         return existingMeshes[index];
       }
-      return new Mesh();
+      Mesh mesh = new Mesh();
+      existingMeshes.Add(mesh);
+      return mesh;
     }
 
 
     /// <summary>
-    /// Copies and maps a vertex from <c>entry.Vertices</c> unless it has already been mapped.
+    /// Copies and maps a vertex from <c>meshDetails.Vertices</c> unless it has already been mapped.
     /// The mapped index is added to the input lists.
     /// </summary>
     /// <remarks>
     /// This is a helper function for mapping mesh data from the original data set into multiple
     /// <c>Mesh</c> objects to respect Unity's vertex count limit.
     /// 
-    /// Each entry in <paramref name="indexMap"/> corresponds to an element in <c>entry.Vertices</c>
+    /// Each entry in <paramref name="indexMap"/> corresponds to an element in <c>meshDetails.Vertices</c>
     /// and is zero for unmapped vertices. For mapped indices, the value is the
     /// <c>mapped index + 1</c>.
     /// 
@@ -1337,28 +1415,44 @@ namespace Tes.Handlers
     /// Regardless of whether the vertex is already mapped, the vertex index is (re)added to
     /// <paramref name="indices"/>.
     /// </remarks>
-    /// <param name="srcIndex">The vertex index in <c>entry.Vertices</c></param>
+    /// <param name="srcIndicesIndex">The vertex index in <c>meshDetails.Vertices</c></param>
     /// <param name="indexMap">The list of vertex mappings. A zero entry is unmapped.</param>
-    /// <param name="entry">The mesh details.</param>
+    /// <param name="meshDetails">The mesh details.</param>
     /// <param name="indices">Indices for the new mesh component.</param>
     /// <param name="vertices">Vertices for the new mesh component.</param>
     /// <param name="normals">Normals for the new mesh component. May be null.</param>
     /// <param name="uvs">UVs for the new mesh component. May be null.</param>
     /// <param name="colours">Colours for the new mesh component. May be null.</param>
-    protected void CopyIndex(int srcIndex, List<int> indexMap, MeshEntry entry, List<int> indices,
+    /// <param name="bounds">Modified to encapsulate all addedv vertices.</param>
+    protected void CopyIndex(int srcIndicesIndex, List<int> indexMap, MeshDetails meshDetails, List<int> indices,
                              List<Vector3> vertices, List<Vector3> normals,
-                             List<Vector2> uvs, List<Color32> colours)
+                             List<Vector2> uvs, List<Color32> colours,
+                             Bounds bounds)
     {
-      int mapping = indexMap[srcIndex];
+      int mapping = indexMap[srcIndicesIndex];
       if (mapping <= 0)
       {
         // New mapping.
-        indexMap[srcIndex] = vertices.Count + 1;
+        indexMap[srcIndicesIndex] = vertices.Count + 1;
         indices.Add(vertices.Count);
-        vertices.Add(entry.Vertices[entry.Indices[srcIndex]]);
-        if (normals != null) { normals.Add(entry.Normals[srcIndex]); }
-        if (uvs != null) { uvs.Add(entry.UVs[srcIndex]); }
-        if (colours != null) { colours.Add(entry.VertexColours[srcIndex]); }
+        int vertIndex = (meshDetails.Indices != null) ? meshDetails.Indices[srcIndicesIndex] : srcIndicesIndex;
+        Vector3 vert = meshDetails.Vertices[vertIndex];
+        vertices.Add(vert);
+        bounds.Expand(vert);
+        if (normals != null)
+        {
+          // Support single uniform normal.
+          if (meshDetails.Normals.Length > 1)
+          {
+            normals.Add(meshDetails.Normals[srcIndicesIndex]);
+          }
+          else
+          {
+            normals.Add(meshDetails.Normals[0]);
+          }
+        }
+        if (uvs != null) { uvs.Add(meshDetails.UVs[srcIndicesIndex]); }
+        if (colours != null) { colours.Add(meshDetails.VertexColours[srcIndicesIndex]); }
       }
       else
       {
@@ -1404,12 +1498,12 @@ namespace Tes.Handlers
     /// <summary>
     /// Invoke <see cref="OnMeshAdded"/>
     /// </summary>
-    /// <param name="entry"></param>
-    protected void NotifyMeshAdded(MeshEntry entry)
+    /// <param name="meshDetails"></param>
+    protected void NotifyMeshAdded(MeshDetails meshDetails)
     {
       if (OnMeshAdded != null)
       {
-        OnMeshAdded(entry);
+        OnMeshAdded(meshDetails);
       }
     }
 
@@ -1417,12 +1511,12 @@ namespace Tes.Handlers
     /// <summary>
     /// Invoke <see cref="OnMeshRemoved"/>
     /// </summary>
-    /// <param name="entry"></param>
-    protected void NotifyMeshRemoved(MeshEntry entry)
+    /// <param name="meshDetails"></param>
+    protected void NotifyMeshRemoved(MeshDetails meshDetails)
     {
       if (OnMeshRemoved != null)
       {
-        OnMeshRemoved(entry);
+        OnMeshRemoved(meshDetails);
       }
     }
 
@@ -1430,16 +1524,16 @@ namespace Tes.Handlers
     /// <summary>
     /// Invoke <see cref="OnMeshFinalised"/>
     /// </summary>
-    /// <param name="entry"></param>
-    protected void NotifyMeshFinalised(MeshEntry entry)
+    /// <param name="meshDetails"></param>
+    protected void NotifyMeshFinalised(MeshDetails meshDetails)
     {
       if (OnMeshFinalised != null)
       {
-        OnMeshFinalised(entry);
+        OnMeshFinalised(meshDetails);
       }
     }
 
 
-    private Dictionary<uint, MeshEntry> _meshes = new Dictionary<uint, MeshEntry>();
+    private Dictionary<uint, MeshDetails> _meshes = new Dictionary<uint, MeshDetails>();
   }
 }

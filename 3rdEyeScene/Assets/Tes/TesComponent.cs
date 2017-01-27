@@ -42,6 +42,13 @@ public class TesComponent : Router
     }
   }
 
+  public static void PrintBounds(Bounds bounds)
+  {
+    Debug.Log(string.Format("B: ({0}, {1}, {2}), ({3}, {4}, {5})",
+      bounds.min.x, bounds.min.y, bounds.min.z,
+      bounds.max.x, bounds.max.y, bounds.max.z));
+  }
+
   protected override void Start()
   {
     base.Start();

@@ -344,11 +344,11 @@ namespace Tes.Handlers.Shape3D
       // Try resolve the mesh from the cache now.
       if (_meshCache != null)
       {
-        MeshCache.MeshEntry meshEntry = _meshCache.GetEntry(points.MeshID);
-        if (meshEntry != null && meshEntry.FinalMeshes != null)
+        MeshCache.MeshDetails meshDetails = _meshCache.GetEntry(points.MeshID);
+        if (meshDetails != null && meshDetails.FinalMeshes != null)
         {
           // Build the mesh parts.
-          SetMesh(points, meshEntry);
+          SetMesh(points, meshDetails);
         }
       }
     }
@@ -356,15 +356,15 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Mesh resource completion notification.
     /// </summary>
-    /// <param name="meshEntry">The mesh(es) finalisd.</param>
+    /// <param name="meshDetails">The mesh(es) finalisd.</param>
     /// <remarks>
-    /// Links objects waiting on <paramref name="meshEntry"/> to use the associated meshes.
+    /// Links objects waiting on <paramref name="meshDetails"/> to use the associated meshes.
     /// </remarks>
-    protected virtual void OnMeshFinalised(MeshCache.MeshEntry meshEntry)
+    protected virtual void OnMeshFinalised(MeshCache.MeshDetails meshDetails)
     {
       // Find any parts waiting on this mesh.
       List<PointsComponent> parts;
-      if (!_registeredParts.TryGetValue(meshEntry.ID, out parts))
+      if (!_registeredParts.TryGetValue(meshDetails.ID, out parts))
       {
         // Nothing waiting.
         return;
@@ -373,22 +373,22 @@ namespace Tes.Handlers.Shape3D
       // Have parts to resolve.
       foreach (PointsComponent part in parts)
       {
-        SetMesh(part, meshEntry);
+        SetMesh(part, meshDetails);
       }
     }
 
     /// <summary>
     /// Mesh resource removal notification.
     /// </summary>
-    /// <param name="meshEntry">The mesh(es) being removed.</param>
+    /// <param name="meshDetails">The mesh(es) being removed.</param>
     /// <remarks>
     /// Stops referencing the associated mesh objects.
     /// </remarks>
-    protected virtual void OnMeshRemoved(MeshCache.MeshEntry meshEntry)
+    protected virtual void OnMeshRemoved(MeshCache.MeshDetails meshDetails)
     {
       // Find objects using the removed mesh.
       List<PointsComponent> parts;
-      if (!_registeredParts.TryGetValue(meshEntry.ID, out parts))
+      if (!_registeredParts.TryGetValue(meshDetails.ID, out parts))
       {
         // Nothing using this mesh.
         return;
@@ -408,15 +408,15 @@ namespace Tes.Handlers.Shape3D
     }
 
     /// <summary>
-    /// Set the visuals of <pararef name="points"/> to use <paramref name="meshEntry"/>.
+    /// Set the visuals of <pararef name="points"/> to use <paramref name="meshDetails"/>.
     /// </summary>
     /// <param name="points">The points object</param>
-    /// <param name="meshEntry">The mesh details.</param>
+    /// <param name="meshDetails">The mesh details.</param>
     /// <remarks>
-    /// Adds multiple children to <paramref name="points"/> when <paramref name="meshEntry"/>
+    /// Adds multiple children to <paramref name="points"/> when <paramref name="meshDetails"/>
     /// contains multiple mesh objects.
     /// </remarks>
-    protected virtual void SetMesh(PointsComponent points, MeshCache.MeshEntry meshEntry)
+    protected virtual void SetMesh(PointsComponent points, MeshCache.MeshDetails meshDetails)
     {
       ShapeComponent shape = points.GetComponent<ShapeComponent>();
       // Clear all children as a hard reset.
@@ -434,19 +434,19 @@ namespace Tes.Handlers.Shape3D
       {
         // Add children for each mesh sub-sub-part.
         int partNumber = 0;
-        foreach (Mesh mesh in meshEntry.FinalMeshes)
+        foreach (Mesh mesh in meshDetails.FinalMeshes)
         {
           GameObject partMesh = new GameObject(string.Format("cloud{0}", partNumber));
-          partMesh.transform.localPosition = meshEntry.LocalPosition;
-          partMesh.transform.localRotation = meshEntry.LocalRotation;
-          partMesh.transform.localScale = meshEntry.LocalScale;
+          partMesh.transform.localPosition = meshDetails.LocalPosition;
+          partMesh.transform.localRotation = meshDetails.LocalRotation;
+          partMesh.transform.localScale = meshDetails.LocalScale;
           partMesh.AddComponent<MeshFilter>().sharedMesh = mesh;
 
           MeshRenderer renderer = partMesh.AddComponent<MeshRenderer>();
-          if (meshEntry.Topology == MeshTopology.Points)
+          if (meshDetails.Topology == MeshTopology.Points)
           {
             // Use mesh material as is.
-            renderer.material = meshEntry.Material;
+            renderer.material = meshDetails.Material;
           }
           else
           {
@@ -462,7 +462,7 @@ namespace Tes.Handlers.Shape3D
       else
       {
         // We are going to need to remap the indexing. For this we'll
-        // copy the required vertices from the MeshEntry and create new
+        // copy the required vertices from the meshDetails and create new
         // meshes with new indices. We could potentially share vertex data,
         // but this is difficult with the Unity vertex count limit.
         int[] indices = points.Indices;
@@ -482,22 +482,22 @@ namespace Tes.Handlers.Shape3D
 
           for (int i = 0; i < sectionCount; ++i)
           {
-            // MappedVertex(ref v, ref n, ref c, meshEntry, indices[i + indexOffset]);
-            verts[i] = meshEntry.Vertices[i + indexOffset];
-            normals[i] = (meshEntry.Normals != null) ? meshEntry.Normals[i + indexOffset] : new Vector3(1, 1, 1);
-            colours[i] = (meshEntry.VertexColours != null) ? meshEntry.VertexColours[i + indexOffset] : white;
+            // MappedVertex(ref v, ref n, ref c, meshDetails, indices[i + indexOffset]);
+            verts[i] = meshDetails.Vertices[i + indexOffset];
+            normals[i] = (meshDetails.Normals != null) ? meshDetails.Normals[i + indexOffset] : new Vector3(1, 1, 1);
+            colours[i] = (meshDetails.VertexColours != null) ? meshDetails.VertexColours[i + indexOffset] : white;
             // Direct indexing in the rebuild.
             inds[i] = i;
           }
 
           // Create this mesh piece.
-          bool defaultMaterial = meshEntry.Topology == MeshTopology.Points;
-          Material material = (defaultMaterial) ? meshEntry.Material : _unlitMaterial;
+          bool defaultMaterial = meshDetails.Topology == MeshTopology.Points;
+          Material material = (defaultMaterial) ? meshDetails.Material : _unlitMaterial;
           Mesh mesh = new Mesh();
           mesh.subMeshCount = 1;
           mesh.vertices = verts;
           mesh.colors32 = colours;
-          if (!defaultMaterial && meshEntry.Normals != null)
+          if (!defaultMaterial && meshDetails.Normals != null)
           {
             mesh.normals = normals;
             material = _litMaterial;

@@ -324,6 +324,8 @@ namespace Tes.Main
                         RequestSnapshot(_currentFrame, processedBytes);
                         lastSnapshotFrame = _currentFrame;
                       }
+                      // Make sure we yield so as to support the later check to avoid flooding the packet queue.
+                      allowYield = true;
                     }
                   }
                   else if (header.RoutingID == (ushort)RoutingID.ServerInfo)
@@ -333,7 +335,7 @@ namespace Tes.Main
                   _packetQueue.Enqueue(packet);
                 }
                 // else notify error.
-                allowYield = _targetFrame == 0 && _frameDelayUs > 0;
+                allowYield = allowYield || _targetFrame == 0 && _frameDelayUs > 0;
               }
             }
             else if (bytesRead == 0 && allowYield && _loop)
@@ -352,7 +354,16 @@ namespace Tes.Main
           allowYield = true;
         }
 
-        yield return null;
+        if (!_paused)
+        {
+          // Wait for the enqueued packets to be processed.
+          // This stops the queue from being swamped when the main thread can't keep up
+          // with processing the queue.
+          while (!_quitFlag && _packetQueue.Count > 0)
+          {
+            yield return null;
+          }
+        }
       }
 
       Eos = true;
@@ -805,6 +816,7 @@ namespace Tes.Main
     /// </remarks>
     void ResetStream()
     {
+      _packetQueue.Clear();
       _packetQueue.Enqueue(BuildResetPacket());
 
       GZipStream zipStream = _stream as GZipStream;

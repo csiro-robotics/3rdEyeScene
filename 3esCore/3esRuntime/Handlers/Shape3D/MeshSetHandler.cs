@@ -215,10 +215,10 @@ namespace Tes.Handlers.Shape3D
           // Try resolve the mesh part.
           if (_meshCache != null)
           {
-            MeshCache.MeshEntry meshEntry = _meshCache.GetEntry(part.ObjectID);
-            if (meshEntry != null && meshEntry.FinalMeshes != null)
+            MeshCache.MeshDetails meshDetails = _meshCache.GetEntry(part.ObjectID);
+            if (meshDetails != null && meshDetails.FinalMeshes != null)
             {
-              SetMesh(part, meshEntry);
+              SetMesh(part, meshDetails);
             }
           }
         }
@@ -291,15 +291,15 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Mesh resource completion notification.
     /// </summary>
-    /// <param name="meshEntry">The mesh(es) finalisd.</param>
+    /// <param name="meshDetails">The mesh(es) finalisd.</param>
     /// <remarks>
-    /// Links objects waiting on <paramref name="meshEntry"/> to use the associated meshes.
+    /// Links objects waiting on <paramref name="meshDetails"/> to use the associated meshes.
     /// </remarks>
-    protected virtual void OnMeshFinalised(MeshCache.MeshEntry meshEntry)
+    protected virtual void OnMeshFinalised(MeshCache.MeshDetails meshDetails)
     {
       // Find any parts waiting on this mesh.
       List<ShapeComponent> parts;
-      if (!_registeredParts.TryGetValue(meshEntry.ID, out parts))
+      if (!_registeredParts.TryGetValue(meshDetails.ID, out parts))
       {
         // Nothing waiting.
         return;
@@ -308,22 +308,22 @@ namespace Tes.Handlers.Shape3D
       // Have parts to resolve.
       foreach (ShapeComponent part in parts)
       {
-        SetMesh(part, meshEntry);
+        SetMesh(part, meshDetails);
       }
     }
 
     /// <summary>
     /// Mesh resource removal notification.
     /// </summary>
-    /// <param name="meshEntry">The mesh(es) being removed.</param>
+    /// <param name="meshDetails">The mesh(es) being removed.</param>
     /// <remarks>
     /// Stops referencing the associated mesh objects.
     /// </remarks>
-    protected virtual void OnMeshRemoved(MeshCache.MeshEntry meshEntry)
+    protected virtual void OnMeshRemoved(MeshCache.MeshDetails meshDetails)
     {
       // Find objects using the removed mesh.
       List<ShapeComponent> parts;
-      if (!_registeredParts.TryGetValue(meshEntry.ID, out parts))
+      if (!_registeredParts.TryGetValue(meshDetails.ID, out parts))
       {
         // Nothing using this mesh.
         return;
@@ -341,15 +341,15 @@ namespace Tes.Handlers.Shape3D
     }
 
     /// <summary>
-    /// Set the visuals of <pararef name="partObject"/> to use <paramref name="meshEntry"/>.
+    /// Set the visuals of <pararef name="partObject"/> to use <paramref name="meshDetails"/>.
     /// </summary>
     /// <param name="partObject">The part object</param>
-    /// <param name="meshEntry">The mesh details.</param>
+    /// <param name="meshDetails">The mesh details.</param>
     /// <remarks>
-    /// Adds multiple children to <paramref name="partObject"/> when <paramref name="meshEntry"/>
+    /// Adds multiple children to <paramref name="partObject"/> when <paramref name="meshDetails"/>
     /// contains multiple mesh objects.
     /// </remarks>
-    protected virtual void SetMesh(ShapeComponent partObject, MeshCache.MeshEntry meshEntry)
+    protected virtual void SetMesh(ShapeComponent partObject, MeshCache.MeshDetails meshDetails)
     {
       // Clear all children as a hard reset.
       foreach (Transform child in partObject.GetComponentsInChildren<Transform>())
@@ -363,19 +363,19 @@ namespace Tes.Handlers.Shape3D
 
       // Add children for each mesh sub-sub-part.
       int subPartNumber = 0;
-      foreach (Mesh mesh in meshEntry.FinalMeshes)
+      foreach (Mesh mesh in meshDetails.FinalMeshes)
       {
         GameObject partMesh = new GameObject();
         partMesh.name = string.Format("sub-part{0}", subPartNumber);
-        partMesh.transform.localPosition = meshEntry.LocalPosition;
-        partMesh.transform.localRotation = meshEntry.LocalRotation;
-        partMesh.transform.localScale = meshEntry.LocalScale;
+        partMesh.transform.localPosition = meshDetails.LocalPosition;
+        partMesh.transform.localRotation = meshDetails.LocalRotation;
+        partMesh.transform.localScale = meshDetails.LocalScale;
 
         MeshFilter filter = partMesh.AddComponent<MeshFilter>();
         filter.sharedMesh = mesh;
 
         MeshRenderer renderer = partMesh.AddComponent<MeshRenderer>();
-        renderer.material = meshEntry.Material;
+        renderer.material = meshDetails.Material;
         renderer.material.color = partObject.Colour;
         partMesh.transform.SetParent(partObject.transform, false);
 
