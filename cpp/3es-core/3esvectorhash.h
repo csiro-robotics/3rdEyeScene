@@ -1,7 +1,3 @@
-//
-// author Kazys Stepanas
-//
-
 /*
 License from the NVIDIA source on which this code is based:
 Copyright (c) 2009-2011, NVIDIA Corporation
