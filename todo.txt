@@ -1,13 +1,12 @@
 Bugs:
 - MESHSET_END() macro does not cater for releasing associated resources. Parameterisation needs to change.
+- Router UpdateCatchUp is currently incompatible with snapshots. Transient objects will be excluded from the snapshot.
+- Large data frames have been known to end up an odd state whereby some data from the previous are still visible and not all data from the next frame are visible.
+  - Possibly a thread safety issue on the concurrent queue.
 - Custom socket bugs (workaround using Qt sockets):
   - On OSX there is sporadic lag.
   - Large packets go missing.
-- Large steps often render before the catching the target frame.
-  - Add a check to Router.Update() on whether the thread is at the target frame. Keep looping while not.
-    - Also include a time limit to prevent deadlock.
-- Large data frames have been known to end up an odd state whereby some data from the previous are still visible and not all data from the next frame are visible.
-  - Possibly a thread safety issue on the concurrent queue.
+
 
 TODO:
 - Profile StreamThread packet decoding and improve performance.
