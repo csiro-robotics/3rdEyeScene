@@ -145,11 +145,11 @@ int populateMap(const Options &opt)
   size_t keyIndex;
   // Update map visualisation every N samples.
   const size_t rayBatchSize = opt.batchSize;
-#ifdef TES_ENABLE
-  char timeStrBuffer[256];
   double timebase = -1;
   double firstBatchTimestamp = -1;
   double lastTimestamp = -1;
+#ifdef TES_ENABLE
+  char timeStrBuffer[256];
   // Keys of voxels touched in the current batch.
   UnorderedKeySet becomeOccupied;
   UnorderedKeySet becomeFree;
@@ -170,7 +170,7 @@ int populateMap(const Options &opt)
   // Ensure mesh is created for later update.
   TES_SERVER_UPDATE(*g_tesServer, 0.0f);
 
-  printf("Populating map");
+  printf("Populating map\n");
   while (loader.nextPoint(sample, origin, &timestamp))
   {
     ++pointCount;
@@ -235,6 +235,7 @@ int populateMap(const Options &opt)
 
     if (pointCount % rayBatchSize == 0 || quit)
     {
+      timebase = (timebase >= 0) ? timebase : firstBatchTimestamp;
       //// Collapse the map.
       //map.isNodeCollapsible()
 #ifdef TES_ENABLE
@@ -243,8 +244,6 @@ int populateMap(const Options &opt)
       elapsedTime = std::max(elapsedTime, 0.0);
       // Cull large time differences.
       elapsedTime = std::min(elapsedTime, 1.0);
-      timebase = (timebase >= 0) ? timebase : firstBatchTimestamp;
-      lastTimestamp = timestamp;
       firstBatchTimestamp = -1;
 
       sprintf(timeStrBuffer, "%g", timestamp - timebase);
@@ -289,9 +288,11 @@ int populateMap(const Options &opt)
       }
 #endif // TES_ENABLE
 
+      lastTimestamp = timestamp;
       if (!opt.quiet)
       {
         printf("\r%g        ", lastTimestamp - timebase);
+        //fflush(stdout);
       }
     }
   }

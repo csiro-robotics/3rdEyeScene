@@ -462,55 +462,25 @@ namespace Tes.Handlers.Shape3D
       else
       {
         // We are going to need to remap the indexing. For this we'll
-        // copy the required vertices from the meshDetails and create new
+        // copy the required vertices from the MeshDetails and create new
         // meshes with new indices. We could potentially share vertex data,
         // but this is difficult with the Unity vertex count limit.
-        int[] indices = points.Indices;
-
-        // Break up into parts to respect the Unity indexing limit.
-        int indexOffset = 0;
-        Color32 white = new Color32(255, 255, 255, 255);
-        while (indexOffset < indices.Length)
+        Mesh[] meshes = meshDetails.Builder.GetReindexedMeshes(points.Indices, MeshTopology.Points);
+        for (int i = 0; i < meshes.Length; ++i)
         {
-          int sectionCount = Math.Min(indices.Length - indexOffset, MeshCache.IndexCountLimit);
-
-          // Build a mesh part.
-          Vector3[] verts = new Vector3[sectionCount];
-          int[] inds = new int[sectionCount];
-          Vector3[] normals = new Vector3[sectionCount];
-          Color32[] colours = new Color32[sectionCount];
-
-          for (int i = 0; i < sectionCount; ++i)
-          {
-            // MappedVertex(ref v, ref n, ref c, meshDetails, indices[i + indexOffset]);
-            verts[i] = meshDetails.Vertices[i + indexOffset];
-            normals[i] = (meshDetails.Normals != null) ? meshDetails.Normals[i + indexOffset] : new Vector3(1, 1, 1);
-            colours[i] = (meshDetails.VertexColours != null) ? meshDetails.VertexColours[i + indexOffset] : white;
-            // Direct indexing in the rebuild.
-            inds[i] = i;
-          }
-
           // Create this mesh piece.
           bool defaultMaterial = meshDetails.Topology == MeshTopology.Points;
           Material material = (defaultMaterial) ? meshDetails.Material : _unlitMaterial;
-          Mesh mesh = new Mesh();
-          mesh.subMeshCount = 1;
-          mesh.vertices = verts;
-          mesh.colors32 = colours;
-          if (!defaultMaterial && meshDetails.Normals != null)
+          if (!defaultMaterial && meshDetails.Builder.Normals.Length != 0)
           {
-            mesh.normals = normals;
             material = _litMaterial;
           }
-          mesh.SetIndices(inds, MeshTopology.Points, 0);
 
           GameObject child = new GameObject();
-          child.AddComponent<MeshFilter>().mesh = mesh;
+          child.AddComponent<MeshFilter>().mesh = meshes[i];
           material.SetInt("PointSize", points.PointSize);
           child.AddComponent<MeshRenderer>().material = material;
           child.transform.SetParent(points.transform, false);
-
-          indexOffset += sectionCount;
         }
       }
     }

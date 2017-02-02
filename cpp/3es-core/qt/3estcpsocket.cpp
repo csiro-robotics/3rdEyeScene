@@ -62,6 +62,8 @@ bool TcpSocket::isConnected() const
     case QTcpSocket::ConnectingState:
     case QTcpSocket::ConnectedState:
       return true;
+    default:
+      break;
     }
   }
 

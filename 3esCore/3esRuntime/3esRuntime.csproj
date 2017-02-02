@@ -78,6 +78,7 @@
     <Compile Include="Runtime\ErrorCode.cs" />
     <Compile Include="Runtime\Info.cs" />
     <Compile Include="Runtime\MaterialLibrary.cs" />
+    <Compile Include="Runtime\MeshBuilder.cs" />
     <Compile Include="Runtime\MessageHandler.cs" />
     <Compile Include="Maths\ColourExt.cs" />
     <Compile Include="Maths\Vector2Ext.cs" />

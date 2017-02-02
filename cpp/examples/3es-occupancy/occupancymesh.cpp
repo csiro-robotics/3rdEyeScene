@@ -268,18 +268,18 @@ void OccupancyMesh::update(const UnorderedKeySet &newlyOccupied, const Unordered
   for (uint32_t vertexIndex : modifiedVertices)
   {
     cmpmsg.offset = vertexIndex;
+    packet.reset(tes::MtMesh, tes::MmtVertex);
+    cmpmsg.write(packet);
+    // Write the invalid value.
+    packet.writeArray<float>(_detail->vertices[vertexIndex].v, 3);
+    packet.finalise();
+    g_tesServer->send(packet);
+
     // Send colour and position update.
     packet.reset(tes::MtMesh, tes::MmtVertexColour);
     cmpmsg.write(packet);
     // Write the invalid value.
     packet.writeArray<uint32_t>(&_detail->colours[vertexIndex], 1);
-    packet.finalise();
-    g_tesServer->send(packet);
-
-    packet.reset(tes::MtMesh, tes::MmtVertex);
-    cmpmsg.write(packet);
-    // Write the invalid value.
-    packet.writeArray<float>(_detail->vertices[vertexIndex].v, 3);
     packet.finalise();
     g_tesServer->send(packet);
   }

@@ -16,11 +16,10 @@ TODO:
 - Consider adding batched object creation messages.
 - Consolidate C# shape constructors and improve consistency.
 - Client log for error messages.
+- UI:
   - Handler options and UI
   - Camera Selection UI
-- Playback speed control.
-  - Partly implemented. Tended to hang the viewer at higher speeds.
-- Scene Graph UI
+  - Scene Graph UI
 - Make sure modal dialogs work properly blocking input to background layers.
 - Export to PLY file (because PLY is easy).
 - Annotation frames.
@@ -30,10 +29,19 @@ TODO:
 - Client rendering override modes:
   - Solid/wireframe overlay
   - Wireframe override
+- PROTOCOL CHANGE: Reduce object overhead. Creating many objects is expensive in data throughput and packet processing.
+  - Modify ObjectAttributes structure (for update messages only?) to have a 1-byte flag member which identifies which of colour, position, rotation and scale data are present.
+  - Consider moving major/minor version members of PacketHeader into ServerSettings message.
+  - Support batch object creation?
 
 Maybe:
+- GL-TF scene serialiser for the client.
+  - For loading reference model and exporting the current scene.
+- GL-TF handler extension
+  - Too expensive for primitives, but may be good for complex data.
 - Support splitting recording files at around 2GB.
 - TCP socket support built on asio.
+- Consider supporting variable Endian encoding in messages, identified by the byte order of the header marker.
 
 Performance improvements:
 - Need to investigate how to do more object management off the main thread. Not well supported by Unity as it doesn't allow objects to be created on other threads.
