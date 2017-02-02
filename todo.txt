@@ -10,6 +10,8 @@ Bugs:
   - Possibly a thread safety issue on the concurrent queue.
 
 TODO:
+- Profile StreamThread packet decoding and improve performance.
+  - Current playback speed bottleneck when stepping.
 - Complete C++ TCP socket support built on POCO
 - "Server" implementation which writes directly to a local file.
 - Change shape shaders to support GPU instancing.
@@ -33,6 +35,7 @@ TODO:
   - Modify ObjectAttributes structure (for update messages only?) to have a 1-byte flag member which identifies which of colour, position, rotation and scale data are present.
   - Consider moving major/minor version members of PacketHeader into ServerSettings message.
   - Support batch object creation?
+- Tidy up and fix up Router catcup logic and _currentFrame management.
 
 Maybe:
 - GL-TF scene serialiser for the client.

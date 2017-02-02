@@ -17,7 +17,7 @@ namespace Tes.Runtime
   /// is not intended for highly dynamic meshes. That is, the update support is intended for
   /// sporadic updates rather than per frame updates of all vertex data.
   /// 
-  /// The class attempts to discrimanately rebuild only components which need it using various
+  /// The class attempts to discriminately rebuild only components which need it using various
   /// dirty flags.
   /// 
   /// Note: it is up to the caller to maintain valid element counts in the various containers.
@@ -1394,7 +1394,7 @@ namespace Tes.Runtime
     /// Log a warning about list indexing being out of range.
     /// </summary>
     /// <param name="index">The out of range index.</param>
-    /// <param name="rangeCount">The container's acutal element count.</param>
+    /// <param name="rangeCount">The container's actual element count.</param>
     /// <param name="context">Identifies the list which was indexed out of range.</param>
     /// <remarks>
     /// Sets an error dirty flag to prevent log span. The flag is reset every time meshes are requested.
@@ -1404,7 +1404,7 @@ namespace Tes.Runtime
       if ((_warningFlags & context) == 0)
       {
         _warningFlags |= context;
-        Debug.LogError(
+        Debug.LogWarning(
             string.Format("Mesh {0} index out of range: {1} : [0, {2})",
               context.ToString(), index, rangeCount)
           );

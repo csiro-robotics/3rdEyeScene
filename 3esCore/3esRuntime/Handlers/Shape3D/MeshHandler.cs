@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Tes.IO;
 using Tes.Net;
@@ -105,7 +106,26 @@ namespace Tes.Handlers.Shape3D
         ResetObject(obj);
       }
 
+      _awaitingFinalisation.Clear();
       base.Reset();
+    }
+
+    /// <summary>
+    /// Finalises Unity mesh objects.
+    /// </summary>
+    public override void PreRender()
+    {
+      base.PreRender();
+      MeshDataComponent meshData;
+      ShapeComponent shape;
+      Material mat;
+      for (int i = 0; i < _awaitingFinalisation.Count; ++i)
+      {
+        meshData = _awaitingFinalisation[i];
+        shape = meshData.GetComponent<ShapeComponent>();
+        mat = SelectMaterial(shape, meshData);
+        FinaliseMesh(meshData.gameObject, shape, meshData, mat, shape.Colour);
+      }
     }
 
     /// <summary>
@@ -400,7 +420,7 @@ namespace Tes.Handlers.Shape3D
         if (offset + itemCount == vertices.Length && meshData.Indices.Length == 0)
         {
           // Last vertices and expecting no indices.
-          FinaliseMesh(obj, shape, meshData, mat, shape.Colour);
+          _awaitingFinalisation.Add(meshData);
         }
       }
       else if (receiveType == (ushort)Shapes.MeshShape.SendDataType.Vertices)  // Indices incoming
@@ -417,7 +437,7 @@ namespace Tes.Handlers.Shape3D
         if (offset + itemCount == indices.Length)
         {
           // Last indices.
-          FinaliseMesh(obj, shape, meshData, mat, shape.Colour);
+          _awaitingFinalisation.Add(meshData);
         }
       }
       else
@@ -519,6 +539,8 @@ namespace Tes.Handlers.Shape3D
       {
         GameObject.Destroy(obj.transform.GetChild(i).gameObject);
       }
+
+      _awaitingFinalisation.RemoveAll((MeshDataComponent cmp) => { return cmp == meshData; });
     }
 
     /// <summary>
@@ -659,5 +681,7 @@ namespace Tes.Handlers.Shape3D
         }
       }
     }
+
+    private List<MeshDataComponent> _awaitingFinalisation = new List<MeshDataComponent>();
   }
 }

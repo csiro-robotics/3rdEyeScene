@@ -274,6 +274,10 @@ namespace Tes.Handlers
         {
           return new Error(ErrorCode.InvalidContent, messageID);
         }
+        if (!FilterMessage(messageID, create.ObjectID, create.Category))
+        {
+          return new Error();
+        }
         return HandleMessage(create, packet, reader);
 
       case ObjectMessageID.Update:
@@ -282,6 +286,10 @@ namespace Tes.Handlers
         if (!update.Read(reader))
         {
           return new Error(ErrorCode.InvalidContent, messageID);
+        }
+        if (!FilterMessage(messageID, update.ObjectID, 0))
+        {
+          return new Error();
         }
         return HandleMessage(update, packet, reader);
 
@@ -292,6 +300,10 @@ namespace Tes.Handlers
         {
           return new Error(ErrorCode.InvalidContent, messageID);
         }
+        if (!FilterMessage(messageID, destroy.ObjectID, 0))
+        {
+          return new Error();
+        }
         return HandleMessage(destroy, packet, reader);
 
       case ObjectMessageID.Data:
@@ -301,10 +313,40 @@ namespace Tes.Handlers
         {
           return new Error(ErrorCode.InvalidContent, messageID);
         }
+        if (!FilterMessage(messageID, data.ObjectID, 0))
+        {
+          return new Error();
+        }
         return HandleMessage(data, packet, reader);
       }
 
       //return new Error();
+    }
+
+    /// <summary>
+    /// Used to allow filtering of incoming messages.
+    /// </summary>
+    /// <param name="messageID">ID of the incoming message.</param>
+    /// <param name="objectID">ID of the object to which the message relates.</param>
+    /// <param name="category">Category of the object, or zero if this information is unavailable.</param>
+    /// <returns>True to allow the message to be processed.</returns>
+    /// <remarks>
+    /// The default implementation respects the <see cref="MessageHandler.ModeFlags"/> values
+    /// filtering out transient object messages when <see cref="MessageHandler.ModeFlags.IgnoreTransient"/>
+    /// is set. Destroy messages are not ignored.
+    /// </remarks>
+    protected virtual bool FilterMessage(ushort messageID, uint objectID, ushort category)
+    {
+      // Don't ignore destroy messages. Ever.
+      if (messageID != (ushort)ObjectMessageID.Destroy)
+      {
+        if (objectID == 0 && (Mode & ModeFlags.IgnoreTransient) != 0)
+        {
+          return false;
+        }
+      }
+
+      return true;
     }
 
     /// <summary>

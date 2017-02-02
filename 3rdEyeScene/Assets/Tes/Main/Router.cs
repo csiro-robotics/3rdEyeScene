@@ -569,90 +569,97 @@ namespace Tes.Main
           _recordOnConnectPath = null;
         }
 
+        bool catchUp = false;
+
         // Move data packets from the data thread into the local queue.
         // We are looking for an end frame control message, at which point
         // we will pass all messages on to the appropriate handles to
         // enact.
         PacketBuffer packet = null;
         bool endFrame = false;
-        while (!endFrame && _dataThread.PacketQueue.TryDequeue(ref packet))
+        bool processingPackets = true;
+        while (!endFrame && processingPackets || catchUp)
         {
-          // Handle record on connect.
-          if (!string.IsNullOrEmpty(_recordOnConnectPath))
+          catchUp = UpdateCatchup(catchUp);
+          if ((processingPackets = _dataThread.PacketQueue.TryDequeue(ref packet)))
           {
-            if (!StartRecording(_recordOnConnectPath))
+            // Handle record on connect.
+            if (!string.IsNullOrEmpty(_recordOnConnectPath))
             {
-              Dialogs.MessageBox.Show(null, string.Format("Unable Failed to start recording to {0}", _recordOnConnectPath), "Recording Error");
-            }
-          }
-          _recordOnConnectPath = null;
-
-          //Debug.Log(string.Format("Routing ID: {0}:{1}", RoutingIDName(packet.Header.RoutingID), packet.Header.MessageID));
-
-          // New message. First handle command/control messages.
-          if (packet.Status == PacketBufferStatus.Complete)
-          {
-            if (_recordingWriter != null)
-            {
-              packet.ExportTo(_recordingWriter);
-            }
-
-            NetworkReader packetReader;
-            switch (packet.Header.RoutingID)
-            {
-            case (ushort)RoutingID.ServerInfo:
-              packetReader = new NetworkReader(packet.CreateReadStream(true));
-              _serverInfo.Read(packetReader);
-              //_timeUnitInv = (_serverInfo.TimeUnit != 0) ? 1.0 / _serverInfo.TimeUnit : 0.0;
-              Scene.Frame = _serverInfo.CoordinateFrame;
-              foreach (MessageHandler handler in _handlers.Handlers)
+              if (!StartRecording(_recordOnConnectPath))
               {
-                handler.UpdateServerInfo(_serverInfo);
+                Dialogs.MessageBox.Show(null, string.Format("Unable Failed to start recording to {0}", _recordOnConnectPath), "Recording Error");
               }
-              break;
+            }
+            _recordOnConnectPath = null;
 
-            case (ushort)RoutingID.Control:
-              packetReader = new NetworkReader(packet.CreateReadStream(true));
-              ControlMessage message = new ControlMessage();
-              if (message.Read(packetReader) &&
-                 (packet.Header.MessageID == (ushort)ControlMessageID.EndFrame ||
-                  packet.Header.MessageID == (ushort)ControlMessageID.ForceFrameFlush ||
-                  packet.Header.MessageID == (ushort)ControlMessageID.Reset))
+            //Debug.Log(string.Format("Routing ID: {0}:{1}", RoutingIDName(packet.Header.RoutingID), packet.Header.MessageID));
+
+            // New message. First handle command/control messages.
+            if (packet.Status == PacketBufferStatus.Complete)
+            {
+              if (_recordingWriter != null)
               {
-                if (packet.Header.MessageID == (ushort)ControlMessageID.Reset)
+                packet.ExportTo(_recordingWriter);
+              }
+
+              NetworkReader packetReader;
+              switch (packet.Header.RoutingID)
+              {
+              case (ushort)RoutingID.ServerInfo:
+                packetReader = new NetworkReader(packet.CreateReadStream(true));
+                _serverInfo.Read(packetReader);
+                //_timeUnitInv = (_serverInfo.TimeUnit != 0) ? 1.0 / _serverInfo.TimeUnit : 0.0;
+                Scene.Frame = _serverInfo.CoordinateFrame;
+                foreach (MessageHandler handler in _handlers.Handlers)
                 {
-                  // Drop pending packets.
-                  _pendingPackets.Clear();
-                  // Reset all the data handlers, but not the data thread.
-                  ResetScene();
-                  // Force a frame flush.
-                  EndFrame();
+                  handler.UpdateServerInfo(_serverInfo);
+                }
+                break;
+
+              case (ushort)RoutingID.Control:
+                packetReader = new NetworkReader(packet.CreateReadStream(true));
+                ControlMessage message = new ControlMessage();
+                if (message.Read(packetReader) &&
+                   (packet.Header.MessageID == (ushort)ControlMessageID.EndFrame ||
+                    packet.Header.MessageID == (ushort)ControlMessageID.ForceFrameFlush ||
+                    packet.Header.MessageID == (ushort)ControlMessageID.Reset))
+                {
+                  if (packet.Header.MessageID == (ushort)ControlMessageID.Reset)
+                  {
+                    // Drop pending packets.
+                    _pendingPackets.Clear();
+                    // Reset all the data handlers, but not the data thread.
+                    ResetScene();
+                    // Force a frame flush.
+                    EndFrame();
+                  }
+                  else
+                  {
+                    EndFrame((message.ControlFlags & (ushort)EndFrameFlag.Persist) != 0);
+                    if (_recordingWriter != null)
+                    {
+                      WriteCameraPosition(_recordingWriter, Camera.main, 255);
+                    }
+                  }
+
+                  endFrame = packet.Header.MessageID == (ushort)ControlMessageID.EndFrame && _dataThread.TargetFrame == 0;
                 }
                 else
                 {
-                  EndFrame((message.ControlFlags & (ushort)EndFrameFlag.Persist) != 0);
-                  if (_recordingWriter != null)
-                  {
-                    WriteCameraPosition(_recordingWriter, Camera.main, 255);
-                  }
+                  _pendingPackets.Enqueue(packet);
                 }
+                break;
 
-                endFrame = packet.Header.MessageID == (ushort)ControlMessageID.EndFrame && _dataThread.TargetFrame == 0;
-              }
-              else
-              {
+              default:
                 _pendingPackets.Enqueue(packet);
+                break;
               }
-              break;
-
-            default:
-              _pendingPackets.Enqueue(packet);
-              break;
             }
-          }
-          else
-          {
-            Debug.LogError(string.Format("Dropping bad packet with routing ID: {0}", packet.Header.RoutingID));
+            else
+            {
+              Debug.LogError(string.Format("Dropping bad packet with routing ID: {0}", packet.Header.RoutingID));
+            }
           }
         }
       }
@@ -667,8 +674,28 @@ namespace Tes.Main
         }
       }
 
+      // This is better tied to a true pre-cull or pre-render, but this object has no visual
+      // so that doesn't get called. Instead we assume the Update() call is tightly bound to
+      // the render frame rate (as opposed to FixedUpdate()).
+      foreach (MessageHandler handler in Handlers.Handlers)
+      {
+        handler.PreRender();
+        handler.Mode = handler.Mode & ~MessageHandler.ModeFlags.IgnoreTransient;
+      }
+
       Application.runInBackground = _dataThread != null && !_dataThread.Paused;
     }
+
+    ///// <summary>
+    ///// Triggers <see cref="Tes.Runtime.MessageHandler.PreRender()"/> calls in all handlers.
+    ///// </summary>
+    //public void OnPreRender()
+    //{
+    //  foreach (MessageHandler handler in Handlers.Handlers)
+    //  {
+    //    handler.PreRender();
+    //  }
+    //}
 
     public void HandleControlMessage(PacketBuffer packet, BinaryReader reader)
     {
@@ -699,6 +726,35 @@ namespace Tes.Main
       {
         Debug.LogError("Malformed control message.");
       }
+    }
+
+    /// <summary>
+    /// Manage catchup state changes.
+    /// </summary>
+    /// <param name="inCatchUp">Currently in catch up mode? Supports looping in the update method.</param>
+    /// <returns>True if the data thread is catch up mode, false otherwise.</returns>
+    /// <remarks>
+    /// In catch up mode the data thread is trying to make a large step. To reduce main thread
+    /// processing, all handers have <see cref="MessageHandler.ModeFlags.IgnoreTransient"/>
+    /// set. It is cleared otherwise.
+    /// </remarks>
+    private bool UpdateCatchup(bool inCatchUp)
+    {
+      bool needCatchUp = false;
+      if (_dataThread != null)
+      {
+        needCatchUp = _dataThread.CatchingUp || _currentFrame + 1 < _dataThread.CurrentFrame;
+      }
+
+      if (inCatchUp != needCatchUp)
+      {
+        foreach (MessageHandler handler in Handlers.Handlers)
+        {
+          handler.Mode = handler.Mode | MessageHandler.ModeFlags.IgnoreTransient;
+        }
+      }
+
+      return needCatchUp;
     }
 
     /// <summary>
@@ -757,14 +813,15 @@ namespace Tes.Main
         // high rates.
         if (_recordingWriter != null)
         {
-          ++_currentFrame;
+          //++_currentFrame;
           ++_totalFrames;
         }
         else
         {
-          _currentFrame = _dataThread.CurrentFrame;
+          //_currentFrame = _dataThread.CurrentFrame;
           _totalFrames = _dataThread.TotalFrames;
         }
+        ++_currentFrame;
       }
     }
 

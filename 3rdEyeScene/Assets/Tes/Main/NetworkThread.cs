@@ -76,6 +76,7 @@ namespace Tes.Main
     public override bool IsLiveStream { get { return true; } }
     public override bool Started { get { return _thread != null && _thread.Running; } }
     public override bool Paused {  get { return false; }set { /* ignored */ } }
+    public override bool CatchingUp { get { return false; } }
 
     public float FrameTime
     {

@@ -59,6 +59,33 @@ namespace Tes.Handlers.Shape3D
       {
         list.Clear();
       }
+      _awaitingFinalisation.Clear();
+    }
+
+    /// <summary>
+    /// Ensures mesh objects are finalised.
+    /// </summary>
+    public override void PreRender()
+    {
+      base.PreRender();
+      // Ensure meshes are finalised.
+      PointsComponent points;
+      for (int i = 0; i < _awaitingFinalisation.Count; ++i)
+      {
+        points = _awaitingFinalisation[i];
+        if (points.MeshDirty)
+        {
+          MeshCache.MeshDetails meshDetails = _meshCache.GetEntry(points.MeshID);
+          if (meshDetails != null && meshDetails.FinalMeshes != null)
+          {
+            // Build the mesh parts.
+            SetMesh(points, meshDetails);
+          }
+          points.MeshDirty = false;
+        }
+      }
+
+      _awaitingFinalisation.Clear();
     }
 
     /// <summary>
@@ -312,7 +339,8 @@ namespace Tes.Handlers.Shape3D
         {
           // Remove from parts.
           parts.Remove(points);
-          //parts.RemoveAll((PointsComponent cmp) => { return cmp == points }));
+          _awaitingFinalisation.RemoveAll((PointsComponent cmp) => { return cmp == points; });
+          //parts.RemoveAll((PointsComponent cmp) => { return cmp == part; }));
         }
       }
       return new Error();
@@ -345,10 +373,10 @@ namespace Tes.Handlers.Shape3D
       if (_meshCache != null)
       {
         MeshCache.MeshDetails meshDetails = _meshCache.GetEntry(points.MeshID);
-        if (meshDetails != null && meshDetails.FinalMeshes != null)
+        if (meshDetails != null && meshDetails.Finalised)
         {
-          // Build the mesh parts.
-          SetMesh(points, meshDetails);
+          points.MeshDirty = true;
+          _awaitingFinalisation.Add(points);
         }
       }
     }
@@ -356,7 +384,7 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Mesh resource completion notification.
     /// </summary>
-    /// <param name="meshDetails">The mesh(es) finalisd.</param>
+    /// <param name="meshDetails">The mesh(es) finalised.</param>
     /// <remarks>
     /// Links objects waiting on <paramref name="meshDetails"/> to use the associated meshes.
     /// </remarks>
@@ -373,7 +401,8 @@ namespace Tes.Handlers.Shape3D
       // Have parts to resolve.
       foreach (PointsComponent part in parts)
       {
-        SetMesh(part, meshDetails);
+        part.MeshDirty = true;
+        _awaitingFinalisation.Add(part);
       }
     }
 
@@ -493,5 +522,6 @@ namespace Tes.Handlers.Shape3D
     private Material _litMaterial = null;
     private Material _unlitMaterial = null;
     private MeshCache _meshCache = null;
+    private List<PointsComponent> _awaitingFinalisation = new List<PointsComponent>();
   }
 }

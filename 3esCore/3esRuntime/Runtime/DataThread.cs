@@ -58,6 +58,14 @@ namespace Tes.Main
     /// </summary>
     public abstract bool Paused { get; set; }
     /// <summary>
+    /// Is the thread currently catchup up to the desired frame?
+    /// </summary>
+    /// <remarks>
+    /// This is principally for playback threads when attempting to process data
+    /// for large frame deltas such as when scrubbing.
+    /// </remarks>
+    public abstract bool CatchingUp { get; }
+    /// <summary>
     /// Start the thread.
     /// </summary>
     /// <returns>True on success.</returns>

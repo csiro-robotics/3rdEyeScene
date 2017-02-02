@@ -42,6 +42,11 @@ namespace Tes.Handlers
     private int _extendedValue;
 
     /// <summary>
+    /// May be used to flag a dirty status. Specific to the owning shape handler.
+    /// </summary>
+    public bool Dirty { get; set; }
+
+    /// <summary>
     /// Translates a 3es colour to a native, Unity colour.
     /// </summary>
     /// <param name="colour">The 3es colour to translate.</param>

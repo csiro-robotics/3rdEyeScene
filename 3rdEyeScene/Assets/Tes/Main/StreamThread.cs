@@ -63,7 +63,7 @@ namespace Tes.Main
       set
       {
         lock (this)
-        { 
+        {
           // Clamp the value to be in range.
           if (value <= _totalFrames)
           {
@@ -88,6 +88,14 @@ namespace Tes.Main
         {
           _thread.Notify();
         }
+      }
+    }
+
+    public override bool CatchingUp
+    {
+      get
+      {
+        return _catcingUp;
       }
     }
 
@@ -233,6 +241,7 @@ namespace Tes.Main
         if (_targetFrame == 0)
         {
           // Not stepping. Check time elapsed.
+          _catcingUp = false;
           stopwatch.Stop();
           stopwatch.Start();
           elapsedUs = stopwatch.ElapsedTicks / (System.Diagnostics.Stopwatch.Frequency / (1000L * 1000L));
@@ -265,6 +274,7 @@ namespace Tes.Main
                 processedBytes = snapshot.StreamOffset;
                 _allowCompressStream = false;
               }
+              _catcingUp = _currentFrame + 1 < _targetFrame;
               stopwatch.Reset();
               stopwatch.Start();
             }
@@ -335,7 +345,7 @@ namespace Tes.Main
                   _packetQueue.Enqueue(packet);
                 }
                 // else notify error.
-                allowYield = allowYield || _targetFrame == 0 && _frameDelayUs > 0;
+                allowYield = allowYield || _targetFrame == 0 && _frameDelayUs > 0 && !_catcingUp;
               }
             }
             else if (bytesRead == 0 && allowYield && _loop)
@@ -487,6 +497,7 @@ namespace Tes.Main
           _totalFrames = _currentFrame;
         }
       }
+      _catcingUp = _currentFrame + 1 < _targetFrame;
     }
 
     #region Snapshots
@@ -830,6 +841,7 @@ namespace Tes.Main
       _stream.Seek(0, SeekOrigin.Begin);
       _currentFrame = 0;
       _frameDelayUs = _frameOverrunUs = 0;
+      _catcingUp = false;
       _allowCompressStream = true;
     }
 
@@ -886,6 +898,14 @@ namespace Tes.Main
     /// </summary>
     private bool _allowCompressStream = true;
     private volatile bool _paused = false;
+    /// <summary>
+    /// Set when the current frame is behind the target frame.
+    /// </summary>
+    /// <remarks>
+    /// Should be cleared before processing the last frame so that the last frame is
+    /// processed with this flag false.
+    /// </remarks>
+    private volatile bool _catcingUp = false;
     private volatile bool _loop = false;
     /// <summary>
     /// A list of frame snapshots to improve step back behaviour.

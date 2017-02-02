@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using Tes.IO;
 using UnityEngine;
 
@@ -19,6 +20,29 @@ namespace Tes.Runtime
   /// </remarks>
   public abstract class MessageHandler
   {
+    /// <summary>
+    /// Flags modifying the normal operating behaviour of a message handler.
+    /// </summary>
+    [Flags]
+    public enum ModeFlags
+    {
+      /// <summary>
+      /// Ignore messages for transient objects. Do not create new transient objects.
+      /// </summary>
+      /// <remarks>
+      /// Normally used to reduce object creation during multi-frame stepping.
+      /// </remarks>
+      IgnoreTransient = (1 << 0)
+    }
+
+    /// <summary>
+    /// Current mode control value.
+    /// </summary>
+    /// <remarks>
+    /// Derived classes should respect the <see cref="ModeFlags"/> values as much as possible.
+    /// </remarks>
+    public ModeFlags Mode { get; set; }
+
     /// <summary>
     /// Delegate used to check if a category is enabled.
     /// </summary>
@@ -110,6 +134,11 @@ namespace Tes.Runtime
     /// </remarks>
     /// <param name="frameNumber">A monotonic frame counter.</param>
     public virtual void EndFrame(uint frameNumber) { }
+
+    /// <summary>
+    /// Called a little prior to actually rendering a frame. This is independent of <see cref="EndFrame(uint)"/>.
+    /// </summary>
+    public virtual void PreRender() { }
 
     /// <summary>
     /// Called when a message arrives with a message routing ID matching

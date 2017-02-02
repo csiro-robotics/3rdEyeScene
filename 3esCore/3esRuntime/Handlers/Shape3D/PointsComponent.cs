@@ -64,6 +64,12 @@ namespace Tes.Handlers.Shape3D
     /// Point render size override. Zero to use the default.
     /// </summary>
     public int PointSize { get { return _pointSize; } set { _pointSize = value; } }
+
+    /// <summary>
+    /// True if the mesh is dirty and needs updating.
+    /// </summary>
+    public bool MeshDirty { get; set; }
+
     [SerializeField]
     private int _pointSize;
 
