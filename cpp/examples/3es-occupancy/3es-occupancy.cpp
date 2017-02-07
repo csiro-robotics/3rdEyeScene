@@ -39,6 +39,24 @@ namespace
   }
 
 
+  enum RayLevel
+  {
+    Rays_Off,
+    Rays_Lines = (1 << 0),
+    Rays_Voxels = (1 << 1),
+    Rays_All = Rays_Lines | Rays_Voxels
+  };
+
+
+  enum SampleLevel
+  {
+    Samples_Off,
+    Samples_Voxels = (1 << 0),
+    Samples_Points = (1 << 1),
+    Samples_All = Samples_Voxels | Samples_Points
+  };
+
+
   struct Options
   {
     std::string cloudFile;
@@ -48,7 +66,8 @@ namespace
     float probHit;
     float probMiss;
     unsigned batchSize;
-    bool noRays;
+    int rays;
+    int samples;
     bool quiet;
 
     inline Options()
@@ -57,13 +76,19 @@ namespace
       , probHit(0.7f)
       , probMiss(0.49f)
       , batchSize(1000)
-      , noRays(false)
+      , rays(Rays_Lines)
+      , samples(Samples_Voxels)
       , quiet(false)
     {}
   };
 
   typedef std::unordered_set<octomap::OcTreeKey, octomap::OcTreeKey::KeyHash> KeySet;
 
+
+  bool matchArg(const char *arg, const char *expect)
+  {
+    return strncmp(arg, expect, strlen(expect)) == 0;
+  }
 
   bool optionValue(const char *arg, int argc, char *argv[], std::string &value)
   {
@@ -156,6 +181,7 @@ int populateMap(const Options &opt)
   UnorderedKeySet touchedFree;
   UnorderedKeySet touchedOccupied;
   std::vector<Vector3f> rays;
+  std::vector<Vector3f> samples;
   OccupancyMesh mapMesh(RES_MapMesh, map);
 #endif // TES_ENABLE
 
@@ -174,8 +200,16 @@ int populateMap(const Options &opt)
   while (loader.nextPoint(sample, origin, &timestamp))
   {
     ++pointCount;
-    TES_STMT(rays.push_back(origin));
-    TES_STMT(rays.push_back(sample));
+    TES_IF(opt.rays & Rays_Lines)
+    {
+      TES_STMT(rays.push_back(origin));
+      TES_STMT(rays.push_back(sample));
+    }
+    TES_IF(opt.samples & Samples_Points)
+    {
+      TES_STMT(samples.push_back(sample));
+    }
+
     if (firstBatchTimestamp < 0)
     {
       firstBatchTimestamp = timestamp;
@@ -248,20 +282,30 @@ int populateMap(const Options &opt)
 
       sprintf(timeStrBuffer, "%g", timestamp - timebase);
       TES_TEXT2D_SCREEN(*g_tesServer, TES_COLOUR(White), timeStrBuffer, 0u, CAT_Info, Vector3f(0.05f, 0.1f, 0.0f));
-      if (!rays.empty())
+      // Draw sample lines.
+      if (opt.rays & Rays_Lines)
       {
-        // Draw sample lines.
-        if (!opt.noRays)
-        {
-          TES_LINES(*g_tesServer, TES_COLOUR(DarkOrange),
-                    rays.data()->v, unsigned(rays.size()), sizeof(*rays.data()),
-                    0u, CAT_Rays);
-        }
-        rays.clear();
+        TES_LINES(*g_tesServer, TES_COLOUR(DarkOrange),
+                  rays.data()->v, unsigned(rays.size()), sizeof(*rays.data()),
+                  0u, CAT_Rays);
       }
+      rays.clear();
       // Render touched voxels in bulk.
-      renderVoxels(touchedFree, map, tes::Colour::Colours[tes::Colour::MediumSpringGreen], CAT_FreeCells);
-      renderVoxels(touchedOccupied, map, tes::Colour::Colours[tes::Colour::Turquoise], CAT_OccupiedCells);
+      if (opt.rays & Rays_Voxels)
+      {
+        renderVoxels(touchedFree, map, tes::Colour::Colours[tes::Colour::MediumSpringGreen], CAT_FreeCells);
+      }
+      if (opt.samples & Samples_Voxels)
+      {
+        renderVoxels(touchedOccupied, map, tes::Colour::Colours[tes::Colour::Turquoise], CAT_OccupiedCells);
+      }
+      if (opt.samples)
+      {
+        TES_POINTS(*g_tesServer, TES_COLOUR(Orange),
+                  samples.data()->v, unsigned(samples.size()), sizeof(*samples.data()),
+                  0u, CAT_OccupiedCells);
+      }
+      samples.clear();
       //TES_SERVER_UPDATE(*g_tesServer, 0.0f);
 
       // Ensure touchedOccupied does not contain newly occupied nodes for mesh update.
@@ -335,17 +379,36 @@ void usage(const Options &opt)
   printf("  Run in quiet mode. Suppresses progress messages.\n");
   printf("-r=<resolution> (%g)\n", opt.resolution);
   printf("  The voxel resolution of the generated map.\n");
-  printf("--no-rays\n");
-  printf("  Disable output of sample lines\n");
+  printf("--rays=[off,lines,voxels,all] (lines)\n");
+  printf("  Enable or turn off visualisation of sample rays.\n");
+  printf("    off: disable. Lowest throughput\n");
+  printf("    lines: visualise line samples. Lower throughput\n");
+  printf("    voxels: visualise intersected voxels. High throughput\n");
+  printf("    all: visualise all previous options. Very high throughput\n");
+  printf("--samples=[off,voxel,points,all] (voxels)\n");
+  printf("  Enable visualisation of sample voxels in each batch (occupied).\n");
+  printf("    off: disable. Lowest throughput\n");
+  printf("    voxels : visualise intersected voxels. Lower throughput\n");
+  printf("    points: visualise sample points. High throughput\n");
+  printf("    all: visualise all previous options. Very high throughput\n");
 }
 
-void initialiseDebugCategories()
+void initialiseDebugCategories(const Options &opt)
 {
   TES_CATEGORY(*g_tesServer, "Map", CAT_Map, 0, true);
   TES_CATEGORY(*g_tesServer, "Populate", CAT_Populate, 0, true);
-  TES_CATEGORY(*g_tesServer, "Rays", CAT_Rays, CAT_Populate, true);
-  TES_CATEGORY(*g_tesServer, "Free", CAT_FreeCells, CAT_Populate, false);
-  TES_CATEGORY(*g_tesServer, "Occupied", CAT_OccupiedCells, CAT_Populate, true);
+  TES_IF(opt.rays & Rays_Lines)
+  {
+    TES_CATEGORY(*g_tesServer, "Rays", CAT_Rays, CAT_Populate, (opt.rays & Rays_Lines) != 0);
+  }
+  TES_IF(opt.rays & Rays_Voxels)
+  {
+    TES_CATEGORY(*g_tesServer, "Free", CAT_FreeCells, CAT_Populate, (opt.rays & Rays_Lines) == 0);
+  }
+  TES_IF(opt.samples)
+  {
+    TES_CATEGORY(*g_tesServer, "Occupied", CAT_OccupiedCells, CAT_Populate, true);
+  }
   TES_CATEGORY(*g_tesServer, "Info", CAT_Info, 0, true);
 }
 
@@ -359,6 +422,7 @@ int main(int argc, char *argv[])
     return 0;
   }
 
+  std::string str;
   for (int i = 1; i < argc; ++i)
   {
     if (argv[i][0] == '-')
@@ -386,9 +450,59 @@ int main(int argc, char *argv[])
         break;
       case '-':  // Long option name.
       {
-        if (std::string(&argv[i][2]).compare("no-lines") == 0)
+        if (matchArg(&argv[i][2], "rays"))
         {
-          opt.noRays = true;
+          ok = optionValue(argv[i] + 6, argc, argv, str);
+          if (ok)
+          {
+            if (str.compare("off") == 0)
+            {
+              opt.rays = Rays_Off;
+            }
+            else if (str.compare("lines") == 0)
+            {
+              opt.rays = Rays_Lines;
+            }
+            else if (str.compare("voxels") == 0)
+            {
+              opt.rays = Rays_Voxels;
+            }
+            else if (str.compare("all") == 0)
+            {
+              opt.rays = Rays_All;
+            }
+            else
+            {
+              ok = false;
+            }
+          }
+        }
+        else if (matchArg(&argv[i][2], "samples"))
+        {
+          ok = optionValue(argv[i] + 9, argc, argv, str);
+          if (ok)
+          {
+            if (str.compare("off") == 0)
+            {
+              opt.samples = Samples_Off;
+            }
+            else if (str.compare("voxels") == 0)
+            {
+              opt.samples = Samples_Voxels;
+            }
+            else if (str.compare("points") == 0)
+            {
+              opt.samples = Samples_Points;
+            }
+            else if (str.compare("all") == 0)
+            {
+              opt.samples = Samples_All;
+            }
+            else
+            {
+              ok = false;
+            }
+          }
         }
         break;
       }
@@ -435,7 +549,7 @@ int main(int argc, char *argv[])
   std::cout << "Starting with " << g_tesServer->connectionCount() << " connection(s)." << std::endl;
 #endif // TES_ENABLE
 
-  initialiseDebugCategories();
+  initialiseDebugCategories(opt);
 
   int res = populateMap(opt);
   TES_SERVER_STOP(*g_tesServer);

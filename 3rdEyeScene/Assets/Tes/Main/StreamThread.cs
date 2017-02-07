@@ -729,25 +729,26 @@ namespace Tes.Main
     /// </summary>
     /// <param name="snapshotStream">The stream to release</param>
     /// <param name="valid">True if the snapshot was successful.</param>
-    public void ReleaseSnapshotStream(Stream snapshotStream, bool valid)
+    public void ReleaseSnapshotStream(uint frameNumber, Stream snapshotStream, bool valid)
     {
-      if (snapshotStream == null)
-      {
-        return;
-      }
-
       lock (_snapshots)
       {
         // Look for the snapshot.
         Snapshot snapshot = null;
         for (int i = 0; i < _snapshots.Count; ++i)
         {
-          if (_snapshots[i].OpenStream == snapshotStream)
+          if (_snapshots[i].FrameNumber == frameNumber)
           {
             snapshot = _snapshots[i];
-            snapshot.OpenStream.Close();
-            snapshot.OpenStream = null;
-            snapshot.Valid = valid;
+            // Validate.
+            snapshot.Valid = valid && snapshotStream != null && snapshotStream == snapshot.OpenStream;
+            // Close stream.
+            if (snapshot.OpenStream != null)
+            {
+              snapshot.OpenStream.Close();
+              snapshot.OpenStream = null;
+            }
+            // Delete temporary file.
             if (!string.IsNullOrEmpty(snapshot.TemporaryFilePath) && !valid && File.Exists(snapshot.TemporaryFilePath))
             {
               File.Delete(snapshot.TemporaryFilePath);
@@ -787,7 +788,7 @@ namespace Tes.Main
     /// <param name="streamOffset">The stream position/bytes read (total) on this frame.</param>
     private void RequestSnapshot(uint frameNumber, long streamOffset)
     {
-      if (HaveSnapshot(frameNumber))
+      if (HaveSnapshot(frameNumber) || !AllowSnapshots)
       {
         return;
       }

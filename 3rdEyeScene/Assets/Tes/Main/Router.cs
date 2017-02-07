@@ -561,129 +561,138 @@ namespace Tes.Main
 
     protected virtual void Update()
     {
-      if (_dataThread != null)
+      try
       {
-        if (Mode == RouterMode.Playing)
+        if (_dataThread != null)
         {
-          // Can't record a playback stream.
-          _recordOnConnectPath = null;
-        }
-
-        bool catchUp = false;
-
-        // Move data packets from the data thread into the local queue.
-        // We are looking for an end frame control message, at which point
-        // we will pass all messages on to the appropriate handles to
-        // enact.
-        PacketBuffer packet = null;
-        bool endFrame = false;
-        bool processingPackets = true;
-        while (!endFrame && processingPackets || catchUp)
-        {
-          catchUp = UpdateCatchup(catchUp);
-          if ((processingPackets = _dataThread.PacketQueue.TryDequeue(ref packet)))
+          if (Mode == RouterMode.Playing)
           {
-            // Handle record on connect.
-            if (!string.IsNullOrEmpty(_recordOnConnectPath))
-            {
-              if (!StartRecording(_recordOnConnectPath))
-              {
-                Dialogs.MessageBox.Show(null, string.Format("Unable Failed to start recording to {0}", _recordOnConnectPath), "Recording Error");
-              }
-            }
+            // Can't record a playback stream.
             _recordOnConnectPath = null;
+          }
 
-            //Debug.Log(string.Format("Routing ID: {0}:{1}", RoutingIDName(packet.Header.RoutingID), packet.Header.MessageID));
+          bool catchUp = false;
 
-            // New message. First handle command/control messages.
-            if (packet.Status == PacketBufferStatus.Complete)
+          // Move data packets from the data thread into the local queue.
+          // We are looking for an end frame control message, at which point
+          // we will pass all messages on to the appropriate handles to
+          // enact.
+          PacketBuffer packet = null;
+          bool endFrame = false;
+          bool processingPackets = true;
+          while (!endFrame && processingPackets || catchUp)
+          {
+            catchUp = UpdateCatchup(catchUp);
+            if ((processingPackets = _dataThread.PacketQueue.TryDequeue(ref packet)))
             {
-              if (_recordingWriter != null)
+              // Handle record on connect.
+              if (!string.IsNullOrEmpty(_recordOnConnectPath))
               {
-                packet.ExportTo(_recordingWriter);
-              }
-
-              NetworkReader packetReader;
-              switch (packet.Header.RoutingID)
-              {
-              case (ushort)RoutingID.ServerInfo:
-                packetReader = new NetworkReader(packet.CreateReadStream(true));
-                _serverInfo.Read(packetReader);
-                //_timeUnitInv = (_serverInfo.TimeUnit != 0) ? 1.0 / _serverInfo.TimeUnit : 0.0;
-                Scene.Frame = _serverInfo.CoordinateFrame;
-                foreach (MessageHandler handler in _handlers.Handlers)
+                if (!StartRecording(_recordOnConnectPath))
                 {
-                  handler.UpdateServerInfo(_serverInfo);
+                  Dialogs.MessageBox.Show(null, string.Format("Unable Failed to start recording to {0}", _recordOnConnectPath), "Recording Error");
                 }
-                break;
+              }
+              _recordOnConnectPath = null;
 
-              case (ushort)RoutingID.Control:
-                packetReader = new NetworkReader(packet.CreateReadStream(true));
-                ControlMessage message = new ControlMessage();
-                if (message.Read(packetReader) &&
-                   (packet.Header.MessageID == (ushort)ControlMessageID.EndFrame ||
-                    packet.Header.MessageID == (ushort)ControlMessageID.ForceFrameFlush ||
-                    packet.Header.MessageID == (ushort)ControlMessageID.Reset))
+              //Debug.Log(string.Format("Routing ID: {0}:{1}", RoutingIDName(packet.Header.RoutingID), packet.Header.MessageID));
+
+              // New message. First handle command/control messages.
+              if (packet.Status == PacketBufferStatus.Complete)
+              {
+                if (_recordingWriter != null)
                 {
-                  if (packet.Header.MessageID == (ushort)ControlMessageID.Reset)
-                  {
-                    // Drop pending packets.
-                    _pendingPackets.Clear();
-                    // Reset all the data handlers, but not the data thread.
-                    ResetScene();
-                    // Force a frame flush.
-                    EndFrame();
-                  }
-                  else
-                  {
-                    EndFrame((message.ControlFlags & (ushort)EndFrameFlag.Persist) != 0);
-                    if (_recordingWriter != null)
+                  packet.ExportTo(_recordingWriter);
+                }
+
+                NetworkReader packetReader;
+                switch (packet.Header.RoutingID)
+                {
+                  case (ushort)RoutingID.ServerInfo:
+                    packetReader = new NetworkReader(packet.CreateReadStream(true));
+                    _serverInfo.Read(packetReader);
+                    //_timeUnitInv = (_serverInfo.TimeUnit != 0) ? 1.0 / _serverInfo.TimeUnit : 0.0;
+                    Scene.Frame = _serverInfo.CoordinateFrame;
+                    foreach (MessageHandler handler in _handlers.Handlers)
                     {
-                      WriteCameraPosition(_recordingWriter, Camera.main, 255);
+                      handler.UpdateServerInfo(_serverInfo);
                     }
-                  }
+                    break;
 
-                  endFrame = packet.Header.MessageID == (ushort)ControlMessageID.EndFrame && _dataThread.TargetFrame == 0;
-                }
-                else
-                {
-                  _pendingPackets.Enqueue(packet);
-                }
-                break;
+                  case (ushort)RoutingID.Control:
+                    packetReader = new NetworkReader(packet.CreateReadStream(true));
+                    ControlMessage message = new ControlMessage();
+                    if (message.Read(packetReader) &&
+                       (packet.Header.MessageID == (ushort)ControlMessageID.EndFrame ||
+                        packet.Header.MessageID == (ushort)ControlMessageID.ForceFrameFlush ||
+                        packet.Header.MessageID == (ushort)ControlMessageID.Reset))
+                    {
+                      if (packet.Header.MessageID == (ushort)ControlMessageID.Reset)
+                      {
+                        // Drop pending packets.
+                        _pendingPackets.Clear();
+                        // Reset all the data handlers, but not the data thread.
+                        ResetScene();
+                        // Force a frame flush.
+                        EndFrame();
+                      }
+                      else
+                      {
+                        EndFrame((message.ControlFlags & (ushort)EndFrameFlag.Persist) != 0);
+                        if (_recordingWriter != null)
+                        {
+                          WriteCameraPosition(_recordingWriter, Camera.main, 255);
+                        }
+                      }
 
-              default:
-                _pendingPackets.Enqueue(packet);
-                break;
+                      endFrame = packet.Header.MessageID == (ushort)ControlMessageID.EndFrame && _dataThread.TargetFrame == 0;
+                    }
+                    else
+                    {
+                      _pendingPackets.Enqueue(packet);
+                    }
+                    break;
+
+                  default:
+                    _pendingPackets.Enqueue(packet);
+                    break;
+                }
               }
-            }
-            else
-            {
-              Debug.LogError(string.Format("Dropping bad packet with routing ID: {0}", packet.Header.RoutingID));
+              else
+              {
+                Debug.LogError(string.Format("Dropping bad packet with routing ID: {0}", packet.Header.RoutingID));
+              }
             }
           }
         }
-      }
 
-      RouterMode curMode = Mode;
-      if (_lastMode != curMode)
-      {
-        _lastMode = curMode;
-        if (_onMmodeChange != null)
+        RouterMode curMode = Mode;
+        if (_lastMode != curMode)
         {
-          _onMmodeChange.Invoke(curMode);
+          _lastMode = curMode;
+          if (_onMmodeChange != null)
+          {
+            _onMmodeChange.Invoke(curMode);
+          }
+        }
+
+        // This is better tied to a true pre-cull or pre-render, but this object has no visual
+        // so that doesn't get called. Instead we assume the Update() call is tightly bound to
+        // the render frame rate (as opposed to FixedUpdate()).
+        foreach (MessageHandler handler in Handlers.Handlers)
+        {
+          handler.PreRender();
         }
       }
-
-      // This is better tied to a true pre-cull or pre-render, but this object has no visual
-      // so that doesn't get called. Instead we assume the Update() call is tightly bound to
-      // the render frame rate (as opposed to FixedUpdate()).
-      foreach (MessageHandler handler in Handlers.Handlers)
+      finally
       {
-        handler.PreRender();
-        handler.Mode = handler.Mode & ~MessageHandler.ModeFlags.IgnoreTransient;
-      }
+        foreach (MessageHandler handler in Handlers.Handlers)
+        {
+          handler.Mode = handler.Mode & ~MessageHandler.ModeFlags.IgnoreTransient;
+        }
 
-      Application.runInBackground = _dataThread != null && !_dataThread.Paused;
+        Application.runInBackground = _dataThread != null && !_dataThread.Paused;
+      }
     }
 
     ///// <summary>
@@ -904,7 +913,7 @@ namespace Tes.Main
 
       try
       {
-        if (PlaybackSettings.Instance.AllowSnapshots)
+        if (PlaybackSettings.Instance.AllowSnapshots && snapshotStream != null)
         {
           BinaryWriter writer = SerialiseScene(snapshotStream, out success);
           WriteFrameFlush(writer);
@@ -915,7 +924,7 @@ namespace Tes.Main
         // Ensure we release the stream.
         if (streamThread != null && snapshotStream != null)
         {
-          streamThread.ReleaseSnapshotStream(snapshotStream, success);
+          streamThread.ReleaseSnapshotStream(frameNumber, snapshotStream, success);
         }
       }
     }
