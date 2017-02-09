@@ -58,20 +58,19 @@ Shader "Points/PointsUnlit"
   [maxvertexcount(4)]
   void geom(point GeometryInput p[1], inout TriangleStream<FragmentInput> triStream)
   {
-    // Magic scaling to a "reasonable" minimum point size.
-    // Otherwise points disappear at size 1.
-    const float PointScale = 0.25f;
-    const float MinScale = 0.5f;
-
+    // Minimum point size. Greater than one due to potential floating point error.
+    // Will generally equate to not overflowing into adjacent pixels anyway.
+    const float MinScale = 1.5f;
     FragmentInput fin;
+
     // _ScreenParams:
     // x is the current render target width in pixels
     // y is the current render target height in pixels
     // z is 1.0 + 1.0/width
     // w is 1.0 + 1.0/height.
     const float4 ppos = mul(UNITY_MATRIX_VP, float4(p[0].pos.xyz, 1));
-    const float depth = ppos.z; // Not quite right, but very good.
-    const float size = max(_PointSize * PointScale * (1 + depth), MinScale) * (_ScreenParams.w - 1.0f);
+    const float depth = ppos.w;
+    const float size = 0.5f * max(0.5f + _PointSize * (1 + depth), MinScale * ppos.w) * (_ScreenParams.w - 1.0f);
     const float3 right = mul(UNITY_MATRIX_VP, UNITY_MATRIX_V[0].xyz * size);
     const float3 up = mul(UNITY_MATRIX_VP, UNITY_MATRIX_V[1].xyz * size);
 
