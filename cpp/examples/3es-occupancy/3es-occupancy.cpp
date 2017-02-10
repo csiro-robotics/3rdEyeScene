@@ -62,6 +62,8 @@ namespace
     std::string cloudFile;
     std::string trajectoryFile;
     uint64_t pointLimit;
+    double startTime;
+    double endTime;
     float resolution;
     float probHit;
     float probMiss;
@@ -72,6 +74,8 @@ namespace
 
     inline Options()
       : pointLimit(0)
+      , startTime(0)
+      , endTime(0)
       , resolution(0.1f)
       , probHit(0.7f)
       , probMiss(0.49f)
@@ -196,8 +200,31 @@ int populateMap(const Options &opt)
   // Ensure mesh is created for later update.
   TES_SERVER_UPDATE(*g_tesServer, 0.0f);
 
+  // Load the first point.
+  bool havePoint = loader.nextPoint(sample, origin, &timestamp);
+  if (!havePoint)
+  {
+    printf("No data to load\n");
+    return -1;
+  }
+
+  timebase = timestamp;
+
+  if (opt.startTime > 0)
+  {
+    // Get to the start time.
+    printf("Skipping to start time offset: %g\n", opt.startTime);
+    while ((havePoint = loader.nextPoint(sample, origin, &timestamp)))
+    {
+      if (timestamp - timebase >= opt.startTime)
+      {
+        break;
+      }
+    }
+  }
+
   printf("Populating map\n");
-  while (loader.nextPoint(sample, origin, &timestamp))
+  while (havePoint)
   {
     ++pointCount;
     TES_IF(opt.rays & Rays_Lines)
@@ -269,7 +296,6 @@ int populateMap(const Options &opt)
 
     if (pointCount % rayBatchSize == 0 || quit)
     {
-      timebase = (timebase >= 0) ? timebase : firstBatchTimestamp;
       //// Collapse the map.
       //map.isNodeCollapsible()
 #ifdef TES_ENABLE
@@ -326,7 +352,9 @@ int populateMap(const Options &opt)
       becomeOccupied.clear();
       becomeFree.clear();
       TES_SERVER_UPDATE(*g_tesServer, float(elapsedTime));
-      if (opt.pointLimit && pointCount >= opt.pointLimit || quit)
+      if (opt.pointLimit && pointCount >= opt.pointLimit ||
+          opt.endTime > 0 && lastTimestamp - timebase >= opt.endTime ||
+          quit)
       {
         break;
       }
@@ -339,6 +367,8 @@ int populateMap(const Options &opt)
         //fflush(stdout);
       }
     }
+
+    havePoint = loader.nextPoint(sample, origin, &timestamp);
   }
 
   TES_SERVER_UPDATE(*g_tesServer, 0.0f);
@@ -379,6 +409,10 @@ void usage(const Options &opt)
   printf("  Run in quiet mode. Suppresses progress messages.\n");
   printf("-r=<resolution> (%g)\n", opt.resolution);
   printf("  The voxel resolution of the generated map.\n");
+  printf("-s=<time> (%g)\n", opt.startTime);
+  printf("  Specifies a time offset for the start time. Ignore points until the time offset from the first point exceeds this value.\n");
+  printf("-e=<time> (%g)\n", opt.endTime);
+  printf("  Specifies an end time relative to the first point. Stop after processing time interval of points.\n");
   printf("--rays=[off,lines,voxels,all] (lines)\n");
   printf("  Enable or turn off visualisation of sample rays.\n");
   printf("    off: disable. Lowest throughput\n");
@@ -433,6 +467,9 @@ int main(int argc, char *argv[])
       case 'b': // batch size
         ok = optionValue(argv[i] + 2, argc, argv, opt.batchSize);
         break;
+      case 'e': // start time
+        ok = optionValue(argv[i] + 2, argc, argv, opt.endTime);
+        break;
       case 'h':
         ok = optionValue(argv[i] + 2, argc, argv, opt.probHit);
         break;
@@ -447,6 +484,9 @@ int main(int argc, char *argv[])
         break;
       case 'r': // resolution
         ok = optionValue(argv[i] + 2, argc, argv, opt.resolution);
+        break;
+      case 's': // start time
+        ok = optionValue(argv[i] + 2, argc, argv, opt.startTime);
         break;
       case '-':  // Long option name.
       {

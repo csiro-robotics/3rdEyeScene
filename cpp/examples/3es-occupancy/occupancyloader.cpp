@@ -185,8 +185,7 @@ bool OccupancyLoader::sampleTrajectory(tes::Vector3f &position, double timestamp
 {
   if (_imp->trajectoryReader)
   {
-    while ((timestamp < _imp->trajectoryBuffer[0].timestamp || timestamp > _imp->trajectoryBuffer[1].timestamp)
-            && _imp->trajectoryReader->ReadNextPoint())
+    while (timestamp > _imp->trajectoryBuffer[1].timestamp && _imp->trajectoryReader->ReadNextPoint())
     {
       const liblas::Point &p = _imp->trajectoryReader->GetPoint();
       _imp->trajectoryBuffer[0] = _imp->trajectoryBuffer[1];
