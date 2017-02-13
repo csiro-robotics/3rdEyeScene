@@ -423,7 +423,7 @@ namespace Tes.Handlers.Shape3D
           _awaitingFinalisation.Add(meshData);
         }
       }
-      else if (receiveType == (ushort)Shapes.MeshShape.SendDataType.Vertices)  // Indices incoming
+      else if (receiveType == (ushort)Shapes.MeshShape.SendDataType.Indices)  // Indices incoming
       {
         // Receiving indices.
         int[] indices = meshData.Indices;

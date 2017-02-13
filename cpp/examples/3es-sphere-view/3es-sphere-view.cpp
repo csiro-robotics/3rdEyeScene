@@ -339,9 +339,12 @@ int main(int argc, char **argvNonConst)
   const tes::Vector3f textPos(0.05f, 0.05f, 0);
   TES_TEXT2D_SCREEN(*tesServer, TES_COLOUR(LimeGreen), "Initial", textPos);
   TES_SERVER_UPDATE(*tesServer, 0.0f);
+
 #ifdef TES_ENABLE
-  int shapeCount = 1; // Consider initial shape.
+  // Start with one shape.
+  int shapeCount = 1;
 #endif // TES_ENABLE
+
   for (unsigned i = 0; i < iterations; ++i)
   {
     std::stringstream label;
