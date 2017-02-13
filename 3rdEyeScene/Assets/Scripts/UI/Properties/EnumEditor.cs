@@ -37,6 +37,7 @@ namespace UI.Properties
         {
           Dropdown.OptionData opt = new Dropdown.OptionData();
           opt.text = strings[i];
+          options.Add(opt);
         }
       }
 

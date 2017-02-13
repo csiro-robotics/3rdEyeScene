@@ -54,7 +54,7 @@ using System;
 /// </remarks>
 [ExecuteInEditMode]
 [RequireComponent(typeof(Camera))]
-class ViewCamera : MonoBehaviour
+public class ViewCamera : MonoBehaviour
 {
   /// <summary>
   /// Cached Screen.width value.

@@ -15,12 +15,18 @@ public class CameraSettingsMigrator : MonoBehaviour
   void Update()
   {
     EdlCamera edl = GetComponent<EdlCamera>();
+    RenderSettings renderSettings = RenderSettings.Instance;
+    Camera sceneCamera = null;
     if (edl != null)
     {
-      RenderSettings renset = RenderSettings.Instance;
-      edl.EdlOn = renset.EdlShader;
-      edl.EdlScale = renset.EdlLinearScale;
-      edl.EdlExpScale = renset.EdlExponentialScale;
+      edl.EdlOn = renderSettings.EdlShader;
+      edl.EdlScale = renderSettings.EdlLinearScale;
+      edl.EdlExpScale = renderSettings.EdlExponentialScale;
+
+      if (edl.EdlSourceCamera != null)
+      {
+        sceneCamera = edl.EdlSourceCamera.GetComponent<Camera>();
+      }
     }
 
     Camera cam = GetComponent<Camera>();
@@ -32,6 +38,34 @@ public class CameraSettingsMigrator : MonoBehaviour
         cam.fieldOfView = camset.FOV;
         cam.nearClipPlane = camset.NearClip;
         cam.farClipPlane = camset.FarClip;
+      }
+
+      if (sceneCamera == null)
+      {
+        sceneCamera = cam;
+      }
+    }
+
+    // Update background settings.
+    if (sceneCamera)
+    {
+      if (renderSettings.Background == RenderSettings.RenderBackground.Skybox)
+      {
+        // Using skybox.
+        if ((sceneCamera.clearFlags & CameraClearFlags.Skybox) == 0)
+        {
+          sceneCamera.clearFlags |= CameraClearFlags.Skybox;
+        }
+      }
+      else
+      {
+        // Solid background colour.
+        if ((sceneCamera.clearFlags & CameraClearFlags.Skybox) != 0)
+        {
+          sceneCamera.clearFlags &= ~CameraClearFlags.Skybox;
+        }
+
+        sceneCamera.backgroundColor = RenderSettings.BackgroundColours[(int)renderSettings.Background];
       }
     }
 
