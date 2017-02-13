@@ -86,16 +86,22 @@ namespace tes
   };
 
   /// Flags controlling the creation and appearance of an object.
-  enum ObjectFlag
+  enum
   {
     OFNone = 0, ///< No flags. Default appearance.
     OFWire = (1 << 0), ///< Show the object as a wireframe mesh.
     OFTransparent = (1 << 1), ///< The object supports transparency. Use the colour alpha channel.
     OFTwoSided = (1 << 2),  ///< Use a two sided shader.
 
-    OFUser = (1 << 8) ///< Use flags start here.
-  };
+    OFUpdateMode = (1 << 3),  ///< Update attributes using only explicitly specified flags from the following.
+    OFPosition = (1 << 4),    ///< Update position data.
+    OFRotation = (1 << 5),    ///< Update rotation data.
+    OFScale = (1 << 6),       ///< Update scale data.
+    OFColour = (1 << 7),      ///< Update colour data.
+    OFColor = OFColour,       ///< Spelling alias for colour.
 
+    OFUser = (1 << 12)        ///< Use flags start here.
+  };
 
   /// Additional attributes for point data sources.
   enum PointsAttributeFlag
@@ -473,7 +479,7 @@ namespace tes
     enum { MessageId = OIdUpdate };
 
     uint32_t id;        ///< Object creation id. Zero if defining a transient/single frame message.
-    uint16_t flags;     ///< Update flags.
+    uint16_t flags;     ///< Update flags from @c ObjectFlag.
     ObjectAttributes attributes;  ///< Initial transformation and colour.
 
     /// Read message content.

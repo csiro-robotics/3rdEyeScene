@@ -45,30 +45,39 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Override to interpret rotation as a normal direction.
     /// </summary>
-    protected override void DecodeTransform(ObjectAttributes attributes, Transform transform)
+    protected override void DecodeTransform(ObjectAttributes attributes, Transform transform, ObjectFlag flags)
     {
-      transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
-      transform.localScale = new Vector3(attributes.ScaleX, attributes.ScaleX, attributes.ScaleY);
-      
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Position) != 0)
+      {
+        transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
+      }
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Scale) != 0)
+      {
+        transform.localScale = new Vector3(attributes.ScaleX, attributes.ScaleX, attributes.ScaleY);
+      }
+
       // Interpret rotation as a normal direction.
-      Vector3 up = Vector3.up;
-      Vector3 normalDir = new Vector3(attributes.RotationX, attributes.RotationY, attributes.RotationZ);
-      Quaternion rotation = Quaternion.identity;
-      float dotProduct = Vector3.Dot(up, normalDir);
-      if (dotProduct != -1.0f)
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Rotation) != 0)
       {
-        // Find the angle between the default normal direction and the given direction.
-        float rotationAngle = Mathf.Cos(dotProduct);
-        // Build a quaternion rotation for this deviation.
-        rotation = Quaternion.AngleAxis(rotationAngle, Vector3.Cross(up * Mathf.PI / 360.0f, normalDir));
+        Vector3 up = Vector3.up;
+        Vector3 normalDir = new Vector3(attributes.RotationX, attributes.RotationY, attributes.RotationZ);
+        Quaternion rotation = Quaternion.identity;
+        float dotProduct = Vector3.Dot(up, normalDir);
+        if (dotProduct != -1.0f)
+        {
+          // Find the angle between the default normal direction and the given direction.
+          float rotationAngle = Mathf.Cos(dotProduct);
+          // Build a quaternion rotation for this deviation.
+          rotation = Quaternion.AngleAxis(rotationAngle, Vector3.Cross(up * Mathf.PI / 360.0f, normalDir));
+        }
+        else
+        {
+          // Opposed vectors. Rotate 180 degrees.
+          rotation = Quaternion.AngleAxis(180.0f, Vector3.forward);
+        }
+
+        transform.localRotation = rotation;
       }
-      else
-      {
-        // Opposed vectors. Rotate 180 degrees.
-        rotation = Quaternion.AngleAxis(180.0f, Vector3.forward);
-      }
-      
-      transform.localRotation = rotation;
     }
 
     private Mesh _solidMesh;

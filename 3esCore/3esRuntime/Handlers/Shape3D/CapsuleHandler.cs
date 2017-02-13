@@ -91,32 +91,53 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Override to decode ScaleX as radius and ScaleZ as length.
     /// </summary>
-    protected override void DecodeTransform(ObjectAttributes attributes, Transform transform)
+    protected override void DecodeTransform(ObjectAttributes attributes, Transform transform, ObjectFlag flags)
     {
       float radius = attributes.ScaleX;
       float length = attributes.ScaleZ;
       float cylinderLength = Mathf.Max(0.0f, length - 2.0f * radius);
-      transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
-      transform.localRotation = new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW);
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Position) != 0)
+      {
+        transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
+      }
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Rotation) != 0)
+      {
+        transform.localRotation = new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW);
+      }
 
       // Apply radius and length to sub components. Also move sphere caps to match the length.
       Transform child;
       child = transform.GetChild(Tes.Tessellate.Capsule.TopIndex);
       if (child != null)
       {
-        child.localPosition = cylinderLength * 0.5f * Tessellate.Capsule.PrimaryAxis;
-        child.localScale = new Vector3(radius, radius, radius);
+        if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Position) != 0)
+        {
+          child.localPosition = cylinderLength * 0.5f * Tessellate.Capsule.PrimaryAxis;
+        }
+        if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Scale) != 0)
+        {
+          child.localScale = new Vector3(radius, radius, radius);
+        }
       }
       child = transform.GetChild(Tes.Tessellate.Capsule.BottomIndex);
       if (child != null)
       {
-        child.localPosition = cylinderLength * -0.5f * Tessellate.Capsule.PrimaryAxis;
-        child.localScale = new Vector3(radius, radius, radius);
+        if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Position) != 0)
+        {
+          child.localPosition = cylinderLength * -0.5f * Tessellate.Capsule.PrimaryAxis;
+        }
+        if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Scale) != 0)
+        {
+          child.localScale = new Vector3(radius, radius, radius);
+        }
       }
       child = transform.GetChild(Tes.Tessellate.Capsule.CylinderIndex);
       if (child != null)
       {
-        child.localScale = new Vector3(radius, radius, cylinderLength);
+        if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Scale) != 0)
+        {
+          child.localScale = new Vector3(radius, radius, cylinderLength);
+        }
       }
     }
 

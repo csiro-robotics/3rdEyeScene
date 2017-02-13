@@ -19,6 +19,10 @@
 #include <3esmeshmessages.h>
 #include <shapes/3esshapes.h>
 
+//-----------------------------------------------------------------------------
+// General macros.
+//-----------------------------------------------------------------------------
+
 /// Enable @p statement if TES is enabled.
 ///
 /// The statement is completely removed when TES is not enabled.
@@ -54,6 +58,147 @@
 /// @param name a member of @p tes::Colour::Predefined.
 /// @param a Alpha channel value [0, 255].
 #define TES_COLOUR_A(name, a) tes::Colour(tes::Colour::Colours[tes::Colour::name], a)
+
+//-----------------------------------------------------------------------------
+// Server setup macros
+//-----------------------------------------------------------------------------
+
+/// Exposes details of a category to connected clients.
+/// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
+/// @param _name A null terminated, UTF-8 string name for the category.
+/// @param _categoryId ID of the category being named [0, 65535].
+/// @param _parentId ID of the parent category, to support category trees. Zero for none. [0, 65535]
+/// @param _active Default the category to the active state (true/false)?
+#define TES_CATEGORY(server, _name, _categoryId, _parentId, _active) \
+  { \
+    tes::CategoryNameMessage msg; \
+    msg.categoryId = _categoryId; \
+    msg.parentId = _parentId; \
+    msg.defaultActive = (_active) ? 1 : 0; \
+    const size_t nameLen = (_name) ? strlen(_name) : 0u; \
+    msg.nameLength = (uint16_t)((nameLen <= 0xffffu) ? nameLen : 0xffffu); \
+    msg.name = _name; \
+    tes::sendMessage((server), tes::MtCategory, tes::CategoryNameMessage::MessageId, msg); \
+  }
+
+/// A helper macro used to declare a @p Server pointer and compile out when TES is not enabled.
+/// Initialises @p server as a @p Server variable with a null value.
+/// @param server The variable name for the @c Server object.
+#define TES_SERVER_DECL(server) tes::Server *server = nullptr;
+
+/// A helper macro used to declare and initialise @p ServerSettings and compile out when TES is
+/// not enabled.
+/// @param settings The variable name for the @p ServerSettings.
+/// @param ... Additional arguments passed to the @p ServerSettings constructor.
+#define TES_SETTINGS(settings, ...) tes::ServerSettings settings = tes::ServerSettings(__VA_ARGS__);
+/// Initialise a default @p ServerInfoMessage and assign the specified @p CoordinateFrame.
+///
+/// The time unit details for @p info can be initialise using @c TES_SERVER_INFO_TIME()
+/// @see @c initDefaultServerInfo()
+/// @param info Variable name for the @c ServerInfoMessage structure.
+/// @param infoCoordinateFrame The server's @c CoordinateFrame value.
+#define TES_SERVER_INFO(info, infoCoordinateFrame) \
+  tes::ServerInfoMessage info; \
+  tes::initDefaultServerInfo(&info); \
+  info.coordinateFrame = infoCoordinateFrame;
+
+/// Initialise the time unit details of a @c ServerInfoMessage.
+/// @param info the @c ServerInfoMessage structure variable.
+/// @param timeUnit The @c ServerInfoMessage::timeUnit value to set.
+/// @param defaultFrameTime The @c ServerInfoMessage::defaultFrameTime value to set.
+#define TES_SERVER_INFO_TIME(info, timeUnit, defaultFrameTime) \
+  info.timeUnit = timeUnit; \
+  info.defaultFrameTime = defaultFrameTime;
+
+/// Initialise @p server to a new @c Server object with the given @C ServerSettings and
+/// @c ServerInfoMessage.
+/// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
+/// @param settings The @c ServerSettings structure to initialise the server with.
+/// @param info The @c ServerInfoMessage structure to initialise the server with.
+#define TES_SERVER_CREATE(server, settings, info) server = tes::Server::create(settings, info);
+
+/// Start the given @c Server in the given mode (synchronous or asynchronous).
+///
+/// After this call, the server can accept connections.
+/// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
+/// @mode The server mode: @c ConnectionMonitor::Synchronous or @c ConnectionMonitor::Asynchronous.
+#define TES_SERVER_START(server, mode) (server).connectionMonitor()->start(mode);
+
+/// Call to update the server flushing the frame and potentially monitoring new connections.
+///
+/// This update macro performs the following update commands:
+/// - Call @c Server::updateFrame()
+/// - Update connections, accepting new and expiring old.
+/// - Updates any pending cache transfers.
+///
+/// Any additional macro arguments are passed to @c Server::updateFrame(). At the very least
+/// a delta time value must be passed (floating point, in seconds). This should be zero when
+/// using TES for algorithm debugging, or a valid time delta in real-time debugging.
+///
+/// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
+/// @param ... Arguments for @c Server::updateFrame()
+#define TES_SERVER_UPDATE(server, ...) \
+  { \
+    (server).updateFrame(__VA_ARGS__); \
+    tes::ConnectionMonitor *_conMon = (server).connectionMonitor(); \
+    if (_conMon->mode() == tes::ConnectionMonitor::Synchronous) \
+    { \
+      _conMon->monitorConnections(); \
+    } \
+    _conMon->commitConnections(); \
+    (server).updateTransfers(0); \
+  }
+
+/// Wait for the server to be ready to accept incoming connections.
+/// This blocks until at least one connection is established up to @p timems milliseconds.
+/// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
+/// @param timems The wait time out to wait for (milliseconds).
+#define TES_SERVER_START_WAIT(server, timems) \
+  if ((server).connectionMonitor()->waitForConnection(timems) > 0) \
+  { \
+    (server).connectionMonitor()->commitConnections(); \
+  }
+
+/// Set the connection callback via @c ConnectionMonitor::setConnectionCallback().
+#define TES_SET_CONNECTION_CALLBACK(server, ...) \
+  (server).connectionMonitor()->setConnectionCallback(__VA_ARGS__);
+
+/// Stop the server. The server is closed and disposed and is no longer valid for use after
+/// this call.
+/// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
+#define TES_SERVER_STOP(server) \
+  (server).close(); \
+  (server).dispose();
+
+/// Check if @p server is enabled.
+/// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
+#define TES_ACTIVE(server) (server).active()
+/// Enable/disable @p server.
+/// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
+#define TES_SET_ACTIVE(server, _active) (server).setActive(_active)
+
+/// Check if a feature is enabled using @c checkFeature().
+/// @param feature The feature to check for.
+#define TES_FEATURE(feature) tes::checkFeature(feature)
+/// Get the flag for a feature.
+/// @param feature The feature identifier.
+#define TES_FEATURE_FLAG(feature) tes::featureFlag(feature)
+/// Check if the given set of features are enabled using @c checkFeatures().
+/// @param featureFlags The flags to check for.
+#define TES_FEATURES(featureFlags) tes::checkFeatures(featureFlags)
+
+/// Execute @c expression if @p featureFlags are all present using @c checkFeatures().
+/// @param featureFlags The flags to require before executing @p expression.
+/// @param expression The code statement or expression to execute if @c checkFeatures() passes.
+#define TES_IF_FEATURES(featureFlags, expression) \
+  if (tes::checkFeatures(featureFlags)) \
+  { \
+    expression; \
+  }
+
+//-----------------------------------------------------------------------------
+// Shape macros
+//-----------------------------------------------------------------------------
 
 /// Solid arrow.
 /// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
@@ -471,138 +616,127 @@
 /// @param id The ID of the shape to destroy.
 #define TES_TRIANGLE_END(server, id) { (server).destroy(tes::MeshShape(tes::DtTriangles, nullptr, 0, 0, static_cast<uint32_t>(id))); }
 
-/// Exposes details of a category to connected clients.
+
+//-----------------------------------------------------------------------------
+// Shape update macros
+//-----------------------------------------------------------------------------
+/// Send a position update message for a shape.
 /// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
-/// @param _name A null terminated, UTF-8 string name for the category.
-/// @param _categoryId ID of the category being named [0, 65535].
-/// @param _parentId ID of the parent category, to support category trees. Zero for none. [0, 65535]
-/// @param _active Default the category to the active state (true/false)?
-#define TES_CATEGORY(server, _name, _categoryId, _parentId, _active) \
-  { \
-    tes::CategoryNameMessage msg; \
-    msg.categoryId = _categoryId; \
-    msg.parentId = _parentId; \
-    msg.defaultActive = (_active) ? 1 : 0; \
-    const size_t nameLen = (_name) ? strlen(_name) : 0u; \
-    msg.nameLength = (uint16_t)((nameLen <= 0xffffu) ? nameLen : 0xffffu); \
-    msg.name = _name; \
-    tes::sendMessage((server), tes::MtCategory, tes::CategoryNameMessage::MessageId, msg); \
-  }
+/// @param ShapeType The class of the shape to update. E.g., @c tes::Box
+/// @param objectID The ID of the object to update.
+/// @param pos The new position. A @c V3Arg compatible argument.
+#define TES_POS_UPDATE(server, ShapeType, objectID, pos) \
+  (server).update(tes::ShapeType(objectID, 0).setPosition(pos).setFlags(tes::OFUpdateMode | tes::OFPosition));
 
-/// A helper macro used to declare a @p Server pointer and compile out when TES is not enabled.
-/// Initialises @p server as a @p Server variable with a null value.
-/// @param server The variable name for the @c Server object.
-#define TES_SERVER_DECL(server) tes::Server *server = nullptr;
-
-/// A helper macro used to declare and initialise @p ServerSettings and compile out when TES is
-/// not enabled.
-/// @param settings The variable name for the @p ServerSettings.
-/// @param ... Additional arguments passed to the @p ServerSettings constructor.
-#define TES_SETTINGS(settings, ...) tes::ServerSettings settings = tes::ServerSettings(__VA_ARGS__);
-/// Initialise a default @p ServerInfoMessage and assign the specified @p CoordinateFrame.
-///
-/// The time unit details for @p info can be initialise using @c TES_SERVER_INFO_TIME()
-/// @see @c initDefaultServerInfo()
-/// @param info Variable name for the @c ServerInfoMessage structure.
-/// @param infoCoordinateFrame The server's @c CoordinateFrame value.
-#define TES_SERVER_INFO(info, infoCoordinateFrame) \
-  tes::ServerInfoMessage info; \
-  tes::initDefaultServerInfo(&info); \
-  info.coordinateFrame = infoCoordinateFrame;
-
-/// Initialise the time unit details of a @c ServerInfoMessage.
-/// @param info the @c ServerInfoMessage structure variable.
-/// @param timeUnit The @c ServerInfoMessage::timeUnit value to set.
-/// @param defaultFrameTime The @c ServerInfoMessage::defaultFrameTime value to set.
-#define TES_SERVER_INFO_TIME(info, timeUnit, defaultFrameTime) \
-  info.timeUnit = timeUnit; \
-  info.defaultFrameTime = defaultFrameTime;
-
-/// Initialise @p server to a new @c Server object with the given @C ServerSettings and
-/// @c ServerInfoMessage.
+/// Send an update message for a shape, updating object rotation.
 /// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
-/// @param settings The @c ServerSettings structure to initialise the server with.
-/// @param info The @c ServerInfoMessage structure to initialise the server with.
-#define TES_SERVER_CREATE(server, settings, info) server = tes::Server::create(settings, info);
+/// @param ShapeType The class of the shape to update. E.g., @c tes::Box
+/// @param objectID The ID of the object to update.
+/// @param quaternion The updated quaternion rotation. A @c QuaternionArg compatible argument.
+#define TES_ROT_UPDATE(server, ShapeType, objectID, quaternion) \
+  (server).update(tes::ShapeType(objectID, 0).setRotation(quaternion).setFlags(tes::OFUpdateMode | tes::OFRotation));
 
-/// Start the given @c Server in the given mode (synchronous or asynchronous).
-///
-/// After this call, the server can accept connections.
+/// Send an update message for a shape, updating scale.
 /// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
-/// @mode The server mode: @c ConnectionMonitor::Synchronous or @c ConnectionMonitor::Asynchronous.
-#define TES_SERVER_START(server, mode) (server).connectionMonitor()->start(mode);
+/// @param ShapeType The class of the shape to update. E.g., @c tes::Box
+/// @param objectID The ID of the object to update.
+/// @param scale The new object scale. A @c V3Arg compatible argument.
+#define TES_SCALE_UPDATE(server, ShapeType, objectID, scale) \
+  (server).update(tes::ShapeType(objectID, 0).setScale(scale).setFlags(tes::OFUpdateMode | tes::OFScale));
 
-/// Call to update the server flushing the frame and potentially monitoring new connections.
-///
-/// This update macro performs the following update commands:
-/// - Call @c Server::updateFrame()
-/// - Update connections, accepting new and expiring old.
-/// - Updates any pending cache transfers.
-///
-/// Any additional macro arguments are passed to @c Server::updateFrame(). At the very least
-/// a delta time value must be passed (floating point, in seconds). This should be zero when
-/// using TES for algorithm debugging, or a valid time delta in real-time debugging.
-///
+/// Send an update message for a shape, updating colour.
 /// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
-/// @param ... Arguments for @c Server::updateFrame()
-#define TES_SERVER_UPDATE(server, ...) \
-  { \
-    (server).updateFrame(__VA_ARGS__); \
-    tes::ConnectionMonitor *_conMon = (server).connectionMonitor(); \
-    if (_conMon->mode() == tes::ConnectionMonitor::Synchronous) \
-    { \
-      _conMon->monitorConnections(); \
-    } \
-    _conMon->commitConnections(); \
-    (server).updateTransfers(0); \
-  }
+/// @param ShapeType The class of the shape to update. E.g., @c tes::Box
+/// @param objectID The ID of the object to update.
+/// @param colour The new object @c Colour.
+#define TES_COLOUR_UPDATE(server, ShapeType, objectID, colour) \
+  (server).update(tes::ShapeType(objectID, 0).setColour(colour).setFlags(tes::OFUpdateMode | tes::OFColour));
 
-/// Wait for the server to be ready to accept incoming connections.
-/// This blocks until at least one connection is established up to @p timems milliseconds.
+/// Send an update message for a shape, updating colour.
 /// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
-/// @param timems The wait time out to wait for (milliseconds).
-#define TES_SERVER_START_WAIT(server, timems) \
-  if ((server).connectionMonitor()->waitForConnection(timems) > 0) \
-  { \
-    (server).connectionMonitor()->commitConnections(); \
-  }
+/// @param ShapeType The class of the shape to update. E.g., @c tes::Box
+/// @param objectID The ID of the object to update.
+/// @param colour The new object @c Colour.
+#define TES_COLOR_UPDATE(server, ShapeType, objectID, colour) \
+  (server).update(tes::ShapeType(objectID, 0).setColour(colour).setFlags(tes::OFUpdateMode | tes::OFColour));
 
-/// Set the connection callback via @c ConnectionMonitor::setConnectionCallback().
-#define TES_SET_CONNECTION_CALLBACK(server, ...) \
-  (server).connectionMonitor()->setConnectionCallback(__VA_ARGS__);
-
-/// Stop the server. The server is closed and disposed and is no longer valid for use after
-/// this call.
+/// Send an update message for a shape, updating position and rotation.
 /// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
-#define TES_SERVER_STOP(server) \
-  (server).close(); \
-  (server).dispose();
+/// @param ShapeType The class of the shape to update. E.g., @c tes::Box
+/// @param objectID The ID of the object to update.
+/// @param pos The new position. A @c V3Arg compatible argument.
+/// @param quaternion The updated quaternion rotation. A @c QuaternionArg compatible argument.
+#define TES_POSROT_UPDATE(server, ShapeType, objectID, pos, quaternion) \
+  (server).update(tes::ShapeType(objectID, 0).setPosition(pos).setRotation(quaternion).setFlags(tes::OFUpdateMode | tes::OFPosition | tes::OFRotation));
 
-/// Check if @p server is enabled.
+/// Send an update message for a shape, updating position and scale.
 /// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
-#define TES_ACTIVE(server) (server).active()
-/// Enable/disable @p server.
+/// @param ShapeType The class of the shape to update. E.g., @c tes::Box
+/// @param objectID The ID of the object to update.
+/// @param pos The new position. A @c V3Arg compatible argument.
+/// @param scale The new object scale. A @c V3Arg compatible argument.
+#define TES_POSSCALE_UPDATE(server, ShapeType, objectID, pos, scale) \
+  (server).update(tes::ShapeType(objectID, 0).setPosition(pos).setScale(scale).setFlags(tes::OFUpdateMode | tes::OFPosition | tes::OFRotation));
+
+/// Send an update message for a shape, updating rotation and scale.
 /// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
-#define TES_SET_ACTIVE(server, _active) (server).setActive(_active)
+/// @param ShapeType The class of the shape to update. E.g., @c tes::Box
+/// @param objectID The ID of the object to update.
+/// @param quaternion The updated quaternion rotation. A @c QuaternionArg compatible argument.
+/// @param scale The new object scale. A @c V3Arg compatible argument.
+#define TES_ROTSCALE_UPDATE(server, ShapeType, objectID, quaternion, scale) \
+  (server).update(tes::ShapeType(objectID, 0).setRotation(quaternion).setScale(scale).setFlags(tes::OFUpdateMode | tes::OFRotation | tes::OFScale ));
 
-/// Check if a feature is enabled using @c checkFeature().
-/// @param feature The feature to check for.
-#define TES_FEATURE(feature) tes::checkFeature(feature)
-/// Get the flag for a feature.
-/// @param feature The feature identifier.
-#define TES_FEATURE_FLAG(feature) tes::featureFlag(feature)
-/// Check if the given set of features are enabled using @c checkFeatures().
-/// @param featureFlags The flags to check for.
-#define TES_FEATURES(featureFlags) tes::checkFeatures(featureFlags)
+/// Send an update message for a shape, updating position, rotation and scale.
+/// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
+/// @param ShapeType The class of the shape to update. E.g., @c tes::Box
+/// @param objectID The ID of the object to update.
+/// @param pos The new position. A @c V3Arg compatible argument.
+/// @param quaternion The updated quaternion rotation. A @c QuaternionArg compatible argument.
+/// @param scale The new object scale. A @c V3Arg compatible argument.
+#define TES_PRS_UPDATE(server, ShapeType, objectID, pos, quaternion, scale) \
+  (server).update(tes::ShapeType(objectID, 0).setPosition(pos).setRotation(quaternion).setScale(scale).setFlags(tes::OFUpdateMode | tes::OFPosition | tes::OFRotation | tes::OFScale ));
 
-/// Execute @c expression if @p featureFlags are all present using @c checkFeatures().
-/// @param featureFlags The flags to require before executing @p expression.
-/// @param expression The code statement or expression to execute if @c checkFeatures() passes.
-#define TES_IF_FEATURES(featureFlags, expression) \
-  if (tes::checkFeatures(featureFlags)) \
-  { \
-    expression; \
-  }
+/// Send an update message for a shape, updating position, rotation and colour.
+/// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
+/// @param ShapeType The class of the shape to update. E.g., @c tes::Box
+/// @param objectID The ID of the object to update.
+/// @param pos The new position. A @c V3Arg compatible argument.
+/// @param quaternion The updated quaternion rotation. A @c QuaternionArg compatible argument.
+/// @param colour The new object @c Colour.
+#define TES_PRC_UPDATE(server, ShapeType, objectID, pos, quaternion, colour) \
+  (server).update(tes::ShapeType(objectID, 0).setPosition(pos).setRotation(quaternion).setColour(colour).setFlags(tes::OFUpdateMode | tes::OFPosition | tes::OFRotation | tes::OFColour ));
+
+/// Send an update message for a shape, updating position, scale and colour.
+/// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
+/// @param ShapeType The class of the shape to update. E.g., @c tes::Box
+/// @param objectID The ID of the object to update.
+/// @param pos The new position. A @c V3Arg compatible argument.
+/// @param scale The new object scale. A @c V3Arg compatible argument.
+/// @param colour The new object @c Colour.
+#define TES_PSC_UPDATE(server, ShapeType, objectID, pos, scale, colour) \
+  (server).update(tes::ShapeType(objectID, 0).setPosition(pos).setScale(scale).setColour(colour).setFlags(tes::OFUpdateMode | tes::OFPosition | tes::OFScale | tes::OFColour ));
+
+/// Send an update message for a shape, updating rotation, scale and colour.
+/// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
+/// @param ShapeType The class of the shape to update. E.g., @c tes::Box
+/// @param objectID The ID of the object to update.
+/// @param quaternion The updated quaternion rotation. A @c QuaternionArg compatible argument.
+/// @param scale The new object scale. A @c V3Arg compatible argument.
+/// @param colour The new object @c Colour.
+#define TES_RSC_UPDATE(server, ShapeType, objectID, quaternion, scale, colour) \
+  (server).update(tes::ShapeType(objectID, 0).setRotation(quaternion).setScale(scale).setColour(colour).setFlags(tes::OFUpdateMode | tes::OFRotation | tes::OFScale | tes::OFColour ));
+
+/// Send an update message for a shape, updating all transform and colour attributes.
+/// @param server The @c Server of @c Connection object. Must be a dereferenced pointer.
+/// @param ShapeType The class of the shape to update. E.g., @c tes::Box
+/// @param objectID The ID of the object to update.
+/// @param pos The new position. A @c V3Arg compatible argument.
+/// @param quaternion The updated quaternion rotation. A @c QuaternionArg compatible argument.
+/// @param scale The new object scale. A @c V3Arg compatible argument.
+/// @param colour The new object @c Colour.
+#define TES_PRSC_UPDATE(server, ShapeType, objectID, pos, quaternion, scale, colour) \
+  (server).update(tes::ShapeType(objectID, 0).setPosition(pos).setRotation(quaternion).setScale(scale).setColour(colour) ));
 
 #else  // !TES_ENABLE
 
@@ -613,6 +747,26 @@
 #define TES_COLOUR(...)
 #define TES_COLOUR_I(...)
 #define TES_COLOUR_A(...)
+
+#define TES_CATEGORY(...)
+#define TES_SERVER_DECL(...)
+#define TES_SETTINGS(...)
+#define TES_SERVER_INFO(...)
+#define TES_SERVER_INFO_TIME(...)
+#define TES_SERVER_CREATE(...)
+#define TES_SERVER_START(...)
+#define TES_SERVER_START_WAIT(...)
+#define TES_SET_CONNECTION_CALLBACK(...)
+#define TES_SERVER_UPDATE(...)
+#define TES_SERVER_STOP(...)
+#define TES_ACTIVE(...) false
+#define TES_SET_ACTIVE(...)
+
+#define TES_FEATURE(...) false
+#define TES_FEATURE_FLAG(...) 0
+#define TES_FEATURES(...)
+#define TES_IF_FEATURES(...)
+
 #define TES_ARROW(...)
 #define TES_ARROW_T(...)
 #define TES_ARROW_W(...)
@@ -681,23 +835,18 @@
 #define TES_TRIANGLES_END(...)
 #define TES_TRIANGLE_END(...)
 
-#define TES_CATEGORY(...)
-#define TES_SERVER_DECL(...)
-#define TES_SETTINGS(...)
-#define TES_SERVER_INFO(...)
-#define TES_SERVER_INFO_TIME(...)
-#define TES_SERVER_CREATE(...)
-#define TES_SERVER_START(...)
-#define TES_SERVER_START_WAIT(...)
-#define TES_SET_CONNECTION_CALLBACK(...)
-#define TES_SERVER_UPDATE(...)
-#define TES_SERVER_STOP(...)
-#define TES_ACTIVE(...) false
-#define TES_SET_ACTIVE(...)
-
-#define TES_FEATURE(...) false
-#define TES_FEATURE_FLAG(...) 0
-#define TES_FEATURES(...)
-#define TES_IF_FEATURES(...)
+#define TES_POS_UPDATE(...)
+#define TES_ROT_UPDATE(...)
+#define TES_SCALE_UPDATE(...)
+#define TES_COLOUR_UPDATE(...)
+#define TES_COLOR_UPDATE(...)
+#define TES_POSROT_UPDATE(...)
+#define TES_POSSCALE_UPDATE(...)
+#define TES_ROTSCALE_UPDATE(...)
+#define TES_PRS_UPDATE(...)
+#define TES_PRC_UPDATE(...)
+#define TES_PSC_UPDATE(...)
+#define TES_RSC_UPDATE(...)
+#define TES_PRSC_UPDATE(...)
 
 #endif // TES_ENABLE

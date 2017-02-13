@@ -421,6 +421,8 @@ namespace Tes.Handlers
     /// </summary>
     /// <param name="attributes">The message attributes to decode.</param>
     /// <param name="transform">The transform object to decode into.</param>
+    /// <param name="flags">The flags associated with the object message. The method considers those related to updating
+    /// specific parts of the object transformation.</param>
     /// <remarks>
     /// The default implementations makes the following assumptions about <paramref name="attributes"/>:
     /// <list type="bullet">
@@ -431,12 +433,29 @@ namespace Tes.Handlers
     ///
     /// This behaviour must be overridden to interpret the attributes differently. For example,
     /// the scale members for a cylinder may indicate length and radius, with a redundant Z component.
+    /// 
+    /// The <paramref name="flags"/> parameter is used to consider the following <see cref="ObjectFlag"/> members:
+    /// <list type="bullet">
+    /// <item><see cref="ObjectFlag.UpdateMode"/> to indentify that only some transform elements are present.</item>
+    /// <item><see cref="ObjectFlag.Position"/></item>
+    /// <item><see cref="ObjectFlag.Rotation"/></item>
+    /// <item><see cref="ObjectFlag.Scale"/></item>
+    /// </list>
     /// </remarks>
-    protected virtual void DecodeTransform(ObjectAttributes attributes, Transform transform)
+    protected virtual void DecodeTransform(ObjectAttributes attributes, Transform transform, ObjectFlag flags = ObjectFlag.None)
     {
-      transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
-      transform.localRotation = new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW);
-      transform.localScale = new Vector3(attributes.ScaleX, attributes.ScaleY, attributes.ScaleZ);
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Position) != 0)
+      {
+        transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
+      }
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Rotation) != 0)
+      {
+        transform.localRotation = new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW);
+      }
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Scale) != 0)
+      {
+        transform.localScale = new Vector3(attributes.ScaleX, attributes.ScaleY, attributes.ScaleZ);
+      }
     }
 
     /// <summary>
@@ -716,16 +735,19 @@ namespace Tes.Handlers
         return new Error(ErrorCode.InvalidObjectID, msg.ObjectID);
       }
 
-      DecodeTransform(msg.Attributes, obj.transform);
+      ObjectFlag flags = (ObjectFlag)msg.Flags;
+      DecodeTransform(msg.Attributes, obj.transform, flags);
 
-      ShapeComponent shapeComp = obj.GetComponent<ShapeComponent>();
-      if (shapeComp != null)
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Colour) != 0)
       {
-        shapeComp.Colour = ShapeComponent.ConvertColour(msg.Attributes.Colour);
-      }
+        ShapeComponent shapeComp = obj.GetComponent<ShapeComponent>();
+        if (shapeComp != null)
+        {
+          shapeComp.Colour = ShapeComponent.ConvertColour(msg.Attributes.Colour);
+        }
 
-      // TODO: respect the UpdateFlag bits in msg.Flags
-      SetColour(obj, ShapeComponent.ConvertColour(msg.Attributes.Colour));
+        SetColour(obj, ShapeComponent.ConvertColour(msg.Attributes.Colour));
+      }
 
       return new Error();
     }

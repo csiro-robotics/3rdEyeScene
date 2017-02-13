@@ -45,14 +45,23 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Override to decode ScaleX as radius and ScaleZ as length.
     /// </summary>
-    protected override void DecodeTransform(ObjectAttributes attributes, Transform transform)
+    protected override void DecodeTransform(ObjectAttributes attributes, Transform transform, ObjectFlag flags)
     {
       float radius = attributes.ScaleX;
       float length = attributes.ScaleY;
-      transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
-      transform.localRotation = new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW);
-      // Unity uses Y up;
-      transform.localScale = new Vector3(radius, length, radius);
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Position) != 0)
+      {
+        transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
+      }
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Rotation) != 0)
+      {
+        transform.localRotation = new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW);
+      }
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Scale) != 0)
+      {
+        // Unity uses Y up;
+        transform.localScale = new Vector3(radius, length, radius);
+      }
     }
 
     /// <summary>

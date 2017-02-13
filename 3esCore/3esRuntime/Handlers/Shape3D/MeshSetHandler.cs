@@ -211,7 +211,6 @@ namespace Tes.Handlers.Shape3D
         shapeComp.Colour = ShapeComponent.ConvertColour(msg.Attributes.Colour);
       }
 
-      obj.transform.SetParent(Root.transform, false);
       DecodeTransform(msg.Attributes, obj.transform);
 
       // Read mesh parts.
