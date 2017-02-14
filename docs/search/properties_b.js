@@ -5,6 +5,6 @@ var searchData=
   ['normal',['Normal',['../classTes_1_1Shapes_1_1Plane.html#aaee7af3ced22be6c7bc27e858f4758fa',1,'Tes::Shapes::Plane']]],
   ['normalised',['normalised',['../structTes_1_1Maths_1_1Quaternion.html#abbad2caecdbbe831e9511ae78118f9e3',1,'Tes.Maths.Quaternion.normalised()'],['../structTes_1_1Maths_1_1Vector2.html#ac5ad6ed52a18c102032c58ce3ea75296',1,'Tes.Maths.Vector2.Normalised()'],['../structTes_1_1Maths_1_1Vector3.html#a842c630bf0a868c3d18e52942001938c',1,'Tes.Maths.Vector3.Normalised()']]],
   ['normallength',['NormalLength',['../classTes_1_1Shapes_1_1Plane.html#a0b3fc587bce2879f04063ff81ba5476c',1,'Tes::Shapes::Plane']]],
-  ['normals',['Normals',['../classTes_1_1Handlers_1_1MeshCache_1_1MeshEntry.html#a20cb95b5b60f0779a3a76a188ae8ae9e',1,'Tes::Handlers::MeshCache::MeshEntry']]],
+  ['normals',['Normals',['../classTes_1_1Shapes_1_1MeshShape.html#a065f689c4193413c62231d4edfbcd158',1,'Tes.Shapes.MeshShape.Normals()'],['../classTes_1_1Runtime_1_1MeshBuilder.html#acc9b0d6186826ac4d6a102d7d90e6e58',1,'Tes.Runtime.MeshBuilder.Normals()']]],
   ['nullentry',['NullEntry',['../structDialogs_1_1FileSystemEntry.html#a1cb892cd63b7ee8b93f03fbf6c579dfe',1,'Dialogs::FileSystemEntry']]]
 ];

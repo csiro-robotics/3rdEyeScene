@@ -1,7 +1,6 @@
 var hierarchy =
 [
     [ "AssetPostprocessor", null, [
-      [ "dotBunny.Unity.VSCodeAssetPostprocessor", "classdotBunny_1_1Unity_1_1VSCodeAssetPostprocessor.html", null ],
       [ "dotBunny.Unity.VSCodeAssetPostprocessor", "classdotBunny_1_1Unity_1_1VSCodeAssetPostprocessor.html", null ]
     ] ],
     [ "Attribute", null, [
@@ -143,6 +142,7 @@ var hierarchy =
     [ "tes::Matrix3< T >", "classtes_1_1Matrix3.html", null ],
     [ "Tes.Maths.Matrix4", "structTes_1_1Maths_1_1Matrix4.html", null ],
     [ "tes::Matrix4< T >", "classtes_1_1Matrix4.html", null ],
+    [ "Tes.Runtime.MeshBuilder", "classTes_1_1Runtime_1_1MeshBuilder.html", null ],
     [ "Tes.Net.MeshComponentMessage", "structTes_1_1Net_1_1MeshComponentMessage.html", null ],
     [ "tes::MeshComponentMessage", "structtes_1_1MeshComponentMessage.html", null ],
     [ "Tes.Net.MeshCreateMessage", "structTes_1_1Net_1_1MeshCreateMessage.html", null ],
@@ -151,7 +151,7 @@ var hierarchy =
     ] ],
     [ "Tes.Net.MeshDestroyMessage", "structTes_1_1Net_1_1MeshDestroyMessage.html", null ],
     [ "tes::MeshDestroyMessage", "structtes_1_1MeshDestroyMessage.html", null ],
-    [ "Tes.Handlers.MeshCache.MeshEntry", "classTes_1_1Handlers_1_1MeshCache_1_1MeshEntry.html", null ],
+    [ "Tes.Handlers.MeshCache.MeshDetails", "classTes_1_1Handlers_1_1MeshCache_1_1MeshDetails.html", null ],
     [ "Tes.Net.MeshFinaliseMessage", "structTes_1_1Net_1_1MeshFinaliseMessage.html", null ],
     [ "tes::MeshFinaliseMessage", "structtes_1_1MeshFinaliseMessage.html", null ],
     [ "Tes.Net.MeshRedefineMessage", "structTes_1_1Net_1_1MeshRedefineMessage.html", null ],
@@ -193,6 +193,8 @@ var hierarchy =
       [ "Dialogs.MessageBoxUI", "classDialogs_1_1MessageBoxUI.html", null ],
       [ "Dialogs.MessageBoxUI", "classDialogs_1_1MessageBoxUI.html", null ],
       [ "EdlCamera", "classEdlCamera.html", null ],
+      [ "LoopingInit", "classLoopingInit.html", null ],
+      [ "PlaybackSpeed", "classPlaybackSpeed.html", null ],
       [ "ResolutionControl", "classResolutionControl.html", null ],
       [ "SocketTest", "classSocketTest.html", null ],
       [ "Tes.Handlers.CameraHandler.CameraInfo", "classTes_1_1Handlers_1_1CameraHandler_1_1CameraInfo.html", null ],
@@ -228,8 +230,9 @@ var hierarchy =
       [ "UI.TreeView", "classUI_1_1TreeView.html", null ],
       [ "ViewCamera", "classViewCamera.html", null ]
     ] ],
-    [ "Tes.Net.ObjectAttributes", "structTes_1_1Net_1_1ObjectAttributes.html", null ],
     [ "tes::ObjectAttributes", "structtes_1_1ObjectAttributes.html", null ],
+    [ "Tes.Net.ObjectAttributes", "structTes_1_1Net_1_1ObjectAttributes.html", null ],
+    [ "OccupancyLoader", "classOccupancyLoader.html", null ],
     [ "Tes.IO.PacketBuffer", "classTes_1_1IO_1_1PacketBuffer.html", null ],
     [ "tes::PacketBuffer", "classtes_1_1PacketBuffer.html", null ],
     [ "Tes.IO.PacketHeader", "structTes_1_1IO_1_1PacketHeader.html", null ],
@@ -241,6 +244,7 @@ var hierarchy =
     [ "tes::PacketStream< PacketHeader >", "classtes_1_1PacketStream.html", [
       [ "tes::PacketWriter", "classtes_1_1PacketWriter.html", null ]
     ] ],
+    [ "Tes.Runtime.MeshBuilder.PartDetails", "classTes_1_1Runtime_1_1MeshBuilder_1_1PartDetails.html", null ],
     [ "PlayerPrefsX", "classPlayerPrefsX.html", null ],
     [ "Tes.Main.PluginManager", "classTes_1_1Main_1_1PluginManager.html", null ],
     [ "Tes.Program", "classTes_1_1Program.html", null ],
@@ -249,12 +253,6 @@ var hierarchy =
     [ "tes::Quaternion< float >", "classtes_1_1Quaternion.html", null ],
     [ "tes::QuaternionArg", "structtes_1_1QuaternionArg.html", null ],
     [ "Tes.Collections.Queue< T >", "classTes_1_1Collections_1_1Queue.html", null ],
-    [ "tes::Resource", "classtes_1_1Resource.html", [
-      [ "tes::MeshResource", "classtes_1_1MeshResource.html", [
-        [ "tes::PointCloud", "classtes_1_1PointCloud.html", null ],
-        [ "tes::SimpleMesh", "classtes_1_1SimpleMesh.html", null ]
-      ] ]
-    ] ],
     [ "Tes.Resource", "interfaceTes_1_1Resource.html", [
       [ "Tes.Shapes.MeshResource", "interfaceTes_1_1Shapes_1_1MeshResource.html", [
         [ "Tes.Shapes.MeshBase", "classTes_1_1Shapes_1_1MeshBase.html", [
@@ -262,6 +260,12 @@ var hierarchy =
           [ "Tes.Shapes.SimpleMesh", "classTes_1_1Shapes_1_1SimpleMesh.html", null ],
           [ "TesMeshWrapper", "classTesMeshWrapper.html", null ]
         ] ]
+      ] ]
+    ] ],
+    [ "tes::Resource", "classtes_1_1Resource.html", [
+      [ "tes::MeshResource", "classtes_1_1MeshResource.html", [
+        [ "tes::PointCloud", "classtes_1_1PointCloud.html", null ],
+        [ "tes::SimpleMesh", "classtes_1_1SimpleMesh.html", null ]
       ] ]
     ] ],
     [ "tes::ResourcePacker", "classtes_1_1ResourcePacker.html", null ],
@@ -272,8 +276,8 @@ var hierarchy =
     [ "Tes.Runtime.SerialiseInfo", "structTes_1_1Runtime_1_1SerialiseInfo.html", null ],
     [ "Tes.Net.ServerInfoMessage", "structTes_1_1Net_1_1ServerInfoMessage.html", null ],
     [ "tes::ServerInfoMessage", "structtes_1_1ServerInfoMessage.html", null ],
-    [ "Tes.Server.ServerSettings", "structTes_1_1Server_1_1ServerSettings.html", null ],
     [ "tes::ServerSettings", "structtes_1_1ServerSettings.html", null ],
+    [ "Tes.Server.ServerSettings", "structTes_1_1Server_1_1ServerSettings.html", null ],
     [ "tes::Shape", "classtes_1_1Shape.html", [
       [ "tes::Arrow", "classtes_1_1Arrow.html", null ],
       [ "tes::Box", "classtes_1_1Box.html", null ],
@@ -295,8 +299,8 @@ var hierarchy =
     ] ],
     [ "Tes.Tessellate.SphereVector3Hash", "structTes_1_1Tessellate_1_1SphereVector3Hash.html", null ],
     [ "tes::SphereVertexHash", "structtes_1_1SphereVertexHash.html", null ],
-    [ "tes::SpinLock", "classtes_1_1SpinLock.html", null ],
     [ "Tes.Thread.SpinLock", "classTes_1_1Thread_1_1SpinLock.html", null ],
+    [ "tes::SpinLock", "classtes_1_1SpinLock.html", null ],
     [ "Stream", null, [
       [ "Tes.IO.Compression.DeflateStream", "classTes_1_1IO_1_1Compression_1_1DeflateStream.html", null ],
       [ "Tes.IO.Compression.GZipStream", "classTes_1_1IO_1_1Compression_1_1GZipStream.html", null ],
@@ -315,19 +319,19 @@ var hierarchy =
     [ "Tes.Handlers.Shape2D.Text2DHandler.TextEntry", "classTes_1_1Handlers_1_1Shape2D_1_1Text2DHandler_1_1TextEntry.html", null ],
     [ "tes::Timer", "classtes_1_1Timer.html", null ],
     [ "tes::Timing", "structtes_1_1Timing.html", null ],
-    [ "Tes.TransferProgress", "structTes_1_1TransferProgress.html", null ],
     [ "tes::TransferProgress", "structtes_1_1TransferProgress.html", null ],
+    [ "Tes.TransferProgress", "structTes_1_1TransferProgress.html", null ],
     [ "Tes.Handlers.TransientShapeCache", "classTes_1_1Handlers_1_1TransientShapeCache.html", null ],
     [ "UI.TreeViewItem", "classUI_1_1TreeViewItem.html", null ],
     [ "UnityEvent", null, [
       [ "Tes.Main.Router.ModeEventEvent", "classTes_1_1Main_1_1Router_1_1ModeEventEvent.html", null ]
     ] ],
-    [ "tes::UpdateMessage", "structtes_1_1UpdateMessage.html", null ],
     [ "Tes.Net.UpdateMessage", "structTes_1_1Net_1_1UpdateMessage.html", null ],
+    [ "tes::UpdateMessage", "structtes_1_1UpdateMessage.html", null ],
     [ "tes::V3Arg", "structtes_1_1V3Arg.html", null ],
     [ "Tes.Maths.Vector2", "structTes_1_1Maths_1_1Vector2.html", null ],
-    [ "Tes.Maths.Vector3", "structTes_1_1Maths_1_1Vector3.html", null ],
     [ "tes::Vector3< T >", "classtes_1_1Vector3.html", null ],
+    [ "Tes.Maths.Vector3", "structTes_1_1Maths_1_1Vector3.html", null ],
     [ "tes::Vector3< float >", "classtes_1_1Vector3.html", null ],
     [ "tes::Vector3Hash< T >", "classtes_1_1Vector3Hash.html", null ],
     [ "tes::Vector4< T >", "classtes_1_1Vector4.html", null ],

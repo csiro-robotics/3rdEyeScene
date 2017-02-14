@@ -22,6 +22,7 @@ var classTes_1_1IO_1_1PacketBuffer =
     [ "Count", "classTes_1_1IO_1_1PacketBuffer.html#a81f18b5d265ee2cb50099b8c3db8f4af", null ],
     [ "Cursor", "classTes_1_1IO_1_1PacketBuffer.html#ae20c74f6eb0335542141b99a51443d46", null ],
     [ "Data", "classTes_1_1IO_1_1PacketBuffer.html#a46c1a89393820e7cd7e48a358ffb8e2b", null ],
+    [ "DroppedByteCount", "classTes_1_1IO_1_1PacketBuffer.html#a86559528c5599db96191c589e5b496b3", null ],
     [ "Header", "classTes_1_1IO_1_1PacketBuffer.html#a8528a109e9c9bdf3d846c52f83db5e93", null ],
     [ "Status", "classTes_1_1IO_1_1PacketBuffer.html#a6cc9b994331ca6413a3b03724c0108e2", null ],
     [ "ValidHeader", "classTes_1_1IO_1_1PacketBuffer.html#a94b2e1d882bddf1504931a864979c847", null ]

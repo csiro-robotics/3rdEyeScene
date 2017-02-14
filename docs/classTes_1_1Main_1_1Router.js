@@ -28,9 +28,11 @@ var classTes_1_1Main_1_1Router =
     [ "CurrentFrame", "classTes_1_1Main_1_1Router.html#a9c6fe7cd4574ba7600dffe4a79c34780", null ],
     [ "FrameTime", "classTes_1_1Main_1_1Router.html#a165f556c37934ac7c42e628d3335d7ab", null ],
     [ "Handlers", "classTes_1_1Main_1_1Router.html#a74b8f4cdaf3fe1e7f573d6c2159d7bd7", null ],
+    [ "Looping", "classTes_1_1Main_1_1Router.html#a85934f12189ce9121c90d009819b3fdd", null ],
     [ "Materials", "classTes_1_1Main_1_1Router.html#a026231c3daab0c8c09947f6fd27e5c59", null ],
     [ "Mode", "classTes_1_1Main_1_1Router.html#a509c84adfc8b7cc28817f7215fa2ec79", null ],
     [ "OnModeChange", "classTes_1_1Main_1_1Router.html#ac1a5d3f212d0280ddab729d5ba83ae8d", null ],
+    [ "PlaybackSpeed", "classTes_1_1Main_1_1Router.html#a74769300e1ba44d572f5b7e68be5f97d", null ],
     [ "Scene", "classTes_1_1Main_1_1Router.html#ad94322cb0ba711ddc9cb731a137dee25", null ],
     [ "TotalFrames", "classTes_1_1Main_1_1Router.html#aff67727e23100918862e3635402b8bd1", null ]
 ];

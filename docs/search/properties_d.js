@@ -8,6 +8,7 @@ var searchData=
   ['payloadsizeoffset',['PayloadSizeOffset',['../structTes_1_1IO_1_1PacketHeader.html#ab3d1b45b479dba18909bb102c4734919',1,'Tes::IO::PacketHeader']]],
   ['persistent',['Persistent',['../classTes_1_1Handlers_1_1Shape2D_1_1Text2DHandler.html#ac13a2c77421b70dc22f500fde0db0e04',1,'Tes::Handlers::Shape2D::Text2DHandler']]],
   ['persistenttext',['PersistentText',['../classTes_1_1Handlers_1_1Shape2D_1_1Text2DHandler.html#aeff6af535bce843a613dc8ebed33d033',1,'Tes::Handlers::Shape2D::Text2DHandler']]],
+  ['playbackspeed',['PlaybackSpeed',['../classTes_1_1Main_1_1Router.html#a74769300e1ba44d572f5b7e68be5f97d',1,'Tes::Main::Router']]],
   ['point',['Point',['../classTes_1_1Shapes_1_1Cone.html#ace19d421146b5fb9d09e8be668741458',1,'Tes::Shapes::Cone']]],
   ['pointcloud',['PointCloud',['../classTes_1_1Shapes_1_1PointCloudShape.html#a93b30ab0e7ea17b0735fc7173e980ff2',1,'Tes::Shapes::PointCloudShape']]],
   ['pointcolours',['PointColours',['../classTes_1_1Shapes_1_1PointCloud.html#aaa86e48ea2d95c34a2d8572d6de9f094',1,'Tes::Shapes::PointCloud']]],

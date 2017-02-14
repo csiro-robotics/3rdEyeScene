@@ -1,9 +1,7 @@
 var searchData=
 [
-  ['rendersettings',['RenderSettings',['../classRenderSettings.html',1,'']]],
-  ['resolutioncontrol',['ResolutionControl',['../classResolutionControl.html',1,'']]],
-  ['resource',['Resource',['../classtes_1_1Resource.html',1,'tes::Resource'],['../interfaceTes_1_1Resource.html',1,'Tes.Resource']]],
-  ['resourcepacker',['ResourcePacker',['../classtes_1_1ResourcePacker.html',1,'tes']]],
-  ['router',['Router',['../classTes_1_1Main_1_1Router.html',1,'Tes::Main']]],
-  ['routerstatus',['RouterStatus',['../classUI_1_1Info_1_1RouterStatus.html',1,'UI::Info']]]
+  ['quaternion',['Quaternion',['../classtes_1_1Quaternion.html',1,'tes::Quaternion&lt; T &gt;'],['../structTes_1_1Maths_1_1Quaternion.html',1,'Tes.Maths.Quaternion']]],
+  ['quaternion_3c_20float_20_3e',['Quaternion&lt; float &gt;',['../classtes_1_1Quaternion.html',1,'tes']]],
+  ['quaternionarg',['QuaternionArg',['../structtes_1_1QuaternionArg.html',1,'tes']]],
+  ['queue',['Queue',['../classTes_1_1Collections_1_1Queue.html',1,'Tes::Collections']]]
 ];

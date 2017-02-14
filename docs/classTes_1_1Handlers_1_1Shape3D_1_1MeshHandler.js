@@ -10,6 +10,7 @@ var classTes_1_1Handlers_1_1Shape3D_1_1MeshHandler =
     [ "PostHandleMessage", "classTes_1_1Handlers_1_1Shape3D_1_1MeshHandler.html#a6b17f52d4dd10f47de9d0265bf8c6fe2", null ],
     [ "PostHandleMessage", "classTes_1_1Handlers_1_1Shape3D_1_1MeshHandler.html#a7b3d4590595d96103efeaf910d12aea1", null ],
     [ "PostSerialiseCreateObject", "classTes_1_1Handlers_1_1Shape3D_1_1MeshHandler.html#a1c36af19b7464afb85388c30a5c89778", null ],
+    [ "PreRender", "classTes_1_1Handlers_1_1Shape3D_1_1MeshHandler.html#ac9827862ddf470a97ec7d77d67020857", null ],
     [ "Reset", "classTes_1_1Handlers_1_1Shape3D_1_1MeshHandler.html#a4e0f0c813edc5c421e9f49d62e4f9b4d", null ],
     [ "SerialiseObject", "classTes_1_1Handlers_1_1Shape3D_1_1MeshHandler.html#a1e8ee019479b274a4d183f0155d2b033", null ],
     [ "Name", "classTes_1_1Handlers_1_1Shape3D_1_1MeshHandler.html#a3eb6a8b312d4b2cfd1783ad594127efa", null ],

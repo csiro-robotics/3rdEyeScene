@@ -5,5 +5,6 @@ var searchData=
   ['reconnecting',['Reconnecting',['../namespaceTes_1_1Main.html#a0051f28fee9431fa2cbfd5be823f684ca80154864ebe36b3db0acd51f9b10f568',1,'Tes::Main']]],
   ['recording',['Recording',['../namespaceTes_1_1Main.html#ae34f1583411b26c783ce3e3a1996201aac5564d2e8b8e0ae08bf4363f2b947166',1,'Tes::Main']]],
   ['redefine',['Redefine',['../namespaceTes_1_1Net.html#a6f70b8a8fee30d525893a070f2753e15ac5dc51eed9a7c980a757eec7c0fe3699',1,'Tes::Net']]],
-  ['reset',['Reset',['../namespaceTes_1_1Net.html#a6c6f02586fa08a101cf9ce130c06e279a526d688f37a86d3c3f27d0c5016eb71d',1,'Tes::Net']]]
+  ['reset',['Reset',['../namespaceTes_1_1Net.html#a6c6f02586fa08a101cf9ce130c06e279a526d688f37a86d3c3f27d0c5016eb71d',1,'Tes::Net']]],
+  ['rotation',['Rotation',['../namespaceTes_1_1Net.html#ac98cc1f309cf100349b8c74ebe23ad2daf1a42bd417390fc63b030a519624607a',1,'Tes::Net']]]
 ];

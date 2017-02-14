@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['categorymessageid',['CategoryMessageId',['../namespacetes.html#ac48745c85e04c02d997a29467bf86629',1,'tes::CategoryMessageId()'],['../namespaceTes_1_1Net.html#af72fbeb3d204a417b8f7fbe38e96f99d',1,'Tes.Net.CategoryMessageID()']]],
+  ['categorymessageid',['CategoryMessageID',['../namespaceTes_1_1Net.html#af72fbeb3d204a417b8f7fbe38e96f99d',1,'Tes.Net.CategoryMessageID()'],['../namespacetes.html#ac48745c85e04c02d997a29467bf86629',1,'tes::CategoryMessageId()']]],
   ['channel',['Channel',['../structTes_1_1Maths_1_1Colour.html#a60b00c4f84ada3e73ed52b1d0c5ef3d4',1,'Tes::Maths::Colour']]],
   ['channels',['Channels',['../classtes_1_1Colour.html#ad39fb4e5ca77e5f879a1697b1a67f3d1',1,'tes::Colour']]],
   ['collatedpacketflag',['CollatedPacketFlag',['../namespaceTes_1_1Net.html#a742fb0d6840176ad6e6e57bdbcdc8f7a',1,'Tes.Net.CollatedPacketFlag()'],['../namespacetes.html#a8d61fbb315161d097bc86d7a6ab641a6',1,'tes::CollatedPacketFlag()']]],
