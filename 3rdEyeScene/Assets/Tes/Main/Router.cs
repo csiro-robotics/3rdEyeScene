@@ -634,11 +634,11 @@ namespace Tes.Main
                         // Reset all the data handlers, but not the data thread.
                         ResetScene();
                         // Force a frame flush.
-                        EndFrame();
+                        EndFrame(0);
                       }
                       else
                       {
-                        EndFrame((message.ControlFlags & (ushort)EndFrameFlag.Persist) != 0);
+                        EndFrame((uint)message.Value64, (message.ControlFlags & (ushort)EndFrameFlag.Persist) != 0);
                         if (_recordingWriter != null)
                         {
                           WriteCameraPosition(_recordingWriter, Camera.main, 255);
@@ -769,8 +769,9 @@ namespace Tes.Main
     /// <summary>
     /// Advance the frame.
     /// </summary>
+    /// <param name="frameNumber">The frame number of the ending frame.</param>
     /// <param name="maintainTransient">True to prevent flushing of transient objects this frame.</param>
-    private void EndFrame(bool maintainTransient = false)
+    private void EndFrame(uint frameNumber, bool maintainTransient = false)
     {
       // TODO: respect the elapsed time. That is, delay processing until the
       // required time has elapsed.
@@ -822,15 +823,13 @@ namespace Tes.Main
         // high rates.
         if (_recordingWriter != null)
         {
-          //++_currentFrame;
           ++_totalFrames;
         }
         else
         {
-          //_currentFrame = _dataThread.CurrentFrame;
           _totalFrames = _dataThread.TotalFrames;
         }
-        ++_currentFrame;
+        _currentFrame = frameNumber;
       }
     }
 

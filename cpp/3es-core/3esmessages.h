@@ -62,11 +62,12 @@ namespace tes
   enum ControlId
   {
     CIdNull,
-    CIdFrame,           ///< Defines a new frame. Value is the delta time in microseconds.
+    CIdFrame,           ///< Defines a new frame. @c value32 is the delta time in microseconds.
     CIdCoordinateFrame, ///< Specifies the a change in coordinate frame view.
-    CIdFrameCount,      ///< Set the total number of frames to expect. More for serialised streams.
+    CIdFrameCount,      ///< Set the total number of frames to expect (@c value32). More for serialised streams.
     CIdForceFrameFlush, ///< Forces a frame update (render) without advancing the time.
     CIdReset,           ///< Clear the scene. This drops all existing data.
+    CIdSnapshot,        ///< Request a frame snapshot during playback. @c value32 is the frame number to snap.
   };
 
   /// Message IDs for @c MtCategory routing.

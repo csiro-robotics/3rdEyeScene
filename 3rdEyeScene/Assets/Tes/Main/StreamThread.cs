@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.IO;
+using System.Runtime.InteropServices;
 using Tes.Collections;
 using Tes.IO;
 using Tes.IO.Compression;
@@ -395,9 +396,13 @@ namespace Tes.Main
     /// <summary>
     /// Handle a control message.
     /// </summary>
-    /// <param name="packet"></param>
-    /// <param name="messageId"></param>
+    /// <param name="packet">The packet containing the control message.</param>
+    /// <param name="messageId">The ID of the control message.</param>
     /// <returns>True if this ended a frame.</returns>
+    /// <remarks>
+    /// This method may modify the packet data before it is queued for processing. The primary
+    /// use case is to write the current frame number into and end of frame message.
+    /// </remarks>
     private bool HandleControlMessage(PacketBuffer packet, ControlMessageID messageId)
     {
       bool endedFrame = false;
@@ -409,7 +414,14 @@ namespace Tes.Main
       
       if (messageId == ControlMessageID.EndFrame)
       {
+        // Replace the end of frame packet with a new one including the current frame number.
+        // FIXME: modify the target value in the buffer stream instead of replacing the object.
         OnEndFrame(msg.Value32);
+        // Overwrite msg.Value64 with the current frame number.
+        int value64Offset = PacketHeader.Size + Marshal.OffsetOf(typeof(ControlMessage), "Value64").ToInt32();
+        byte[] packetData = packet.Data;
+        byte[] frameNumberBytes = BitConverter.GetBytes(Endian.ToNetwork((ulong)_currentFrame));
+        Array.Copy(frameNumberBytes, 0, packetData, value64Offset, frameNumberBytes.Length);
         endedFrame = true;
       }
       else if (messageId == ControlMessageID.FrameCount)
