@@ -16,6 +16,20 @@ namespace Dialogs
 	public class TrueFileSystem : FileSystemModel
 	{
 		/// <summary>
+		/// Include hidden files and directories in the listed items?
+		/// </summary>
+		public bool ShowHiddenFiles { get; set; }
+
+		/// <summary>
+		/// Instantiate a new model of the host file system.
+		/// </summary>
+		/// <param name="showHiddenFiles">Assigned to <see cref="ShowHiddenFiles"/>.
+		public TrueFileSystem(bool showHiddenFiles = false)
+		{
+			ShowHiddenFiles = showHiddenFiles;
+		}
+
+		/// <summary>
 		/// Attempts to convert <paramref name="directory"/> into a DriveInfo reference.
 		/// </summary>
 		/// <param name="directory">The directory to attempt to represent as a drive.</param>
@@ -205,7 +219,7 @@ namespace Dialogs
 			{
 				yield return CreateEntry(drive);
 			}
-#endif // 
+#endif //
     }
 
     /// <summary>
@@ -253,13 +267,17 @@ namespace Dialogs
 				for (int i = 0; i < subDirs.Length; ++i)
 				{
 					DirectoryInfo dir = subDirs[i];
-					children.Add(CreateEntry(dir));
+					if (ShowHiddenFiles || (dir.Attributes & FileAttributes.Hidden) == 0)
+					{
+						children.Add(CreateEntry(dir));
+					}
 				}
 
 				for (int i = 0; i < files.Length; ++i)
 				{
 					FileInfo file = files[i];
-					if (filter == null || filter.IsMatch(file.Name))
+					if ((filter == null || filter.IsMatch(file.Name)) &&
+							(ShowHiddenFiles || (file.Attributes & FileAttributes.Hidden) == 0))
 					{
 						children.Add(CreateEntry(file));
 					}
