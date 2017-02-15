@@ -51,6 +51,28 @@ namespace Dialogs
 		protected ScrollRect _filesView;
 		[SerializeField]
 		protected FileDialogIcons _iconSet;
+
+		[SerializeField]
+		protected bool _autoGridLayoutSizing = true;
+		/// <summary>
+		/// Adjust the scroll rect layout sizing to match the item size? Only affects grid layout.
+		/// </summary>
+		public bool AutoGridLayoutSizing
+		{
+			get { return _autoGridLayoutSizing; }
+			set { _autoGridLayoutSizing = value; }
+		}
+		[SerializeField]
+		protected bool _autoScrollSensitivity = true;
+		/// <summary>
+		/// Automatically adjust the scrolling sensitivity to match the item size?
+		/// </summary>
+		public bool AutoScrollSensitivity
+		{
+			get { return _autoScrollSensitivity; }
+			set { _autoScrollSensitivity = value; }
+		}
+
 		#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
 		private KeyCode[] _addSelectionKeys = new KeyCode[] { KeyCode.LeftCommand, KeyCode.RightCommand };
 		#else  // UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
@@ -125,7 +147,7 @@ namespace Dialogs
 			get
 			{
         if (_selectedFiles.Count > 0)
-        { 
+        {
 				  for (int i = 0; i < _selectedFiles.Count; ++i)
 				  {
 					  yield return _selectedFiles[i].Entry.FullName;
@@ -560,15 +582,61 @@ namespace Dialogs
 		/// <remarks>
 		/// This addresses layout issues where the size of a scroll view may not have been calculated yet
 		/// and we must wait until the end of frame to have valid values for <see cref="FixSize"/>.
+		///
+		/// This method also ensures that the content grid size matches the item size and the scrolling
+		/// sensitivity is suitable.
 		/// </remarks>
     /// <param name="scroll">The scroll view.</param>
     /// <param name="template">The template item used to populate the scroll view.</param>
     /// <returns></returns>
     protected IEnumerator FixSizeAtEndOfFrame(ScrollRect scroll, GameObject template)
     {
+			// Fix up the scrolling sensitivity and spacing grid size (if using a grid).
+			RectTransform templateRect = (template) ? template.transform as RectTransform : null;
+			if (AutoGridLayoutSizing)
+			{
+				CheckLayoutSpacing(scroll, templateRect);
+			}
+			if (AutoScrollSensitivity)
+			{
+				CheckScrollSensitivity(scroll, templateRect);
+			}
       yield return new WaitForEndOfFrame();
-      FixSize(scroll, template);
+      FixSize(scroll, templateRect);
     }
+
+		/// <summary>
+		/// Adjust the grid layout of <paramref name="scroll"/> (if present) to exactly
+		/// match the <paramref name="templateRect"/> size.
+		/// </summary>
+    /// <param name="scroll">The scroll view.</param>
+    /// <param name="template">The template item transform used to populate the scroll view.</param>
+		protected void CheckLayoutSpacing(ScrollRect scroll, RectTransform templateRect)
+		{
+			if (templateRect != null && scroll != null)
+			{
+				GridLayoutGroup gridLayout = scroll.content.GetComponent<GridLayoutGroup>();
+				if (gridLayout != null)
+				{
+					gridLayout.cellSize = new Vector2(templateRect.rect.width, templateRect.rect.height);
+				}
+				scroll.scrollSensitivity = templateRect.rect.height;
+			}
+		}
+
+		/// <summary>
+		/// Adjust the scroll sensitivity of <param name="scroll"/> to match the sizing of
+		/// <paramref name="templateRect"/> size.
+		/// </summary>
+    /// <param name="scroll">The scroll view.</param>
+    /// <param name="template">The template item transform used to populate the scroll view.</param>
+		protected void CheckScrollSensitivity(ScrollRect scroll, RectTransform templateRect)
+		{
+			if (templateRect != null && scroll != null)
+			{
+				scroll.scrollSensitivity = templateRect.rect.height;
+			}
+		}
 
 		/// <summary>
 		/// Fixes the size of a file item ScrollRect to match its content.
@@ -582,10 +650,9 @@ namespace Dialogs
     /// <param name="scroll">The scroll view.</param>
     /// <param name="template">The template item used to populate the scroll view. Used to determine
 		///	the per item width/height.</param>
-		protected static void FixSize(ScrollRect scroll, GameObject template)
+		protected static void FixSize(ScrollRect scroll, RectTransform templateRect)
 		{
 			// Change the height to suit the number of items.
-			RectTransform templateRect = (template) ? template.transform as RectTransform : null;
       RectTransform contentRect = scroll.content.transform as RectTransform;
 			if (!templateRect || !contentRect)
 			{
@@ -597,7 +664,15 @@ namespace Dialogs
         return;
       }
 
-			int columnCount = Mathf.FloorToInt(contentRect.rect.width / templateRect.rect.width);
+			float scrollWidth = contentRect.rect.width;
+
+			// Account for the vertical scroll bar if hidden.
+			if (scroll.verticalScrollbar != null && !scroll.verticalScrollbar.gameObject.activeSelf)
+			{
+				scrollWidth -= scroll.verticalScrollbar.GetComponent<RectTransform>().rect.width;
+			}
+
+			int columnCount = Mathf.FloorToInt(scrollWidth / templateRect.rect.width);
       if (columnCount == 0)
       {
 				columnCount = 1;

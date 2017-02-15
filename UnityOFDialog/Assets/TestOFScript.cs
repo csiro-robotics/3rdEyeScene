@@ -11,7 +11,7 @@ public class TestOFScript : MonoBehaviour
   public void ShowSaveDialog()
   {
     if (_fileDialog == null && BrowseUI != null)
-    { 
+    {
       //_fileDialog = new OpenFileDialog(new TrueFileSystem(), BrowseUI);
       _fileDialog = new SaveFileDialog(new TrueFileSystem(), BrowseUI, _messageUI);
       _fileDialog.AddExtension = true;
