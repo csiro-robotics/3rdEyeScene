@@ -1,5 +1,6 @@
 Bugs:
 - MESHSET_END() macro does not cater for releasing associated resources. Parameterisation needs to change.
+  - Consider adding a dummy mesh resource which only exposes an ID, but no data.
 - Router UpdateCatchUp is currently incompatible with snapshots. Transient objects will be excluded from the snapshot.
 - Large data frames have been known to end up an odd state whereby some data from the previous are still visible and not all data from the next frame are visible.
   - Possibly a thread safety issue on the concurrent queue.
