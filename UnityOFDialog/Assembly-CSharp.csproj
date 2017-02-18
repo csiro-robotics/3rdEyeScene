@@ -65,6 +65,8 @@
      <Compile Include="Assets\Dialogs\MessageBoxUI.cs" />
      <Compile Include="Assets\Dialogs\OpenFileDialog.cs" />
      <Compile Include="Assets\Dialogs\SaveFileDialog.cs" />
+     <Compile Include="Assets\Dialogs\ToolTipInfo.cs" />
+     <Compile Include="Assets\Dialogs\ToolTipOverlay.cs" />
      <Compile Include="Assets\Dialogs\TrueFileSystem.cs" />
      <Compile Include="Assets\TestOFScript.cs" />
  <Reference Include="UnityEngine.UI">

@@ -525,6 +525,13 @@ namespace Dialogs
 				Text itemText = itemUI.GetComponentInChildren<Text>();
 				FileEntryComponent entry = itemUI.GetComponent<FileEntryComponent>();
 				Sprite sprite = (icons != null) ? icons.GetIcon(item) : null;
+				ToolTipInfo toolTip = itemUI.GetComponentInChildren<ToolTipInfo>();
+
+				// We are only allowed to modify an empty tool tip.
+				if (toolTip != null && toolTip.ToolTip.Length > 0)
+				{
+					toolTip = null;
+				}
 
 				// Ensure tag
 				if (entry == null)
@@ -556,6 +563,10 @@ namespace Dialogs
 				if (itemText != null)
 				{
 					itemText.text = item.Name;
+					if (toolTip != null)
+					{
+						toolTip.ToolTip = item.Name;
+					}
 				}
 
 				if (entry.Highlight)
