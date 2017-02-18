@@ -235,12 +235,17 @@ namespace
       verts[2] = vertices[triangle[2]];
 
       // Highlight the working triangle: extrude it a bit to make it pop.
-      TES_TRIANGLE_W(*tesServer, TES_COLOUR(FireBrick), verts[0] * 1.01f, verts[1] * 1.01f, verts[2] * 1.01f);
+      TES_TRIANGLE(*tesServer, TES_COLOUR(FireBrick), verts[0] * 1.01f, verts[1] * 1.01f, verts[2] * 1.01f);
 
       // Calculate the new vertex at the centre of the existing triangle.
       newVertices[0] = (0.5f * (verts[0] + verts[1])).normalised();
       newVertices[1] = (0.5f * (verts[1] + verts[2])).normalised();
+#if 1
       newVertices[2] = (0.5f * (verts[2] + verts[0])).normalised();
+#else  // #
+      // Introduce a bug in the tessellation
+      newVertices[2] = (1.0f * (verts[2] + verts[2])).normalised();
+#endif // #
 
       // Create new triangles.
       // Given triangle ABC, and adding vertices DEF such that:
@@ -253,7 +258,8 @@ namespace
       def[1] = insertVertex(newVertices[1], vertices, vertexMap);
       def[2] = insertVertex(newVertices[2], vertices, vertexMap);
 
-      TES_TRIANGLE_IW(*tesServer, TES_COLOUR(Cyan), vertices.data()->v, def[0], def[1], def[2]);
+      TES_TRIANGLE_I(*tesServer, TES_COLOUR(Cyan), vertices.data()->v, def[0], def[1], def[2]);
+      TES_TRIANGLE_IW(*tesServer, TES_COLOUR(Navy), vertices.data()->v, def[0], def[1], def[2]);
 
       // Replace the original triangle ABC with DEF
       indices[i * 3 + 0] = def[0];
@@ -265,19 +271,22 @@ namespace
       indices.push_back(def[0]);
       indices.push_back(def[2]);
 
-      TES_TRIANGLE_IW(*tesServer, TES_COLOUR(Cyan), vertices.data()->v, abc[0], def[0], def[2]);
+      TES_TRIANGLE_I(*tesServer, TES_COLOUR(Cyan), vertices.data()->v, abc[0], def[0], def[2]);
+      TES_TRIANGLE_IW(*tesServer, TES_COLOUR(Navy), vertices.data()->v, abc[0], def[0], def[2]);
 
       indices.push_back(abc[1]);
       indices.push_back(def[1]);
       indices.push_back(def[0]);
 
-      TES_TRIANGLE_IW(*tesServer, TES_COLOUR(Cyan), vertices.data()->v, abc[1], def[1], def[0]);
+      TES_TRIANGLE_I(*tesServer, TES_COLOUR(Cyan), vertices.data()->v, abc[1], def[1], def[0]);
+      TES_TRIANGLE_IW(*tesServer, TES_COLOUR(Navy), vertices.data()->v, abc[1], def[1], def[0]);
 
       indices.push_back(abc[2]);
       indices.push_back(def[2]);
       indices.push_back(def[1]);
 
-      TES_TRIANGLE_IW(*tesServer, TES_COLOUR(Cyan), vertices.data()->v, abc[2], def[2], def[1]);
+      TES_TRIANGLE_I(*tesServer, TES_COLOUR(Cyan), vertices.data()->v, abc[2], def[2], def[1]);
+      TES_TRIANGLE_IW(*tesServer, TES_COLOUR(Navy), vertices.data()->v, abc[2], def[2], def[1]);
 
       TES_SERVER_UPDATE(*tesServer, 0, true); // Flush.
     }
