@@ -10,21 +10,21 @@ namespace Dialogs
   /// This script can be attached to an object to allow user configuration of the
   /// icon set.
   /// </remarks>
-	public class FileDialogIcons : MonoBehaviour, FileIconSet
-	{
+  public class FileDialogIcons : MonoBehaviour, FileIconSet
+  {
     /// <summary>
     /// Default icon to show when no other icon can be resolved.
     /// </summary>
-		[SerializeField]
-		public Sprite _defaultIcon;
-		public Sprite DefaultIcon { get { return _defaultIcon; } }
+    [SerializeField]
+    public Sprite _defaultIcon;
+    public Sprite DefaultIcon { get { return _defaultIcon; } }
 
     /// <summary>
     /// The set of icons (user editable).
     /// </summary>
-		[SerializeField]
-		private IconInfo[] _icons = null;
-		public IEnumerable<IconInfo> Icons { get { return _icons; } }
+    [SerializeField]
+    private IconInfo[] _icons = null;
+    public IEnumerable<IconInfo> Icons { get { return _icons; } }
 
     /// <summary>
     /// Get the icon for <paramref name="entry"/>
@@ -36,26 +36,26 @@ namespace Dialogs
     /// An icon with matching Type and no SubType matches any item of the type, regardless
     /// of its SubType.
     /// </remarks>
-		public Sprite GetIcon(FileSystemEntry entry)
-		{
-			Sprite defaultIcon = _defaultIcon;
+    public Sprite GetIcon(FileSystemEntry entry)
+    {
+      Sprite defaultIcon = _defaultIcon;
 
-			for (int i = 0; i < _icons.Length; ++i)
-			{
-				if (_icons[i].Type == entry.Type)
-				{
-					if (_icons[i].SubType == entry.SubType)
-					{
-						return _icons[i].Icon;
-					}
-					else if (string.IsNullOrEmpty(_icons[i].SubType))
-					{
-						defaultIcon = _icons[i].Icon;
-					}
-				}
-			}
+      for (int i = 0; i < _icons.Length; ++i)
+      {
+        if (_icons[i].Type == entry.Type)
+        {
+          if (_icons[i].SubType == entry.SubType)
+          {
+            return _icons[i].Icon;
+          }
+          else if (string.IsNullOrEmpty(_icons[i].SubType))
+          {
+            defaultIcon = _icons[i].Icon;
+          }
+        }
+      }
 
-			return defaultIcon;
-		}
-	}
+      return defaultIcon;
+    }
+  }
 }

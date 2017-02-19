@@ -9,13 +9,13 @@ using UnityEngine;
 /// </summary>
 public class SetRangeAttribute : Attribute
 {
-	public float Min { get; set; }
-	public float Max { get; set; }
-	public SetRangeAttribute(float min, float max)
-	{
-		Min = min;
-		Max = max;
-	}
+  public float Min { get; set; }
+  public float Max { get; set; }
+  public SetRangeAttribute(float min, float max)
+  {
+    Min = min;
+    Max = max;
+  }
 }
 
 /// <summary>
@@ -51,20 +51,20 @@ public class TooltipAttribute : Attribute
 /// </remarks>
 public class Settings : INotifyPropertyChanged
 {
-	public event PropertyChangedEventHandler PropertyChanged;
+  public event PropertyChangedEventHandler PropertyChanged;
 
-	public string Name { get; set; }
+  public string Name { get; set; }
 
-	protected void Notify(PropertyInfo property)
-	{
-		Notify(property.Name);
-	}
+  protected void Notify(PropertyInfo property)
+  {
+    Notify(property.Name);
+  }
 
-	protected void Notify(string propertyName)
-	{
-		if (PropertyChanged != null)
-		{
-			PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
-		}
-	}
+  protected void Notify(string propertyName)
+  {
+    if (PropertyChanged != null)
+    {
+      PropertyChanged(this, new PropertyChangedEventArgs(propertyName));
+    }
+  }
 }

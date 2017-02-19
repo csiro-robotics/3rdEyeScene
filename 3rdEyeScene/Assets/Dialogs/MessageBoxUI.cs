@@ -170,6 +170,15 @@ namespace Dialogs
       _iconImage.gameObject.SetActive(false);
     }
 
+    void Update()
+    {
+      if (Input.GetButton("Cancel"))
+      {
+        OnCancel();
+        return;
+      }
+    }
+
     protected void UpdateButtons()
     {
       if (_confirmButton != null) _confirmButton.gameObject.SetActive(false);

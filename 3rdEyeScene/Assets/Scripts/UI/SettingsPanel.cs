@@ -52,11 +52,13 @@ namespace UI
 
     void OnEnable()
     {
+      tes.InputStack.SetLayerEnabled("Settings", true);
       ClearActive();
     }
 
     void OnDisable()
     {
+      tes.InputStack.SetLayerEnabled("Settings", false);
       ClearActive();
     }
 

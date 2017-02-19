@@ -25,6 +25,10 @@ public class TesComponent : Router
   public Material VoxelsMaterial;
   public FileDialogUI FileDialogUI;
 
+  [SerializeField]
+  private InputSystem.InputStack _inputStack = null;
+  public InputSystem.InputStack InputStack { get { return _inputStack; } }
+
   private PluginManager _plugins = new PluginManager();
   public PluginManager Plugins { get { return _plugins; } }
 
@@ -148,8 +152,11 @@ public class TesComponent : Router
       saveDlg.Filter = FileFilter;
       saveDlg.DefaultExt = "3es";
       saveDlg.AddExtension = true;
+      _inputStack.SetLayerEnabled("Dialogs", true);
+      // Input
       saveDlg.ShowDialog(delegate(CommonDialog dialog, DialogResult result)
       {
+        _inputStack.SetLayerEnabled("Dialogs", false);
         SaveFileDialog dlg = dialog as SaveFileDialog;
         if (result == DialogResult.OK && dlg != null)
         {
@@ -178,8 +185,10 @@ public class TesComponent : Router
       openDlg.Filter = FileFilter;
       openDlg.DefaultExt = "3es";
       openDlg.AddExtension = true;
+      _inputStack.SetLayerEnabled("Dialogs", true);
       openDlg.ShowDialog(delegate (CommonDialog dialog, DialogResult result)
       {
+        _inputStack.SetLayerEnabled("Dialogs", false);
         OpenFileDialog dlg = dialog as OpenFileDialog;
         if (result == DialogResult.OK && dlg != null)
         {
