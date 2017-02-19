@@ -363,8 +363,6 @@ namespace Tes.Handlers.Shape3D
       // - In order.
       // - Under the overall Unity mesh indexing limit.
       MeshDataComponent meshData = obj.GetComponent<MeshDataComponent>();
-      ShapeComponent shape = obj.GetComponent<ShapeComponent>();
-      Material mat = SelectMaterial(shape, meshData);
 
       if (receiveType == (ushort)Shapes.MeshShape.SendDataType.Normals ||
           receiveType == (ushort)Shapes.MeshShape.SendDataType.UniformNormal)  // Normals incoming
