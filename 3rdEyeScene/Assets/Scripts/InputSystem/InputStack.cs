@@ -27,6 +27,12 @@ namespace InputSystem
       return null;
     }
 
+    /// <summary>
+    /// Enable or disable a layer.
+    /// </summary>
+    /// <param name="layerName">The layer to affect.</param>
+    /// <param name="enabled">True to enable, false to disable.</param>
+    /// <returns></returns>
     public bool SetLayerEnabled(string layerName, bool enabled)
     {
       for (int i = 0; i < _layers.Count; ++i)
@@ -40,6 +46,9 @@ namespace InputSystem
       return false;
     }
 
+    /// <summary>
+    /// Update the stack ensuring layers are appropriately blocked.
+    /// </summary>
     public void Update()
     {
       bool blocked = false;

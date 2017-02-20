@@ -12,7 +12,6 @@ Bugs:
 TODO:
 - Profile StreamThread packet decoding and improve performance.
   - Current playback speed bottleneck when stepping.
-- Complete C++ TCP socket support built on POCO
 - "Server" implementation which writes directly to a local file.
 - Change shape shaders to support GPU instancing.
 - Consider adding batched object creation messages.
@@ -22,7 +21,6 @@ TODO:
   - Handler options and UI
   - Camera Selection UI
   - Scene Graph UI
-- Make sure modal dialogs work properly blocking input to background layers.
 - Export to PLY file (because PLY is easy).
 - Annotation frames.
   - Skip/step by annotation frames.
@@ -31,6 +29,7 @@ TODO:
 - Client rendering override modes:
   - Solid/wireframe overlay
   - Wireframe override
+- Complete C++ TCP socket support built on POCO
 - PROTOCOL CHANGE: Reduce object overhead. Creating many objects is expensive in data throughput and packet processing.
   - Modify ObjectAttributes structure (for update messages only?) to have a 1-byte flag member which identifies which of colour, position, rotation and scale data are present.
   - Consider moving major/minor version members of PacketHeader into ServerSettings message.
