@@ -6,7 +6,6 @@ namespace InputSystem
   [Flags]
   public enum MetaKey
   {
-    None = 0,
     Shift = (1 << 0),
     Alt = (1 << 1),
     Control = (1 << 2),
@@ -26,7 +25,7 @@ namespace InputSystem
       get
       {
         #if UNITY_EDITOR
-        if (_editorMeta != MetaKey.None)
+        if (_editorMeta != 0)
         {
           return _editorMeta;
         }
@@ -37,7 +36,7 @@ namespace InputSystem
 
     public KeyCombo() { }
 
-    public KeyCombo(KeyCode code, MetaKey meta = MetaKey.None)
+    public KeyCombo(KeyCode code, MetaKey meta = 0)
     {
       _keyCode = code;
       // Using _editorMeta is not important, but helps avoid a build warning.
@@ -45,7 +44,7 @@ namespace InputSystem
       _meta = _editorMeta;
     }
 
-    public KeyCombo(string keyName, MetaKey meta = MetaKey.None)
+    public KeyCombo(string keyName, MetaKey meta = 0)
     {
       _keyName = keyName;
       // Using _editorMeta is not important, but helps avoid a build warning.
@@ -57,7 +56,7 @@ namespace InputSystem
     {
       string[] parts = sequence.Split(new char[] { '+' });
       string keyName = null;
-      MetaKey meta = MetaKey.None;
+      MetaKey meta = 0;
       for (int i = 0; i < parts.Length; ++i)
       {
         if (!ParseMeta(ref meta, parts[i]))
@@ -143,7 +142,10 @@ namespace InputSystem
       {
         if (MetaActive(Meta, layer))
         {
-          return true;
+          if (MetaActive(Meta, layer))
+          {
+            return true;
+          }
         }
       }
       return false;
@@ -189,35 +191,40 @@ namespace InputSystem
       return false;
     }
 
+    public static bool MatchMetaState(MetaKey meta, InputLayer layer, MetaKey testFlag, KeyCode key1, KeyCode key2)
+    {
+      if ((meta & testFlag) != 0 && !layer.GetKey(key1) && !layer.GetKey(key2) ||
+          (meta & testFlag) == 0 && (layer.GetKey(key1) || layer.GetKey(key2)))
+      {
+        return false;
+      }
+      return true;
+    }
+
+    public static bool MatchMetaState(MetaKey meta, InputLayer layer, MetaKey testFlag, KeyCode key1, KeyCode key2, KeyCode key3, KeyCode key4)
+    {
+      if ((meta & testFlag) != 0 && !layer.GetKey(key1) && !layer.GetKey(key2) && !layer.GetKey(key3) && !layer.GetKey(key4) ||
+          (meta & testFlag) == 0 && (layer.GetKey(key1) || layer.GetKey(key2) || layer.GetKey(key3) || layer.GetKey(key4)))
+      {
+        return false;
+      }
+      return true;
+    }
+
+    public static bool MatchMetaState(MetaKey meta, InputLayer layer, MetaKey testFlag, KeyCode key)
+    {
+      return MatchMetaState(meta, layer, testFlag, key, key);
+    }
+
     public static bool MetaActive(MetaKey meta, InputLayer layer)
     {
       // FIXME: this is not precise enough for multiple meta combos.
       bool active = true;
 
-      if ((meta & MetaKey.Shift) != 0 &&
-          !layer.GetKey(KeyCode.LeftShift) && !layer.GetKey(KeyCode.RightShift))
-      {
-        active = false;
-      }
-
-      if ((meta & MetaKey.Alt) != 0 &&
-          !layer.GetKey(KeyCode.LeftAlt) && !layer.GetKey(KeyCode.RightAlt))
-      {
-        active = false;
-      }
-
-      if ((meta & MetaKey.Control) != 0 &&
-          !layer.GetKey(KeyCode.LeftControl) && !layer.GetKey(KeyCode.RightControl))
-      {
-        active = false;
-      }
-
-      if ((meta & MetaKey.Super) != 0 &&
-          !layer.GetKey(KeyCode.LeftCommand) && !layer.GetKey(KeyCode.RightCommand) &&
-          !layer.GetKey(KeyCode.LeftWindows) && !layer.GetKey(KeyCode.RightWindows))
-      {
-        active = false;
-      }
+      active = active && MatchMetaState(meta, layer, MetaKey.Shift, KeyCode.LeftShift, KeyCode.RightShift);
+      active = active && MatchMetaState(meta, layer, MetaKey.Alt, KeyCode.LeftAlt, KeyCode.RightAlt);
+      active = active && MatchMetaState(meta, layer, MetaKey.Control, KeyCode.LeftControl, KeyCode.RightControl);
+      active = active && MatchMetaState(meta, layer, MetaKey.Super, KeyCode.LeftWindows, KeyCode.RightWindows, KeyCode.LeftCommand, KeyCode.RightCommand);
 
       return active;
     }
@@ -260,8 +267,8 @@ namespace InputSystem
     [SerializeField]
     private KeyCode _keyCode = KeyCode.None;
     [SerializeField, EnumFlags]
-    private MetaKey _meta = MetaKey.None;
+    private MetaKey _meta = 0;
     [SerializeField, EnumFlags]
-    private MetaKey _editorMeta = MetaKey.None;
+    private MetaKey _editorMeta = 0;
   }
 }
