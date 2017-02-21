@@ -396,7 +396,7 @@ namespace Tes.Tessellate
 
       // Finally build the indices for the triangles.
       // Tessellate each ring up the hemispheres.
-      int ringStartIndex, previousRingStartIndex;
+      int ringStartIndex, previousRingStartIndex, poleIndex;
       previousRingStartIndex = initialVertexCount;
       for (int r = 1; r < hemisphereRingCount; ++r)
       {
@@ -418,11 +418,12 @@ namespace Tes.Tessellate
 
       // Connect the final ring to the polar vertex.
       ringStartIndex = (hemisphereRingCount - 1) * segments + initialVertexCount;
+      poleIndex = ringStartIndex + segments;
       for (int i = 0; i < segments; ++i)
       {
         indices.Add(ringStartIndex + i);
         indices.Add(ringStartIndex + (i + 1) % segments);
-        indices.Add(ringStartIndex + segments); // Polar vertex
+        indices.Add(poleIndex); // Polar vertex
       }
 
       // Build lower hemi-sphere as required.
@@ -455,17 +456,20 @@ namespace Tes.Tessellate
         if (hemisphereRingCount > 1)
         { 
           ringStartIndex = (hemisphereRingCount - 1 - 1) * segments + hemisphereOffset;
+          poleIndex = ringStartIndex + segments;
         }
         else
         {
           // Shared equator.
           ringStartIndex = 0;
+          // Skip the other pole index.
+          poleIndex = ringStartIndex + segments + 1;
         }
         for (int i = 0; i < segments; ++i)
         {
           indices.Add(ringStartIndex + (i + 1) % segments);
           indices.Add(ringStartIndex + i);
-          indices.Add(ringStartIndex + segments); // Polar vertex
+          indices.Add(poleIndex); // Polar vertex
         }
       }
 
