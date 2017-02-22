@@ -76,7 +76,7 @@ namespace Tes.Main
       {
         NetworkThread netThread = _dataThread as NetworkThread;
         StreamThread streamThread = _dataThread as StreamThread;
-        
+
         if (streamThread != null)
         {
           if (streamThread.Eos)
@@ -87,9 +87,9 @@ namespace Tes.Main
           {
             return RouterMode.Paused;
           }
-          return RouterMode.Playing; 
+          return RouterMode.Playing;
         }
-        
+
         if (netThread != null)
         {
           switch (netThread.Status)
@@ -109,7 +109,7 @@ namespace Tes.Main
             break;
           }
         }
-        
+
         return RouterMode.Idle;
       }
     }
@@ -145,12 +145,12 @@ namespace Tes.Main
     /// Access to the registered <see cref="MessageHandler"/> objects.
     /// </summary>
     public MessageHandlerLibrary Handlers { get { return _handlers; } }
-    
+
     /// <summary>
     /// Access to the known materials library.
     /// </summary>
     public MaterialLibrary Materials { get { return _materials; } }
-    
+
     /// <summary>
     /// Access to the scene root.
     /// </summary>
@@ -278,7 +278,7 @@ namespace Tes.Main
           foreach (var value in Enum.GetValues(enumType))
           {
             try
-            { 
+            {
               if ((ushort)value == id)
               {
                 // Found a match. Convert to string.
@@ -305,7 +305,7 @@ namespace Tes.Main
     /// <remarks>
     /// On success, this sets the active data thread to a <see cref="StreamThead"/> and continues
     /// to playback messages from this stream.
-    /// 
+    ///
     /// Any active data stream is terminated before attempting to open <paramref name="fileName"/>.
     /// </remarks>
     public bool OpenFile(string fileName)
@@ -343,7 +343,7 @@ namespace Tes.Main
     /// <remarks>
     /// On success, this sets the active data thread to a <see cref="NetworkThread"/> and continues
     /// to read and process messages from this stream.
-    /// 
+    ///
     /// Any active data stream is terminated before attempting to open the network connection.
     /// </remarks>
     public bool Connect(IPEndPoint endPoint, bool autoReconnect)
@@ -380,7 +380,7 @@ namespace Tes.Main
         Application.runInBackground = !_dataThread.Paused;
       }
     }
-    
+
     /// <summary>
     /// Disconnect from the current network connection.
     /// </summary>
@@ -390,14 +390,14 @@ namespace Tes.Main
     public void Disconnect()
     {
       if (_dataThread as NetworkThread != null)
-      { 
+      {
         Reset();
       }
     }
 
     /// <summary>
     /// Start recording the current network stream to <paramref cref="filePath">
-    /// </summary>    
+    /// </summary>
     /// <param name="filePath">The file path to save the recording to.</param>
     /// <returns><code>true</code> on successfully starting recording.</returns>
     /// <remarks>
@@ -422,7 +422,7 @@ namespace Tes.Main
       {
         return false;
       }
-      
+
       StopRecording();
       try
       {
@@ -444,10 +444,10 @@ namespace Tes.Main
 
       return _recordingWriter != null;
     }
-    
+
     /// <summary>
     /// Stop the current recording.
-    /// </summary>    
+    /// </summary>
     public void StopRecording()
     {
       if (_recordingWriter != null)
@@ -458,12 +458,12 @@ namespace Tes.Main
         _recordingWriter = null;
       }
     }
-    
+
     public void Stop()
     {
       Reset();
     }
-    
+
     public void StepForward()
     {
       if (_dataThread != null && !_dataThread.IsLiveStream)
@@ -516,7 +516,7 @@ namespace Tes.Main
         Application.runInBackground = true;
       }
     }
-    
+
     public void Reset(bool partialReset = false)
     {
       StopRecording();
@@ -527,11 +527,12 @@ namespace Tes.Main
         _dataThread = null;
       }
       if (!partialReset)
-      { 
+      {
         ResetScene();
       }
       // No longer run in background. Will again if we get a network thread.
       Application.runInBackground = false;
+      _pendingSnapshotFrame = ~0u;
     }
 
     public void InitialiseHandlers()
@@ -582,7 +583,7 @@ namespace Tes.Main
           bool processingPackets = true;
           while (!endFrame && processingPackets || catchUp)
           {
-            catchUp = UpdateCatchup(catchUp);
+            catchUp = UpdateCatchup(catchUp, _pendingSnapshotFrame != ~0u);
             if ((processingPackets = _dataThread.PacketQueue.TryDequeue(ref packet)))
             {
               // Handle record on connect.
@@ -625,27 +626,35 @@ namespace Tes.Main
                     if (message.Read(packetReader) &&
                        (packet.Header.MessageID == (ushort)ControlMessageID.EndFrame ||
                         packet.Header.MessageID == (ushort)ControlMessageID.ForceFrameFlush ||
-                        packet.Header.MessageID == (ushort)ControlMessageID.Reset))
+                        packet.Header.MessageID == (ushort)ControlMessageID.Reset) ||
+                        packet.Header.MessageID == (ushort)ControlMessageID.Snapshop)
                     {
-                      if (packet.Header.MessageID == (ushort)ControlMessageID.Reset)
+                      switch ((ControlMessageID)packet.Header.MessageID)
                       {
-                        // Drop pending packets.
-                        _pendingPackets.Clear();
-                        // Reset all the data handlers, but not the data thread.
-                        ResetScene();
-                        // Force a frame flush.
-                        EndFrame(0);
+                        case ControlMessageID.Reset:
+                          // Drop pending packets.
+                          _pendingPackets.Clear();
+                          // Reset all the data handlers, but not the data thread.
+                          ResetScene();
+                          // Force a frame flush.
+                          EndFrame(0);
+                          break;
+                        case ControlMessageID.Snapshop:
+                          catchUp = UpdateCatchup(catchUp, true);
+                          _pendingSnapshotFrame = message.Value32;
+                          break;
+                        case ControlMessageID.EndFrame:
+                        case ControlMessageID.ForceFrameFlush:
+                          EndFrame((uint)message.Value64, (message.ControlFlags & (ushort)EndFrameFlag.Persist) != 0);
+                          if (_recordingWriter != null)
+                          {
+                            WriteCameraPosition(_recordingWriter, Camera.main, 255);
+                          }
+                          endFrame = packet.Header.MessageID == (ushort)ControlMessageID.EndFrame && _dataThread.TargetFrame == 0;
+                          break;
+                        default:
+                          break;
                       }
-                      else
-                      {
-                        EndFrame((uint)message.Value64, (message.ControlFlags & (ushort)EndFrameFlag.Persist) != 0);
-                        if (_recordingWriter != null)
-                        {
-                          WriteCameraPosition(_recordingWriter, Camera.main, 255);
-                        }
-                      }
-
-                      endFrame = packet.Header.MessageID == (ushort)ControlMessageID.EndFrame && _dataThread.TargetFrame == 0;
                     }
                     else
                     {
@@ -716,16 +725,14 @@ namespace Tes.Main
         case ControlMessageID.EndFrame:
         case ControlMessageID.ForceFrameFlush:
         case ControlMessageID.Reset:
-          // Noop. Already handled.
+        case ControlMessageID.Snapshop:
+          // Noop. Already handled when dequeued.
           break;
         case ControlMessageID.CoordinateFrame:
           if (Scene != null && Scene.Root != null)
           {
             Scene.Frame = (Tes.Net.CoordinateFrame)message.Value32;
           }
-          break;
-        case ControlMessageID.Snapshop:
-          GenerateSnapshot(message.Value32);
           break;
         default:
           break;
@@ -741,16 +748,17 @@ namespace Tes.Main
     /// Manage catchup state changes.
     /// </summary>
     /// <param name="inCatchUp">Currently in catch up mode? Supports looping in the update method.</param>
+    /// <param name="forceExitCatchup">Force exit of catchup mode?</param>
     /// <returns>True if the data thread is catch up mode, false otherwise.</returns>
     /// <remarks>
     /// In catch up mode the data thread is trying to make a large step. To reduce main thread
     /// processing, all handers have <see cref="MessageHandler.ModeFlags.IgnoreTransient"/>
     /// set. It is cleared otherwise.
     /// </remarks>
-    private bool UpdateCatchup(bool inCatchUp)
+    private bool UpdateCatchup(bool inCatchUp, bool forceExitCatchup = false)
     {
       bool needCatchUp = false;
-      if (_dataThread != null)
+      if (_dataThread != null && !forceExitCatchup)
       {
         needCatchUp = _dataThread.CatchingUp || _currentFrame + 1 < _dataThread.CurrentFrame;
       }
@@ -773,6 +781,13 @@ namespace Tes.Main
     /// <param name="maintainTransient">True to prevent flushing of transient objects this frame.</param>
     private void EndFrame(uint frameNumber, bool maintainTransient = false)
     {
+      // Finalise any pending snapshop.
+      if (_pendingSnapshotFrame != ~0u)
+      {
+        GenerateSnapshot(_pendingSnapshotFrame);
+        _pendingSnapshotFrame = ~0u;
+      }
+
       // TODO: respect the elapsed time. That is, delay processing until the
       // required time has elapsed.
       foreach (MessageHandler handler in _handlers.Handlers)
@@ -1063,7 +1078,7 @@ namespace Tes.Main
 
           // Test the packet.
           int bytesRead = outStream.Read(headerBuffer, 0, headerBuffer.Length);
-          if (bytesRead == headerBuffer.Length) 
+          if (bytesRead == headerBuffer.Length)
           {
             // Create a packet.
             if (header.Read(new NetworkReader(new MemoryStream(headerBuffer, false))))
@@ -1077,7 +1092,7 @@ namespace Tes.Main
               }
               else
               {
-                // At this point, we've failed to find the right kind of header. We could use the payload size to 
+                // At this point, we've failed to find the right kind of header. We could use the payload size to
                 // skip ahead in the stream which should align exactly to the next message.
                 // Not done for initial testing.
               }
@@ -1158,6 +1173,10 @@ namespace Tes.Main
     /// Duplicates the total frame number from the data thread to update only when relevant.
     /// </summary>
     private uint _totalFrames = 0;
+    /// <summary>
+    /// Specifies the next frame number at the end of which a snapshot should be taken.
+    /// </summary>
+    private uint _pendingSnapshotFrame = ~0u;
     /// <summary>
     /// This writer is used to record the current network connection.
     /// We are not recording if it is null and we are if it is non-null.

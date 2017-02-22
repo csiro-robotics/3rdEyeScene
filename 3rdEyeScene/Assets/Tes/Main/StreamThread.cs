@@ -48,7 +48,7 @@ namespace Tes.Main
     private uint _snapshotMinFrames = 5;
 
     public override Queue<PacketBuffer> PacketQueue { get { return _packetQueue; } }
-    public override uint CurrentFrame 
+    public override uint CurrentFrame
     {
       get { lock(this) { return _currentFrame; } }
       set { TargetFrame = value; }
@@ -115,7 +115,7 @@ namespace Tes.Main
           return _playbackSpeed;
         }
       }
-      
+
       set
       {
         lock(this)
@@ -225,6 +225,7 @@ namespace Tes.Main
       long processedBytes = 0;
       long bytesSinceLastSnapshot = 0;
       uint lastSnapshotFrame = 0;
+      bool requestSnapshot = false;
 
       stopwatch.Start();
       while (!_quitFlag && _stream != null) // && _stream.Position + PacketHeader.Size <= _stream.Length)
@@ -259,7 +260,7 @@ namespace Tes.Main
         {
           elapsedUs = 0;
           lock(this)
-          { 
+          {
             if (_targetFrame < _currentFrame)
             {
               // Stepping back.
@@ -313,6 +314,18 @@ namespace Tes.Main
               allowYield = false;
               if (header.Read(new NetworkReader(new MemoryStream(headerBuffer, false))))
               {
+                if (requestSnapshot)
+                {
+                  // Snapshot request is for the end of the next frame.
+                  // This message must be the first in the frame to ensure all transient objects
+                  // are correctly visualised. That is, this message gives the visualisation
+                  // logic a chance to ensure everything is ready for the snapshot.
+                  lastSnapshotFrame = _currentFrame + 1;
+                  bytesSinceLastSnapshot = 0;
+                  RequestSnapshot(_currentFrame, processedBytes);
+                  requestSnapshot = false;
+                }
+
                 // Read the header. Determine the expected size and read that much more data.
                 int crcSize = ((header.Flags & (byte)PacketFlag.NoCrc) == 0) ? Crc16.CrcSize : 0;
                 PacketBuffer packet = new PacketBuffer(header.PacketSize + crcSize);
@@ -331,9 +344,10 @@ namespace Tes.Main
                           lastSnapshotFrame < _currentFrame &&
                           _currentFrame - lastSnapshotFrame >= _snapshotMinFrames)
                       {
-                        bytesSinceLastSnapshot = 0;
-                        RequestSnapshot(_currentFrame, processedBytes);
-                        lastSnapshotFrame = _currentFrame;
+                        // Request a snapshot for the next frame, not the ending one.
+                        // This is to ensure that all transient objects are represented
+                        // in the snapshot frame.
+                        requestSnapshot = true;
                       }
                       // Make sure we yield so as to support the later check to avoid flooding the packet queue.
                       allowYield = true;
@@ -411,7 +425,7 @@ namespace Tes.Main
       {
         return endedFrame;
       }
-      
+
       if (messageId == ControlMessageID.EndFrame)
       {
         // Replace the end of frame packet with a new one including the current frame number.
@@ -569,8 +583,8 @@ namespace Tes.Main
 
       try
       {
-        Stream snapStream = new FileStream(snapshot.TemporaryFilePath, FileMode.Open, FileAccess.Read);
         // Ensure stream has been reset.
+        Stream snapStream = new FileStream(snapshot.TemporaryFilePath, FileMode.Open, FileAccess.Read);
         if (_stream as GZipStream != null)
         {
           ResetStream();
@@ -666,6 +680,17 @@ namespace Tes.Main
                 // Check for end of frame messages to yield on.
                 _packetQueue.Enqueue(packet);
                 ok = true;
+              }
+              else
+              {
+                switch (packet.Status)
+                {
+                case PacketBufferStatus.CrcError:
+                  Debug.LogError("Failed to decode packet CRC.");
+                  break;
+                default:
+                  break;
+                }
               }
             }
           }

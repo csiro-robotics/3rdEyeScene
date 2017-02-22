@@ -2,6 +2,7 @@
 using System.IO;
 using Tes.Net;
 using Tes.Runtime;
+using Tes.Shapes;
 using Tes.IO;
 using UnityEngine;
 using System;
@@ -41,7 +42,7 @@ namespace Tes.Handlers
       public int IndexCount { get; internal set; }
 
       /// <summary>
-      /// Acces the object being used to construct the Unity mesh objects.
+      /// Access the object being used to construct the Unity mesh objects.
       /// </summary>
       public MeshBuilder Builder { get { return _builder; } }
       /// <summary>
@@ -85,6 +86,86 @@ namespace Tes.Handlers
       public bool Finalised { get; internal set; }
 
       private MeshBuilder _builder = new MeshBuilder();
+    }
+
+    /// <summary>
+    /// Wraps a <see cref="MeshDetails"/> object to expose it as a <see cref="MeshResource"/>
+    /// for the purposes of serialisation.
+    /// </summary>
+    /// <remarks>
+    /// This approach is used to ensure consistent serialisation, without duplicating code paths.
+    /// </remarks>
+    private class MeshSerialiser : MeshBase
+    {
+      /// <summary>
+      /// The wrapped mesh details.
+      /// </summary>
+      public MeshDetails Details { get; private set; }
+
+      /// <summary>
+      /// Create a serialiser for the given mesh details.
+      /// </summary>
+      /// <param name="details">The mesh to serialise.</param>
+      public MeshSerialiser(MeshDetails details)
+      {
+        Details = details;
+
+        // Migrate data fields.
+        ID = details.ID;
+        Maths.Matrix4 transform = Maths.Rotation.ToMatrix4(Maths.QuaternionExt.FromUnity(details.LocalRotation));
+        transform.Translation = Maths.Vector3Ext.FromUnity(details.LocalPosition);
+        transform.ApplyScaling(Maths.Vector3Ext.FromUnity(details.LocalScale));
+        Transform = transform;
+        Tint = Maths.ColourExt.FromUnity(details.Tint).Value;
+        DrawType = Details.DrawType;
+        CalculateNormals = Details.Builder.CalculateNormals;
+
+        MeshComponentFlag components = 0;
+        if (details.VertexCount > 0) { components |= MeshComponentFlag.Vertex; }
+        if (details.Builder.ExplicitIndices) { components |= MeshComponentFlag.Index; }
+        if (_colours.Length > 0) { components |= MeshComponentFlag.Colour; }
+        if (_normals.Length > 0) { components |= MeshComponentFlag.Normal; }
+        if (_uvs.Length > 0) { components |= MeshComponentFlag.UV; }
+        Components = components;
+
+        // Copy arrays into the correct format.
+        _vertices = Maths.Vector3Ext.FromUnity(details.Builder.Vertices);
+        _normals = Maths.Vector3Ext.FromUnity(details.Builder.Normals);
+        _uvs = Maths.Vector2Ext.FromUnity(details.Builder.UVs);
+        _colours = Maths.ColourExt.FromUnityUInts(details.Builder.Colours);
+      }
+
+      #region MeshBase overrides.
+      public override int IndexSize { get { return 4; } }
+
+      public override uint VertexCount(int stream = 0)
+      {
+        // Return how many we have so far, not the expected amount.
+        return (uint)_vertices.Length;
+      }
+
+      public override uint IndexCount(int stream = 0)
+      {
+        // Return how many we have so far, not the expected amount.
+        return (uint)Details.Builder.Indices.Length;
+      }
+
+      public override Tes.Maths.Vector3[] Vertices(int stream = 0) { return _vertices; }
+
+
+      public override int[] Indices4(int stream = 0) { return Details.Builder.Indices; }
+
+      public override Tes.Maths.Vector3[] Normals(int stream = 0) { return _normals; }
+
+      public override Tes.Maths.Vector2[] UVs(int stream = 0) { return _uvs; }
+
+      public override uint[] Colours(int stream = 0) { return _colours; }
+      #endregion
+
+      private Maths.Vector3[] _vertices;
+      private Maths.Vector3[] _normals;
+      private Maths.Vector2[] _uvs;
+      private uint[] _colours;
     }
 
     /// <summary>
@@ -338,14 +419,18 @@ namespace Tes.Handlers
       packet.FinalisePacket();
       packet.ExportTo(writer);
 
-      uint blockSize = 65000u;
-
-      // Now write data messages for the mesh content.
-      WriteMeshComponent(mesh.ID, MeshMessageType.Vertex, mesh.Builder.Vertices, packet, writer, blockSize);
-      WriteMeshComponent(mesh.ID, MeshMessageType.Index, mesh.Builder.Indices, packet, writer, blockSize);
-      WriteMeshComponent(mesh.ID, MeshMessageType.Normal, mesh.Builder.Normals, packet, writer, blockSize);
-      WriteMeshComponent(mesh.ID, MeshMessageType.VertexColour, mesh.Builder.Colours, packet, writer, blockSize);
-      WriteMeshComponent(mesh.ID, MeshMessageType.UV, mesh.Builder.UVs, packet, writer, blockSize);
+      // Now use the MeshResource methods to complete serialisation.
+      MeshSerialiser serialiser = new MeshSerialiser(mesh);
+      TransferProgress prog = new TransferProgress();
+      prog.Reset();
+      while (!prog.Complete)
+      {
+        serialiser.Transfer(packet, 0, ref prog);
+        if (packet.FinalisePacket())
+        {
+          packet.ExportTo(writer);
+        }
+      }
 
       // Finalise if possible.
       if (mesh.Finalised)
@@ -405,155 +490,6 @@ namespace Tes.Handlers
 
         if (cmsg.Count > 0)
         {
-          packet.FinalisePacket();
-          packet.ExportTo(writer);
-        }
-
-        cmsg.Offset += cmsg.Count;
-        cmsg.Count = 0;
-      }
-    }
-
-    /// <summary>
-    /// Write a <see cref="MeshComponentMessage"/> to serialise <c>Vector2</c> data.
-    /// </summary>
-    /// <param name="meshID">Mesh resource ID we are serialising for.</param>
-    /// <param name="type">The mesh component type; e.g., <see cref="MeshMessageType.UV"/>.</param>
-    /// <param name="data">The <c>Vector2</c> data array.</param>
-    /// <param name="packet">Packet buffer to compose messages in</param>
-    /// <param name="writer">Writer to export completed message packets to.</param>
-    /// <param name="blockSize">The maximum number of elements per message.</param>
-    /// <remarks>
-    /// Writes multiple messages to <paramref name="writer"/> as required to ensure all
-    /// <paramref name="data"/> are written.
-    /// </remarks>
-    protected void WriteMeshComponent(uint meshID, MeshMessageType type, Vector2[] data, PacketBuffer packet, BinaryWriter writer, uint blockSize)
-    {
-      if (data == null || data.Length == 0)
-      {
-        return;
-      }
-
-      MeshComponentMessage cmsg = new MeshComponentMessage();
-      cmsg.MeshID = meshID;
-      cmsg.Offset = 0;
-      cmsg.Reserved = 0;
-      cmsg.Count = 0;
-
-      while (cmsg.Offset < data.Length)
-      {
-        Vector2 v;
-        cmsg.Count = (ushort)Math.Min(blockSize, (uint)data.Length - cmsg.Offset);
-        packet.Reset((ushort)RoutingID, (ushort)type);
-        cmsg.Write(packet);
-        for (int i = 0; i < cmsg.Count; ++i)
-        {
-          v = data[i + cmsg.Offset];
-          packet.WriteBytes(BitConverter.GetBytes(v.x), true);
-          packet.WriteBytes(BitConverter.GetBytes(v.y), true);
-        }
-
-        if (cmsg.Count > 0)
-        {
-          cmsg.Write(packet);
-          packet.FinalisePacket();
-          packet.ExportTo(writer);
-        }
-
-        cmsg.Offset += cmsg.Count;
-        cmsg.Count = 0;
-      }
-    }
-
-    /// <summary>
-    /// Write a <see cref="MeshComponentMessage"/> to serialise <c>Color32</c> data.
-    /// </summary>
-    /// <param name="meshID">Mesh resource ID we are serialising for.</param>
-    /// <param name="type">The mesh component type; e.g., <see cref="MeshMessageType.VertexColour"/>.</param>
-    /// <param name="data">The <c>Color32</c> data array.</param>
-    /// <param name="packet">Packet buffer to compose messages in</param>
-    /// <param name="writer">Writer to export completed message packets to.</param>
-    /// <param name="blockSize">The maximum number of elements per message.</param>
-    /// <remarks>
-    /// Writes multiple messages to <paramref name="writer"/> as required to ensure all
-    /// <paramref name="data"/> are written.
-    /// </remarks>
-    protected void WriteMeshComponent(uint meshID, MeshMessageType type, Color32[] data, PacketBuffer packet, BinaryWriter writer, uint blockSize)
-    {
-      if (data == null || data.Length == 0)
-      {
-        return;
-      }
-
-      MeshComponentMessage cmsg = new MeshComponentMessage();
-      cmsg.MeshID = meshID;
-      cmsg.Offset = 0;
-      cmsg.Reserved = 0;
-      cmsg.Count = 0;
-
-      while (cmsg.Offset < data.Length)
-      {
-        Color32 c;
-        cmsg.Count = (ushort)Math.Min(blockSize, (uint)data.Length - cmsg.Offset);
-        packet.Reset((ushort)RoutingID, (ushort)type);
-        cmsg.Write(packet);
-        for (int i = 0; i < cmsg.Count; ++i)
-        {
-          c = data[i + cmsg.Offset];
-          packet.WriteBytes(BitConverter.GetBytes(ShapeComponent.ConvertColour(c)), true);
-        }
-
-        if (cmsg.Count > 0)
-        {
-          cmsg.Write(packet);
-          packet.FinalisePacket();
-          packet.ExportTo(writer);
-        }
-
-        cmsg.Offset += cmsg.Count;
-        cmsg.Count = 0;
-      }
-    }
-
-    /// <summary>
-    /// Write a <see cref="MeshComponentMessage"/> to serialise <c>int</c> data.
-    /// </summary>
-    /// <param name="meshID">Mesh resource ID we are serialising for.</param>
-    /// <param name="type">The mesh component type; e.g., <see cref="MeshMessageType.Index"/>.</param>
-    /// <param name="data">The <c>int</c> data array.</param>
-    /// <param name="packet">Packet buffer to compose messages in</param>
-    /// <param name="writer">Writer to export completed message packets to.</param>
-    /// <param name="blockSize">The maximum number of elements per message.</param>
-    /// <remarks>
-    /// Writes multiple messages to <paramref name="writer"/> as required to ensure all
-    /// <paramref name="data"/> are written.
-    /// </remarks>
-    protected void WriteMeshComponent(uint meshID, MeshMessageType type, int[] data, PacketBuffer packet, BinaryWriter writer, uint blockSize)
-    {
-      if (data == null || data.Length == 0)
-      {
-        return;
-      }
-
-      MeshComponentMessage cmsg = new MeshComponentMessage();
-      cmsg.MeshID = meshID;
-      cmsg.Offset = 0;
-      cmsg.Reserved = 0;
-      cmsg.Count = 0;
-
-      while (cmsg.Offset < data.Length)
-      {
-        cmsg.Count = (ushort)Math.Min(blockSize, (uint)data.Length - cmsg.Offset);
-        packet.Reset((ushort)RoutingID, (ushort)type);
-        cmsg.Write(packet);
-        for (int i = 0; i < cmsg.Count; ++i)
-        {
-          packet.WriteBytes(BitConverter.GetBytes(data[i + cmsg.Offset]), true);
-        }
-
-        if (cmsg.Count > 0)
-        {
-          cmsg.Write(packet);
           packet.FinalisePacket();
           packet.ExportTo(writer);
         }
@@ -685,8 +621,8 @@ namespace Tes.Handlers
 
       int voffset = (int)msg.Offset;
       // Bounds check.
-      int vertexCount = meshDetails.VertexCount;
-      if (voffset >= vertexCount || voffset + (int)msg.Count > vertexCount)
+      int vertexCount = (int)meshDetails.VertexCount;
+      if (voffset >= vertexCount || voffset + msg.Count > vertexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Vertex);
       }
@@ -694,7 +630,7 @@ namespace Tes.Handlers
       // Check for settings initial bounds.
       bool ok = true;
       Vector3 v = Vector3.zero;
-      for (int vInd = 0; ok && vInd < (int)msg.Count; ++vInd)
+      for (int vInd = 0; ok && vInd < msg.Count; ++vInd)
       {
         v.x = reader.ReadSingle();
         v.y = reader.ReadSingle();
@@ -738,8 +674,8 @@ namespace Tes.Handlers
 
       int voffset = (int)msg.Offset;
       // Bounds check.
-      int vertexCount = meshDetails.VertexCount;
-      if (voffset >= vertexCount || voffset + (int)msg.Count > vertexCount)
+      int vertexCount = (int)meshDetails.VertexCount;
+      if (voffset >= vertexCount || voffset + msg.Count > vertexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.VertexColour);
       }
@@ -747,7 +683,7 @@ namespace Tes.Handlers
       // Check for settings initial bounds.
       bool ok = true;
       uint colour;
-      for (int vInd = 0; ok && vInd < (int)msg.Count; ++vInd)
+      for (int vInd = 0; ok && vInd < msg.Count; ++vInd)
       {
         colour = reader.ReadUInt32();
         meshDetails.Builder.UpdateColour(vInd + voffset, ShapeComponent.ConvertColour(colour));
@@ -789,8 +725,8 @@ namespace Tes.Handlers
 
       int ioffset = (int)msg.Offset;
       // Bounds check.
-      int indexCount = meshDetails.IndexCount;
-      if (ioffset >= indexCount || ioffset + (int)msg.Count > indexCount)
+      int indexCount = (int)meshDetails.IndexCount;
+      if (ioffset >= indexCount || ioffset + msg.Count > indexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Index);
       }
@@ -798,7 +734,7 @@ namespace Tes.Handlers
       // Check for settings initial bounds.
       bool ok = true;
       int index;
-      for (int iInd = 0; ok && iInd < (int)msg.Count; ++iInd)
+      for (int iInd = 0; ok && iInd < msg.Count; ++iInd)
       {
         index = reader.ReadInt32();
         meshDetails.Builder.UpdateIndex(iInd + ioffset, index);
@@ -840,8 +776,8 @@ namespace Tes.Handlers
 
       int voffset = (int)msg.Offset;
       // Bounds check.
-      int vertexCount = meshDetails.VertexCount;
-      if (voffset >= vertexCount || voffset + (int)msg.Count > vertexCount)
+      int vertexCount = (int)meshDetails.VertexCount;
+      if (voffset >= vertexCount || voffset + msg.Count > vertexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Normal);
       }
@@ -896,8 +832,8 @@ namespace Tes.Handlers
 
       int voffset = (int)msg.Offset;
       // Bounds check.
-      int vertexCount = meshDetails.VertexCount;
-      if (voffset >= vertexCount || voffset + (int)msg.Count > vertexCount)
+      int vertexCount = (int)meshDetails.VertexCount;
+      if (voffset >= vertexCount || voffset + msg.Count > vertexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.UV);
       }
@@ -905,7 +841,7 @@ namespace Tes.Handlers
       // Check for settings initial bounds.
       bool ok = true;
       Vector2 uv = Vector2.zero;
-      for (int vInd = 0; ok && vInd < (int)msg.Count; ++vInd)
+      for (int vInd = 0; ok && vInd < msg.Count; ++vInd)
       {
         uv.x = reader.ReadSingle();
         uv.y = reader.ReadSingle();
