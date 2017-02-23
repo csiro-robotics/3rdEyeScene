@@ -139,6 +139,17 @@ namespace Tes.Net
       ScaleY = scale.Y;
       ScaleZ = scale.Z;
     }
+
+    /// <summary>
+    /// Extract a 4x4 transformation matrix from the stored attributes.
+    /// </summary>
+    /// <returns>The extracted transformation matrix.</returns>
+    public Matrix4 GetTransform()
+    {
+      Matrix4 trans = Rotation.ToMatrix4(new Quaternion(RotationX, RotationY, RotationZ, RotationW));
+      trans.Translation = new Vector3(X, Y, Z);
+      trans.ApplyScaling(new Vector3(ScaleX, ScaleY, ScaleZ));
+      return trans;
+    }
   }
 }
-

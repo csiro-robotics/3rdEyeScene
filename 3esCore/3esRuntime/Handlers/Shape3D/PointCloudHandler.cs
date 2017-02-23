@@ -140,83 +140,23 @@ namespace Tes.Handlers.Shape3D
       return obj;
     }
 
-    /// <summary>
-    /// Overridden to include point count and attributes.
-    /// </summary>
-    /// <param name="packet">Packet to write the message to.</param>
-    /// <param name="shape">Shape object to write.</param>
-    /// <returns>An error on failure.</returns>
-    protected override Error SerialiseObject(PacketBuffer packet, ShapeComponent shape)
+    protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
     {
-      CreateMessage msg = new CreateMessage();
-      msg.ObjectID = shape.ObjectID;
-      msg.Category = shape.Category;
-      msg.Flags = shape.ObjectFlags;
-      EncodeAttributes(ref msg.Attributes, shape.gameObject, shape);
-      msg.Write(packet);
-
-      PointsComponent pointsComp = shape.GetComponent<PointsComponent>();
-      if (pointsComp == null)
+      PointsComponent pointsComp = shapeComponent.GetComponent<PointsComponent>();
+      if (pointsComp != null)
       {
-        return new Error(ErrorCode.SerialisationFailure, shape.ObjectID);
+        ObjectAttributes attr = new ObjectAttributes();
+        EncodeAttributes(ref attr, shapeComponent.gameObject, shapeComponent);
+
+        Shapes.PointCloudShape points = new Shapes.PointCloudShape(new MeshResourcePlaceholder(pointsComp.MeshID),
+                                                                   shapeComponent.ObjectID,
+                                                                   shapeComponent.Category,
+                                                                   (byte)pointsComp.PointSize);
+        points.SetAttributes(attr);
+
+        return points;
       }
-
-      packet.WriteBytes(BitConverter.GetBytes((UInt32)pointsComp.MeshID), true);
-      packet.WriteBytes(BitConverter.GetBytes((UInt32)pointsComp.IndexCount), true);
-      packet.WriteBytes(new byte[] { (byte)pointsComp.PointSize }, true);
-
-      return new Error();
-    }
-
-    /// <summary>
-    /// Overridden to serialise <see cref="DataMessage">data messages</see> containing
-    /// index data (if any).
-    /// </summary>
-    /// <param name="packet"></param>
-    /// <param name="writer"></param>
-    /// <param name="shape"></param>
-    /// <returns></returns>
-    protected override Error PostSerialiseCreateObject(PacketBuffer packet, BinaryWriter writer, ShapeComponent shape)
-    {
-      PointsComponent pointsComp = shape.GetComponent<PointsComponent>();
-      if (pointsComp == null)
-      {
-        return new Error(ErrorCode.SerialisationFailure, shape.ObjectID);
-      }
-
-      if (pointsComp.IndexCount == 0)
-      {
-        // Nothing to do.
-        return new Error();
-      }
-
-      uint offset = 0;
-      int[] indices = pointsComp.Indices;
-      DataMessage msg = new DataMessage();
-      msg.ObjectID = shape.ObjectID;
-      while (offset < pointsComp.IndexCount)
-      {
-        // Very rough max limit.
-        uint sectionSize = Math.Min(pointsComp.IndexCount - offset, 65000u / 4u);
-
-        packet.Reset(RoutingID, DataMessage.MessageID);
-        msg.Write(packet);
-
-        packet.WriteBytes(BitConverter.GetBytes(offset), true);
-        packet.WriteBytes(BitConverter.GetBytes(sectionSize), true);
-
-        for (uint i = 0; i < sectionSize; ++i)
-        {
-          packet.WriteBytes(BitConverter.GetBytes(indices[i + offset]), true);
-        }
-
-        packet.FinalisePacket();
-        packet.ExportTo(writer);
-
-        offset += sectionSize;
-      }
-
-      return new Error();
+      return null;
     }
 
     /// <summary>

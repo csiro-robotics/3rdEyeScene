@@ -1,5 +1,4 @@
-﻿using System;
-using Tes.Maths;
+﻿using Tes.Maths;
 using Tes.Shapes;
 
 namespace Tes
@@ -9,6 +8,14 @@ namespace Tes
   /// </summary>
   public class Pyramid : Shape
   {
+    /// <summary>
+    /// Empty constructor.
+    /// </summary>
+    public Pyramid()
+      : base((ushort)Tes.Net.RoutingID.UserIDStart)
+    {
+    }
+
     /// <summary>
     /// Construct a pyramid shape.
     /// </summary>

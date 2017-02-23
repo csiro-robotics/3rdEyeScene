@@ -94,6 +94,7 @@
     <Compile Include="Tessellate\Sphere.cs" />
     <Compile Include="Tessellate\SphereVector3Hash.cs" />
     <Compile Include="Tessellate\Star.cs" />
+    <Compile Include="Handlers\MeshResourcePlaceholder.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\3esCore\3esCore.csproj">

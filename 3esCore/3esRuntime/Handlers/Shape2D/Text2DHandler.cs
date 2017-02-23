@@ -346,30 +346,42 @@ namespace Tes.Handlers.Shape2D
     public override Error Serialise(BinaryWriter writer, ref SerialiseInfo info)
     {
       PacketBuffer packet = new PacketBuffer();
-      PacketHeader header = PacketHeader.Create(RoutingID, CreateMessage.MessageID);
-      CreateMessage msg = new CreateMessage();
-      byte[] encoded = new byte[1024];
+      Shapes.Text2D shape = new Shapes.Text2D(null);
       info.TransientCount = info.PersistentCount = 0u;
-      msg.Reserved = 0;
-      packet.WriteHeader(header);
 
       foreach (TextEntry entry in TransientText.Entries)
       {
         ++info.TransientCount;
-        WriteEntry(entry, packet, msg, ref encoded);
+        shape.ID = 0;
+        shape.Category = entry.Category;
+        shape.Flags = entry.ObjectFlags;
+        shape.SetPosition(entry.Position.x, entry.Position.y, entry.Position.z);
+        shape.Text = entry.Text;
         if (packet.FinalisePacket())
         {
           packet.ExportTo(writer);
+        }
+        else
+        {
+          return new Error(ErrorCode.SerialisationFailure);
         }
       }
 
       foreach (TextEntry entry in PersistentText.Entries)
       {
         ++info.PersistentCount;
-        WriteEntry(entry, packet, msg, ref encoded);
+        shape.ID = 0;
+        shape.Category = entry.Category;
+        shape.Flags = entry.ObjectFlags;
+        shape.SetPosition(entry.Position.x, entry.Position.y, entry.Position.z);
+        shape.Text = entry.Text;
         if (packet.FinalisePacket())
         {
           packet.ExportTo(writer);
+        }
+        else
+        {
+          return new Error(ErrorCode.SerialisationFailure);
         }
       }
 
@@ -385,35 +397,6 @@ namespace Tes.Handlers.Shape2D
     {
       PersistentText.CategoryActive(categoryId, active);
       TransientText.CategoryActive(categoryId, active);
-    }
-
-    /// <summary>
-    /// Serialise a single text entry.
-    /// </summary>
-    /// <param name="entry"></param>
-    /// <param name="packet"></param>
-    /// <param name="msg"></param>
-    /// <param name="encoded"></param>
-    private void WriteEntry(TextEntry entry, PacketBuffer packet, CreateMessage msg, ref byte[] encoded)
-    {
-      ushort strlen;
-      packet.Reset(RoutingID, CreateMessage.MessageID);
-      msg.ObjectID = entry.ID;
-      msg.Category = entry.Category;
-      msg.Flags = entry.ObjectFlags;
-      msg.Attributes.X = entry.Position.x;
-      msg.Attributes.Y = entry.Position.y;
-      msg.Attributes.Z = entry.Position.z;
-      msg.Write(packet);
-
-      strlen = (ushort)System.Text.Encoding.Default.GetByteCount(entry.Text);
-      if (encoded.Length < strlen)
-      {
-        encoded = new byte[strlen];
-      }
-      System.Text.Encoding.Default.GetBytes(entry.Text, 0, entry.Text.Length, encoded, 0);
-      packet.WriteBytes(BitConverter.GetBytes(strlen), true);
-      packet.WriteBytes(encoded, false, 0, strlen);
     }
 
     /// <summary>

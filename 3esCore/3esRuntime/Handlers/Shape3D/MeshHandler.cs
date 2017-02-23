@@ -156,144 +156,32 @@ namespace Tes.Handlers.Shape3D
       return obj;
     }
 
-    /// <summary>
-    /// Serialise a single object to the <paramref name="packet"/>
-    /// </summary>
-    /// <param name="packet">Packet to write the message to.</param>
-    /// <param name="shape">Shape object to write.</param>
-    /// <returns>An error on failure.</returns>
-    protected override Error SerialiseObject(PacketBuffer packet, ShapeComponent shape)
+    protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
     {
-      CreateMessage msg = new CreateMessage();
-      msg.ObjectID = shape.ObjectID;
-      msg.Category = shape.Category;
-      msg.Flags = shape.ObjectFlags;
-      EncodeAttributes(ref msg.Attributes, shape.gameObject, shape);
-      msg.Write(packet);
-      // Add vertex count.
-      MeshDataComponent meshData = shape.GetComponent<MeshDataComponent>();
-      uint count = (uint)meshData.Vertices.Length;
-      packet.WriteBytes(BitConverter.GetBytes(count), true);
-      count = (uint)meshData.Indices.Length;
-      packet.WriteBytes(BitConverter.GetBytes(count), true);
-      byte drawType = (byte)meshData.DrawType;
-      packet.WriteBytes(new byte[] { drawType }, false);
-      return new Error();
-    }
-
-    /// <summary>
-    /// Overridden to include vertex data extracted from the mesh.
-    /// </summary>
-    /// <param name="packet">Packet to write the message to.</param>
-    /// <param name="writer">Write to export completed packets to.</param>
-    /// <param name="shape">Shape object to write.</param>
-    /// <returns>An error on failure.</returns>
-    protected override Error PostSerialiseCreateObject(PacketBuffer packet, BinaryWriter writer, ShapeComponent shape)
-    {
-      DataMessage msg = new DataMessage();
-      msg.ObjectID = shape.ObjectID;
-
-      // Get the mesh to extract triangle data from.
-      MeshDataComponent meshData = shape.GetComponent<MeshDataComponent>();
-
-      if (meshData == null)
+      MeshDataComponent meshData = shapeComponent.GetComponent<MeshDataComponent>();
+      if (meshData != null)
       {
-        // Nothing to write.
-        packet.WriteBytes(BitConverter.GetBytes((uint)0), true);
-        packet.WriteBytes(BitConverter.GetBytes((uint)0), true);
-        packet.WriteBytes(new byte[] { 0 }, false);
-        packet.FinalisePacket();
-        packet.ExportTo(writer);
-        return new Error();
-      }
+        ObjectAttributes attr = new ObjectAttributes();
+        EncodeAttributes(ref attr, shapeComponent.gameObject, shapeComponent);
 
-      uint indexOffset = 0;
-      uint totalItems = (meshData.Normals != null) ? (uint)meshData.Normals.Length : 0;
-      ushort sendCode = (ushort)Shapes.MeshShape.SendDataType.Normals;
-      while (indexOffset < totalItems)
-      {
-        // Very rough maximum limit.
-        const uint maxPacketNormals = ((0xff00u - 256u) / 12);
-        Vector3 n;
-        uint itemCount = (uint)(meshData.Normals.Length - indexOffset);
-        itemCount = (itemCount <= maxPacketNormals) ? itemCount : maxPacketNormals;
-
-        packet.Reset(RoutingID, DataMessage.MessageID);
-        msg.Write(packet);
-        packet.WriteBytes(BitConverter.GetBytes(sendCode), true);
-        packet.WriteBytes(BitConverter.GetBytes(indexOffset), true);
-        packet.WriteBytes(BitConverter.GetBytes(itemCount), true);
-
-        for (int i = 0; i < itemCount; ++i)
+        Shapes.MeshShape mesh = new Shapes.MeshShape(meshData.DrawType,
+                                                     Maths.Vector3Ext.FromUnity(meshData.Vertices),
+                                                     meshData.Indices,
+                                                     shapeComponent.ObjectID,
+                                                     shapeComponent.Category,
+                                                     Maths.Vector3.Zero,
+                                                     Maths.Quaternion.Identity,
+                                                     Maths.Vector3.One);
+        mesh.SetAttributes(attr);
+        mesh.CalculateNormals = meshData.CalculateNormals;
+        if (!meshData.CalculateNormals && meshData.Normals != null && meshData.Normals.Length > 0)
         {
-          n = meshData.Normals[i + indexOffset];
-          packet.WriteBytes(BitConverter.GetBytes(n.x), true);
-          packet.WriteBytes(BitConverter.GetBytes(n.y), true);
-          packet.WriteBytes(BitConverter.GetBytes(n.z), true);
+          mesh.Normals = Maths.Vector3Ext.FromUnity(meshData.Normals);
         }
-        packet.FinalisePacket();
-        packet.ExportTo(writer);
-        indexOffset += itemCount;
+
+        return mesh;
       }
-
-      sendCode = (ushort)Shapes.MeshShape.SendDataType.Vertices;
-      totalItems = (uint)meshData.Vertices.Length;
-      while (indexOffset < totalItems)
-      {
-        // Very rough maximum limit.
-        const uint maxPacketVertices = ((0xff00u - 256u) / 12);
-        Vector3 v;
-        uint itemCount = (uint)(meshData.Vertices.Length - indexOffset);
-        itemCount = (itemCount <= maxPacketVertices) ? itemCount : maxPacketVertices;
-
-        packet.Reset(RoutingID, DataMessage.MessageID);
-        msg.Write(packet);
-        packet.WriteBytes(BitConverter.GetBytes(sendCode), true);
-        packet.WriteBytes(BitConverter.GetBytes(indexOffset), true);
-        packet.WriteBytes(BitConverter.GetBytes(itemCount), true);
-
-        for (int i = 0; i < itemCount; ++i)
-        {
-          v = meshData.Vertices[i + indexOffset];
-          packet.WriteBytes(BitConverter.GetBytes(v.x), true);
-          packet.WriteBytes(BitConverter.GetBytes(v.y), true);
-          packet.WriteBytes(BitConverter.GetBytes(v.z), true);
-        }
-        packet.FinalisePacket();
-        packet.ExportTo(writer);
-        indexOffset += itemCount;
-      }
-
-      int[] indices = meshData.Indices;
-      if (indices != null)
-      {
-        indexOffset = 0;
-        totalItems = (uint)indices.Length;
-        sendCode = (ushort)Shapes.MeshShape.SendDataType.Indices;
-        while (indexOffset < totalItems)
-        {
-          // Very rough maximum limit.
-          const uint maxPacketIndices = ((0xff00u - 256u) / 4);
-          uint itemCount = (uint)(indices.Length - indexOffset);
-          itemCount = (itemCount <= maxPacketIndices) ? itemCount : maxPacketIndices;
-
-          packet.Reset(RoutingID, DataMessage.MessageID);
-          msg.Write(packet);
-          packet.WriteBytes(BitConverter.GetBytes(sendCode), true);
-          packet.WriteBytes(BitConverter.GetBytes(indexOffset), true);
-          packet.WriteBytes(BitConverter.GetBytes(itemCount), true);
-
-          for (int i = 0; i < itemCount; ++i)
-          {
-            packet.WriteBytes(BitConverter.GetBytes(indices[i + indexOffset]), true);
-          }
-          packet.FinalisePacket();
-          packet.ExportTo(writer);
-          indexOffset += itemCount;
-        }
-      }
-
-      return new Error();
+      return null;
     }
 
     /// <summary>

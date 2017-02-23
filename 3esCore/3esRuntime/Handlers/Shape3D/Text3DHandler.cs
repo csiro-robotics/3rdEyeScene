@@ -123,35 +123,6 @@ namespace Tes.Handlers.Shape3D
     }
 
     /// <summary>
-    /// Serialise a text object.
-    /// </summary>
-    /// <param name="packet"></param>
-    /// <param name="shape"></param>
-    /// <returns></returns>
-    protected override Error SerialiseObject(PacketBuffer packet, ShapeComponent shape)
-    {
-      CreateMessage msg = new CreateMessage();
-      msg.ObjectID = shape.ObjectID;
-      msg.Category = shape.Category;
-      msg.Flags = shape.ObjectFlags;
-      EncodeAttributes(ref msg.Attributes, shape.gameObject, shape);
-      msg.Write(packet);
-      TextMesh text = shape.GetComponent<TextMesh>();
-      if (text != null)
-      {
-        ushort strlen = (ushort)System.Text.Encoding.Default.GetByteCount(text.text);
-        if (_encodingBuffer == null || _encodingBuffer.Length < strlen)
-        {
-          _encodingBuffer = new byte[strlen];
-        }
-        System.Text.Encoding.Default.GetBytes(text.text, 0, text.text.Length, _encodingBuffer, 0);
-        packet.WriteBytes(BitConverter.GetBytes(strlen), true);
-        packet.WriteBytes(_encodingBuffer, false, 0, strlen);
-      }
-      return new Error();
-    }
-
-    /// <summary>
     /// Handle additional <see cref="CreateMessage"/> data.
     /// </summary>
     /// <param name="obj"></param>
@@ -231,7 +202,18 @@ namespace Tes.Handlers.Shape3D
       return new Error();
     }
 
+    protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
+    {
+      TextMesh text = shapeComponent.GetComponent<TextMesh>();
+      if (text != null)
+      {
+        Shapes.Shape shape = new Shapes.Text3D(text.text);
+        ConfigureShape(shape, shapeComponent);
+        return shape;
+      }
+      return null;
+    }
+
     private CoordinateFrame _frame = ServerInfoMessage.Default.CoordinateFrame;
-    private byte[] _encodingBuffer = new byte[1024];
   }
 }

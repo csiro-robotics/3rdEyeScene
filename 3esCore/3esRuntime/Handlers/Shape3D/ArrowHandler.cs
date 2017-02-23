@@ -84,6 +84,13 @@ namespace Tes.Handlers.Shape3D
       attr.ScaleX = attr.ScaleY = Mathf.Asin(transform.localScale.x / attr.ScaleZ);
     }
 
+    protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
+    {
+      Shapes.Shape shape = new Shapes.Arrow();
+      ConfigureShape(shape, shapeComponent);
+      return shape;
+    }
+
     private Mesh _solidMesh;
     private Mesh _wireframeMesh;
   }

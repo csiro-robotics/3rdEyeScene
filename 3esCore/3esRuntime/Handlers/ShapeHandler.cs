@@ -167,65 +167,107 @@ namespace Tes.Handlers
     }
 
     /// <summary>
+    /// Create a dummy shape object used to generate serialisation messages.
+    /// </summary>
+    /// <param name="shapeComponent">The component to create a shape for.</param>
+    /// <returns>A shape instance suitable for configuring to generate serialisation messages.</returns>
+    /// <remarks>
+    /// Base classes should implement this method to return an instance of the appropriate
+    /// <see cref="Shapes.Shape"/> derivation. For example, the <see cref="Shape3D.SphereHandler"/>
+    /// should return a <see cref="Shapes.Sphere"/> object. See
+    /// <see cref="SerialiseObjects(BinaryWriter, IEnumerator&lt;GameObject&gt;, ref uint)"/> for further
+    /// details.
+    /// </remarks>
+    protected abstract Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent);
+
+    /// <summary>
+    /// A helper functio to configure the TES <paramref name="shape"/> to match the Unity object <paramref name="shapeComponent"/>.
+    /// </summary>
+    /// <param name="shape">The shape object to configure to match the Unity representation.</param>
+    /// <param name="shapeComponent">The Unity shape representation.</param>
+    protected void ConfigureShape(Shapes.Shape shape, ShapeComponent shapeComponent)
+    {
+      ObjectAttributes attr = new ObjectAttributes();
+      shape.ID = shapeComponent.ObjectID;
+      shape.Category = shapeComponent.Category;
+      EncodeAttributes(ref attr, shapeComponent.gameObject, shapeComponent);
+      shape.SetAttributes(attr);
+    }
+
+    /// <summary>
     /// Serialises a list of objects to <paramref name="writer"/>
     /// </summary>
     /// <param name="writer">The writer to serialise to.</param>
     /// <param name="objects">The object to write.</param>
     /// <param name="processedCount">Number of objects processed.</param>
     /// <returns>An error code on failure.</returns>
+    /// <remarks>
+    /// Default serialisation uses the following logic on each object:
+    /// <list type="bullet">
+    /// <item>Call <see cref="CreateSerialisationShape(ShapeComponent)"/> to
+    ///       create a temporary shape to match the unity object</item>
+    /// <item>Call <see cref="Shapes.Shape.WriteCreate(PacketBuffer)"/> to generate the creation message
+    ///       and serialise the packet.</item>
+    /// <item>For complex shapes, call <see cref="Shapes.Shape.WriteData(PacketBuffer, ref uint)"/> as required
+    ///       and serialise the packets.</item>
+    /// </list>
+    /// 
+    /// Using the <see cref="Shapes.Shape"/> classes ensures serialisation is consistent with the server code
+    /// and reduces the code maintenance to one code path.
+    /// </remarks>
     protected virtual Error SerialiseObjects(BinaryWriter writer, IEnumerator<GameObject> objects, ref uint processedCount)
     {
       // Serialise transient objects.
       PacketBuffer packet = new PacketBuffer();
       Error err;
+      Shapes.Shape tempShape = null;
+      uint dataMarker = 0;
+      int dataResult = 0;
+
+      Debug.Assert(tempShape != null && tempShape.RoutingID == RoutingID);
 
       processedCount = 0;
       while (objects.MoveNext())
       {
         ++processedCount;
         GameObject obj = objects.Current;
-        packet.Reset(RoutingID, CreateMessage.MessageID);
-        ShapeComponent comp = obj.GetComponent<ShapeComponent>();
-        if (comp != null)
+        tempShape = CreateSerialisationShape(obj.GetComponent<ShapeComponent>());
+        if (tempShape != null)
         {
-          err = SerialiseObject(packet, comp);
-          if (err.Failed)
+          tempShape.WriteCreate(packet);
+          packet.FinalisePacket();
+          packet.ExportTo(writer);
+
+          if (tempShape.IsComplex)
           {
-            return err;
+            dataResult = 1;
+            dataMarker = 0;
+            while (dataResult > 1)
+            {
+              dataResult = tempShape.WriteData(packet, ref dataMarker);
+              packet.FinalisePacket();
+              packet.ExportTo(writer);
+            }
+
+            if (dataResult < 0)
+            {
+              return new Error(ErrorCode.SerialisationFailure);
+            }
+
+            // Post serialisation extensions.
+            err = PostSerialiseCreateObject(packet, writer, obj.GetComponent<ShapeComponent>());
+            if (err.Failed)
+            {
+              return err;
+            }
           }
         }
         else
         {
           return new Error(ErrorCode.SerialisationFailure);
         }
-
-        packet.FinalisePacket();
-        packet.ExportTo(writer);
-
-        err = PostSerialiseCreateObject(packet, writer, comp);
-        if (err.Failed)
-        {
-          return err;
-        }
       }
 
-      return new Error();
-    }
-
-    /// <summary>
-    /// Serialise a single object to the <paramref name="packet"/>
-    /// </summary>
-    /// <param name="packet">Packet to write the message to.</param>
-    /// <param name="shape">Shape object to write.</param>
-    /// <returns>An error on failure.</returns>
-    protected virtual Error SerialiseObject(PacketBuffer packet, ShapeComponent shape)
-    {
-      CreateMessage msg = new CreateMessage();
-      msg.ObjectID = shape.ObjectID;
-      msg.Category = shape.Category;
-      msg.Flags = shape.ObjectFlags;
-      EncodeAttributes(ref msg.Attributes, shape.gameObject, shape);
-      msg.Write(packet);
       return new Error();
     }
 

@@ -137,45 +137,31 @@ namespace Tes.Handlers.Shape3D
       return obj;
     }
 
-    /// <summary>
-    /// Overridden to include mesh part data.
-    /// </summary>
-    /// <param name="packet">Packet to write the message to.</param>
-    /// <param name="shape">Shape object to write.</param>
-    /// <returns>An error on failure.</returns>
-    protected override Error SerialiseObject(PacketBuffer packet, ShapeComponent shape)
+    protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
     {
-      CreateMessage msg = new CreateMessage();
-      msg.ObjectID = shape.ObjectID;
-      msg.Category = shape.Category;
-      msg.Flags = shape.ObjectFlags;
-      EncodeAttributes(ref msg.Attributes, shape.gameObject, shape);
-      msg.Write(packet);
-
-      // Get the mesh to extract line data from.
-      // Note: Might be more accurate to count the children as follows:
-      //    partCount = (UInt16)(shape.GetComponentsInChildren<ShapeComponent>().Length - 1);
-      // We use -1 to account for the 'shape' object itself.
-      UInt16 partCount = (UInt16)shape.gameObject.transform.childCount;
-      ObjectAttributes partAttributes = new ObjectAttributes();
-      packet.WriteBytes(BitConverter.GetBytes(partCount), true);
+      // Start by building the resource list.
+      int partCount = shapeComponent.transform.childCount;
+      ObjectAttributes attrs = new ObjectAttributes();
+      Shapes.MeshSet meshSet = new Shapes.MeshSet(shapeComponent.ObjectID, shapeComponent.Category);
       for (int i = 0; i < partCount; ++i)
       {
         // Write the mesh ID
-        ShapeComponent part = shape.transform.GetChild(i).GetComponent<ShapeComponent>();
-        if (part != null)
+        ShapeComponent partSrc = shapeComponent.transform.GetChild(i).GetComponent<ShapeComponent>();
+        if (partSrc != null)
         {
-          packet.WriteBytes(BitConverter.GetBytes((UInt32)part.ObjectID), true);
-          EncodeAttributes(ref partAttributes, part.gameObject, part);
+          MeshResourcePlaceholder part = new MeshResourcePlaceholder(partSrc.ObjectID);
+          // Encode attributes into target format.
+          EncodeAttributes(ref attrs, partSrc.gameObject, partSrc);
+          // And convert to matrix.
+          meshSet.AddPart(part, attrs.GetTransform());
         }
         else
         {
-          packet.WriteBytes(BitConverter.GetBytes((UInt32)0u), true);
+          Debug.LogError(string.Format("Failed to extract child {0} for mesh set {1}.", i, shapeComponent.name));
+          return null;
         }
-        partAttributes.Write(packet);
       }
-
-      return new Error();
+      return meshSet;
     }
 
     /// <summary>

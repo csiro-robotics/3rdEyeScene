@@ -61,6 +61,13 @@ namespace Tes.Handlers.Shape3D
       }
     }
 
+    protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
+    {
+      Shapes.Shape shape = new Shapes.Star();
+      ConfigureShape(shape, shapeComponent);
+      return shape;
+    }
+
     private Mesh _solidMesh;
     private Mesh _wireframeMesh;
   }

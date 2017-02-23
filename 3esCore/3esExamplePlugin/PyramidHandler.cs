@@ -130,6 +130,13 @@ namespace Tes
     /// </summary>
     public override Mesh WireframeMesh { get { return _wireframeMesh; } }
 
+    protected override Shapes.Shape CreateSerialisationShape(Handlers.ShapeComponent shapeComponent)
+    {
+      Shapes.Shape shape = new Pyramid();
+      ConfigureShape(shape, shapeComponent);
+      return shape;
+    }
+
     private Mesh _solidMesh;
     private Mesh _wireframeMesh;
   }
