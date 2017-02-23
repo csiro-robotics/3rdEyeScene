@@ -758,16 +758,19 @@ namespace Tes.Main
     private bool UpdateCatchup(bool inCatchUp, bool forceExitCatchup = false)
     {
       bool needCatchUp = false;
-      if (_dataThread != null && !forceExitCatchup)
+      if (_dataThread != null && !_dataThread.IsLiveStream)
       {
-        needCatchUp = _dataThread.CatchingUp || _currentFrame + 1 < _dataThread.CurrentFrame;
-      }
-
-      if (inCatchUp != needCatchUp)
-      {
-        foreach (MessageHandler handler in Handlers.Handlers)
+        if (_dataThread != null && !forceExitCatchup)
         {
-          handler.Mode = handler.Mode | MessageHandler.ModeFlags.IgnoreTransient;
+          needCatchUp = _dataThread.CatchingUp || _currentFrame + 1 < _dataThread.CurrentFrame;
+        }
+
+        if (inCatchUp != needCatchUp)
+        {
+          foreach (MessageHandler handler in Handlers.Handlers)
+          {
+            handler.Mode = handler.Mode | MessageHandler.ModeFlags.IgnoreTransient;
+          }
         }
       }
 
@@ -844,7 +847,7 @@ namespace Tes.Main
         {
           _totalFrames = _dataThread.TotalFrames;
         }
-        _currentFrame = frameNumber;
+        _currentFrame = (_dataThread.IsLiveStream) ? _totalFrames : frameNumber;
       }
     }
 
