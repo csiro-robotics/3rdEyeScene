@@ -242,7 +242,7 @@ namespace Tes.Handlers
           {
             dataResult = 1;
             dataMarker = 0;
-            while (dataResult > 1)
+            while (dataResult > 0)
             {
               dataResult = tempShape.WriteData(packet, ref dataMarker);
               packet.FinalisePacket();
