@@ -73,12 +73,16 @@ namespace Tes.Maths
     /// <returns>The converted array.</returns>
     public static Colour[] FromUnity(UnityEngine.Color32[] ucolours)
     {
-      Colour[] converted = new Colour[ucolours.Length];
-      for (int i = 0; i < ucolours.Length; ++i)
+      if (ucolours != null)
       {
-        converted[i] = FromUnity(ucolours[i]);
+        Colour[] converted = new Colour[ucolours.Length];
+        for (int i = 0; i < ucolours.Length; ++i)
+        {
+          converted[i] = FromUnity(ucolours[i]);
+        }
+        return converted;
       }
-      return converted;
+      return null;
     }
 
     /// <summary>
@@ -88,12 +92,16 @@ namespace Tes.Maths
     /// <returns>The converted array.</returns>
     public static uint[] FromUnityUInts(UnityEngine.Color32[] ucolours)
     {
-      uint[] converted = new uint[ucolours.Length];
-      for (int i = 0; i < ucolours.Length; ++i)
+      if (ucolours != null)
       {
-        converted[i] = FromUnity(ucolours[i]).Value;
+        uint[] converted = new uint[ucolours.Length];
+        for (int i = 0; i < ucolours.Length; ++i)
+        {
+          converted[i] = FromUnity(ucolours[i]).Value;
+        }
+        return converted;
       }
-      return converted;
+      return null;
     }
   }
 }

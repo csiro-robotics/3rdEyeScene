@@ -4,58 +4,55 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{f5446fc5-e245-4242-9597-38a2cf919c39}</ProjectGuid>
-    <OutputType>Library</OutputType>
+    <ProjectGuid>{C7622A88-DB9D-439A-AC34-8FDDEDD9AB2E}</ProjectGuid>
+    <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Tes</RootNamespace>
-    <AssemblyName>3esExamplePluginCore</AssemblyName>
+    <AssemblyName>3esPluginTest</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\..\build\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\..\build\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="UnityEngine" Condition="!Exists('$(UNITY_DLL_PATH)') And Exists('\\Applications\\Unity\\Unity.app\\Contents\\Managed\\UnityEngine.dll') ">
-      <HintPath>\Applications\Unity\Unity.app\Contents\Managed\UnityEngine.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine" Condition="!Exists('$(UNITY_DLL_PATH)') And Exists('C:\\Program Files\\Unity\\Editor\\Data\\Managed\\UnityEngine.dll') ">
-      <HintPath>C:\Program Files\Unity\Editor\Data\Managed\UnityEngine.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine" Condition=" Exists('$(UNITY_DLL_PATH)') ">
-      <HintPath>$(UNITY_DLL_PATH)\UnityEngine.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Pyramid.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\3esCore\3esCore.csproj">
+    <ProjectReference Include="..\..\3esCore\3esCore.csproj">
       <Project>{91d3c546-37ef-4ef1-a48a-487a1f367a33}</Project>
       <Name>3esCore</Name>
+      <Private>False</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\3esExamplePluginCore\3esExamplePluginCore.csproj">
+      <Project>{F5446FC5-E245-4242-9597-38A2CF919C39}</Project>
+      <Name>3esExamplePluginCore</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>

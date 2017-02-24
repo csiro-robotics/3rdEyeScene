@@ -346,46 +346,67 @@ namespace Tes.Handlers.Shape2D
     public override Error Serialise(BinaryWriter writer, ref SerialiseInfo info)
     {
       PacketBuffer packet = new PacketBuffer();
-      Shapes.Text2D shape = new Shapes.Text2D(null);
       info.TransientCount = info.PersistentCount = 0u;
 
-      foreach (TextEntry entry in TransientText.Entries)
+      if (!Serialise(TransientText, packet, writer, ref info.TransientCount))
       {
-        ++info.TransientCount;
-        shape.ID = 0;
-        shape.Category = entry.Category;
-        shape.Flags = entry.ObjectFlags;
-        shape.SetPosition(entry.Position.x, entry.Position.y, entry.Position.z);
-        shape.Text = entry.Text;
-        if (packet.FinalisePacket())
-        {
-          packet.ExportTo(writer);
-        }
-        else
-        {
-          return new Error(ErrorCode.SerialisationFailure);
-        }
+        return new Error(ErrorCode.SerialisationFailure);
       }
 
-      foreach (TextEntry entry in PersistentText.Entries)
+      if (!Serialise(PersistentText, packet, writer, ref info.PersistentCount))
       {
-        ++info.PersistentCount;
-        shape.ID = 0;
-        shape.Category = entry.Category;
-        shape.Flags = entry.ObjectFlags;
-        shape.SetPosition(entry.Position.x, entry.Position.y, entry.Position.z);
-        shape.Text = entry.Text;
-        if (packet.FinalisePacket())
-        {
-          packet.ExportTo(writer);
-        }
-        else
-        {
-          return new Error(ErrorCode.SerialisationFailure);
-        }
+        return new Error(ErrorCode.SerialisationFailure);
       }
 
       return new Error();
+    }
+
+    private static bool Serialise(Text2DManager textManager, PacketBuffer packet, BinaryWriter writer, ref uint count)
+    {
+      Shapes.Text2D shape = new Shapes.Text2D(null);
+      uint progressMarker = 0;
+      int dataResult = 1;
+      bool shapeOk = true;
+
+      foreach (TextEntry entry in textManager.Entries)
+      {
+        ++count;
+        shape.ID = entry.ID;
+        shape.Category = entry.Category;
+        shape.Flags = entry.ObjectFlags;
+        shape.SetPosition(entry.Position.x, entry.Position.y, entry.Position.z);
+        shape.Text = entry.Text;
+        shape.WriteCreate(packet);
+
+        shapeOk = packet.FinalisePacket();
+        if (shapeOk)
+        {
+          packet.ExportTo(writer);
+
+          if (shape.IsComplex)
+          {
+            dataResult = 1;
+            while (dataResult > 0 && shapeOk)
+            {
+              shape.WriteData(packet, ref progressMarker);
+              shapeOk = packet.FinalisePacket();
+              if (shapeOk)
+              {
+                packet.ExportTo(writer);
+              }
+            }
+
+            shapeOk = dataResult == 0;
+          }
+        }
+
+        if (!shapeOk)
+        {
+          return false;
+        }
+      }
+
+      return true;
     }
 
     /// <summary>

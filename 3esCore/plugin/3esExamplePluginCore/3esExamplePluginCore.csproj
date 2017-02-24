@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{BBAD5963-CDCE-4A2B-9072-295F946280E6}</ProjectGuid>
+    <ProjectGuid>{F5446FC5-E245-4242-9597-38A2CF919C39}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>Tes</RootNamespace>
-    <AssemblyName>3esExamplePlugin</AssemblyName>
+    <AssemblyName>3esExamplePluginCore</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -16,7 +16,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
+    <OutputPath>..\..\bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -24,7 +24,7 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>..\..\bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -45,25 +45,17 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PyramidHandler.cs" />
+    <Compile Include="Pyramid.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\3esCore\3esCore.csproj">
+    <ProjectReference Include="..\..\3esCore\3esCore.csproj">
       <Project>{91d3c546-37ef-4ef1-a48a-487a1f367a33}</Project>
       <Name>3esCore</Name>
     </ProjectReference>
-    <ProjectReference Include="..\3esRuntime\3esRuntime.csproj">
-      <Project>{13d0c0d8-035f-4a6d-8148-ba96ee9ebf9e}</Project>
-      <Name>3esRuntime</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\3esExamplePluginCore\3esExamplePluginCore.csproj">
-      <Project>{F5446FC5-E245-4242-9597-38A2CF919C39}</Project>
-      <Name>3esExamplePluginCore</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>

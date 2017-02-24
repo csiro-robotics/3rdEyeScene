@@ -121,18 +121,19 @@ namespace Tes.Handlers
         CalculateNormals = Details.Builder.CalculateNormals;
 
         MeshComponentFlag components = 0;
-        if (details.VertexCount > 0) { components |= MeshComponentFlag.Vertex; }
-        if (details.Builder.ExplicitIndices) { components |= MeshComponentFlag.Index; }
-        if (_colours.Length > 0) { components |= MeshComponentFlag.Colour; }
-        if (_normals.Length > 0) { components |= MeshComponentFlag.Normal; }
-        if (_uvs.Length > 0) { components |= MeshComponentFlag.UV; }
-        Components = components;
 
         // Copy arrays into the correct format.
         _vertices = Maths.Vector3Ext.FromUnity(details.Builder.Vertices);
         _normals = Maths.Vector3Ext.FromUnity(details.Builder.Normals);
         _uvs = Maths.Vector2Ext.FromUnity(details.Builder.UVs);
         _colours = Maths.ColourExt.FromUnityUInts(details.Builder.Colours);
+
+        if (details.VertexCount > 0) { components |= MeshComponentFlag.Vertex; }
+        if (details.Builder.ExplicitIndices) { components |= MeshComponentFlag.Index; }
+        if (_colours != null && _colours.Length > 0) { components |= MeshComponentFlag.Colour; }
+        if (_normals != null && _normals.Length > 0) { components |= MeshComponentFlag.Normal; }
+        if (_uvs != null && _uvs.Length > 0) { components |= MeshComponentFlag.UV; }
+        Components = components;
       }
 
       #region MeshBase overrides.

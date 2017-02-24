@@ -11,13 +11,15 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3esRuntime", "3esRuntime\3e
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3esServerTest", "3esServerTest\3esServerTest.csproj", "{689AE501-F550-41EE-BCAB-4DA1AA50DC8E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3esExamplePlugin", "3esExamplePlugin\3esExamplePlugin.csproj", "{BBAD5963-CDCE-4A2B-9072-295F946280E6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3esExamplePlugin", "plugin\3esExamplePlugin\3esExamplePlugin.csproj", "{BBAD5963-CDCE-4A2B-9072-295F946280E6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3esPluginTest", "3esPluginTest\3esPluginTest.csproj", "{C7622A88-DB9D-439A-AC34-8FDDEDD9AB2E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3esPluginTest", "plugin\3esPluginTest\3esPluginTest.csproj", "{C7622A88-DB9D-439A-AC34-8FDDEDD9AB2E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3esManyTest", "3esManyTest\3esManyTest.csproj", "{198E6177-C01F-4BD0-845B-671ACF27D8A6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3esExamplePluginCore", "3esExamplePluginCore\3esExamplePluginCore.csproj", "{F5446FC5-E245-4242-9597-38A2CF919C39}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3esExamplePluginCore", "plugin\3esExamplePluginCore\3esExamplePluginCore.csproj", "{F5446FC5-E245-4242-9597-38A2CF919C39}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plugin", "plugin", "{707B3D7D-CE45-4ECB-AF5C-29F2733FDA82}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -60,5 +62,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{BBAD5963-CDCE-4A2B-9072-295F946280E6} = {707B3D7D-CE45-4ECB-AF5C-29F2733FDA82}
+		{C7622A88-DB9D-439A-AC34-8FDDEDD9AB2E} = {707B3D7D-CE45-4ECB-AF5C-29F2733FDA82}
+		{F5446FC5-E245-4242-9597-38A2CF919C39} = {707B3D7D-CE45-4ECB-AF5C-29F2733FDA82}
 	EndGlobalSection
 EndGlobal

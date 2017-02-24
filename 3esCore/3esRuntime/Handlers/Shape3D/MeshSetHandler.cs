@@ -143,6 +143,8 @@ namespace Tes.Handlers.Shape3D
       int partCount = shapeComponent.transform.childCount;
       ObjectAttributes attrs = new ObjectAttributes();
       Shapes.MeshSet meshSet = new Shapes.MeshSet(shapeComponent.ObjectID, shapeComponent.Category);
+      EncodeAttributes(ref attrs, shapeComponent.gameObject, shapeComponent);
+      meshSet.SetAttributes(attrs);
       for (int i = 0; i < partCount; ++i)
       {
         // Write the mesh ID
@@ -197,6 +199,7 @@ namespace Tes.Handlers.Shape3D
         shapeComp.Colour = ShapeComponent.ConvertColour(msg.Attributes.Colour);
       }
 
+      obj.transform.SetParent(Root.transform, false);
       DecodeTransform(msg.Attributes, obj.transform);
 
       // Read mesh parts.
@@ -371,7 +374,7 @@ namespace Tes.Handlers.Shape3D
       // Clear all children as a hard reset.
       foreach (Transform child in partObject.GetComponentsInChildren<Transform>())
       {
-        if (child.gameObject != partObject)
+        if (child.gameObject != partObject.gameObject)
         {
           child.parent = null;
           GameObject.Destroy(child.gameObject);

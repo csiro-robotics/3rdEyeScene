@@ -73,12 +73,16 @@ namespace Tes.Maths
     /// <returns>The converted array.</returns>
     public static Vector2[] FromUnity(UnityEngine.Vector2[] uvecs)
     {
-      Vector2[] tesVectors = new Vector2[uvecs.Length];
-      for (int i = 0; i < uvecs.Length; ++i)
+      if (uvecs != null)
       {
-        tesVectors[i] = FromUnity(uvecs[i]);
+        Vector2[] tesVectors = new Vector2[uvecs.Length];
+        for (int i = 0; i < uvecs.Length; ++i)
+        {
+          tesVectors[i] = FromUnity(uvecs[i]);
+        }
+        return tesVectors;
       }
-      return tesVectors;
+      return null;
     }
   }
 }
