@@ -417,7 +417,10 @@ namespace Tes.Handlers
       msg.Attributes.Colour = ShapeComponent.ConvertColour(mesh.Tint);
 
       msg.Write(packet);
-      packet.FinalisePacket();
+      if (!packet.FinalisePacket())
+      {
+        return new Error(ErrorCode.SerialisationFailure);
+      }
       packet.ExportTo(writer);
 
       // Now use the MeshResource methods to complete serialisation.
@@ -427,10 +430,11 @@ namespace Tes.Handlers
       while (!prog.Complete)
       {
         serialiser.Transfer(packet, 0, ref prog);
-        if (packet.FinalisePacket())
+        if (!packet.FinalisePacket())
         {
-          packet.ExportTo(writer);
+          return new Error(ErrorCode.SerialisationFailure);
         }
+        packet.ExportTo(writer);
       }
 
       // Finalise if possible.
@@ -441,7 +445,10 @@ namespace Tes.Handlers
         fmsg.Flags = 0;
         packet.Reset((ushort)RoutingID, MeshFinaliseMessage.MessageID);
         fmsg.Write(packet);
-        packet.FinalisePacket();
+        if (!packet.FinalisePacket())
+        {
+          return new Error(ErrorCode.SerialisationFailure);
+        }
         packet.ExportTo(writer);
       }
 

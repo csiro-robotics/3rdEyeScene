@@ -19,7 +19,8 @@ namespace
   ///   enforced.
   uint16_t estimateTransferCount(size_t elementSize, unsigned byteLimit)
   {
-    const size_t maxTransfer = 0xffffu / elementSize;
+    //                                    packet header           crc
+    const size_t maxTransfer = (0xffffu - sizeof(PacketHeader) - sizeof(uint16_t)) / elementSize;
     size_t count = byteLimit ? byteLimit / elementSize : maxTransfer;
     if (count < 1)
     {
@@ -32,8 +33,6 @@ namespace
 
     return uint16_t(count);
   }
-
-
 
 
   template <typename T, int ELEMCOUNT = 1>

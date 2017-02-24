@@ -245,6 +245,29 @@ namespace Tes.Shapes
     }
 
     /// <summary>
+    /// Estimate the number of elements which can be transferred at the given <paramref name="byteLimit"/>
+    /// </summary>
+    /// <param name="elementSize">The byte size of each element.</param>
+    /// <param name="byteLimit">The maximum number of bytes to transfer. Note: a hard limit of 0xffff is
+    ///   enforced.</param>
+    /// <returns>The maximum number of elements which can be accommodated in the byte limit (conservative).</returns>
+    public static ushort EstimateTransferCount(int elementSize, int byteLimit)
+    {
+      int maxTransfer = (0xffff - PacketHeader.Size + Crc16.CrcSize) / elementSize;
+      int count = (byteLimit > 0) ? byteLimit / elementSize : maxTransfer;
+      if (count < 1)
+      {
+        count = 1;
+      }
+      else if (count > maxTransfer)
+      {
+        count = maxTransfer;
+      }
+
+      return (ushort)count;
+    }
+
+    /// <summary>
     /// Handles transfer of mesh content.
     /// </summary>
     /// <param name="packet">The packet buffer in which to compose the transfer message.</param>
@@ -323,12 +346,13 @@ namespace Tes.Shapes
     protected bool Transfer(PacketBuffer packet, MeshMessageType component, Vector3[] items, int byteLimit, ref TransferProgress progress)
     {
       // Compose component message.
+      int elementSize = 12; // 3 * 4 byte floats
       MeshComponentMessage msg = new MeshComponentMessage();
       msg.MeshID = ID;
       packet.Reset((ushort)RoutingID.Mesh, (ushort)component);
       msg.Offset = (uint)progress.Progress;
       msg.Reserved = 0;
-      msg.Count = (ushort)Math.Min(0xffff, items.Length - progress.Progress);
+      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit), (uint)items.Length - msg.Offset);
 
       msg.Write(packet);
       uint ii = msg.Offset;
@@ -355,10 +379,11 @@ namespace Tes.Shapes
     {
       // Compose component message.
       MeshComponentMessage msg = new MeshComponentMessage();
+      int elementSize = 8; // 2 * 4 byte floats
       msg.MeshID = ID;
       msg.Offset = (uint)progress.Progress;
       msg.Reserved = 0;
-      msg.Count = (ushort)Math.Min(0xffff, items.Length - progress.Progress);
+      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit), (uint)items.Length - msg.Offset);
 
       packet.Reset(TypeID, (ushort)component);
       msg.Write(packet);
@@ -385,10 +410,11 @@ namespace Tes.Shapes
     {
       // Compose component message.
       MeshComponentMessage msg = new MeshComponentMessage();
+      int elementSize = 2; // 2 bytes
       msg.MeshID = ID;
       msg.Offset = (uint)progress.Progress;
       msg.Reserved = 0;
-      msg.Count = (ushort)Math.Min(0xffff, items.Length - progress.Progress);
+      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit), (uint)items.Length - msg.Offset);
 
       packet.Reset(TypeID, (ushort)component);
       msg.Write(packet);
@@ -414,10 +440,11 @@ namespace Tes.Shapes
     {
       // Compose component message.
       MeshComponentMessage msg = new MeshComponentMessage();
+      int elementSize = 4; // 4 bytes
       msg.MeshID = ID;
       msg.Offset = (uint)progress.Progress;
       msg.Reserved = 0;
-      msg.Count = (ushort)Math.Min(0xffff, items.Length - progress.Progress);
+      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit), (uint)items.Length - msg.Offset);
 
       packet.Reset(TypeID, (ushort)component);
       msg.Write(packet);
@@ -443,10 +470,11 @@ namespace Tes.Shapes
     {
       // Compose component message.
       MeshComponentMessage msg = new MeshComponentMessage();
+      int elementSize = 4; // 4 bytes
       msg.MeshID = ID;
       msg.Offset = (uint)progress.Progress;
       msg.Reserved = 0;
-      msg.Count = (ushort)Math.Min(0xffff, items.Length - progress.Progress);
+      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit), (uint)items.Length - msg.Offset);
 
       packet.Reset(TypeID, (ushort)component);
       msg.Write(packet);

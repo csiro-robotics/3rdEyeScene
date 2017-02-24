@@ -308,6 +308,11 @@ namespace Tes.IO
       // Calculate the packet CRC.
       // Fix up the payload size.
       _header.PayloadSize = (ushort)(Math.Max(0, _currentByteCount - PacketHeader.Size));
+      if (_header.PayloadSize != _currentByteCount - PacketHeader.Size)
+      {
+        // Payload is too large.
+        return false;
+      }
       byte[] sizeBytes = BitConverter.GetBytes(Endian.ToNetwork(_header.PayloadSize));
       for (int i = 0; i < sizeBytes.Length; ++i)
       {
