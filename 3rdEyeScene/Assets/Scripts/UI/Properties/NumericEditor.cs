@@ -194,14 +194,25 @@ namespace UI.Properties
 
     protected void SetValue(long val)
     {
+      if (_range != null)
+      {
+        val = Math.Max((long)_range.Min, Math.Min(val, (long)_range.Max));
+      }
+
       if (Property != null && Target != null)
       {
+        // Validate the range.
         Property.SetValue(Target, Convert.ChangeType(val, Property.PropertyType), null);
       }
     }
 
     protected void SetValue(double val)
     {
+      if (_range != null)
+      {
+        val = Math.Max((double)_range.Min, Math.Min(val, (double)_range.Max));
+      }
+
       if (Property != null && Target != null)
       {
         Property.SetValue(Target, Convert.ChangeType(val, Property.PropertyType), null);
@@ -210,6 +221,11 @@ namespace UI.Properties
 
     protected void SetValue(float val)
     {
+      if (_range != null)
+      {
+        val = Math.Max(_range.Min, Math.Min(val, _range.Max));
+      }
+
       if (Property != null && Target != null)
       {
         Property.SetValue(Target, Convert.ChangeType(val, Property.PropertyType), null);

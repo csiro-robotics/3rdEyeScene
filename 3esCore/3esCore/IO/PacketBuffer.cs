@@ -629,9 +629,8 @@ namespace Tes.IO
     /// <param name="bytes">The data stream to append.</param>
     /// <param name="available">The number of bytes from <paramref name="bytes"/> to append.
     /// This allows the given buffer to be larger than the available data.</param>
-    /// <returns>False if the buffer is still waiting on data, true if the packet has been
-    /// completed.</returns>
-    public bool Emplace(byte[] bytes, int available)
+    /// <returns>The number of bytes added from <paramref name="bytes"/>.</returns>
+    public int Emplace(byte[] bytes, int available)
     {
       return Emplace(bytes, 0, available);
     }
@@ -647,15 +646,15 @@ namespace Tes.IO
     /// <param name="offset">Byte offset into <paramref name="bytes"/> to start reading from.</param>
     /// <param name="length">The number of bytes from <paramref name="bytes"/> to append.
     /// This allows the given buffer to be larger than the available data.</param>
-    /// <returns>False if the buffer is still waiting on data, true if the packet has been
-    /// completed.</returns>
-    public bool Emplace(byte[] bytes, int offset, int length)
+    /// <returns>The number of bytes added from <paramref name="bytes"/>.</returns>
+    public int Emplace(byte[] bytes, int offset, int length)
     {
       ResetCursor();
       EnsureBufferCapacity(_cursor + _currentByteCount + length);
       Array.Copy(bytes, offset, _internalBuffer, _currentByteCount, length);
       _currentByteCount += length;
-      return CompleteEmplace(length);
+      CompleteEmplace(length);
+      return length;
     }
 
     /// <summary>
@@ -666,14 +665,15 @@ namespace Tes.IO
     /// </remarks>
     /// <param name="stream">The stream to read bytes from.</param>
     /// <param name="available">The number of bytes to read from <paramref name="stream"/>.</param>
-    /// <returns>False if the buffer is still waiting on data, true if the packet has been
-    /// completed.</returns>
-    public bool Emplace(Stream stream, int available)
+    /// <returns>The number of bytes added from <paramref name="bytes"/>.</returns>
+    public int Emplace(Stream stream, int available)
     {
       ResetCursor();
       EnsureBufferCapacity(_cursor + _currentByteCount + available);
-      _currentByteCount += stream.Read(_internalBuffer, _currentByteCount, available);
-      return CompleteEmplace(available);
+      int addedBytes = stream.Read(_internalBuffer, _currentByteCount, available);
+      _currentByteCount += addedBytes;
+      CompleteEmplace(available);
+      return addedBytes;
     }
 
     #endregion

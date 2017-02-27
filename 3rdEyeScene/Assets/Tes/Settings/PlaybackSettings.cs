@@ -27,11 +27,27 @@ public class PlaybackSettings : Settings
   }
 
   [Browsable(true), SetRange(1, 1000),
+    Tooltip("Try restore snapshot when skipping forwards at least this number of frames.")]
+  public int SnapshotSkipForwardFrames
+  {
+    get { return PlayerPrefs.GetInt("playback.snapshotSkipForwardFrames", 512); }
+    set { PlayerPrefs.SetInt("playback.snapshotSkipForwardFrames", value); Notify("SnapshotSkipForwardFrames"); }
+  }
+
+  [Browsable(true), SetRange(1, 1000),
     Tooltip("Minimum number of frames to have elapsed between snapshots.")]
   public int SnapshotFrameSeparation
   {
     get { return PlayerPrefs.GetInt("playback.snapshotFrameSeparation", 5); }
     set { PlayerPrefs.SetInt("playback.snapshotFrameSeparation", value); Notify("SnapshotFrameSeparation"); }
+  }
+
+  [Browsable(true),
+    Tooltip("Compress snap shots?")]
+  public bool SnapshotCompression
+  {
+    get { return PlayerPrefsX.GetBool("playback.snapshotCompression", true); }
+    set { PlayerPrefsX.SetBool("playback.snapshotCompression", value); Notify("SnapshotCompression"); }
   }
 
   [Browsable(true),

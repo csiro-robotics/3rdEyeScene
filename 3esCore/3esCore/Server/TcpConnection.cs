@@ -334,7 +334,7 @@ namespace Tes.Server
     /// </remarks>
     private void FlushCollatedPacket()
     {
-      if (_collator.CollatedBytes > 0 && _collator.Finalise())
+      if (_collator.CollatedBytes > 0 && _collator.FinaliseEncoding())
       {
         int byteCount = _collator.Count;
         // TODO: catch exception and mark client as disconnected.

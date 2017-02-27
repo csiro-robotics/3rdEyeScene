@@ -18,19 +18,56 @@ namespace Tes.Main
   /// </remarks>
   public class StreamThread : DataThread
   {
+    /// <summary>
+    /// Details of a snapshot.
+    /// </summary>
+    /// <remarks>
+    /// Snapshots must be taken at the end of a frame. However, we can't guarantee that the
+    /// visualiser included transient objects in the serialisation as the message handlers
+    /// may have been ignoring transient objects. This is marked by the state of
+    /// <see cref="IncludesTransient"/>. When this is true, we can restore the exact
+    /// <see cref="FrameNumber"/>. When false, we can restore to <see cref="FrameNumber"/>
+    /// as a starting point for subsequent frames, but <see cref="FrameNumber"/> may not
+    /// be an accurate representation of that frame.
+    /// </remarks>
     class Snapshot
     {
+      /// <summary>
+      /// Offset into the serialisation stream (bytes) at which the snapshot is made.
+      /// </summary>
       public long StreamOffset = 0;
+      /// <summary>
+      /// The (end of) frame number for the snapshot.
+      /// </summary>
       public uint FrameNumber = 0;
+      /// <summary>
+      /// Does this snapshot include transient objects? See class remarks.
+      /// </summary>
+      public bool IncludesTransient = false;
+      /// <summary>
+      /// File name capturing the snapshot.
+      /// </summary>
       public string TemporaryFilePath;
+      /// <summary>
+      /// File stream to the snapshot stream. Matches <see cref="TemporaryFilePath"/>.
+      /// Closed once saved.
+      /// </summary>
       public Stream OpenStream;
+      /// <summary>
+      /// Is the snapshot valid for restoration.
+      /// </summary>
       public bool Valid = false;
     }
 
     /// <summary>
+    /// Allow use of snapshots?
+    /// </summary>
+    public bool AllowSnapshots { get; set; }
+
+    /// <summary>
     /// Take a snapshot after this many kilo (technically kibi, but I can't bring myself to call it that) bytes.
     /// </summary>
-    public long SnapshotBytes
+    public long SnapshotKiloBytes
     {
       get { lock (this) { return _snapshotKiloBytes; } }
       set { lock (this) { _snapshotKiloBytes = value; } }
@@ -46,6 +83,13 @@ namespace Tes.Main
       set { lock (this) { _snapshotMinFrames = value; } }
     }
     private uint _snapshotMinFrames = 5;
+
+    public uint ShapshotSkipForwardFrames
+    {
+      get { lock (this) { return _shapshotSkipForwardFrames; } }
+      set { lock (this) { _shapshotSkipForwardFrames = value; } }
+    }
+    private uint _shapshotSkipForwardFrames = 50;
 
     public override Queue<PacketBuffer> PacketQueue { get { return _packetQueue; } }
     public override uint CurrentFrame
@@ -125,11 +169,6 @@ namespace Tes.Main
       }
     }
 
-    /// <summary>
-    /// Allow use of snapshots?
-    /// </summary>
-    public bool AllowSnapshots { get; set; }
-
     public StreamThread()
     {
     }
@@ -195,7 +234,10 @@ namespace Tes.Main
         _thread = null;
         if (_stream != null)
         {
-          _stream.Close();
+          if (_stream.CanRead)
+          {
+            _stream.Close();
+          }
           _stream = null;
         }
       }
@@ -225,7 +267,7 @@ namespace Tes.Main
       long processedBytes = 0;
       long bytesSinceLastSnapshot = 0;
       uint lastSnapshotFrame = 0;
-      bool requestSnapshot = false;
+      bool endOfStream = false;
 
       stopwatch.Start();
       while (!_quitFlag && _stream != null) // && _stream.Position + PacketHeader.Size <= _stream.Length)
@@ -268,6 +310,7 @@ namespace Tes.Main
               bytesSinceLastSnapshot = 0;
               lastSnapshotFrame = 0;
               ResetStream();
+              endOfStream = false;
               Snapshot snapshot = TrySnapshot(_targetFrame);
               if (snapshot != null)
               {
@@ -279,9 +322,7 @@ namespace Tes.Main
               stopwatch.Reset();
               stopwatch.Start();
             }
-#if FALSE
-            // FIXME: remove hard coded 'large' frame count step.
-            else if (_targetFrame > _currentFrame + 100)
+            else if (_targetFrame > _currentFrame + ShapshotSkipForwardFrames)
             {
               // Also try snapshots when stepping forwards large frame counts.
               // No need to reset the stream as we do when stepping back.
@@ -296,7 +337,6 @@ namespace Tes.Main
               stopwatch.Reset();
               stopwatch.Start();
             }
-#endif // FALSE
           }
         }
 
@@ -311,7 +351,8 @@ namespace Tes.Main
         try
         {
           allowYield = false;
-          while (!allowYield)
+          endOfStream = false;
+          while (!allowYield && !endOfStream)
           {
             if (_allowCompressStream && Util.GZipUtil.IsGZipStream(_stream))
             {
@@ -321,6 +362,7 @@ namespace Tes.Main
             }
 
             bytesRead = _stream.Read(headerBuffer, 0, headerBuffer.Length);
+            endOfStream = bytesRead == 0;
             processedBytes += bytesRead;
             bytesSinceLastSnapshot += bytesRead;
             _paused = _paused || bytesRead == 0 && !_loop;
@@ -331,40 +373,32 @@ namespace Tes.Main
               allowYield = false;
               if (header.Read(new NetworkReader(new MemoryStream(headerBuffer, false))))
               {
-                if (requestSnapshot)
-                {
-                  // Snapshot request is for the end of the next frame.
-                  // This message must be the first in the frame to ensure all transient objects
-                  // are correctly visualised. That is, this message gives the visualisation
-                  // logic a chance to ensure everything is ready for the snapshot.
-                  lastSnapshotFrame = _currentFrame + 1;
-                  bytesSinceLastSnapshot = 0;
-                  RequestSnapshot(_currentFrame, processedBytes);
-                  requestSnapshot = false;
-                }
-
                 // Read the header. Determine the expected size and read that much more data.
                 int crcSize = ((header.Flags & (byte)PacketFlag.NoCrc) == 0) ? Crc16.CrcSize : 0;
                 PacketBuffer packet = new PacketBuffer(header.PacketSize + crcSize);
                 packet.Emplace(headerBuffer, bytesRead);
-                packet.Emplace(_stream, header.PacketSize + crcSize - bytesRead);
+                processedBytes += packet.Emplace(_stream, header.PacketSize + crcSize - bytesRead);
                 if (packet.Status == PacketBufferStatus.Complete)
                 {
                   // Check for end of frame messages to yield on.
                   // TODO: check frame elapsed time as well.
                   if (header.RoutingID == (ushort)RoutingID.Control)
                   {
+                    // HandleControlMessage() returns true on an end of frame event.
                     if (HandleControlMessage(packet, (ControlMessageID)header.MessageID))
                     {
-                      // Ended a frame. Check for snapshot.
+                      // Ended a frame. Check for snapshot. We'll queue the request after the end of
+                      // frame message below.
                       if (bytesSinceLastSnapshot >= _snapshotKiloBytes * 1024 &&
                           lastSnapshotFrame < _currentFrame &&
                           _currentFrame - lastSnapshotFrame >= _snapshotMinFrames)
                       {
-                        // Request a snapshot for the next frame, not the ending one.
-                        // This is to ensure that all transient objects are represented
-                        // in the snapshot frame.
-                        requestSnapshot = true;
+                        // Snapshot the results of ending this frame.
+                        // Note: we can't restore this exact frame as we can't guarantee transient
+                        // objects are serialised by the viewer.
+                        lastSnapshotFrame = _currentFrame;
+                        bytesSinceLastSnapshot = 0;
+                        RequestSnapshot(lastSnapshotFrame, processedBytes);
                       }
                       // Make sure we yield so as to support the later check to avoid flooding the packet queue.
                       allowYield = true;
@@ -377,6 +411,10 @@ namespace Tes.Main
                   _packetQueue.Enqueue(packet);
                 }
                 // else notify error.
+                else
+                {
+                  Debug.LogError(string.Format("Failed to decode packet: {0}", packet.Status.ToString()));
+                }
                 allowYield = allowYield || _targetFrame == 0 && _frameDelayUs > 0 && !_catcingUp;
               }
             }
@@ -392,7 +430,7 @@ namespace Tes.Main
           _quitFlag = true;
           _allowCompressStream = false;
           bytesRead = 0;
-          UnityEngine.Debug.LogException(e);
+          Debug.LogException(e);
           allowYield = true;
         }
 
@@ -561,7 +599,11 @@ namespace Tes.Main
         Snapshot bestShot = null;
         foreach (Snapshot snapshot in _snapshots)
         {
-          if (snapshot.FrameNumber <= targetFrame)
+          // Suitable snapshot if it's before the target frame, or
+          // at the target frame and includes transient objects.
+          // See Snapshot class remarks.
+          if (snapshot.FrameNumber < targetFrame ||
+            snapshot.IncludesTransient && snapshot.FrameNumber == targetFrame)
           {
             if (snapshot.Valid)
             {
@@ -814,9 +856,11 @@ namespace Tes.Main
     /// <summary>
     /// Release a snapshot stream.
     /// </summary>
+    /// <param name="frameNumber">The frame number the snap shop serialised.</param>
     /// <param name="snapshotStream">The stream to release</param>
+    /// <param name="includesTransient">Does the stream include transient objects? See <see cref="Snapshot"/> remarks.</param>
     /// <param name="valid">True if the snapshot was successful.</param>
-    public void ReleaseSnapshotStream(uint frameNumber, Stream snapshotStream, bool valid)
+    public void ReleaseSnapshotStream(uint frameNumber, Stream snapshotStream, bool includesTransient, bool valid)
     {
       lock (_snapshots)
       {
@@ -827,15 +871,16 @@ namespace Tes.Main
           if (_snapshots[i].FrameNumber == frameNumber)
           {
             snapshot = _snapshots[i];
+            snapshot.IncludesTransient = includesTransient;
             // Validate.
             snapshot.Valid = valid && snapshotStream != null && snapshotStream == snapshot.OpenStream;
-            // Close stream.
-            if (snapshot.OpenStream != null)
+            // Ensure the stream is properly closed.
+            if (snapshot.OpenStream != null && snapshot.OpenStream.CanWrite)
             {
               snapshot.OpenStream.Flush();
               snapshot.OpenStream.Close();
-              snapshot.OpenStream = null;
             }
+            snapshot.OpenStream = null;
             // Delete temporary file.
             if (!string.IsNullOrEmpty(snapshot.TemporaryFilePath) && !valid && File.Exists(snapshot.TemporaryFilePath))
             {

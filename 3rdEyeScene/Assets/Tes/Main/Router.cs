@@ -8,6 +8,7 @@ using Tes.Net;
 using Tes.Runtime;
 using UnityEngine;
 using UnityEngine.Events;
+using System.ComponentModel;
 
 namespace Tes.Main
 {
@@ -317,8 +318,15 @@ namespace Tes.Main
       }
       StreamThread thread = new StreamThread();
       _dataThread = thread;
-      thread.AllowSnapshots = PlaybackSettings.Instance.AllowSnapshots;
-      thread.Loop = PlaybackSettings.Instance.Looping;
+      PlaybackSettings playbackSettings = PlaybackSettings.Instance;
+      if (playbackSettings != null)
+      {
+        thread.AllowSnapshots = playbackSettings.AllowSnapshots;
+        thread.SnapshotKiloBytes = playbackSettings.SnapshotEveryKb;
+        thread.ShapshotSkipForwardFrames = (uint)Math.Max(0, playbackSettings.SnapshotSkipForwardFrames);
+        thread.SnapshotMinFrames = (uint)Math.Max(0, playbackSettings.SnapshotFrameSeparation);
+        thread.Loop = playbackSettings.Looping;
+      }
       thread.PlaybackSpeed = PlaybackSpeed;
       Stream inputStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
       if (!thread.Start(inputStream))
@@ -431,7 +439,7 @@ namespace Tes.Main
         _totalFrames = 0;
 
         bool ok;
-        BinaryWriter writer = SerialiseScene(fileStream, out ok);
+        BinaryWriter writer = SerialiseScene(fileStream, true, out ok);
         // Write the initial camera position.
         WriteCameraPosition(writer, Camera.main, 255);
         WriteFrameFlush(writer);
@@ -532,7 +540,6 @@ namespace Tes.Main
       }
       // No longer run in background. Will again if we get a network thread.
       Application.runInBackground = false;
-      _pendingSnapshotFrame = ~0u;
     }
 
     public void InitialiseHandlers()
@@ -557,6 +564,11 @@ namespace Tes.Main
       if (_scene == null)
       {
         _scene = new Scene();
+      }
+
+      if (PlaybackSettings.Instance != null)
+      {
+        PlaybackSettings.Instance.PropertyChanged += OnPropertyChanged;
       }
     }
 
@@ -583,7 +595,7 @@ namespace Tes.Main
           bool processingPackets = true;
           while (!endFrame && processingPackets || catchUp)
           {
-            catchUp = UpdateCatchup(catchUp, _pendingSnapshotFrame != ~0u);
+            catchUp = UpdateCatchup(catchUp);
             if ((processingPackets = _dataThread.PacketQueue.TryDequeue(ref packet)))
             {
               // Handle record on connect.
@@ -626,8 +638,7 @@ namespace Tes.Main
                     if (message.Read(packetReader) &&
                        (packet.Header.MessageID == (ushort)ControlMessageID.EndFrame ||
                         packet.Header.MessageID == (ushort)ControlMessageID.ForceFrameFlush ||
-                        packet.Header.MessageID == (ushort)ControlMessageID.Reset) ||
-                        packet.Header.MessageID == (ushort)ControlMessageID.Snapshop)
+                        packet.Header.MessageID == (ushort)ControlMessageID.Reset))
                     {
                       switch ((ControlMessageID)packet.Header.MessageID)
                       {
@@ -637,15 +648,14 @@ namespace Tes.Main
                           // Reset all the data handlers, but not the data thread.
                           ResetScene();
                           // Force a frame flush.
-                          EndFrame(0);
+                          EndFrame(0, catchUp);
                           break;
                         case ControlMessageID.Snapshop:
                           catchUp = UpdateCatchup(catchUp, true);
-                          _pendingSnapshotFrame = message.Value32;
                           break;
                         case ControlMessageID.EndFrame:
                         case ControlMessageID.ForceFrameFlush:
-                          EndFrame((uint)message.Value64, (message.ControlFlags & (ushort)EndFrameFlag.Persist) != 0);
+                          EndFrame((uint)message.Value64, catchUp, (message.ControlFlags & (ushort)EndFrameFlag.Persist) != 0);
                           if (_recordingWriter != null)
                           {
                             WriteCameraPosition(_recordingWriter, Camera.main, 255);
@@ -715,7 +725,7 @@ namespace Tes.Main
     //  }
     //}
 
-    public void HandleControlMessage(PacketBuffer packet, BinaryReader reader)
+    public void HandleControlMessage(PacketBuffer packet, BinaryReader reader, bool catchingUp)
     {
       ControlMessage message = new ControlMessage();
       if (message.Read(reader))
@@ -725,14 +735,16 @@ namespace Tes.Main
         case ControlMessageID.EndFrame:
         case ControlMessageID.ForceFrameFlush:
         case ControlMessageID.Reset:
-        case ControlMessageID.Snapshop:
           // Noop. Already handled when dequeued.
           break;
         case ControlMessageID.CoordinateFrame:
           if (Scene != null && Scene.Root != null)
           {
-            Scene.Frame = (Tes.Net.CoordinateFrame)message.Value32;
+            Scene.Frame = (CoordinateFrame)message.Value32;
           }
+          break;
+        case ControlMessageID.Snapshop:
+          GenerateSnapshot(message.Value32, !catchingUp);
           break;
         default:
           break;
@@ -741,6 +753,45 @@ namespace Tes.Main
       else
       {
         Debug.LogError("Malformed control message.");
+      }
+    }
+
+    /// <summary>
+    /// Handler for value changes in user settings.
+    /// </summary>
+    /// <param name="sender">The settings object for which a value is changing. Generally derived from
+    ///   <see cref="Settings"/>, though not essential.</param>
+    /// <param name="args">Event arguments. Identifies the changed property.</param>
+    protected void OnPropertyChanged(object sender, PropertyChangedEventArgs args)
+    {
+      // Looking for changes to PlaybackSettings.
+      PlaybackSettings playback;
+      if ((playback = sender as PlaybackSettings) != null)
+      {
+        StreamThread streamThread = _dataThread as StreamThread;
+        if (streamThread != null)
+        {
+          if (string.Compare(args.PropertyName, "AllowSnapshots") == 0)
+          {
+            streamThread.AllowSnapshots = playback.AllowSnapshots;
+          }
+          else if (string.Compare(args.PropertyName, "SnapshotEveryKb") == 0)
+          {
+            streamThread.SnapshotKiloBytes = playback.SnapshotEveryKb;
+          }
+          else if (string.Compare(args.PropertyName, "ShapshotSkipForwardFrames") == 0)
+          {
+            streamThread.ShapshotSkipForwardFrames = (uint)Math.Max(0, playback.SnapshotSkipForwardFrames);
+          }
+          else if (string.Compare(args.PropertyName, "SnapshotFrameSeparation") == 0)
+          {
+            streamThread.SnapshotMinFrames = (uint)Math.Max(0, playback.SnapshotFrameSeparation);
+          }
+          else if (string.Compare(args.PropertyName, "Looping") == 0)
+          {
+            streamThread.Loop = playback.Looping;
+          }
+        }
       }
     }
 
@@ -762,7 +813,9 @@ namespace Tes.Main
       {
         if (_dataThread != null && !forceExitCatchup)
         {
-          needCatchUp = _dataThread.CatchingUp || _currentFrame + 1 < _dataThread.CurrentFrame;
+          // Don't catch up on frame zero.
+          // This can ensure some initial state conditions, including restoring snapshots.
+          needCatchUp = _dataThread.CatchingUp || _currentFrame != 0 && _currentFrame + 1 < _dataThread.CurrentFrame;
         }
 
         if (inCatchUp != needCatchUp)
@@ -781,16 +834,10 @@ namespace Tes.Main
     /// Advance the frame.
     /// </summary>
     /// <param name="frameNumber">The frame number of the ending frame.</param>
+    /// <param name="catchingUp">Are we in catch up mode (transient objects disabled).</param>
     /// <param name="maintainTransient">True to prevent flushing of transient objects this frame.</param>
-    private void EndFrame(uint frameNumber, bool maintainTransient = false)
+    private void EndFrame(uint frameNumber, bool catchingUp, bool maintainTransient = false)
     {
-      // Finalise any pending snapshop.
-      if (_pendingSnapshotFrame != ~0u)
-      {
-        GenerateSnapshot(_pendingSnapshotFrame);
-        _pendingSnapshotFrame = ~0u;
-      }
-
       // TODO: respect the elapsed time. That is, delay processing until the
       // required time has elapsed.
       foreach (MessageHandler handler in _handlers.Handlers)
@@ -807,7 +854,7 @@ namespace Tes.Main
           NetworkReader packetReader = new NetworkReader(packet.CreateReadStream(true));
           if (packet.Header.RoutingID == (ushort)RoutingID.Control)
           {
-            HandleControlMessage(packet, packetReader);
+            HandleControlMessage(packet, packetReader, catchingUp);
           }
           else
           {
@@ -855,12 +902,14 @@ namespace Tes.Main
     /// Serialise the current work state to the given (file) stream.
     /// </summary>
     /// <param name="fileStream">The (file) stream to writer to.</param>
+    /// <param name="allowCompression">Allow the use of a compressed file stream?</param>
+    /// <param name="success">Set to true to indicate success, false otherwise.</param>
     /// <returns>A binary writer to the compressed stream for appending data.</returns>
     /// <remarks>
     /// The <paramref name="fileStream"/> will be wrapped in a GZipStream which is
     /// used to instantiate the <c>BinaryWriter</c>.
     /// </remarks>
-    private BinaryWriter SerialiseScene(Stream fileStream, out bool success)
+    private BinaryWriter SerialiseScene(Stream fileStream, bool allowCompression, out bool success)
     {
       //string fileName = (fileStream as FileStream != null) ? (fileStream as FileStream).Name : "<unknown>";
       //Debug.Log(string.Format("SerialiseScene({0}, [out])", fileName));
@@ -882,7 +931,7 @@ namespace Tes.Main
       headerStream = null;
 
       // Now wrap the file in a GZip stream to start compression if we are not already doing so.
-      if (false && fileStream as GZipStream == null)
+      if (fileStream as GZipStream == null)
       {
         writer = new NetworkWriter(new GZipStream(fileStream, CompressionMode.Compress));
       }
@@ -920,7 +969,7 @@ namespace Tes.Main
     /// <remarks>
     /// Works with the <see cref="StreamThread"/> to create, register and populate the output stream.
     /// </remarks>
-    private void GenerateSnapshot(uint frameNumber)
+    private void GenerateSnapshot(uint frameNumber, bool includesTransients)
     {
       StreamThread streamThread = _dataThread as StreamThread;
       if (streamThread == null)
@@ -936,9 +985,11 @@ namespace Tes.Main
       {
         if (PlaybackSettings.Instance.AllowSnapshots && snapshotStream != null)
         {
-          BinaryWriter writer = SerialiseScene(snapshotStream, out success);
+          BinaryWriter writer = SerialiseScene(snapshotStream, PlaybackSettings.Instance.SnapshotCompression, out success);
           WriteFrameFlush(writer);
           writer.Flush();
+          // Must be closed to ensure the compression stream finalises correctly.
+          writer.Close();
         }
       }
       finally
@@ -946,12 +997,16 @@ namespace Tes.Main
         // Ensure we release the stream.
         if (streamThread != null && snapshotStream != null)
         {
-          streamThread.ReleaseSnapshotStream(frameNumber, snapshotStream, success);
+          streamThread.ReleaseSnapshotStream(frameNumber, snapshotStream, includesTransients, success);
         }
       }
     }
 
-
+    /// <summary>
+    /// Write a <see cref="ControlMessage"/> using <see cref="ControlMessageID.ForceFrameFlush"/>
+    /// to <paramref name="writer"/>.
+    /// </summary>
+    /// <param name="writer">The writer to serialise with.</param>
     private void WriteFrameFlush(BinaryWriter writer)
     {
       PacketBuffer packet = new PacketBuffer();
@@ -967,6 +1022,23 @@ namespace Tes.Main
       packet.ExportTo(writer);
     }
 
+    /// <summary>
+    /// Write the "header" message for a recording stream.
+    /// </summary>
+    /// <param name="writer">The writer used to write the headers.</param>
+    /// <remarks>
+    /// By convention, the "header" for a recorded stream contains the following messages:
+    /// <list type="bullet">
+    /// <item>A <see cref="ServerInfoMessage"/> to set up the scene and playback.</item>
+    /// <item>A <see cref="ControlMessage"/> using <see cref="ControlMessageID.FrameCount"/>
+    /// to identify the frame count.</item>
+    /// </list>
+    /// 
+    /// Both messages should be in uncompressed space, thus the writer should not be using a
+    /// zip stream. The frame count written here is zero and is finalised by calling
+    /// <see cref="FinaliseFrameCount(BinaryWriter, uint)"/> once the final frame count is
+    /// known.
+    /// </remarks>
     private void WriteRecordingHeader(BinaryWriter writer)
     {
       // First write a server info message to define the coordinate frame and other server details.
@@ -989,6 +1061,25 @@ namespace Tes.Main
       packet.ExportTo(writer);
     }
 
+    /// <summary>
+    /// Finalises the frame count in the stream underpinning <paramref name="writer"/>.
+    /// </summary>
+    /// <param name="writer">The binary writer and stream to export to.</param>
+    /// <param name="frameCount">The total number of frames.</param>
+    /// <remarks>
+    /// By convention, a recording stream includes a <see cref="ControlMessage"/> with ID
+    /// <see cref="ControlMessageID.FrameCount"/> to identify the total number of frames in
+    /// the stream. This is expected towards the start of the stream before compression begins.
+    /// 
+    /// This method rewinds the stream supporting <paramref name="writer"/>, searches for the
+    /// frame count <see cref="ControlMessage"/> and modifies its <see cref="ControlMessage.Value32"/>
+    /// to match <paramref name="frameCount"/>.
+    /// 
+    /// The method supports the underlying <paramref name="writer"/> stream to be either <c>GZipStream</c>
+    /// or an uncompressed stream. However, in order to succeed, the true stream (underpinning the
+    /// zip stream) must support seeking and the message must appear in the uncompressed section.
+    /// The method fails if these conditions are not met.
+    /// </remarks>
     private void FinaliseFrameCount(BinaryWriter writer, uint frameCount)
     {
       // Rewind the stream to the beginning and find the first RoutingID.Control message
@@ -1118,7 +1209,7 @@ namespace Tes.Main
 
         packet.Reset((ushort)RoutingID.Control, (ushort)ControlMessageID.FrameCount);
         frameCountMsg.ControlFlags = 0;
-        frameCountMsg.Value32 = frameCount;  // Placeholder. Frame count is currently unknown.
+        frameCountMsg.Value32 = frameCount;  // Place holder. Frame count is currently unknown.
         frameCountMsg.Value64 = 0;
         frameCountMsg.Write(packet);
         packet.FinalisePacket();
@@ -1134,6 +1225,12 @@ namespace Tes.Main
     }
 
 
+    /// <summary>
+    /// Exports a camera position and settings message to <paramref name="writer"/>.
+    /// </summary>
+    /// <param name="writer">The writer (and stream) to serialise the message to.</param>
+    /// <param name="camera">The camera object from which settings are read.</param>
+    /// <param name="cameraID">The camera ID to assign to the exported camera message</param>
     private void WriteCameraPosition(BinaryWriter writer, Camera camera, byte cameraID)
     {
       PacketBuffer packet = new PacketBuffer();
@@ -1181,10 +1278,6 @@ namespace Tes.Main
     /// Duplicates the total frame number from the data thread to update only when relevant.
     /// </summary>
     private uint _totalFrames = 0;
-    /// <summary>
-    /// Specifies the next frame number at the end of which a snapshot should be taken.
-    /// </summary>
-    private uint _pendingSnapshotFrame = ~0u;
     /// <summary>
     /// This writer is used to record the current network connection.
     /// We are not recording if it is null and we are if it is non-null.

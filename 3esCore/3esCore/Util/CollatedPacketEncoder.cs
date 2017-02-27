@@ -110,7 +110,7 @@ namespace Tes.Util
     {
       if (!_finalised)
       {
-        Finalise();
+        FinaliseEncoding();
       }
       _finalised = false;
       CollatedBytes = 0;
@@ -174,17 +174,14 @@ namespace Tes.Util
     /// Finalise the collated packet before sending.
     /// </summary>
     /// <returns>True on successful finalisation, false if already finalised</returns>
-    /// <remarks>
-    /// This is poorly named given the .Net meaning of "Finalize()"
-    /// </remarks>
-    public bool Finalise()
+    public bool FinaliseEncoding()
     {
       if (_finalised)
       {
         return false;
       }
 
-      // Finalise compression.
+      // Finalise compression. Stream must be closed.
       _collationStream.Close();
       // Ensure a valid state.
       _collationStream = _dataStream;

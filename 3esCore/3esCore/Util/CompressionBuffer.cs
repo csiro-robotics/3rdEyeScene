@@ -14,7 +14,9 @@ namespace Tes.Util
   /// the stream wrapped by the zip stream. This makes it impossible to access the
   /// written byte count in the memory stream or to reuse the stream.
   /// 
-  /// Most members are simply a pass through to the underlying <c>MemoryStream</c>.
+  /// Most members are simply a pass through to the underlying <c>MemoryStream</c>. However
+  /// the <see cref="Close()"/> function flushes the buffer, but leaves the <c>MemoryStream</c>
+  /// open. In this way, the <c>MemoryStream</c> can continue to be used.
   /// </remarks>
   class CompressionBuffer : Stream
   {

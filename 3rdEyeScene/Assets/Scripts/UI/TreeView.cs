@@ -73,7 +73,6 @@ namespace UI
     /// </summary>
     public void Clear()
     {
-      TreeViewItem item;
       // Prevent rebuilding the visuals.
       _propagatingBindings = true;
       Clear(Root);
