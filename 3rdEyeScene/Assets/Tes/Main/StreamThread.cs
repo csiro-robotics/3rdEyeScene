@@ -326,7 +326,7 @@ namespace Tes.Main
             {
               // Also try snapshots when stepping forwards large frame counts.
               // No need to reset the stream as we do when stepping back.
-              Snapshot snapshot = TrySnapshot(_targetFrame);
+              Snapshot snapshot = TrySnapshot(_targetFrame, _currentFrame);
               if (snapshot != null)
               {
                 lastSnapshotFrame = _currentFrame = snapshot.FrameNumber;
@@ -393,9 +393,7 @@ namespace Tes.Main
                           lastSnapshotFrame < _currentFrame &&
                           _currentFrame - lastSnapshotFrame >= _snapshotMinFrames)
                       {
-                        // Snapshot the results of ending this frame.
-                        // Note: we can't restore this exact frame as we can't guarantee transient
-                        // objects are serialised by the viewer.
+                        // We may request a snapshot now.
                         lastSnapshotFrame = _currentFrame;
                         bytesSinceLastSnapshot = 0;
                         RequestSnapshot(lastSnapshotFrame, processedBytes);
@@ -581,14 +579,15 @@ namespace Tes.Main
       _catcingUp = _currentFrame + 1 < _targetFrame;
     }
 
-#region Snapshots
+    #region Snapshots
 
     /// <summary>
     /// Try find a snapshot near the given frame number.
     /// </summary>
-    /// <param name="targetFrame"></param>
+    /// <param name="targetFrame">The frame number we are trying to achieve.</param>
+    /// <param name="currentFrame">The current frame number. A valid snapshot must occur after this number.</param>
     /// <returns>The frame number reached by the snapshot.</returns>
-    private Snapshot TrySnapshot(uint targetFrame)
+    private Snapshot TrySnapshot(uint targetFrame, uint currentFrame = 0)
     {
       if (!AllowSnapshots)
       {
@@ -602,8 +601,9 @@ namespace Tes.Main
           // Suitable snapshot if it's before the target frame, or
           // at the target frame and includes transient objects.
           // See Snapshot class remarks.
-          if (snapshot.FrameNumber < targetFrame ||
-            snapshot.IncludesTransient && snapshot.FrameNumber == targetFrame)
+          if (snapshot.FrameNumber > currentFrame &&
+              (snapshot.FrameNumber < targetFrame ||
+                snapshot.IncludesTransient && snapshot.FrameNumber == targetFrame))
           {
             if (snapshot.Valid)
             {
@@ -708,6 +708,7 @@ namespace Tes.Main
           if (DecodeSnapshotStream(snapStream))
           {
             _currentFrame = snapshot.FrameNumber;
+            Debug.Log(string.Format("Restored frame: {0}", _currentFrame));
             return true;
           }
           Debug.LogError(string.Format("Failed to decode snapshot for frame {0}", snapshot.FrameNumber));

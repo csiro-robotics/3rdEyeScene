@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using UnityEngine;
 
 namespace Tes.Runtime
@@ -252,6 +252,23 @@ namespace Tes.Runtime
     {
       if (Dirty)
       {
+        // Log count mismatches.
+        if (!(ValidateCounts(_vertices, _normals, true) || _normals != null && _normals.Count == 1))
+        {
+          Debug.LogWarning(string.Format("Mesh vertex/normal count mismatch: {0} != {1}",
+            _vertices != null ? _vertices.Count : 0, _normals != null ? _normals.Count : 0));
+        }
+        if (!ValidateCounts(_vertices, _uvs, true))
+        {
+          Debug.LogWarning(string.Format("Mesh vertex/UV count mismatch: {0} != {1}",
+            _vertices != null ? _vertices.Count : 0, _uvs != null ? _uvs.Count : 0));
+        }
+        if (!ValidateCounts(_vertices, _uvs, true))
+        {
+          Debug.LogWarning(string.Format("Mesh vertex/colour count mismatch: {0} != {1}",
+            _vertices != null ? _vertices.Count : 0, _colours != null ? _colours.Count : 0));
+        }
+
         if (IndexCount <= UnityIndexLimit)
         {
           UpdateSingleMesh();
@@ -261,6 +278,7 @@ namespace Tes.Runtime
           UpdateMultiMesh();
         }
         _dirty = DirtyFlag.None;
+
         // Clear warnings log.
         _warningFlags = DirtyFlag.None;
       }
@@ -1409,6 +1427,22 @@ namespace Tes.Runtime
               context.ToString(), index, rangeCount)
           );
       }
+    }
+
+    /// <summary>
+    /// A validation routine that ensures two lists have matching counts or optionally <paramref name="b"/> is empty.
+    /// </summary>
+    /// <param name="a">The first list. Must not be null.</param>
+    /// <param name="b">The second list. Maybe null.</param>
+    /// <param name="allowEmptyB">Always succeed when b is null or empty?</param>
+    /// <returns>True if the length of the lists match.</returns>
+    private static bool ValidateCounts(IList a, IList b, bool allowEmptyB)
+    {
+      if (b != null)
+      {
+        return allowEmptyB && b.Count == 0 || a.Count == b.Count;
+      }
+      return allowEmptyB;
     }
 
     private Bounds _bounds = new Bounds();

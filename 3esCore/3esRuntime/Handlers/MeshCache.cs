@@ -437,21 +437,6 @@ namespace Tes.Handlers
         packet.ExportTo(writer);
       }
 
-      // Finalise if possible.
-      if (mesh.Finalised)
-      {
-        MeshFinaliseMessage fmsg = new MeshFinaliseMessage();
-        fmsg.MeshID = mesh.ID;
-        fmsg.Flags = 0;
-        packet.Reset((ushort)RoutingID, MeshFinaliseMessage.MessageID);
-        fmsg.Write(packet);
-        if (!packet.FinalisePacket())
-        {
-          return new Error(ErrorCode.SerialisationFailure);
-        }
-        packet.ExportTo(writer);
-      }
-
       return new Error();
     }
 
@@ -981,7 +966,7 @@ namespace Tes.Handlers
         break;
       }
 
-      // Generate the meshes here!
+      // Generate the meshes here.
       Error err = new Error();
       meshDetails.Builder.CalculateNormals = generateNormals;
       meshDetails.Builder.GetMeshes();

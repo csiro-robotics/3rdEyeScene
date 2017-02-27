@@ -990,6 +990,7 @@ namespace Tes.Main
           writer.Flush();
           // Must be closed to ensure the compression stream finalises correctly.
           writer.Close();
+          Debug.Log(string.Format("Snapshot on frame: {0}", frameNumber));
         }
       }
       finally

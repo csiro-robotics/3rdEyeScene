@@ -30,7 +30,7 @@ public class PlaybackSettings : Settings
     Tooltip("Try restore snapshot when skipping forwards at least this number of frames.")]
   public int SnapshotSkipForwardFrames
   {
-    get { return PlayerPrefs.GetInt("playback.snapshotSkipForwardFrames", 512); }
+    get { return PlayerPrefs.GetInt("playback.snapshotSkipForwardFrames", 100); }
     set { PlayerPrefs.SetInt("playback.snapshotSkipForwardFrames", value); Notify("SnapshotSkipForwardFrames"); }
   }
 
