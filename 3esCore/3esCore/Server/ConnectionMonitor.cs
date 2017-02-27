@@ -49,6 +49,8 @@ namespace Tes.Server
         return true;
       }
 
+      _lock = new Tes.Thread.SpinLock();
+
       switch (mode)
       {
       case ConnectionMonitorMode.Synchronous:
@@ -58,13 +60,13 @@ namespace Tes.Server
 
       case ConnectionMonitorMode.Asynchronous:
         _quitFlag = false;
-        _lock = new Tes.Thread.SpinLock();
         _thread = new System.Threading.Thread(MonitorThread);
         _thread.Start();
         Mode = ConnectionMonitorMode.Asynchronous;
         break;
 
       default:
+        _lock = null;
         return false;
       }
 
@@ -109,6 +111,7 @@ namespace Tes.Server
         _thread.Join();
         _thread = null;
       }
+      _lock = null;
     }
 
     /// <summary>
