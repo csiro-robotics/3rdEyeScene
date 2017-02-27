@@ -72,6 +72,6 @@ namespace InputSystem
     }
 
     [SerializeField]
-    private List<InputLayer> _layers;
+    private List<InputLayer> _layers = new List<InputLayer>();
   }
 }

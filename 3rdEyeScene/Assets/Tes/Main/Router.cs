@@ -877,14 +877,18 @@ namespace Tes.Main
       // Copy header to the file.
       fileStream.Write(headerBytes, 0, headerBytes.Length);
       // Dispose of the temporary objects.
-      headerBytes = null;
       writer = null;
+      headerBytes = null;
       headerStream = null;
 
       // Now wrap the file in a GZip stream to start compression if we are not already doing so.
-      if (fileStream as GZipStream == null)
+      if (false && fileStream as GZipStream == null)
       {
         writer = new NetworkWriter(new GZipStream(fileStream, CompressionMode.Compress));
+      }
+      else
+      {
+        writer = new NetworkWriter(fileStream);
       }
 
       Error err;
@@ -934,6 +938,7 @@ namespace Tes.Main
         {
           BinaryWriter writer = SerialiseScene(snapshotStream, out success);
           WriteFrameFlush(writer);
+          writer.Flush();
         }
       }
       finally

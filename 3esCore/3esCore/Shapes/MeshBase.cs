@@ -349,11 +349,11 @@ namespace Tes.Shapes
       int elementSize = 12; // 3 * 4 byte floats
       MeshComponentMessage msg = new MeshComponentMessage();
       msg.MeshID = ID;
-      packet.Reset((ushort)RoutingID.Mesh, (ushort)component);
       msg.Offset = (uint)progress.Progress;
       msg.Reserved = 0;
       msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit), (uint)items.Length - msg.Offset);
 
+      packet.Reset((ushort)RoutingID.Mesh, (ushort)component);
       msg.Write(packet);
       uint ii = msg.Offset;
       for (int i = 0; i < msg.Count; ++i, ++ii)

@@ -338,7 +338,6 @@ namespace UI
     {
       if (_expander != null)
       {
-
         _expander.interactable = _children.Count != 0;
       }
     }

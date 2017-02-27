@@ -264,7 +264,6 @@ namespace Tes.Main
             if (_targetFrame < _currentFrame)
             {
               // Stepping back.
-              // Naive solution: reset the file stream and consume until the requested frame.
               processedBytes = 0;
               bytesSinceLastSnapshot = 0;
               lastSnapshotFrame = 0;
@@ -280,6 +279,24 @@ namespace Tes.Main
               stopwatch.Reset();
               stopwatch.Start();
             }
+#if FALSE
+            // FIXME: remove hard coded 'large' frame count step.
+            else if (_targetFrame > _currentFrame + 100)
+            {
+              // Also try snapshots when stepping forwards large frame counts.
+              // No need to reset the stream as we do when stepping back.
+              Snapshot snapshot = TrySnapshot(_targetFrame);
+              if (snapshot != null)
+              {
+                lastSnapshotFrame = _currentFrame = snapshot.FrameNumber;
+                processedBytes = snapshot.StreamOffset;
+                _allowCompressStream = false;
+              }
+              _catcingUp = _currentFrame + 1 < _targetFrame;
+              stopwatch.Reset();
+              stopwatch.Start();
+            }
+#endif // FALSE
           }
         }
 
@@ -526,7 +543,7 @@ namespace Tes.Main
       _catcingUp = _currentFrame + 1 < _targetFrame;
     }
 
-    #region Snapshots
+#region Snapshots
 
     /// <summary>
     /// Try find a snapshot near the given frame number.
@@ -567,6 +584,35 @@ namespace Tes.Main
       }
 
       return null;
+    }
+
+    private Snapshot FindSnapshot(uint targetFrame)
+    {
+      if (!AllowSnapshots)
+      {
+        return null;
+      }
+
+      Snapshot bestShot = null;
+      lock (_snapshots)
+      {
+        foreach (Snapshot snapshot in _snapshots)
+        {
+          if (snapshot.FrameNumber <= targetFrame)
+          {
+            if (snapshot.Valid)
+            {
+              bestShot = snapshot;
+            }
+          }
+          else
+          {
+            break;
+          }
+        }
+      }
+
+      return bestShot;
     }
 
     /// <summary>
@@ -665,7 +711,8 @@ namespace Tes.Main
           }
           bytesRead = snapStream.Read(headerBuffer, 0, headerBuffer.Length);
 
-          ok = false;
+          // ok = false if done, true when we read something.
+          ok = bytesRead == 0;
           if (bytesRead == headerBuffer.Length)
           {
             if (header.Read(new NetworkReader(new MemoryStream(headerBuffer, false))))
@@ -687,6 +734,9 @@ namespace Tes.Main
                 {
                 case PacketBufferStatus.CrcError:
                   Debug.LogError("Failed to decode packet CRC.");
+                  break;
+                case PacketBufferStatus.Collating:
+                  Debug.LogError("Insufficient data for packet.");
                   break;
                 default:
                   break;
@@ -782,6 +832,7 @@ namespace Tes.Main
             // Close stream.
             if (snapshot.OpenStream != null)
             {
+              snapshot.OpenStream.Flush();
               snapshot.OpenStream.Close();
               snapshot.OpenStream = null;
             }
@@ -855,7 +906,7 @@ namespace Tes.Main
       }
     }
 
-    #endregion
+#endregion
 
     /// <summary>
     /// Reset playback.
