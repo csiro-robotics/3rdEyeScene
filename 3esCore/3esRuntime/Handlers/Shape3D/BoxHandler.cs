@@ -42,6 +42,11 @@ namespace Tes.Handlers.Shape3D
     /// </summary>
     public override Mesh WireframeMesh { get { return _wireframeMesh; } }
 
+    /// <summary>
+    /// Creates an box shape for serialisation.
+    /// </summary>
+    /// <param name="shapeComponent">The component to create a shape for.</param>
+    /// <returns>A shape instance suitable for configuring to generate serialisation messages.</returns>
     protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
     {
       Shapes.Shape shape = new Shapes.Box();

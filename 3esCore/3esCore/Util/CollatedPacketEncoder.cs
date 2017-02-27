@@ -21,7 +21,7 @@ namespace Tes.Util
   /// <item>Finalise the packet</item>
   /// <item>Call <see cref="Add(PacketBuffer)"/></item>
   /// </list>
-  /// <item>Call <see cref="Finalise()"/> on the encoder</item>
+  /// <item>Call <see cref="FinaliseEncoding()"/> on the encoder</item>
   /// <item>Send the encoded packet.</item>
   /// <item>Reset the encoder.</item>
   /// </list>

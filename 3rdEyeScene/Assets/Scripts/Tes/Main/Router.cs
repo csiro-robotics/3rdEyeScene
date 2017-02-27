@@ -65,8 +65,8 @@ namespace Tes.Main
     }
 
     [SerializeField]
-    protected ModeEventEvent _onMmodeChange = new ModeEventEvent();
-    public ModeEventEvent OnModeChange { get { return _onMmodeChange; } }
+    protected ModeEventEvent _onModeChange = new ModeEventEvent();
+    public ModeEventEvent OnModeChange { get { return _onModeChange; } }
 
     /// <summary>
     /// Reports the current mode.
@@ -689,9 +689,9 @@ namespace Tes.Main
         if (_lastMode != curMode)
         {
           _lastMode = curMode;
-          if (_onMmodeChange != null)
+          if (_onModeChange != null)
           {
-            _onMmodeChange.Invoke(curMode);
+            _onModeChange.Invoke(curMode);
           }
         }
 
