@@ -432,7 +432,7 @@ namespace Tes.Shapes
         packet.WriteBytes(BitConverter.GetBytes(itemCount), true);
 
         Vector3 n;
-        for (int i = (int)(progressMarker); i < (itemCount + offset); ++i)
+        for (uint i = offset; i < (itemCount + offset); ++i)
         {
           n = normals[i];
           packet.WriteBytes(BitConverter.GetBytes(n.X), true);
@@ -459,7 +459,7 @@ namespace Tes.Shapes
         packet.WriteBytes(BitConverter.GetBytes(itemCount), true);
 
         Vector3 v;
-        for (int i = (int)(progressMarker); i < (itemCount + offset); ++i)
+        for (uint i = offset; i < (itemCount + offset); ++i)
         {
           v = vertices[i];
           packet.WriteBytes(BitConverter.GetBytes(v.X), true);

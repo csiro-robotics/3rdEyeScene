@@ -31,6 +31,18 @@ using UnityEngine;
 /// </remarks>
 public class SerialisationTest : MonoBehaviour
 {
+  [Flags]
+  public enum ValidationFlag
+  {
+    Position = (1 << 0),
+    Rotation = (1 << 1),
+    Scale = (1 << 2),
+    Colour = (1 << 3),
+    RotationAsNormal = (1 << 4),
+
+    Default = Position | Rotation | Scale | Colour
+  }
+
   public TesComponent tes = null;
   public ushort TestPort = 35035;
   public float ConnectWaitTime = 10.0f;
@@ -38,6 +50,18 @@ public class SerialisationTest : MonoBehaviour
 
   void Start()
   {
+    _validationFlags = new Dictionary<Type, ValidationFlag>();
+    // Planes use rotation as a normal.
+    _validationFlags.Add(typeof(Tes.Shapes.Plane),
+                         ValidationFlag.Position | ValidationFlag.RotationAsNormal | ValidationFlag.Scale | ValidationFlag.Colour);
+    // Rotation independent, or special rotation shapes:
+    _validationFlags.Add(typeof(Sphere),
+                         ValidationFlag.Position | ValidationFlag.Scale | ValidationFlag.Colour);
+    _validationFlags.Add(typeof(Star),
+                         ValidationFlag.Position | ValidationFlag.Scale | ValidationFlag.Colour);
+    _validationFlags.Add(typeof(Sphere),
+                         ValidationFlag.Position | ValidationFlag.Scale | ValidationFlag.Colour);
+
     _specialObjectValidation = new Dictionary<Type, SpecialObjectValidation>();
     _specialValidation = new Dictionary<Type, SpecialValidation>();
 
@@ -292,10 +316,6 @@ public class SerialisationTest : MonoBehaviour
       Debug.LogException(e);
       return false;
     }
-    finally
-    {
-      _sampleMesh = null;
-    }
 
     return true;
   }
@@ -365,6 +385,7 @@ public class SerialisationTest : MonoBehaviour
   bool ValidateScene(int validationCount, List<Shape> shapes)
   {
     bool ok = true;
+    ValidationFlag validationFlags = 0;
     foreach (Shape shape in shapes)
     {
       // Find the associated handler.
@@ -375,7 +396,11 @@ public class SerialisationTest : MonoBehaviour
         GameObject obj = FindObjectFor(shape, handler);
         if (obj != null)
         {
-          validated = ValidateAgainstObject(shape, obj);
+          if (!_validationFlags.TryGetValue(shape.GetType(), out validationFlags))
+          {
+            validationFlags = ValidationFlag.Default;
+          }
+          validated = ValidateAgainstObject(shape, obj, validationFlags);
         }
         else if (ValidateWithoutObject(shape, handler))
         {
@@ -431,7 +456,7 @@ public class SerialisationTest : MonoBehaviour
     return shapeComponent.gameObject;
   }
 
-  bool ValidateAgainstObject(Shape shape, GameObject obj)
+  bool ValidateAgainstObject(Shape shape, GameObject obj, ValidationFlag flags)
   {
     // Validate position and rotation. Can't do scale due to varying semantics.
     var shapeComponent = obj.GetComponentInChildren<Tes.Handlers.ShapeComponent>();
@@ -449,28 +474,33 @@ public class SerialisationTest : MonoBehaviour
       ok = false;
     }
 
-    if (xform.localPosition != Tes.Maths.Vector3Ext.ToUnity(shape.Position))
+    if ((flags & ValidationFlag.Position) != 0 && xform.localPosition != Tes.Maths.Vector3Ext.ToUnity(shape.Position))
     {
-      Debug.LogError("Position mismatch.");
+      Debug.LogError(string.Format("Position mismatch: {0} != {1}",
+                      xform.localPosition, Tes.Maths.Vector3Ext.ToUnity(shape.Position)));
       ok = false;
     }
-    if (xform.localRotation != Tes.Maths.QuaternionExt.ToUnity(shape.Rotation))
+    if ((flags & ValidationFlag.Rotation) != 0 && xform.localRotation != Tes.Maths.QuaternionExt.ToUnity(shape.Rotation))
     {
-      Debug.LogError("Position mismatch.");
+      Debug.LogError(string.Format("Rotation mismatch: {0} != {1}",
+                      xform.localRotation, Tes.Maths.QuaternionExt.ToUnity(shape.Rotation)));
       ok = false;
     }
 
-    Color32 c1 = shapeComponent.Colour;
-    Color32 c2 = Tes.Handlers.ShapeComponent.ConvertColour(shape.Colour);
-    if (c1.r != c2.r || c1.g != c2.g || c1.b != c2.b || c1.a != c2.a)
+    if ((flags & ValidationFlag.Colour) != 0)
     {
-      Debug.LogError("Colour mismatch.");
-      ok = false;
+      Color32 c1 = shapeComponent.Colour;
+      Color32 c2 = Tes.Handlers.ShapeComponent.ConvertColour(shape.Colour);
+      if (c1.r != c2.r || c1.g != c2.g || c1.b != c2.b || c1.a != c2.a)
+      {
+        Debug.LogError(string.Format("Colour mismatch: {0} != {1}", c1, c2));
+        ok = false;
+      }
     }
 
     if (shape.ID != shapeComponent.ObjectID)
     {
-      Debug.LogError("Shape ID mismatch.");
+      Debug.LogError(string.Format("Shape ID mismatch: {0} != {1}", shape.ID, shapeComponent.ObjectID));
       ok = false;
     }
 
@@ -499,7 +529,7 @@ public class SerialisationTest : MonoBehaviour
     return false;
   }
 
-  static bool ValidateVectors(string context, Vector3[] uverts, Tes.Maths.Vector3[] tverts)
+  static bool ValidateVectors(string context, Vector3[] uverts, Tes.Maths.Vector3[] tverts, float epsilon = 1e-3f)
   {
     bool ok = true;
     int count = uverts.Length;
@@ -507,14 +537,21 @@ public class SerialisationTest : MonoBehaviour
     {
       count = Math.Min(uverts.Length, tverts.Length);
       ok = false;
-      Debug.LogError(string.Format("{0} count mismatch: {0} != {1}", context, uverts.Length, tverts.Length));
+      Debug.LogError(string.Format("{0} count mismatch: {1} != {2}", context, uverts.Length, tverts.Length));
     }
 
+    Vector3 tvert;
+    Vector3 separation;
+    float diffSqr;
     for (int i = 0; i < count; ++i)
     {
-      if (uverts[i] != Tes.Maths.Vector3Ext.ToUnity(tverts[i]))
+      tvert = Tes.Maths.Vector3Ext.ToUnity(tverts[i]);
+      separation = uverts[i] - tvert;
+      diffSqr = separation.sqrMagnitude;
+      if (diffSqr > epsilon * epsilon)
       {
-        Debug.LogError(string.Format("{0} mismatch at index {0}", context, i));
+        Debug.LogError(string.Format("{0} mismatch at index {1}: {2} != {3} (difference: {4})",
+                       context, i, uverts[i], tvert, Mathf.Sqrt(diffSqr)));
         ok = false;
         break;
       }
@@ -531,14 +568,14 @@ public class SerialisationTest : MonoBehaviour
     {
       count = Math.Min(uinds.Length, tinds.Length);
       ok = false;
-      Debug.LogError(string.Format("{0} count mismatch: {0} != {1}", context, uinds.Length, tinds.Length));
+      Debug.LogError(string.Format("{0} count mismatch: {1} != {2}", context, uinds.Length, tinds.Length));
     }
 
     for (int i = 0; i < count; ++i)
     {
       if (uinds[i] != tinds[i])
       {
-        Debug.LogError(string.Format("{0} mismatch at index {0}", context, i));
+        Debug.LogError(string.Format("{0} mismatch at index {1}", context, i));
         ok = false;
         break;
       }
@@ -686,7 +723,8 @@ public class SerialisationTest : MonoBehaviour
 
     if (textEntry.Position != Tes.Maths.Vector3Ext.ToUnity(shape.Position))
     {
-      Debug.LogError("Position mismatch.");
+      Debug.LogError(string.Format("Position mismatch: {0} != {1}",
+                      textEntry.Position, Tes.Maths.Vector3Ext.ToUnity(shape.Position)));
       ok = false;
     }
 
@@ -706,6 +744,8 @@ public class SerialisationTest : MonoBehaviour
 
     return ok;
   }
+
+  private Dictionary<Type, ValidationFlag> _validationFlags = null;
 
   delegate bool SpecialObjectValidation(Shape shape, GameObject obj);
   private Dictionary<Type, SpecialObjectValidation> _specialObjectValidation = null;
