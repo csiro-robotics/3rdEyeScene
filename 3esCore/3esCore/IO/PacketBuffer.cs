@@ -665,7 +665,7 @@ namespace Tes.IO
     /// </remarks>
     /// <param name="stream">The stream to read bytes from.</param>
     /// <param name="available">The number of bytes to read from <paramref name="stream"/>.</param>
-    /// <returns>The number of bytes added from <paramref name="bytes"/>.</returns>
+    /// <returns>The number of bytes added from <paramref name="stream"/>.</returns>
     public int Emplace(Stream stream, int available)
     {
       ResetCursor();

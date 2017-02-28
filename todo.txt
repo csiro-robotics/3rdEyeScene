@@ -1,6 +1,5 @@
 Bugs:
 - TES_MESHSET_XXX() macros do not cater for defining the associated resources. Parameterisation needs to change.
-- Router UpdateCatchUp is currently incompatible with snapshots. Transient objects will be excluded from the snapshot.
 - Large data frames have been known to end up an odd state whereby some data from the previous are still visible and not all data from the next frame are visible.
   - Possibly a thread safety issue on the concurrent queue.
 - Custom socket bugs (workaround using Qt sockets):
@@ -9,13 +8,11 @@ Bugs:
 
 
 TODO:
+- Modify StreamThread to support collated packets
+  - Change recording compression from file level to use collated packets and work on chunked compression.
+    . Better for snapshots as seeking is allowed.
 - Profile StreamThread packet decoding and improve performance.
   - Current playback speed bottleneck when stepping.
-- Reduce serialisation maintenance burden. There is code duplication of serialisation code for complex shapes. The following shapes duplicate serialisation in their Handlers and their Shapes:
-  - MeshHandler/MeshShape
-  - MeshCache/MeshBase (MeshResource)
-  - PointCloud/PointCloudHandler
-  - See if MeshHandler can leverage the MeshResource code to ensure consistent serialisation.
 - "Server" implementation which writes directly to a local file.
 - Change shape shaders to support GPU instancing.
 - Consider adding batched object creation messages.

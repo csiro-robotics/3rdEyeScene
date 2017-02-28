@@ -140,6 +140,11 @@ namespace Tes.Handlers.Shape3D
       return obj;
     }
 
+    /// <summary>
+    /// Creates a point cloud shape for serialising <paramref name="shapeComponent"/> and its point data.
+    /// </summary>
+    /// <param name="shapeComponent">The component to create a shape for.</param>
+    /// <returns>A shape instance suitable for configuring to generate serialisation messages.</returns>
     protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
     {
       PointsComponent pointsComp = shapeComponent.GetComponent<PointsComponent>();

@@ -137,6 +137,11 @@ namespace Tes.Handlers.Shape3D
       return obj;
     }
 
+    /// <summary>
+    /// Creates a mesh set shape for serialising the mesh and its resource references.
+    /// </summary>
+    /// <param name="shapeComponent">The component to create a shape for.</param>
+    /// <returns>A shape instance suitable for configuring to generate serialisation messages.</returns>
     protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
     {
       // Start by building the resource list.
