@@ -417,9 +417,8 @@ namespace Tes.Shapes
       // Must send normals before final vertices/indices as those trigger mesh finalisation.
       if (progressMarker < totalNormals)
       {
-        // Approximate vertex limit per packet. Packet size maximum is 0xffff.
-        // Take off a bit for overheads (256) and divide by 12 bytes per vertex.
-        const uint maxPacketNormals = ((0xff00u - 256u) / 12);
+        // Estimate element count limit.
+        int maxPacketNormals = MeshBase.EstimateTransferCount(12, 0, DataMessage.Size);
         sendCode = (totalNormals != 1) ? (ushort)SendDataType.Normals : (ushort)SendDataType.UniformNormal;
         offset = (uint)progressMarker;
         itemCount = (uint)(normals.Length - offset);
@@ -444,9 +443,8 @@ namespace Tes.Shapes
       }
       else if (progressMarker < totalNormals + totalVertices)
       {
-        // Approximate vertex limit per packet. Packet size maximum is 0xffff.
-        // Take off a bit for overheads (256) and divide by 12 bytes per vertex.
-        const uint maxPacketVertices = ((0xff00u - 256u) / 12);
+        // Estimate element count limit.
+        int maxPacketVertices = MeshBase.EstimateTransferCount(12, 0, DataMessage.Size);
         sendCode = (ushort)SendDataType.Vertices; // Vertices
         offset = (uint)(progressMarker - totalNormals);
         itemCount = (uint)(vertices.Length - offset);
@@ -471,9 +469,8 @@ namespace Tes.Shapes
       }
       else if (progressMarker < totalNormals + totalVertices + totalIndices)
       {
-        // Approximate index limit per packet. Packet size maximum is 0xffff.
-        // Take off a bit for overheads (256) and divide by 4 bytes per vertex.
-        const uint maxPacketIndices = ((0xff00u - 256u) / 4u);
+        // Estimate element count limit.
+        int maxPacketIndices = MeshBase.EstimateTransferCount(4, 0, DataMessage.Size);
         sendCode = (ushort)SendDataType.Indices; // Indices
         offset = (uint)(progressMarker - totalNormals - totalVertices);
         itemCount = (uint)(indices.Length - offset);

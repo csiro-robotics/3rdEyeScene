@@ -3,6 +3,8 @@
 //
 #include "3esmeshshape.h"
 
+#include "3esmeshset.h"
+
 #include <3escoreutil.h>
 #include <3espacketwriter.h>
 
@@ -151,12 +153,10 @@ int MeshShape::writeData(PacketWriter &stream, unsigned &progressMarker) const
   // Normals must be sent first as the mesh if finalised on completing vertex/index data.
   if (progressMarker < _normalsCount)
   {
-    // Send vertices.
-    // Approximate vertex limit per packet. Packet size maximum is 0xffff.
-    // Take off a bit for overheads (256) and divide by 12 bytes per vertex.
-    const unsigned maxPacketVertices = ((0xffff - 256) / 12);
+    // Send normals.
+    const int maxPacketNormals = MeshResource::estimateTransferCount(12, 0, sizeof(DataMessage));
     offset = progressMarker;
-    itemCount = uint32_t(std::min(_normalsCount - offset, maxPacketVertices));
+    itemCount = uint32_t(std::min<uint32_t>(_normalsCount - offset, maxPacketNormals));
 
     sendType = (_normalsCount != 1) ? SDT_Normals : SDT_UniformNormal;  // Sending normals.
     ok = stream.writeElement(sendType) == sizeof(sendType) && ok;
@@ -181,11 +181,9 @@ int MeshShape::writeData(PacketWriter &stream, unsigned &progressMarker) const
   else if (progressMarker < _normalsCount + _vertexCount)
   {
     // Send vertices.
-    // Approximate vertex limit per packet. Packet size maximum is 0xffff.
-    // Take off a bit for overheads (256) and divide by 12 bytes per vertex.
-    const unsigned maxPacketVertices = ((0xffff - 256) / 12);
+    const int maxPacketVertices = MeshResource::estimateTransferCount(12, 0, sizeof(DataMessage));
     offset = progressMarker - _normalsCount;
-    itemCount = uint32_t(std::min(_vertexCount - offset, maxPacketVertices));
+    itemCount = uint32_t(std::min<uint32_t>(_vertexCount - offset, maxPacketVertices));
 
     sendType = SDT_Vertices; // Sending vertices.
     ok = stream.writeElement(sendType) == sizeof(sendType) && ok;
@@ -210,11 +208,9 @@ int MeshShape::writeData(PacketWriter &stream, unsigned &progressMarker) const
   else if (progressMarker < _normalsCount + _vertexCount + _indexCount)
   {
     // Send indices.
-    // Approximate index limit per packet. Packet size maximum is 0xffff.
-    // Take off a bit for overheads (256) and divide by 4 bytes per index.
-    const unsigned maxPacketIndices = ((0xffff - 256) / 4);
+    const int maxPacketIndices = MeshResource::estimateTransferCount(4, 0, sizeof(DataMessage));
     offset = progressMarker - _normalsCount - _vertexCount;
-    itemCount = uint32_t(std::min(_indexCount - offset, maxPacketIndices));
+    itemCount = uint32_t(std::min<uint32_t>(_indexCount - offset, maxPacketIndices));
 
     sendType = SDT_Indices; // Sending indices.
     ok = stream.writeElement(sendType) == sizeof(sendType) && ok;

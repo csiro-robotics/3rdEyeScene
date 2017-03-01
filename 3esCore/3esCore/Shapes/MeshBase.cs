@@ -251,9 +251,9 @@ namespace Tes.Shapes
     /// <param name="byteLimit">The maximum number of bytes to transfer. Note: a hard limit of 0xffff is
     ///   enforced.</param>
     /// <returns>The maximum number of elements which can be accommodated in the byte limit (conservative).</returns>
-    public static ushort EstimateTransferCount(int elementSize, int byteLimit)
+    public static ushort EstimateTransferCount(int elementSize, int byteLimit, int overhead = 0)
     {
-      int maxTransfer = (0xffff - PacketHeader.Size + Crc16.CrcSize) / elementSize;
+      int maxTransfer = (0xffff - (PacketHeader.Size + overhead + Crc16.CrcSize)) / elementSize;
       int count = (byteLimit > 0) ? byteLimit / elementSize : maxTransfer;
       if (count < 1)
       {
@@ -351,7 +351,7 @@ namespace Tes.Shapes
       msg.MeshID = ID;
       msg.Offset = (uint)progress.Progress;
       msg.Reserved = 0;
-      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit), (uint)items.Length - msg.Offset);
+      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit, MeshComponentMessage.Size), (uint)items.Length - msg.Offset);
 
       packet.Reset((ushort)RoutingID.Mesh, (ushort)component);
       msg.Write(packet);
@@ -383,7 +383,7 @@ namespace Tes.Shapes
       msg.MeshID = ID;
       msg.Offset = (uint)progress.Progress;
       msg.Reserved = 0;
-      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit), (uint)items.Length - msg.Offset);
+      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit, MeshComponentMessage.Size), (uint)items.Length - msg.Offset);
 
       packet.Reset(TypeID, (ushort)component);
       msg.Write(packet);
@@ -414,7 +414,7 @@ namespace Tes.Shapes
       msg.MeshID = ID;
       msg.Offset = (uint)progress.Progress;
       msg.Reserved = 0;
-      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit), (uint)items.Length - msg.Offset);
+      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit, MeshComponentMessage.Size), (uint)items.Length - msg.Offset);
 
       packet.Reset(TypeID, (ushort)component);
       msg.Write(packet);
@@ -444,7 +444,7 @@ namespace Tes.Shapes
       msg.MeshID = ID;
       msg.Offset = (uint)progress.Progress;
       msg.Reserved = 0;
-      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit), (uint)items.Length - msg.Offset);
+      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit, MeshComponentMessage.Size), (uint)items.Length - msg.Offset);
 
       packet.Reset(TypeID, (ushort)component);
       msg.Write(packet);
@@ -474,7 +474,7 @@ namespace Tes.Shapes
       msg.MeshID = ID;
       msg.Offset = (uint)progress.Progress;
       msg.Reserved = 0;
-      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit), (uint)items.Length - msg.Offset);
+      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit, MeshComponentMessage.Size), (uint)items.Length - msg.Offset);
 
       packet.Reset(TypeID, (ushort)component);
       msg.Write(packet);
@@ -488,5 +488,5 @@ namespace Tes.Shapes
       return progress.Progress == items.Length;
     }
     #endregion
-}
+  }
 }

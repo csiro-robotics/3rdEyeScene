@@ -38,7 +38,9 @@ public class SerialisationTest : MonoBehaviour
     Rotation = (1 << 1),
     Scale = (1 << 2),
     Colour = (1 << 3),
-    RotationAsNormal = (1 << 4),
+    // Original shape position must be converted to Unity's left-handed system. Requires position flag.
+    PositionConverted = (1 << 4),
+    RotationAsNormal = (1 << 5),
 
     Default = Position | Rotation | Scale | Colour
   }
@@ -46,6 +48,7 @@ public class SerialisationTest : MonoBehaviour
   public TesComponent tes = null;
   public ushort TestPort = 35035;
   public float ConnectWaitTime = 10.0f;
+  public CoordinateFrame ServerCoordinateFrame = CoordinateFrame.XYZ;
   private MeshResource _sampleMesh = null;
 
   void Start()
@@ -53,14 +56,14 @@ public class SerialisationTest : MonoBehaviour
     _validationFlags = new Dictionary<Type, ValidationFlag>();
     // Planes use rotation as a normal.
     _validationFlags.Add(typeof(Tes.Shapes.Plane),
-                         ValidationFlag.Position | ValidationFlag.RotationAsNormal | ValidationFlag.Scale | ValidationFlag.Colour);
+                         ValidationFlag.Default | ValidationFlag.RotationAsNormal);
     // Rotation independent, or special rotation shapes:
     _validationFlags.Add(typeof(Sphere),
                          ValidationFlag.Position | ValidationFlag.Scale | ValidationFlag.Colour);
     _validationFlags.Add(typeof(Star),
                          ValidationFlag.Position | ValidationFlag.Scale | ValidationFlag.Colour);
-    _validationFlags.Add(typeof(Sphere),
-                         ValidationFlag.Position | ValidationFlag.Scale | ValidationFlag.Colour);
+    _validationFlags.Add(typeof(Text3D),
+                         ValidationFlag.Position | ValidationFlag.Scale | ValidationFlag.Colour | ValidationFlag.PositionConverted);
 
     _specialObjectValidation = new Dictionary<Type, SpecialObjectValidation>();
     _specialValidation = new Dictionary<Type, SpecialValidation>();
@@ -80,7 +83,12 @@ public class SerialisationTest : MonoBehaviour
 
   public bool CanStart()
   {
+#if !TRUE_THREADS
+    Debug.LogError("3rd Eye Scene must be configured to use TRUE_THREADS in order to support the network communication required by this test.");
+    return false;
+#else  // !TRUE_THREADS
     return tes != null;
+#endif // !TRUE_THREADS
   }
 
   IEnumerator TestRoutine()
@@ -214,7 +222,7 @@ public class SerialisationTest : MonoBehaviour
     ServerSettings serverSettings = ServerSettings.Default;
     ServerInfoMessage info = ServerInfoMessage.Default;
     serverSettings.ListenPort = TestPort;
-    info.CoordinateFrame = CoordinateFrame.XYZ;
+    info.CoordinateFrame = ServerCoordinateFrame;
     //serverSettings.Flags |= ServerFlag.Compress;
 
     return new TcpServer(serverSettings);
@@ -474,17 +482,41 @@ public class SerialisationTest : MonoBehaviour
       ok = false;
     }
 
-    if ((flags & ValidationFlag.Position) != 0 && xform.localPosition != Tes.Maths.Vector3Ext.ToUnity(shape.Position))
+    // Convert to Unity position.
+    if ((flags & ValidationFlag.Position) != 0)
     {
-      Debug.LogError(string.Format("Position mismatch: {0} != {1}",
-                      xform.localPosition, Tes.Maths.Vector3Ext.ToUnity(shape.Position)));
-      ok = false;
+      Vector3 shapePos = Tes.Maths.Vector3Ext.ToUnity(shape.Position);
+      if ((flags & ValidationFlag.PositionConverted) != 0)
+      {
+        shapePos = Tes.Main.Scene.RemoteToUnity(shapePos, ServerCoordinateFrame);
+      }
+
+      if (xform.localPosition != shapePos)
+      {
+        Debug.LogError(string.Format("Position mismatch: {0} != {1}", xform.localPosition, shapePos));
+        ok = false;
+      }
     }
-    if ((flags & ValidationFlag.Rotation) != 0 && xform.localRotation != Tes.Maths.QuaternionExt.ToUnity(shape.Rotation))
+    else if ((flags & ValidationFlag.PositionConverted) != 0)
     {
-      Debug.LogError(string.Format("Rotation mismatch: {0} != {1}",
-                      xform.localRotation, Tes.Maths.QuaternionExt.ToUnity(shape.Rotation)));
-      ok = false;
+
+    }
+
+    if ((flags & ValidationFlag.Rotation) != 0)
+    {
+      Quaternion shapeRot = Tes.Maths.QuaternionExt.ToUnity(shape.Rotation);
+      if ((flags & ValidationFlag.RotationAsNormal) != 0)
+      {
+        // TODO:
+        shapeRot = xform.localRotation;
+      }
+
+      if (xform.localRotation != shapeRot)
+      {
+        Debug.LogError(string.Format("Rotation mismatch: {0} != {1}",
+                        xform.localRotation, Tes.Maths.QuaternionExt.ToUnity(shape.Rotation)));
+        ok = false;
+      }
     }
 
     if ((flags & ValidationFlag.Colour) != 0)
@@ -607,8 +639,8 @@ public class SerialisationTest : MonoBehaviour
     bool ok = true;
     Tes.Handlers.MeshCache meshCache = (Tes.Handlers.MeshCache)tes.GetHandler((ushort)RoutingID.Mesh);
 
-    // Just assume one child right now.
-    var part = obj.GetComponentInChildren<Tes.Handlers.ShapeComponent>();
+    // First the first *child* ShapeComponent. This identfies the mesh.
+    var part = GetFirstChildComponent<Tes.Handlers.ShapeComponent>(obj);
     if (part == null)
     {
       Debug.LogError("Missing mesh set part resource.");
@@ -628,6 +660,19 @@ public class SerialisationTest : MonoBehaviour
     ok = ValidateIndices("Index", meshDetails.Builder.Indices, _sampleMesh.Indices4()) && ok;
 
     return ok;
+  }
+
+  T GetFirstChildComponent<T>(GameObject obj, bool includeInactive = false) where T : MonoBehaviour
+  {
+    foreach (T comp in obj.GetComponentsInChildren<T>())
+    {
+      if (comp.gameObject != obj)
+      {
+        return comp;
+      }
+    }
+
+    return null;
   }
 
   bool ValidateCloud(Shape shape, GameObject obj)
