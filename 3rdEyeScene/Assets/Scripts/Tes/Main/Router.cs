@@ -899,6 +899,32 @@ namespace Tes.Main
     }
 
     /// <summary>
+    /// Serialise the current scene to <paramref name="fileName"/>.
+    /// </summary>
+    /// <param name="fileName">The file to serialise to.</param>
+    /// <param name="allowCompression">Allow compressed serialisation?</param>
+    /// <returns>True on success, false on any exception or failure (logged).</returns>
+    public bool SerialiseScene(string fileName, bool allowCompression)
+    {
+      bool success;
+
+      try
+      {
+        BinaryWriter writer = SerialiseScene(new FileStream(fileName, FileMode.Create), allowCompression, out success);
+        WriteFrameFlush(writer);
+        writer.Flush();
+        // Must be closed to ensure the compression stream finalises correctly.
+        writer.Close();
+      }
+      catch (Exception e)
+      {
+        Debug.LogException(e);
+        success = false;
+      }
+      return success;
+    }
+
+    /// <summary>
     /// Serialise the current work state to the given (file) stream.
     /// </summary>
     /// <param name="fileStream">The (file) stream to writer to.</param>
@@ -931,7 +957,7 @@ namespace Tes.Main
       headerStream = null;
 
       // Now wrap the file in a GZip stream to start compression if we are not already doing so.
-      if (fileStream as GZipStream == null)
+      if (allowCompression && fileStream as GZipStream == null)
       {
         writer = new NetworkWriter(new GZipStream(fileStream, CompressionMode.Compress));
       }
@@ -1054,7 +1080,7 @@ namespace Tes.Main
 
       // Next write a placeholder control packet to define the total number of frames.
       frameCountMsg.ControlFlags = 0;
-      frameCountMsg.Value32 = 0;  // Placeholder. Frame count is currently unknown.
+      frameCountMsg.Value32 = 1;  // Placeholder. Frame count is currently unknown.
       frameCountMsg.Value64 = 0;
       packet.Reset((ushort)RoutingID.Control, (ushort)ControlMessageID.FrameCount);
       frameCountMsg.Write(packet);

@@ -440,6 +440,7 @@ namespace Tes.Runtime
       }
       else
       {
+        EnsureListSize(_vertices, index, Vector3.zero);
         _vertices.Add(v);
       }
       _bounds.Encapsulate(v);
@@ -456,6 +457,7 @@ namespace Tes.Runtime
       DirtyVertices(baseIndex, verts.Count(), DirtyFlag.Vertices);
       int vind = baseIndex;
       var iter = verts.GetEnumerator();
+      EnsureListSize(_vertices, baseIndex, Vector3.zero);
       while (iter.MoveNext())
       {
         if (vind < _vertices.Count)
@@ -506,6 +508,7 @@ namespace Tes.Runtime
       }
       else
       {
+        EnsureListSize(_indices, index, 0);
         _indices.Add(i);
       }
       DirtyIndices(index, 1);
@@ -521,6 +524,7 @@ namespace Tes.Runtime
       DirtyIndices(baseIndex, inds.Count());
       int iind = baseIndex;
       var iter = inds.GetEnumerator();
+      EnsureListSize(_indices, baseIndex, 0);
       while (iter.MoveNext())
       {
         if (iind < _indices.Count)
@@ -570,6 +574,7 @@ namespace Tes.Runtime
       }
       else
       {
+        EnsureListSize(_normals, index, Vector3.zero);
         _normals.Add(n);
       }
       DirtyVertices(index, 1, DirtyFlag.Normals);
@@ -585,6 +590,7 @@ namespace Tes.Runtime
       DirtyVertices(baseIndex, normals.Count(), DirtyFlag.Normals);
       int vind = baseIndex;
       var iter = normals.GetEnumerator();
+      EnsureListSize(_normals, baseIndex, Vector3.zero);
       while (iter.MoveNext())
       {
         if (vind < _normals.Count)
@@ -634,6 +640,7 @@ namespace Tes.Runtime
       }
       else
       {
+        EnsureListSize(_uvs, index, Vector2.zero);
         _uvs.Add(uv);
       }
       DirtyVertices(index, 1, DirtyFlag.UVs);
@@ -649,6 +656,7 @@ namespace Tes.Runtime
       DirtyVertices(baseIndex, uvs.Count(), DirtyFlag.UVs);
       int vind = baseIndex;
       var iter = uvs.GetEnumerator();
+      EnsureListSize(_uvs, baseIndex, Vector2.zero);
       while (iter.MoveNext())
       {
         if (vind < _uvs.Count)
@@ -698,6 +706,7 @@ namespace Tes.Runtime
       }
       else
       {
+        EnsureListSize(_colours, index, new Color32(0, 0, 0, 255));
         _colours.Add(c);
       }
       DirtyVertices(index, 1, DirtyFlag.Colours);
@@ -713,6 +722,7 @@ namespace Tes.Runtime
       DirtyVertices(baseIndex, colours.Count(), DirtyFlag.Colours);
       int vind = baseIndex;
       var iter = colours.GetEnumerator();
+      EnsureListSize(_colours, baseIndex, new Color32(0, 0, 0, 255));
       while (iter.MoveNext())
       {
         if (vind < _colours.Count)
@@ -724,6 +734,22 @@ namespace Tes.Runtime
           _colours.Add(iter.Current);
         }
         ++vind;
+      }
+    }
+
+    /// <summary>
+    /// A utility method which ensures <paramref name="list"/> contains at least <paramref name="requiredCount"/>
+    /// elements. <paramref name="value"/> is added to pad the list as required.
+    /// </summary>
+    /// <typeparam name="T">List content type.</typeparam>
+    /// <param name="list">The list to potentially expand.</param>
+    /// <param name="requiredCount">The required number of elements in <paramref name="list"/>.</param>
+    /// <param name="value">The value to add which additional elements are required.</param>
+    protected static void EnsureListSize<T>(List<T> list, int requiredCount, T value)
+    {
+      for (int i = list.Count; i < requiredCount; ++i)
+      {
+        list.Add(value);
       }
     }
 

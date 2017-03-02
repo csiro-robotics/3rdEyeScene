@@ -24,6 +24,12 @@ namespace Tes.Net
     public uint ObjectID;
 
     /// <summary>
+    /// Returns type byte size this structure.
+    /// </summary>
+    /// <value>The byte size of this structure type.</value>
+    public static int Size { get { return Marshal.SizeOf(typeof(DataMessage)); } }
+
+    /// <summary>
     /// Read the message from the given <paramref name="reader"/>.
     /// </summary>
     /// <param name="reader">The reader to read from.</param>

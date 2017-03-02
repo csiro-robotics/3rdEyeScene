@@ -479,6 +479,12 @@ unsigned TcpConnection::releaseResource(uint64_t resourceId)
 void TcpConnection::flushCollatedPacket()
 {
   std::lock_guard<Lock> guard(_sendLock);
+  flushCollatedPacketUnguarded();
+}
+
+
+void TcpConnection::flushCollatedPacketUnguarded()
+{
   if (_collation->collatedBytes())
   {
     _collation->finalise();
@@ -501,12 +507,19 @@ int TcpConnection::writePacket(const uint8_t *buffer, uint16_t byteCount)
   // Add to the collection buffer.
   if (_collation->collatedBytes() + byteCount >= _collation->maxPacketSize())
   {
-    // Unlock to flush, then relock.
-    guard.unlock();
-    flushCollatedPacket();
-    guard.lock();
+    flushCollatedPacketUnguarded();
   }
-  return _collation->add(buffer, byteCount);
+
+  int sendCount = _collation->add(buffer, byteCount);
+  if (sendCount == -1)
+  {
+    // Failed to collate. Packet may be too big to collated (due to collation overhead).
+    // Flush the buffer, then send without collation.
+    flushCollatedPacketUnguarded();
+    sendCount = _client->write(buffer, byteCount);
+  }
+
+  return sendCount;
 }
 
 

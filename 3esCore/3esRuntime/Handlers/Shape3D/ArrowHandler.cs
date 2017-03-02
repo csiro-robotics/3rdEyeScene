@@ -77,11 +77,14 @@ namespace Tes.Handlers.Shape3D
       attr.RotationY = transform.localRotation.y;
       attr.RotationZ = transform.localRotation.z;
       attr.RotationW = transform.localRotation.w;
-      attr.ScaleZ = transform.localScale.z;
+      attr.ScaleX = transform.localScale.x;
+      attr.ScaleY = attr.ScaleZ = transform.localScale.z;
+#if OLD
       // Convert base radius back to an angle.
       // Conceptually the calculation is:
       //    angle = asin(radius / length)
       attr.ScaleX = attr.ScaleY = Mathf.Asin(transform.localScale.x / attr.ScaleZ);
+#endif // OLD
     }
 
     /// <summary>

@@ -22,6 +22,13 @@ namespace tes
     /// Virtual destructor.
     virtual ~MeshResource() {}
 
+    /// Estimate the number of elements which can be transferred at the given @p byteLimit.
+    /// @param elementSize The byte size of each element.
+    /// @param byteLimit The maximum number of bytes to transfer. Note: a hard limit of 0xffff,
+    ///   packet header size and CRC is enforced. Zero indices use of the hard limit.
+    /// @param Additional byte overhead to account for.
+    static int estimateTransferCount(size_t elementSize, unsigned byteLimit, int overhead = 0);
+
     /// Returns @c MtMesh
     uint16_t typeId() const override;
 

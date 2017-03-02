@@ -117,5 +117,7 @@ namespace Tes.Server
     /// <param name="connections">The collection of active connections to server should handle.</param>
     /// <param name="callback">Optional callback to invoke for each new connection.</param>
     void UpdateConnections(IList<IConnection> connections, NewConnectionCallback callback = null);
+
+    // FIXME: need an explicit method to kick all clients. Can emulate with ConnectionMonitor.Stop() for now.
   }
 }

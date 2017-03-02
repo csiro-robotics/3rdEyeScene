@@ -13,28 +13,6 @@ using namespace tes;
 
 namespace
 {
-  /// Estimate the number of elements which can be transferred at the given @p byteLimit.
-  /// @param elementSize The byte size of each element.
-  /// @param byteLimit The maximum number of bytes to transfer. Note: a hard limit of 0xffff is
-  ///   enforced.
-  uint16_t estimateTransferCount(size_t elementSize, unsigned byteLimit)
-  {
-    //                                    packet header           crc
-    const size_t maxTransfer = (0xffffu - sizeof(PacketHeader) - sizeof(uint16_t)) / elementSize;
-    size_t count = byteLimit ? byteLimit / elementSize : maxTransfer;
-    if (count < 1)
-    {
-      count = 1;
-    }
-    else if (count > maxTransfer)
-    {
-      count = maxTransfer;
-    }
-
-    return uint16_t(count);
-  }
-
-
   template <typename T, int ELEMCOUNT = 1>
   unsigned writeComponent(PacketWriter &packet, uint32_t meshId,
                           uint32_t offset, unsigned byteLimit,
@@ -53,7 +31,7 @@ namespace
     // no obvious error path.
     byteLimit = std::min(byteLimit, 0xff00u);
     effectiveByteLimit = byteLimit ? std::min<int>(effectiveByteLimit, byteLimit) : effectiveByteLimit;
-    uint16_t transferCount = estimateTransferCount(elementSize, effectiveByteLimit);
+    uint16_t transferCount = MeshResource::estimateTransferCount(elementSize, effectiveByteLimit, int(sizeof(MeshComponentMessage)));
     if (transferCount > componentCount - offset)
     {
       transferCount = componentCount - offset;
@@ -77,6 +55,24 @@ namespace
 
     return transferCount;
   }
+}
+
+
+int MeshResource::estimateTransferCount(size_t elementSize, unsigned byteLimit, int overhead)
+{
+  //                                    packet header           message                         crc
+  const size_t maxTransfer = (0xffffu - (sizeof(PacketHeader) + overhead + sizeof(uint16_t))) / elementSize;
+  size_t count = byteLimit ? byteLimit / elementSize : maxTransfer;
+  if (count < 1)
+  {
+    count = 1;
+  }
+  else if (count > maxTransfer)
+  {
+    count = maxTransfer;
+  }
+
+  return uint16_t(count);
 }
 
 
@@ -251,7 +247,7 @@ unsigned MeshResource::writeIndices(PacketWriter &packet, uint32_t meshId,
   // no obvious error path.
   byteLimit = std::min(byteLimit, 0xff00u);
   effectiveByteLimit = byteLimit ? std::min<int>(effectiveByteLimit, byteLimit) : effectiveByteLimit;
-  uint16_t transferCount = estimateTransferCount(elementSize, effectiveByteLimit);
+  uint16_t transferCount = estimateTransferCount(elementSize, effectiveByteLimit, int(sizeof(MeshComponentMessage)));
   if (transferCount > componentCount - offset)
   {
     transferCount = (uint16_t)(componentCount - offset);
