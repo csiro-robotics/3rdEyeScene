@@ -957,7 +957,7 @@ namespace Tes.Main
       headerStream = null;
 
       // Now wrap the file in a GZip stream to start compression if we are not already doing so.
-      if (fileStream as GZipStream == null)
+      if (allowCompression && fileStream as GZipStream == null)
       {
         writer = new NetworkWriter(new GZipStream(fileStream, CompressionMode.Compress));
       }
@@ -1080,7 +1080,7 @@ namespace Tes.Main
 
       // Next write a placeholder control packet to define the total number of frames.
       frameCountMsg.ControlFlags = 0;
-      frameCountMsg.Value32 = 0;  // Placeholder. Frame count is currently unknown.
+      frameCountMsg.Value32 = 1;  // Placeholder. Frame count is currently unknown.
       frameCountMsg.Value64 = 0;
       packet.Reset((ushort)RoutingID.Control, (ushort)ControlMessageID.FrameCount);
       frameCountMsg.Write(packet);

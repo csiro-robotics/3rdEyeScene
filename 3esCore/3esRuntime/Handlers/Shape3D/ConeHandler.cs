@@ -70,6 +70,7 @@ namespace Tes.Handlers.Shape3D
     protected override void EncodeAttributes(ref ObjectAttributes attr, GameObject obj, ShapeComponent comp)
     {
       Transform transform = obj.transform;
+      attr.Colour = ShapeComponent.ConvertColour(comp.Colour);
       attr.X = transform.localPosition.x;
       attr.Y = transform.localPosition.y;
       attr.Z = transform.localPosition.z;

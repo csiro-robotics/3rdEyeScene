@@ -190,6 +190,7 @@ namespace Tes.Handlers
       ObjectAttributes attr = new ObjectAttributes();
       shape.ID = shapeComponent.ObjectID;
       shape.Category = shapeComponent.Category;
+      shape.Flags = shapeComponent.ObjectFlags;
       EncodeAttributes(ref attr, shapeComponent.gameObject, shapeComponent);
       shape.SetAttributes(attr);
     }

@@ -47,7 +47,8 @@ public class SerialisationTest : MonoBehaviour
 
   public TesComponent tes = null;
   public ushort TestPort = 35035;
-  public float ConnectWaitTime = 10.0f;
+  public float ConnectWaitTime = 5.0f;
+  public float StreamWaitTime = 1.0f;
   public CoordinateFrame ServerCoordinateFrame = CoordinateFrame.XYZ;
   private MeshResource _sampleMesh = null;
 
@@ -161,7 +162,9 @@ public class SerialisationTest : MonoBehaviour
     // Serialise client scene.
     string sceneFile1 = Path.GetFullPath(Path.Combine("temp", "test-scene01.3es"));
     string sceneFile2 = Path.GetFullPath(Path.Combine("temp", "test-scene02.3es"));
+    // Note: compression is very slow in debug builds.
     tes.SerialiseScene(sceneFile1, true);
+    //tes.SerialiseScene(sceneFile1, false);
     Debug.Log("Serialised scene");
     yield return null;
 
@@ -177,9 +180,16 @@ public class SerialisationTest : MonoBehaviour
     //--------------------------------------------------------
     // Reset and load the scene.
     tes.OpenFile(sceneFile1);
-    tes.StepForward();
-    Debug.Log("Restored scene");
+    Debug.Log("Restored scene 1");
     yield return null;
+
+    // Give the stream thread a chance to read.
+    elapsedTime = 0;
+    do
+    {
+      yield return null;
+      elapsedTime += Time.deltaTime;
+    } while (elapsedTime < StreamWaitTime && tes.CurrentFrame == 0);
 
     //--------------------------------------------------------
     // Validate client scene.
@@ -197,13 +207,19 @@ public class SerialisationTest : MonoBehaviour
     Debug.Log("Serialised scene again");
     yield return null;
 
-
     //--------------------------------------------------------
     // Reset and load the scene.
     tes.OpenFile(sceneFile2);
-    tes.StepForward();
-    Debug.Log("Restored scene");
+    Debug.Log("Restored scene 2");
     yield return null;
+
+    // Give the stream thread a chance to read.
+    elapsedTime = 0;
+    do
+    {
+      yield return null;
+      elapsedTime += Time.deltaTime;
+    } while (elapsedTime < StreamWaitTime && tes.CurrentFrame == 0);
 
     //--------------------------------------------------------
     // Validate client scene.
@@ -473,12 +489,12 @@ public class SerialisationTest : MonoBehaviour
 
     if (shapeComponent.Category != shape.Category)
     {
-      Debug.LogError("Category mismatch.");
+      Debug.LogError(string.Format("{0} Category mismatch.", obj.name));
       ok = false;
     }
     if (shapeComponent.ObjectFlags != shape.Flags)
     {
-      Debug.LogError("Flags mismatch");
+      Debug.LogError(string.Format("{0} Flags mismatch", obj.name));
       ok = false;
     }
 
@@ -493,7 +509,7 @@ public class SerialisationTest : MonoBehaviour
 
       if (xform.localPosition != shapePos)
       {
-        Debug.LogError(string.Format("Position mismatch: {0} != {1}", xform.localPosition, shapePos));
+        Debug.LogError(string.Format("{0} Position mismatch: {2} != {3}", obj.name, xform.localPosition, shapePos));
         ok = false;
       }
     }
@@ -513,7 +529,7 @@ public class SerialisationTest : MonoBehaviour
 
       if (xform.localRotation != shapeRot)
       {
-        Debug.LogError(string.Format("Rotation mismatch: {0} != {1}",
+        Debug.LogError(string.Format("{0} Rotation mismatch: {1} != {2}",
                         xform.localRotation, Tes.Maths.QuaternionExt.ToUnity(shape.Rotation)));
         ok = false;
       }
@@ -525,14 +541,14 @@ public class SerialisationTest : MonoBehaviour
       Color32 c2 = Tes.Handlers.ShapeComponent.ConvertColour(shape.Colour);
       if (c1.r != c2.r || c1.g != c2.g || c1.b != c2.b || c1.a != c2.a)
       {
-        Debug.LogError(string.Format("Colour mismatch: {0} != {1}", c1, c2));
+        Debug.LogError(string.Format("{0} Colour mismatch: {1} != {2}", obj.name, c1, c2));
         ok = false;
       }
     }
 
     if (shape.ID != shapeComponent.ObjectID)
     {
-      Debug.LogError(string.Format("Shape ID mismatch: {0} != {1}", shape.ID, shapeComponent.ObjectID));
+      Debug.LogError(string.Format("{0} Shape ID mismatch: {1} != {2}", obj.name, shape.ID, shapeComponent.ObjectID));
       ok = false;
     }
 
