@@ -407,7 +407,7 @@ void TcpServer::updateConnections(const std::vector<TcpConnection *> &connection
     }
   }
 
-  _connections.clear();
+  _connections.resize(0);
   std::for_each(connections.begin(), connections.end(),
                 [this] (TcpConnection *con){ _connections.push_back(con);});
 

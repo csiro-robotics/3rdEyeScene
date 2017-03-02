@@ -6,7 +6,8 @@
 
 #include "3es-core.h"
 
-#include "3esmeshset.h"
+#include "3escolour.h"
+#include "3esmeshresource.h"
 #include "3esmeshmessages.h"
 
 namespace tes
@@ -40,6 +41,9 @@ namespace tes
     ~SimpleMesh();
 
     virtual void clear();
+
+    /// Clear only the data arrays.
+    virtual void clearData();
 
     virtual uint32_t id() const override;
 

@@ -71,7 +71,14 @@ namespace tes
     ///   The negative value may be less than -1 and still indicate the successful transfer size.
     virtual int updateFrame(float dt, bool flush = true) = 0;
 
-        /// Update any pending amortised data transfers (e.g., mesh transfer).
+    /// Update any pending resource transfers (e.g., mesh transfer).
+    ///
+    /// Transfer may be amortised by setting a @c byteLimit or enforced by a zero byte limit.
+    /// Zero guarantees all outstanding resources are transfered.
+    ///
+    /// This method should generally be called once for every @c updateFrame(), normally
+    /// before the frame update. This holds especially true when not amortising transfer (zero byte limit).
+    ///
     /// @param byteLimit Limit the packet payload size to approximately this
     /// amount of data.
     /// @return The number of bytes queued for transfer for this message, or negative on error.

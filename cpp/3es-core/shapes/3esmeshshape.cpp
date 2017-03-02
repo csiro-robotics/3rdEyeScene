@@ -3,6 +3,7 @@
 //
 #include "3esmeshshape.h"
 
+#include "3esmeshresource.h"
 #include "3esmeshset.h"
 
 #include <3escoreutil.h>

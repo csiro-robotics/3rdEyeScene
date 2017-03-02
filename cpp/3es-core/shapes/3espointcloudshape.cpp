@@ -3,13 +3,14 @@
 //
 #include "3espointcloudshape.h"
 
+#include "3esmeshresource.h"
+
 #include <3escoreutil.h>
 #include <3espacketwriter.h>
 
 #include <algorithm>
 
 using namespace tes;
-
 
 bool PointCloudShape::writeCreate(PacketWriter &stream) const
 {

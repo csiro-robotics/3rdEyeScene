@@ -4,6 +4,7 @@
 #include "3esmeshset.h"
 
 #include "3esmeshmessages.h"
+#include "3esmeshresource.h"
 #include "3esrotation.h"
 #include "3estransferprogress.h"
 

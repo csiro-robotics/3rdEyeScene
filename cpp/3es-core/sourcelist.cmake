@@ -50,6 +50,8 @@ list(APPEND PUBLIC_HEADERS
   shapes/3escapsule.h
   shapes/3escone.h
   shapes/3escylinder.h
+  shapes/3esmeshplaceholder.h
+  shapes/3esmeshresource.h
   shapes/3esmeshset.h
   shapes/3esmeshshape.h
   shapes/3esplane.h
@@ -95,6 +97,7 @@ list(APPEND SOURCES
   shapes/3escapsule.cpp
   shapes/3escone.cpp
   shapes/3escylinder.cpp
+  shapes/3esmeshplaceholder.cpp
   shapes/3esmeshset.cpp
   shapes/3esmeshshape.cpp
   shapes/3esplane.cpp
