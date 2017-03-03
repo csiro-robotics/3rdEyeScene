@@ -1,4 +1,5 @@
 ﻿using Dialogs;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Tes.Main;
@@ -119,6 +120,21 @@ public class TesComponent : Router
         handler.OnCategoryChange(categoryId, active);
       }
     };
+
+    LoadCommandLineFile();
+  }
+
+  void LoadCommandLineFile()
+  {
+    Options opt = new Options();
+    if (opt.Anonymous.Count > 0)
+    {
+      // Load the first anonymous argument.
+      if (!OpenFile(opt.Anonymous[0]))
+      {
+        Debug.LogWarning(string.Format("Failed to load command line specified file: {0}", opt.Anonymous[0]));
+      }
+    }
   }
 
   void OnApplicationQuit()

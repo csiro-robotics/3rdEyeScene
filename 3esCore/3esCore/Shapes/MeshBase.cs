@@ -250,6 +250,7 @@ namespace Tes.Shapes
     /// <param name="elementSize">The byte size of each element.</param>
     /// <param name="byteLimit">The maximum number of bytes to transfer. Note: a hard limit of 0xffff is
     ///   enforced.</param>
+    /// <param name="overhead">Additional byte overhead to a account for. This reduces the effectivel, total byte limit.</param>
     /// <returns>The maximum number of elements which can be accommodated in the byte limit (conservative).</returns>
     public static ushort EstimateTransferCount(int elementSize, int byteLimit, int overhead = 0)
     {

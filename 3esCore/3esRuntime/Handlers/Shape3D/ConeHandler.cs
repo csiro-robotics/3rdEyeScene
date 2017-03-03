@@ -1,4 +1,5 @@
 ﻿using Tes.Net;
+using Tes.Runtime;
 using UnityEngine;
 
 namespace Tes.Handlers.Shape3D
@@ -47,8 +48,6 @@ namespace Tes.Handlers.Shape3D
     /// </summary>
     protected override void DecodeTransform(ObjectAttributes attributes, Transform transform, ObjectFlag flags)
     {
-      float radius = attributes.ScaleX;
-      float length = attributes.ScaleY;
       if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Position) != 0)
       {
         transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
@@ -59,8 +58,8 @@ namespace Tes.Handlers.Shape3D
       }
       if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Scale) != 0)
       {
-        // Unity uses Y up;
-        transform.localScale = new Vector3(radius, length, radius);
+        //Vector3 scaleVector = new Vector3(attributes.ScaleX, attributes.ScaleY, attributes.ScaleZ);
+        transform.localScale = new Vector3(attributes.ScaleX, attributes.ScaleY, attributes.ScaleZ);
       }
     }
 
@@ -78,9 +77,12 @@ namespace Tes.Handlers.Shape3D
       attr.RotationY = transform.localRotation.y;
       attr.RotationZ = transform.localRotation.z;
       attr.RotationW = transform.localRotation.w;
-      attr.ScaleX = attr.ScaleY = transform.localScale.x;
-      // Unity uses Y up;
-      attr.ScaleZ = transform.localScale.y;
+      attr.ScaleX = transform.localScale.x;
+      attr.ScaleY = transform.localScale.y;
+      attr.ScaleZ = transform.localScale.z;
+      //attr.ScaleX = attr.ScaleY = transform.localScale.x;
+      //// Unity uses Y up;
+      //attr.ScaleZ = transform.localScale.y;
     }
 
     /// <summary>

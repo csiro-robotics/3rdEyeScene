@@ -67,14 +67,21 @@ public class SerialisationTest : MonoBehaviour
                          ValidationFlag.Position | ValidationFlag.Scale | ValidationFlag.Colour | ValidationFlag.PositionConverted);
 
     _specialObjectValidation = new Dictionary<Type, SpecialObjectValidation>();
-    _specialValidation = new Dictionary<Type, SpecialValidation>();
-
     _specialObjectValidation.Add(typeof(MeshShape), ValidateMesh);
     _specialObjectValidation.Add(typeof(MeshSet), ValidateMeshSet);
     _specialObjectValidation.Add(typeof(PointCloudShape), ValidateCloud);
     _specialObjectValidation.Add(typeof(Text3D), ValidateText3D);
 
+    _specialValidation = new Dictionary<Type, SpecialValidation>();
     _specialValidation.Add(typeof(Text2D), ValidateText2D);
+
+    _postCreationFunctions = new Dictionary<Type, ShapeDelegate>();
+    _postCreationFunctions.Add(typeof(Cone), (Shape shape) =>
+    {
+      Cone cone = (Cone)shape;
+      cone.Length = 2.0f;
+      cone.Angle = 15.0f / 180.0f * Mathf.PI;
+    });
 
     if (CanStart())
     {
@@ -90,6 +97,18 @@ public class SerialisationTest : MonoBehaviour
 #else  // !TRUE_THREADS
     return tes != null;
 #endif // !TRUE_THREADS
+  }
+
+  /// <summary>
+  /// Quit the application if in standalone mode.
+  /// </summary>
+  void Done(bool success = false)
+  {
+    Options opt = new Options();
+    if (!success || !opt.Opt.Contains("persist"))
+    {
+      Application.Quit();
+    }
   }
 
   IEnumerator TestRoutine()
@@ -127,6 +146,7 @@ public class SerialisationTest : MonoBehaviour
     if (!tes.Connected || server.ConnectionCount == 0)
     {
       Debug.LogError("Connection failed.");
+      Done();
       yield break;
     }
 
@@ -137,6 +157,7 @@ public class SerialisationTest : MonoBehaviour
     if (!CreateShapes(server, shapes))
     {
       Debug.LogError("Shape creation failed.");
+      Done();
       yield break;
     }
     server.UpdateTransfers(0);
@@ -154,6 +175,7 @@ public class SerialisationTest : MonoBehaviour
     if (!ValidateScene(++validationCount, shapes))
     {
       Debug.LogError(string.Format("Scene validation {0} failed.", validationCount));
+      Done();
       yield break;
     }
     yield return null;
@@ -196,6 +218,7 @@ public class SerialisationTest : MonoBehaviour
     if (!ValidateScene(++validationCount, shapes))
     {
       Debug.LogError(string.Format("Scene validation {0} failed.", validationCount));
+      Done();
       yield break;
     }
     yield return null;
@@ -226,11 +249,13 @@ public class SerialisationTest : MonoBehaviour
     if (!ValidateScene(++validationCount, shapes))
     {
       Debug.LogError(string.Format("Scene validation {0} failed.", validationCount));
+      Done();
       yield break;
     }
     yield return null;
 
     Debug.Log("Test OK");
+    Done(true);
   }
 
   IServer InitialiseServer()
@@ -293,6 +318,7 @@ public class SerialisationTest : MonoBehaviour
       ConstructorInfo[] simpleConstructors = GenerateShapeConstructors(explicitTypes);
 
       Shape shape = null;
+      ShapeDelegate postCreate = null;
       uint objId = 0;
       foreach (ConstructorInfo constructor in simpleConstructors)
       {
@@ -301,7 +327,13 @@ public class SerialisationTest : MonoBehaviour
         shape.Position = new Tes.Maths.Vector3((float)objId);
         shape.Rotation = Tes.Maths.Quaternion.AxisAngle(new Tes.Maths.Vector3(1, 1, 0).Normalised, (objId * 24.0f) / 180.0f * Mathf.PI);
         shape.Scale = new Tes.Maths.Vector3(0.5f, 0.1f, 0.1f);
-        shape.Colour = Tes.Maths.Colour.Colours[(int)(objId % Tes.Maths.Colour.Colours.Length)].Value;
+        shape.Colour = Tes.Maths.Colour.Cycle(objId).Value;
+
+        if (_postCreationFunctions.TryGetValue(shape.GetType(), out postCreate))
+        {
+          postCreate(shape);
+        }
+
         server.Create(shape);
         shapes.Add(shape);
       }
@@ -313,8 +345,9 @@ public class SerialisationTest : MonoBehaviour
       List<Vector3> normals = new List<Vector3>();
       List<int> indices = new List<int>();
 
-      Tes.Tessellate.Sphere.SubdivisionSphere(verts, normals, indices, Vector3.zero, 0.42f, 4);
+      Tes.Tessellate.Sphere.SubdivisionSphere(verts, normals, indices, Vector3.zero, 0.42f, 5);
       shape = CreateMesh(++objId, verts, normals, indices);
+      shape.Position = new Tes.Maths.Vector3((float)objId);
       server.Create(shape);
       shapes.Add(shape);
 
@@ -374,6 +407,7 @@ public class SerialisationTest : MonoBehaviour
         indices.ToArray(), new Tes.Maths.Vector3((float)id));
     mesh.ID = id;
     mesh.Normals = normals;
+    mesh.Position = new Tes.Maths.Vector3((float)id);
 
     return mesh;
   }
@@ -382,6 +416,7 @@ public class SerialisationTest : MonoBehaviour
   {
     MeshSet meshSet = new MeshSet(id, 0);
     meshSet.AddPart(mesh);
+    meshSet.Position = new Tes.Maths.Vector3((float)id);
     return meshSet;
   }
 
@@ -389,6 +424,7 @@ public class SerialisationTest : MonoBehaviour
   {
     PointCloudShape cloud = new PointCloudShape(mesh, id);
     cloud.ID = id;
+    cloud.Position = new Tes.Maths.Vector3((float)id);
     return cloud;
   }
 
@@ -504,7 +540,7 @@ public class SerialisationTest : MonoBehaviour
       Vector3 shapePos = Tes.Maths.Vector3Ext.ToUnity(shape.Position);
       if ((flags & ValidationFlag.PositionConverted) != 0)
       {
-        shapePos = Tes.Main.Scene.RemoteToUnity(shapePos, ServerCoordinateFrame);
+        shapePos = Tes.Runtime.FrameTransform.RemoteToUnity(shapePos, ServerCoordinateFrame);
       }
 
       if (xform.localPosition != shapePos)
@@ -813,4 +849,7 @@ public class SerialisationTest : MonoBehaviour
 
   delegate bool SpecialValidation(Shape shape, MessageHandler handler);
   private Dictionary<Type, SpecialValidation> _specialValidation = null;
+
+  delegate void ShapeDelegate(Shape shape);
+  private Dictionary<Type, ShapeDelegate> _postCreationFunctions = null;
 }

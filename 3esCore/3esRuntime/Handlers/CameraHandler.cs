@@ -202,9 +202,9 @@ namespace Tes.Handlers
       camera.FOV = msg.FOV;
 
       Transform transform = camera.transform;
-      Vector3 dir = Scene.RemoteToUnity(new Vector3(msg.DirX, msg.DirY, msg.DirZ), _frame);
-      Vector3 up = Scene.RemoteToUnity(new Vector3(msg.UpX, msg.UpY, msg.UpZ), _frame);
-      transform.localPosition = Scene.RemoteToUnity(new Vector3(msg.X, msg.Y, msg.Z), _frame);
+      Vector3 dir = FrameTransform.RemoteToUnity(new Vector3(msg.DirX, msg.DirY, msg.DirZ), _frame);
+      Vector3 up = FrameTransform.RemoteToUnity(new Vector3(msg.UpX, msg.UpY, msg.UpZ), _frame);
+      transform.localPosition = FrameTransform.RemoteToUnity(new Vector3(msg.X, msg.Y, msg.Z), _frame);
       transform.LookAt(transform.position + dir, up);
 
       return new Error();
@@ -231,15 +231,15 @@ namespace Tes.Handlers
         {
           ++info.PersistentCount;
           msg.CameraID = camera.ID;
-          v = Scene.UnityToRemote(camera.transform.localPosition, _frame);
+          v = FrameTransform.UnityToRemote(camera.transform.localPosition, _frame);
           msg.X = v.x;
           msg.Y = v.y;
           msg.Z = v.z;
-          v = Scene.UnityToRemote(camera.transform.forward, _frame);
+          v = FrameTransform.UnityToRemote(camera.transform.forward, _frame);
           msg.DirX = v.x;
           msg.DirY = v.y;
           msg.DirZ = v.z;
-          v = Scene.UnityToRemote(camera.transform.up, _frame);
+          v = FrameTransform.UnityToRemote(camera.transform.up, _frame);
           msg.UpX = v.x;
           msg.UpY = v.y;
           msg.UpZ = v.z;

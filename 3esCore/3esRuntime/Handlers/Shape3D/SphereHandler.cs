@@ -57,7 +57,7 @@ namespace Tes.Handlers.Shape3D
       }
       if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Scale) != 0)
       {
-        transform.localScale = new Vector3(attributes.ScaleX, attributes.ScaleX, attributes.ScaleX);
+        transform.localScale = new Vector3(attributes.ScaleX, attributes.ScaleY, attributes.ScaleZ);
       }
     }
 

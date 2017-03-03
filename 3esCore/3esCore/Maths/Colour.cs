@@ -13,12 +13,12 @@ namespace Tes.Maths
     Gainsboro,
     LightGrey,
     Silver,
-    DarkGray,
-    Gray,
-    DimGray,
-    LightSlateGray,
-    SlateGray,
-    DarkSlateGray,
+    DarkGrey,
+    Grey,
+    DimGrey,
+    LightSlateGrey,
+    SlateGrey,
+    DarkSlateGrey,
     Black,
 
     // Whites
@@ -175,6 +175,32 @@ namespace Tes.Maths
   }
 
   /// <summary>
+  /// Enumerates the various available colour cycles.
+  /// </summary>
+  /// <remarks>
+  /// Note: the colours cycles include sets which attempt to cater for various
+  /// forms of colour blindness. These are not rigorously constructed and may
+  /// not be as well suited as they are intended. Feel free to offer suggested
+  /// improvements to these colours sets.
+  /// </remarks>
+  /// <seealso cref="Colour.Cycle(uint, ColourCycle)"/>
+  public enum ColourCycle
+  {
+    /// Standard colour set.
+    StandardCycle,
+    /// A colour set which attempts to cater for Deuteranomaly colour blindness.
+    DeuteranomalyCycle,
+    /// A colour set which attempts to cater for Protanomaly colour blindness.
+    ProtanomalyCycle,
+    /// A colour set which attempts to cater for Tritanomaly colour blindness.
+    TritanomalyCycle,
+    /// A small grey scale colour set.
+    GreyCycle,
+    /// Defines the number of available colour sets.
+    CycleCount
+  };
+
+  /// <summary>
   /// A utility class representing a colour as a 32-bit integer.
   /// </summary>
   /// <remarks>
@@ -322,6 +348,23 @@ namespace Tes.Maths
     }
 
     /// <summary>
+    /// Return a colour from one of the standard <see cref="ColourCycle"/> sets.
+    /// </summary>
+    /// <param name="number">An indexing value in the colour cycle. May be out of range as it is wrapped.</param>
+    /// <param name="cycle">The colour cycle to use.</param>
+    /// <returns>A colour from the selected cycle.</returns>
+    /// <remarks>
+    /// Using this method it is possible to use a monotonic <paramref name="number"/> as
+    /// as indexing value. The value is wrapped to the <paramref name="cycle"/> length,
+    /// guaranteeing valid colour from the set.
+    /// </remarks>
+    public static Colour Cycle(uint number, ColourCycle cycle = ColourCycle.StandardCycle)
+    {
+      int[] cycleArray = ColourCycles[(int)cycle];
+      return Colours[cycleArray[number % cycleArray.Length]];
+    }
+
+    /// <summary>
     /// Predefined colour array.
     /// </summary>
     public static readonly Colour[] Colours = new Colour[]
@@ -466,6 +509,206 @@ namespace Tes.Maths
       new Colour(72, 61, 139),
       new Colour(106, 90, 205),
       new Colour(123, 104, 238)
+    };
+
+    /// <summary>
+    /// A predefined set of colours which attempts to distinguish consecutive colours.
+    /// </summary>
+    public static readonly int[] DefaultColourSet = new int[]
+    {
+      (int)PredefinedColour.Red,
+      (int)PredefinedColour.Green,
+      (int)PredefinedColour.Blue,
+      (int)PredefinedColour.MediumOrchid,
+      (int)PredefinedColour.Olive,
+      (int)PredefinedColour.Teal,
+      (int)PredefinedColour.Black,
+      (int)PredefinedColour.OrangeRed,
+      (int)PredefinedColour.Yellow,
+      (int)PredefinedColour.MediumAquamarine,
+      (int)PredefinedColour.Gainsboro,
+      (int)PredefinedColour.White,
+      (int)PredefinedColour.Pink,
+      (int)PredefinedColour.LightSalmon,
+      (int)PredefinedColour.Tomato,
+      (int)PredefinedColour.DarkOliveGreen,
+      (int)PredefinedColour.Aqua,
+      (int)PredefinedColour.LightSteelBlue,
+      (int)PredefinedColour.Silver,
+      (int)PredefinedColour.HotPink,
+      (int)PredefinedColour.Salmon,
+      (int)PredefinedColour.Coral,
+      (int)PredefinedColour.Wheat,
+      (int)PredefinedColour.Olive,
+      (int)PredefinedColour.PowderBlue,
+      (int)PredefinedColour.Thistle,
+      (int)PredefinedColour.DarkGrey,
+      (int)PredefinedColour.DeepPink,
+      (int)PredefinedColour.DarkSalmon,
+      (int)PredefinedColour.DarkOrange,
+      (int)PredefinedColour.Moccasin,
+      (int)PredefinedColour.BurlyWood,
+      (int)PredefinedColour.OliveDrab,
+      (int)PredefinedColour.Aquamarine,
+      (int)PredefinedColour.LightBlue,
+      (int)PredefinedColour.Plum,
+      (int)PredefinedColour.DimGrey,
+      (int)PredefinedColour.PaleVioletRed,
+      (int)PredefinedColour.LightCoral,
+      (int)PredefinedColour.Orange,
+      (int)PredefinedColour.PeachPuff,
+      (int)PredefinedColour.Tan,
+      (int)PredefinedColour.YellowGreen,
+      (int)PredefinedColour.Turquoise,
+      (int)PredefinedColour.SkyBlue,
+      (int)PredefinedColour.Violet,
+      (int)PredefinedColour.SlateGrey,
+      (int)PredefinedColour.MediumVioletRed,
+      (int)PredefinedColour.IndianRed,
+      (int)PredefinedColour.RosyBrown,
+      (int)PredefinedColour.LimeGreen,
+      (int)PredefinedColour.MediumTurquoise,
+      (int)PredefinedColour.DeepSkyBlue,
+      (int)PredefinedColour.Orchid,
+      (int)PredefinedColour.DarkSlateGrey,
+      (int)PredefinedColour.Crimson,
+      (int)PredefinedColour.Khaki,
+      (int)PredefinedColour.SandyBrown,
+      (int)PredefinedColour.Lime,
+      (int)PredefinedColour.DarkTurquoise,
+      (int)PredefinedColour.CornflowerBlue,
+      (int)PredefinedColour.Fuchsia,
+      (int)PredefinedColour.FireBrick,
+      (int)PredefinedColour.DarkKhaki,
+      (int)PredefinedColour.DarkGoldenrod,
+      (int)PredefinedColour.LawnGreen,
+      (int)PredefinedColour.LightSeaGreen,
+      (int)PredefinedColour.SteelBlue,
+      (int)PredefinedColour.MediumPurple,
+      (int)PredefinedColour.DarkRed,
+      (int)PredefinedColour.Gold,
+      (int)PredefinedColour.Peru,
+      (int)PredefinedColour.MediumSpringGreen,
+      (int)PredefinedColour.CadetBlue,
+      (int)PredefinedColour.RoyalBlue,
+      (int)PredefinedColour.BlueViolet,
+      (int)PredefinedColour.Chocolate,
+      (int)PredefinedColour.LightGreen,
+      (int)PredefinedColour.DarkCyan,
+      (int)PredefinedColour.DarkBlue,
+      (int)PredefinedColour.DarkViolet,
+      (int)PredefinedColour.SaddleBrown,
+      (int)PredefinedColour.DarkSeaGreen,
+      (int)PredefinedColour.MidnightBlue,
+      (int)PredefinedColour.Purple,
+      (int)PredefinedColour.Sienna,
+      (int)PredefinedColour.MediumSeaGreen,
+      (int)PredefinedColour.Indigo,
+      (int)PredefinedColour.Brown,
+      (int)PredefinedColour.SeaGreen,
+      (int)PredefinedColour.DarkSlateBlue,
+      (int)PredefinedColour.Maroon,
+      (int)PredefinedColour.DarkGreen,
+      (int)PredefinedColour.SlateBlue
+    };
+
+    /// <summary>
+    /// A colour set which attempts to be deuteranomoly colour blind friendly.
+    /// </summary>
+    public static readonly int[] DeuteranomalyColourSet = new int[]
+    {
+      (int)PredefinedColour.RoyalBlue,
+      (int)PredefinedColour.Yellow,
+      (int)PredefinedColour.Silver,
+      (int)PredefinedColour.Black,
+      (int)PredefinedColour.Blue,
+      (int)PredefinedColour.Khaki,
+      (int)PredefinedColour.Gainsboro,
+      (int)PredefinedColour.Beige,
+      (int)PredefinedColour.Navy,
+      (int)PredefinedColour.DarkKhaki,
+      (int)PredefinedColour.White,
+      (int)PredefinedColour.Grey,
+      (int)PredefinedColour.MidnightBlue,
+      (int)PredefinedColour.SlateGrey,
+      (int)PredefinedColour.Ivory,
+      (int)PredefinedColour.Gold,
+      (int)PredefinedColour.DarkSlateBlue,
+      (int)PredefinedColour.MediumSlateBlue
+    };
+
+    /// <summary>
+    /// A colour set which attempts to be protanomoly colour blind friendly.
+    /// </summary>
+    public static readonly int[] ProtanomalyColourSet = new int[]
+    {
+      (int)PredefinedColour.Blue,
+      (int)PredefinedColour.Yellow,
+      (int)PredefinedColour.Black,
+      (int)PredefinedColour.Silver,
+      (int)PredefinedColour.CornflowerBlue,
+      (int)PredefinedColour.Gainsboro,
+      (int)PredefinedColour.MediumSlateBlue,
+      (int)PredefinedColour.Khaki,
+      (int)PredefinedColour.Grey,
+      (int)PredefinedColour.DarkBlue,
+      (int)PredefinedColour.Beige,
+      (int)PredefinedColour.DarkKhaki,
+      (int)PredefinedColour.MidnightBlue,
+      (int)PredefinedColour.SlateGrey,
+      (int)PredefinedColour.RoyalBlue,
+      (int)PredefinedColour.Ivory,
+      (int)PredefinedColour.DarkSlateBlue,
+    };
+
+    /// <summary>
+    /// A colour set which attempts to be trianomoly colour blind friendly.
+    /// </summary>
+    public static readonly int[] TritanomalyColourSet = new int[]
+    {
+      (int)PredefinedColour.DeepSkyBlue,
+      (int)PredefinedColour.DeepPink,
+      (int)PredefinedColour.PaleTurquoise,
+      (int)PredefinedColour.Black,
+      (int)PredefinedColour.Crimson,
+      (int)PredefinedColour.LightSeaGreen,
+      (int)PredefinedColour.Gainsboro,
+      (int)PredefinedColour.Blue,
+      (int)PredefinedColour.DarkRed,
+      (int)PredefinedColour.Silver,
+      (int)PredefinedColour.Brown,
+      (int)PredefinedColour.DarkTurquoise,
+      (int)PredefinedColour.Grey,
+      (int)PredefinedColour.Maroon,
+      (int)PredefinedColour.Teal,
+      (int)PredefinedColour.SlateGrey,
+      (int)PredefinedColour.MidnightBlue,
+      (int)PredefinedColour.DarkSlateGrey,
+    };
+
+    /// <summary>
+    /// A greyscale colour set.
+    /// </summary>
+    public static readonly int[] GreyColourSet = new int[]
+    {
+      (int)PredefinedColour.Black,
+      (int)PredefinedColour.Silver,
+      (int)PredefinedColour.DarkSlateGrey,
+      (int)PredefinedColour.Grey,
+      (int)PredefinedColour.Gainsboro,
+      (int)PredefinedColour.SlateGrey,
+    };
+
+    /// <summary>
+    /// Encapsulates the various standard colour cycles into an array.
+    /// </summary>
+    public static readonly int[][] ColourCycles = new int[][]
+    {
+      DefaultColourSet,
+      DeuteranomalyColourSet,
+      ProtanomalyColourSet,
+      TritanomalyColourSet,
+      GreyColourSet
     };
   }
 }

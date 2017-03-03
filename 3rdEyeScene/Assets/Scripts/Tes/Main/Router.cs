@@ -51,7 +51,7 @@ namespace Tes.Main
   }
 
   /// <summary>
-  /// The Tes <see cref="Router"/> is the main controll process for 3rd Eye Scene.
+  /// The Tes <see cref="Router"/> is the main control process for 3rd Eye Scene.
   /// </summary>
   /// <remarks>
   /// The <see cref="Router"/> manages the data active streaming thread and routes
@@ -1267,15 +1267,15 @@ namespace Tes.Main
       // Convert from Unity frame into the server frame.
       Vector3 v = Vector3.zero;
 
-      v = Scene.UnityToRemote(camera.transform.position, _serverInfo.CoordinateFrame);
+      v = FrameTransform.UnityToRemote(camera.transform.position, _serverInfo.CoordinateFrame);
       cameraMessage.X = v.x;
       cameraMessage.Y = v.y;
       cameraMessage.Z = v.z;
-      v = Scene.UnityToRemote(camera.transform.up, _serverInfo.CoordinateFrame);
+      v = FrameTransform.UnityToRemote(camera.transform.up, _serverInfo.CoordinateFrame);
       cameraMessage.UpX = v.x;
       cameraMessage.UpY = v.y;
       cameraMessage.UpZ = v.z;
-      v = Scene.UnityToRemote(camera.transform.forward, _serverInfo.CoordinateFrame);
+      v = FrameTransform.UnityToRemote(camera.transform.forward, _serverInfo.CoordinateFrame);
       cameraMessage.DirX = v.x;
       cameraMessage.DirY = v.y;
       cameraMessage.DirZ = v.z;

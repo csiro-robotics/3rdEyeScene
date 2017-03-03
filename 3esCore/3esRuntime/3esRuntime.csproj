@@ -76,6 +76,7 @@
     <Compile Include="Runtime\DataThread.cs" />
     <Compile Include="Runtime\Error.cs" />
     <Compile Include="Runtime\ErrorCode.cs" />
+    <Compile Include="Runtime\FrameTransform.cs" />
     <Compile Include="Runtime\Info.cs" />
     <Compile Include="Runtime\MaterialLibrary.cs" />
     <Compile Include="Runtime\MeshBuilder.cs" />
