@@ -89,7 +89,7 @@ namespace Tes.Handlers.Shape3D
     {
       base.Initialise(root, serverRoot, materials);
     }
-  
+
     /// <summary>
     /// Overridden to release mesh resources.
     /// </summary>
@@ -144,7 +144,7 @@ namespace Tes.Handlers.Shape3D
       }
       base.BeginFrame(frameNumber, maintainTransient);
     }
-    
+
     /// <summary>
     /// Overridden to add <see cref="MeshDataComponent"/>.
     /// </summary>
@@ -397,7 +397,7 @@ namespace Tes.Handlers.Shape3D
           }
         }
         else if (meshData.CalculateNormals)
-        { 
+        {
           mat = Materials[MaterialLibrary.VertexColourLit];
         }
         else
@@ -493,7 +493,7 @@ namespace Tes.Handlers.Shape3D
 
         mesh.RecalculateBounds();
         if (meshData.CalculateNormals && !haveNormals)
-        { 
+        {
           //mesh.RecalculateNormals();
         }
       }

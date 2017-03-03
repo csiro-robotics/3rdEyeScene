@@ -403,6 +403,9 @@ namespace Tes.Shapes
                                 Vector3[] vertices, Vector3[] normals, int[] indices)
     {
       DataMessage msg = new DataMessage();
+      // Local byte overhead needs to account for the size of sendType, offset and itemCount.
+      // Use a larger value as I haven't got the edge cases quite right yet.
+      const int localByteOverhead = 100;
       msg.ObjectID = objectID;
       packet.Reset(routingID, DataMessage.MessageID);
       msg.Write(packet);
@@ -418,7 +421,7 @@ namespace Tes.Shapes
       if (progressMarker < totalNormals)
       {
         // Estimate element count limit.
-        int maxPacketNormals = MeshBase.EstimateTransferCount(12, 0, DataMessage.Size);
+        int maxPacketNormals = MeshBase.EstimateTransferCount(12, 0, DataMessage.Size + localByteOverhead);
         sendCode = (totalNormals != 1) ? (ushort)SendDataType.Normals : (ushort)SendDataType.UniformNormal;
         offset = (uint)progressMarker;
         itemCount = (uint)(normals.Length - offset);
@@ -444,7 +447,7 @@ namespace Tes.Shapes
       else if (progressMarker < totalNormals + totalVertices)
       {
         // Estimate element count limit.
-        int maxPacketVertices = MeshBase.EstimateTransferCount(12, 0, DataMessage.Size);
+        int maxPacketVertices = MeshBase.EstimateTransferCount(12, 0, DataMessage.Size + localByteOverhead);
         sendCode = (ushort)SendDataType.Vertices; // Vertices
         offset = (uint)(progressMarker - totalNormals);
         itemCount = (uint)(vertices.Length - offset);
@@ -470,7 +473,7 @@ namespace Tes.Shapes
       else if (progressMarker < totalNormals + totalVertices + totalIndices)
       {
         // Estimate element count limit.
-        int maxPacketIndices = MeshBase.EstimateTransferCount(4, 0, DataMessage.Size);
+        int maxPacketIndices = MeshBase.EstimateTransferCount(4, 0, DataMessage.Size + localByteOverhead);
         sendCode = (ushort)SendDataType.Indices; // Indices
         offset = (uint)(progressMarker - totalNormals - totalVertices);
         itemCount = (uint)(indices.Length - offset);

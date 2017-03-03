@@ -143,6 +143,9 @@ int MeshShape::writeData(PacketWriter &stream, unsigned &progressMarker) const
 {
   bool ok = true;
   DataMessage msg;
+  // Local byte overhead needs to account for the size of sendType, offset and itemCount.
+  // Use a larger value as I haven't got the edge cases quite right yet.
+  const size_t localByteOverhead = 100;
   msg.id = _data.id;
   stream.reset(routingId(), DataMessage::MessageId);
   ok = msg.write(stream);
@@ -155,7 +158,7 @@ int MeshShape::writeData(PacketWriter &stream, unsigned &progressMarker) const
   if (progressMarker < _normalsCount)
   {
     // Send normals.
-    const int maxPacketNormals = MeshResource::estimateTransferCount(12, 0, sizeof(DataMessage));
+    const int maxPacketNormals = MeshResource::estimateTransferCount(12, 0, sizeof(DataMessage) + localByteOverhead);
     offset = progressMarker;
     itemCount = uint32_t(std::min<uint32_t>(_normalsCount - offset, maxPacketNormals));
 
@@ -182,7 +185,7 @@ int MeshShape::writeData(PacketWriter &stream, unsigned &progressMarker) const
   else if (progressMarker < _normalsCount + _vertexCount)
   {
     // Send vertices.
-    const int maxPacketVertices = MeshResource::estimateTransferCount(12, 0, sizeof(DataMessage));
+    const int maxPacketVertices = MeshResource::estimateTransferCount(12, 0, sizeof(DataMessage) + localByteOverhead);
     offset = progressMarker - _normalsCount;
     itemCount = uint32_t(std::min<uint32_t>(_vertexCount - offset, maxPacketVertices));
 
@@ -209,7 +212,7 @@ int MeshShape::writeData(PacketWriter &stream, unsigned &progressMarker) const
   else if (progressMarker < _normalsCount + _vertexCount + _indexCount)
   {
     // Send indices.
-    const int maxPacketIndices = MeshResource::estimateTransferCount(4, 0, sizeof(DataMessage));
+    const int maxPacketIndices = MeshResource::estimateTransferCount(4, 0, sizeof(DataMessage) + localByteOverhead);
     offset = progressMarker - _normalsCount - _vertexCount;
     itemCount = uint32_t(std::min<uint32_t>(_indexCount - offset, maxPacketIndices));
 
