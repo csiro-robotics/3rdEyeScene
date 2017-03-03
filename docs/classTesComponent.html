@@ -100,7 +100,7 @@ Inheritance diagram for TesComponent:</div>
  <div class="center">
   <img src="classTesComponent.png" usemap="#TesComponent_map" alt=""/>
   <map id="TesComponent_map" name="TesComponent_map">
-<area href="classTes_1_1Main_1_1Router.html" title="The Tes Router is the main controll process for 3rd Eye Scene. " alt="Tes.Main.Router" shape="rect" coords="0,56,105,80"/>
+<area href="classTes_1_1Main_1_1Router.html" title="The Tes Router is the main control process for 3rd Eye Scene. " alt="Tes.Main.Router" shape="rect" coords="0,56,105,80"/>
 </map>
  </div></div>
 <table class="memberdecls">
@@ -164,9 +164,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>Reset</b> (bool parti
 <tr class="memitem:a94c3b20780af7bbed473fe10d97ca0a4 inherit pub_methods_classTes_1_1Main_1_1Router"><td class="memItemLeft" align="right" valign="top"><a id="a94c3b20780af7bbed473fe10d97ca0a4"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>InitialiseHandlers</b> ()</td></tr>
 <tr class="separator:a94c3b20780af7bbed473fe10d97ca0a4 inherit pub_methods_classTes_1_1Main_1_1Router"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1069f5324a4276a30aab527834d7a599 inherit pub_methods_classTes_1_1Main_1_1Router"><td class="memItemLeft" align="right" valign="top"><a id="a1069f5324a4276a30aab527834d7a599"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>HandleControlMessage</b> (<a class="el" href="classTes_1_1IO_1_1PacketBuffer.html">PacketBuffer</a> packet, BinaryReader reader)</td></tr>
-<tr class="separator:a1069f5324a4276a30aab527834d7a599 inherit pub_methods_classTes_1_1Main_1_1Router"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a421f0112004b8bc9908ae3d86ea355b1 inherit pub_methods_classTes_1_1Main_1_1Router"><td class="memItemLeft" align="right" valign="top"><a id="a421f0112004b8bc9908ae3d86ea355b1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>HandleControlMessage</b> (<a class="el" href="classTes_1_1IO_1_1PacketBuffer.html">PacketBuffer</a> packet, BinaryReader reader, bool catchingUp)</td></tr>
+<tr class="separator:a421f0112004b8bc9908ae3d86ea355b1 inherit pub_methods_classTes_1_1Main_1_1Router"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae8c34050201dffa60663c92d714fa5bd inherit pub_methods_classTes_1_1Main_1_1Router"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Main_1_1Router.html#ae8c34050201dffa60663c92d714fa5bd">SerialiseScene</a> (string fileName, bool allowCompression)</td></tr>
+<tr class="memdesc:ae8c34050201dffa60663c92d714fa5bd inherit pub_methods_classTes_1_1Main_1_1Router"><td class="mdescLeft">&#160;</td><td class="mdescRight">Serialise the current scene to <em>fileName</em> .  <a href="classTes_1_1Main_1_1Router.html#ae8c34050201dffa60663c92d714fa5bd">More...</a><br /></td></tr>
+<tr class="separator:ae8c34050201dffa60663c92d714fa5bd inherit pub_methods_classTes_1_1Main_1_1Router"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -219,9 +222,15 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>ResetScene</b> ()</td
 <tr class="memitem:a8d1bc3ab1d7d197ec25af9e8848bcdda inherit pro_methods_classTes_1_1Main_1_1Router"><td class="memItemLeft" align="right" valign="top"><a id="a8d1bc3ab1d7d197ec25af9e8848bcdda"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>Update</b> ()</td></tr>
 <tr class="separator:a8d1bc3ab1d7d197ec25af9e8848bcdda inherit pro_methods_classTes_1_1Main_1_1Router"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad04fdb0e6aefef141ab66957416f3b48 inherit pro_methods_classTes_1_1Main_1_1Router"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Main_1_1Router.html#ad04fdb0e6aefef141ab66957416f3b48">OnPropertyChanged</a> (object sender, PropertyChangedEventArgs args)</td></tr>
+<tr class="memdesc:ad04fdb0e6aefef141ab66957416f3b48 inherit pro_methods_classTes_1_1Main_1_1Router"><td class="mdescLeft">&#160;</td><td class="mdescRight">Handler for value changes in user settings.  <a href="classTes_1_1Main_1_1Router.html#ad04fdb0e6aefef141ab66957416f3b48">More...</a><br /></td></tr>
+<tr class="separator:ad04fdb0e6aefef141ab66957416f3b48 inherit pro_methods_classTes_1_1Main_1_1Router"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
 Properties</h2></td></tr>
+<tr class="memitem:aa4ce2d6076a5fd490e49012f15f52e39"><td class="memItemLeft" align="right" valign="top"><a id="aa4ce2d6076a5fd490e49012f15f52e39"></a>
+<a class="el" href="classInputSystem_1_1InputStack.html">InputSystem.InputStack</a>&#160;</td><td class="memItemRight" valign="bottom"><b>InputStack</b><code> [get]</code></td></tr>
+<tr class="separator:aa4ce2d6076a5fd490e49012f15f52e39"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afa5216064b4cae9d403da31b0b30bdb9"><td class="memItemLeft" align="right" valign="top"><a id="afa5216064b4cae9d403da31b0b30bdb9"></a>
 <a class="el" href="classTes_1_1Main_1_1PluginManager.html">PluginManager</a>&#160;</td><td class="memItemRight" valign="bottom"><b>Plugins</b><code> [get]</code></td></tr>
 <tr class="separator:afa5216064b4cae9d403da31b0b30bdb9"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -275,9 +284,9 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>AverageFrameTime</b>
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="inherited"></a>
 Additional Inherited Members</h2></td></tr>
 <tr class="inherit_header pro_attribs_classTes_1_1Main_1_1Router"><td colspan="2" onclick="javascript:toggleInherit('pro_attribs_classTes_1_1Main_1_1Router')"><img src="closed.png" alt="-"/>&#160;Protected Attributes inherited from <a class="el" href="classTes_1_1Main_1_1Router.html">Tes.Main.Router</a></td></tr>
-<tr class="memitem:a35f119ebd855eea7956fdb2f984b4422 inherit pro_attribs_classTes_1_1Main_1_1Router"><td class="memItemLeft" align="right" valign="top"><a id="a35f119ebd855eea7956fdb2f984b4422"></a>
-<a class="el" href="classTes_1_1Main_1_1Router_1_1ModeEventEvent.html">ModeEventEvent</a>&#160;</td><td class="memItemRight" valign="bottom"><b>_onMmodeChange</b> = new <a class="el" href="classTes_1_1Main_1_1Router_1_1ModeEventEvent.html">ModeEventEvent</a>()</td></tr>
-<tr class="separator:a35f119ebd855eea7956fdb2f984b4422 inherit pro_attribs_classTes_1_1Main_1_1Router"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e3f3cd11d191173df6ddd9d08855ddc inherit pro_attribs_classTes_1_1Main_1_1Router"><td class="memItemLeft" align="right" valign="top"><a id="a5e3f3cd11d191173df6ddd9d08855ddc"></a>
+<a class="el" href="classTes_1_1Main_1_1Router_1_1ModeEventEvent.html">ModeEventEvent</a>&#160;</td><td class="memItemRight" valign="bottom"><b>_onModeChange</b> = new <a class="el" href="classTes_1_1Main_1_1Router_1_1ModeEventEvent.html">ModeEventEvent</a>()</td></tr>
+<tr class="separator:a5e3f3cd11d191173df6ddd9d08855ddc inherit pro_attribs_classTes_1_1Main_1_1Router"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Primary component for instantiating the 3rd Eye Scene managers. </p>

@@ -161,9 +161,9 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:aab281baf31cc3af8702791240cab60b5"><td class="memItemLeft" align="right" valign="top">override GameObject&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshSetHandler.html#aab281baf31cc3af8702791240cab60b5">CreateObject</a> ()</td></tr>
 <tr class="memdesc:aab281baf31cc3af8702791240cab60b5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Overridden to not add mesh components.  <a href="#aab281baf31cc3af8702791240cab60b5">More...</a><br /></td></tr>
 <tr class="separator:aab281baf31cc3af8702791240cab60b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abdef1298e134672513586a1a10380534"><td class="memItemLeft" align="right" valign="top">override <a class="el" href="classTes_1_1Runtime_1_1Error.html">Error</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshSetHandler.html#abdef1298e134672513586a1a10380534">SerialiseObject</a> (<a class="el" href="classTes_1_1IO_1_1PacketBuffer.html">PacketBuffer</a> packet, <a class="el" href="classTes_1_1Handlers_1_1ShapeComponent.html">ShapeComponent</a> shape)</td></tr>
-<tr class="memdesc:abdef1298e134672513586a1a10380534"><td class="mdescLeft">&#160;</td><td class="mdescRight">Overridden to include mesh part data.  <a href="#abdef1298e134672513586a1a10380534">More...</a><br /></td></tr>
-<tr class="separator:abdef1298e134672513586a1a10380534"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5f085ac5755b87a4ae4443284db3e9d9"><td class="memItemLeft" align="right" valign="top">override <a class="el" href="classTes_1_1Shapes_1_1Shape.html">Shapes.Shape</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshSetHandler.html#a5f085ac5755b87a4ae4443284db3e9d9">CreateSerialisationShape</a> (<a class="el" href="classTes_1_1Handlers_1_1ShapeComponent.html">ShapeComponent</a> shapeComponent)</td></tr>
+<tr class="memdesc:a5f085ac5755b87a4ae4443284db3e9d9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Creates a mesh set shape for serialising the mesh and its resource references.  <a href="#a5f085ac5755b87a4ae4443284db3e9d9">More...</a><br /></td></tr>
+<tr class="separator:a5f085ac5755b87a4ae4443284db3e9d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a479133c83be6d3bbcfe63f859e7c20e2"><td class="memItemLeft" align="right" valign="top">override <a class="el" href="classTes_1_1Runtime_1_1Error.html">Error</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshSetHandler.html#a479133c83be6d3bbcfe63f859e7c20e2">HandleMessage</a> (<a class="el" href="structTes_1_1Net_1_1CreateMessage.html">CreateMessage</a> msg, <a class="el" href="classTes_1_1IO_1_1PacketBuffer.html">PacketBuffer</a> packet, BinaryReader reader)</td></tr>
 <tr class="memdesc:a479133c83be6d3bbcfe63f859e7c20e2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Overridden to read information about mesh parts.  <a href="#a479133c83be6d3bbcfe63f859e7c20e2">More...</a><br /></td></tr>
 <tr class="separator:a479133c83be6d3bbcfe63f859e7c20e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -183,6 +183,9 @@ Protected Member Functions</h2></td></tr>
 <tr class="memdesc:a1bfd98297865bc8065cf2ea2a94a6117"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the visuals of &lt;pararef name="partObject"&gt; to use <em>meshDetails</em> .  <a href="#a1bfd98297865bc8065cf2ea2a94a6117">More...</a><br /></td></tr>
 <tr class="separator:a1bfd98297865bc8065cf2ea2a94a6117"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pro_methods_classTes_1_1Handlers_1_1ShapeHandler"><td colspan="2" onclick="javascript:toggleInherit('pro_methods_classTes_1_1Handlers_1_1ShapeHandler')"><img src="closed.png" alt="-"/>&#160;Protected Member Functions inherited from <a class="el" href="classTes_1_1Handlers_1_1ShapeHandler.html">Tes.Handlers.ShapeHandler</a></td></tr>
+<tr class="memitem:afaf3ab019cdeeda556bd0eb86da6d56d inherit pro_methods_classTes_1_1Handlers_1_1ShapeHandler"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Handlers_1_1ShapeHandler.html#afaf3ab019cdeeda556bd0eb86da6d56d">ConfigureShape</a> (<a class="el" href="classTes_1_1Shapes_1_1Shape.html">Shapes.Shape</a> shape, <a class="el" href="classTes_1_1Handlers_1_1ShapeComponent.html">ShapeComponent</a> shapeComponent)</td></tr>
+<tr class="memdesc:afaf3ab019cdeeda556bd0eb86da6d56d inherit pro_methods_classTes_1_1Handlers_1_1ShapeHandler"><td class="mdescLeft">&#160;</td><td class="mdescRight">A helper functio to configure the TES <em>shape</em>  to match the Unity object <em>shapeComponent</em> .  <a href="classTes_1_1Handlers_1_1ShapeHandler.html#afaf3ab019cdeeda556bd0eb86da6d56d">More...</a><br /></td></tr>
+<tr class="separator:afaf3ab019cdeeda556bd0eb86da6d56d inherit pro_methods_classTes_1_1Handlers_1_1ShapeHandler"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af849e00336edae6623097bc42b42a6a8 inherit pro_methods_classTes_1_1Handlers_1_1ShapeHandler"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classTes_1_1Runtime_1_1Error.html">Error</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Handlers_1_1ShapeHandler.html#af849e00336edae6623097bc42b42a6a8">SerialiseObjects</a> (BinaryWriter writer, IEnumerator&lt; GameObject &gt; objects, ref uint processedCount)</td></tr>
 <tr class="memdesc:af849e00336edae6623097bc42b42a6a8 inherit pro_methods_classTes_1_1Handlers_1_1ShapeHandler"><td class="mdescLeft">&#160;</td><td class="mdescRight">Serialises a list of objects to <em>writer</em>   <a href="classTes_1_1Handlers_1_1ShapeHandler.html#af849e00336edae6623097bc42b42a6a8">More...</a><br /></td></tr>
 <tr class="separator:af849e00336edae6623097bc42b42a6a8 inherit pro_methods_classTes_1_1Handlers_1_1ShapeHandler"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -436,6 +439,43 @@ Additional Inherited Members</h2></td></tr>
 <dl class="section return"><dt>Returns</dt><dd></dd></dl>
 
 <p>Reimplemented from <a class="el" href="classTes_1_1Handlers_1_1ShapeHandler.html#a9d074a7f08795dae64a652803afc131d">Tes.Handlers.ShapeHandler</a>.</p>
+
+</div>
+</div>
+<a id="a5f085ac5755b87a4ae4443284db3e9d9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5f085ac5755b87a4ae4443284db3e9d9">&#9670;&nbsp;</a></span>CreateSerialisationShape()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">override <a class="el" href="classTes_1_1Shapes_1_1Shape.html">Shapes.Shape</a> Tes.Handlers.Shape3D.MeshSetHandler.CreateSerialisationShape </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classTes_1_1Handlers_1_1ShapeComponent.html">ShapeComponent</a>&#160;</td>
+          <td class="paramname"><em>shapeComponent</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span><span class="mlabel">virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Creates a mesh set shape for serialising the mesh and its resource references. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">shapeComponent</td><td>The component to create a shape for.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A shape instance suitable for configuring to generate serialisation messages.</dd></dl>
+
+<p>Implements <a class="el" href="classTes_1_1Handlers_1_1ShapeHandler.html#a51f60a6ee1821cc9499d3d8617c2c7f2">Tes.Handlers.ShapeHandler</a>.</p>
 
 </div>
 </div>
@@ -735,54 +775,6 @@ Additional Inherited Members</h2></td></tr>
 <p>Clear all current objects and mesh references. </p>
 
 <p>Reimplemented from <a class="el" href="classTes_1_1Runtime_1_1MessageHandler.html#a80d187b72352f7b2c385a38f99eabcee">Tes.Runtime.MessageHandler</a>.</p>
-
-</div>
-</div>
-<a id="abdef1298e134672513586a1a10380534"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abdef1298e134672513586a1a10380534">&#9670;&nbsp;</a></span>SerialiseObject()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">override <a class="el" href="classTes_1_1Runtime_1_1Error.html">Error</a> Tes.Handlers.Shape3D.MeshSetHandler.SerialiseObject </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classTes_1_1IO_1_1PacketBuffer.html">PacketBuffer</a>&#160;</td>
-          <td class="paramname"><em>packet</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classTes_1_1Handlers_1_1ShapeComponent.html">ShapeComponent</a>&#160;</td>
-          <td class="paramname"><em>shape</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Overridden to include mesh part data. </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">packet</td><td>Packet to write the message to.</td></tr>
-    <tr><td class="paramname">shape</td><td>Shape object to write.</td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>An error on failure.</dd></dl>
-
-<p>Reimplemented from <a class="el" href="classTes_1_1Handlers_1_1ShapeHandler.html#a83f9caddc8b63b40fe8e50344f17a2e2">Tes.Handlers.ShapeHandler</a>.</p>
 
 </div>
 </div>

@@ -10,5 +10,6 @@ var searchData=
   ['persistentcount',['PersistentCount',['../structTes_1_1Runtime_1_1SerialiseInfo.html#af87bbc18b155be0e48da4ec8e9e6e450',1,'Tes::Runtime::SerialiseInfo']]],
   ['phase',['phase',['../structtes_1_1TransferProgress.html#a71c28ba2311a10fba3a3acca9354545c',1,'tes::TransferProgress::phase()'],['../structTes_1_1TransferProgress.html#acf3963c3937fb1f26d0f751aa1254a99',1,'Tes.TransferProgress.Phase()']]],
   ['position',['position',['../structtes_1_1ObjectAttributes.html#aa9a96f33d7ab4363752026ff2b871874',1,'tes::ObjectAttributes::position()'],['../classTes_1_1Handlers_1_1Shape2D_1_1Text2DHandler_1_1TextEntry.html#acc1aa88ff1a8667672a97677336cfd4a',1,'Tes.Handlers.Shape2D.Text2DHandler.TextEntry.Position()']]],
-  ['progress',['progress',['../structtes_1_1TransferProgress.html#a1dc9feab7b0f8129caa9b231c6b84b6b',1,'tes::TransferProgress::progress()'],['../structTes_1_1TransferProgress.html#a43b233476e3f9da6dc31deea50886c1a',1,'Tes.TransferProgress.Progress()']]]
+  ['progress',['progress',['../structtes_1_1TransferProgress.html#a1dc9feab7b0f8129caa9b231c6b84b6b',1,'tes::TransferProgress::progress()'],['../structTes_1_1TransferProgress.html#a43b233476e3f9da6dc31deea50886c1a',1,'Tes.TransferProgress.Progress()']]],
+  ['protanomalycolourset',['ProtanomalyColourSet',['../structTes_1_1Maths_1_1Colour.html#a8ba5eb296745575047a4e8d8cf0c5f44',1,'Tes::Maths::Colour']]]
 ];

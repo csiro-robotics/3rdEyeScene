@@ -94,16 +94,17 @@ $(document).ready(function(){initNavTree('classtes_1_1MeshResource.html','');});
 <p>Represents a mesh part or object.  
  <a href="classtes_1_1MeshResource.html#details">More...</a></p>
 
-<p><code>#include &lt;<a class="el" href="3esmeshset_8h_source.html">3esmeshset.h</a>&gt;</code></p>
+<p><code>#include &lt;<a class="el" href="3esmeshresource_8h_source.html">3esmeshresource.h</a>&gt;</code></p>
 <div class="dynheader">
 Inheritance diagram for tes::MeshResource:</div>
 <div class="dyncontent">
  <div class="center">
   <img src="classtes_1_1MeshResource.png" usemap="#tes::MeshResource_map" alt=""/>
   <map id="tes::MeshResource_map" name="tes::MeshResource_map">
-<area href="classtes_1_1Resource.html" title="The Resource base class defines an interface for any resource used by Shape objects such as MeshSet..." alt="tes::Resource" shape="rect" coords="64,0,183,24"/>
-<area href="classtes_1_1PointCloud.html" alt="tes::PointCloud" shape="rect" coords="0,112,119,136"/>
-<area href="classtes_1_1SimpleMesh.html" title="An encapsulated definition of a mesh. " alt="tes::SimpleMesh" shape="rect" coords="129,112,248,136"/>
+<area href="classtes_1_1Resource.html" title="The Resource base class defines an interface for any resource used by Shape objects such as MeshSet..." alt="tes::Resource" shape="rect" coords="143,0,276,24"/>
+<area href="classtes_1_1MeshPlaceholder.html" title="A placeholder for a mesh resource, carrying only a mesh ID. " alt="tes::MeshPlaceholder" shape="rect" coords="0,112,133,136"/>
+<area href="classtes_1_1PointCloud.html" alt="tes::PointCloud" shape="rect" coords="143,112,276,136"/>
+<area href="classtes_1_1SimpleMesh.html" title="An encapsulated definition of a mesh. " alt="tes::SimpleMesh" shape="rect" coords="286,112,419,136"/>
 </map>
  </div></div>
 <table class="memberdecls">
@@ -180,6 +181,9 @@ uint64_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
+<tr class="memitem:a09fe85688fbc9fe2cfaef3a3e39482fe"><td class="memItemLeft" align="right" valign="top">static int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classtes_1_1MeshResource.html#a09fe85688fbc9fe2cfaef3a3e39482fe">estimateTransferCount</a> (size_t elementSize, unsigned byteLimit, int overhead=0)</td></tr>
+<tr class="memdesc:a09fe85688fbc9fe2cfaef3a3e39482fe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Estimate the number of elements which can be transferred at the given <code>byteLimit</code>.  <a href="#a09fe85688fbc9fe2cfaef3a3e39482fe">More...</a><br /></td></tr>
+<tr class="separator:a09fe85688fbc9fe2cfaef3a3e39482fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aca5207413854433d4907a074855f90db"><td class="memItemLeft" align="right" valign="top"><a id="aca5207413854433d4907a074855f90db"></a>
 *&lt;/code &gt; **param <a class="el" href="classtes_1_1MeshResource.html#ae8e1b892e6f852526d029c981775acb7">packet</a> Packet to write to *param meshId The mesh to which the data belong *param offset An index count offset to start writing from See remarks *param byteLimit A hard limit on the number of bytes to write *param dataSource Base pointer for the index data *param dataStride Number of bytes between <a class="el" href="classtes_1_1MeshResource.html#ad7ae62377c97da547da9837ee5af3aa2">indices</a> *param indexByteWidth The byte size of a single index Generally equal to p dataStride *param componentCount The total number of <a class="el" href="classtes_1_1MeshResource.html#ad7ae62377c97da547da9837ee5af3aa2">indices</a> *return The number of <a class="el" href="classtes_1_1MeshResource.html#ad7ae62377c97da547da9837ee5af3aa2">indices</a> written *static unsigned&#160;</td><td class="memItemRight" valign="bottom"><b>writeIndices</b> (<a class="el" href="classtes_1_1PacketWriter.html">PacketWriter</a> &amp;<a class="el" href="classtes_1_1MeshResource.html#ae8e1b892e6f852526d029c981775acb7">packet</a>, uint32_t meshId, uint32_t offset, unsigned byteLimit, const uint8_t *dataSource, unsigned dataStride, unsigned indexByteWidth, uint32_t componentCount)</td></tr>
 <tr class="separator:aca5207413854433d4907a074855f90db"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -380,6 +384,58 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>nextPhase</b>
 </dl>
 
 <p>Implemented in <a class="el" href="classtes_1_1SimpleMesh.html#a1ccc2c020bef98d0b78c5200d8b83721">tes::SimpleMesh</a>, and <a class="el" href="classtes_1_1PointCloud.html#a1eebbc20eda49bf774ab2593d1476ebe">tes::PointCloud</a>.</p>
+
+</div>
+</div>
+<a id="a09fe85688fbc9fe2cfaef3a3e39482fe"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a09fe85688fbc9fe2cfaef3a3e39482fe">&#9670;&nbsp;</a></span>estimateTransferCount()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static int tes::MeshResource::estimateTransferCount </td>
+          <td>(</td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>elementSize</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned&#160;</td>
+          <td class="paramname"><em>byteLimit</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>overhead</em> = <code>0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Estimate the number of elements which can be transferred at the given <code>byteLimit</code>. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">elementSize</td><td>The byte size of each element. </td></tr>
+    <tr><td class="paramname">byteLimit</td><td>The maximum number of bytes to transfer. Note: a hard limit of 0xffff, packet header size and CRC is enforced. Zero indices use of the hard limit. </td></tr>
+    <tr><td class="paramname">Additional</td><td>byte overhead to account for. </td></tr>
+  </table>
+  </dd>
+</dl>
 
 </div>
 </div>
@@ -921,7 +977,7 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>nextPhase</b>
 </div>
 </div>
 <hr/>The documentation for this class was generated from the following file:<ul>
-<li><a class="el" href="3esmeshset_8h_source.html">3esmeshset.h</a></li>
+<li><a class="el" href="3esmeshresource_8h_source.html">3esmeshresource.h</a></li>
 </ul>
 </div><!-- contents -->
 </div><!-- doc-content -->

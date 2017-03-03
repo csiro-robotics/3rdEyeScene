@@ -87,6 +87,7 @@ $(document).ready(function(){initNavTree('classTes_1_1Runtime_1_1MeshBuilder.htm
 <a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pub-attribs">Public Attributes</a> &#124;
 <a href="#pro-methods">Protected Member Functions</a> &#124;
+<a href="#pro-static-methods">Static Protected Member Functions</a> &#124;
 <a href="#properties">Properties</a> &#124;
 <a href="classTes_1_1Runtime_1_1MeshBuilder-members.html">List of all members</a>  </div>
   <div class="headertitle">
@@ -223,6 +224,12 @@ Protected Member Functions</h2></td></tr>
 <tr class="memitem:a40a0ab9c22f4f820543c2f8eb0a8b89c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Runtime_1_1MeshBuilder.html#a40a0ab9c22f4f820543c2f8eb0a8b89c">DirtyIndices</a> (int firstIndexIndex, int count)</td></tr>
 <tr class="memdesc:a40a0ab9c22f4f820543c2f8eb0a8b89c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Mark a range of indices as dirty.  <a href="#a40a0ab9c22f4f820543c2f8eb0a8b89c">More...</a><br /></td></tr>
 <tr class="separator:a40a0ab9c22f4f820543c2f8eb0a8b89c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-static-methods"></a>
+Static Protected Member Functions</h2></td></tr>
+<tr class="memitem:a2bfb03fbc36a7e2680571ab13ac33bc9"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Runtime_1_1MeshBuilder.html#a2bfb03fbc36a7e2680571ab13ac33bc9">EnsureListSize&lt; T &gt;</a> (List&lt; T &gt; list, int requiredCount, T value)</td></tr>
+<tr class="memdesc:a2bfb03fbc36a7e2680571ab13ac33bc9"><td class="mdescLeft">&#160;</td><td class="mdescRight">A utility method which ensures <em>list</em>  contains at least <em>requiredCount</em>  elements.  <a href="#a2bfb03fbc36a7e2680571ab13ac33bc9">More...</a><br /></td></tr>
+<tr class="separator:a2bfb03fbc36a7e2680571ab13ac33bc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
 Properties</h2></td></tr>
@@ -821,6 +828,65 @@ Properties</h2></td></tr>
     <tr><td class="paramname">firstVertexIndex</td><td>Identifies the first vertex of interest.</td></tr>
     <tr><td class="paramname">count</td><td>The number of vertices to dirty.</td></tr>
     <tr><td class="paramname">flag</td><td>The dirty flag to apply. Should be one of the vertex related values.</td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
+<a id="a2bfb03fbc36a7e2680571ab13ac33bc9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2bfb03fbc36a7e2680571ab13ac33bc9">&#9670;&nbsp;</a></span>EnsureListSize< T >()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static void Tes.Runtime.MeshBuilder.EnsureListSize&lt; T &gt; </td>
+          <td>(</td>
+          <td class="paramtype">List&lt; T &gt;&#160;</td>
+          <td class="paramname"><em>list</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>requiredCount</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">T&#160;</td>
+          <td class="paramname"><em>value</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>A utility method which ensures <em>list</em>  contains at least <em>requiredCount</em>  elements. </p>
+<p><em>value</em>  is added to pad the list as required. </p>
+<dl class="tparams"><dt>Template Parameters</dt><dd>
+  <table class="tparams">
+    <tr><td class="paramname">T</td><td>List content type.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">list</td><td>The list to potentially expand.</td></tr>
+    <tr><td class="paramname">requiredCount</td><td>The required number of elements in <em>list</em> .</td></tr>
+    <tr><td class="paramname">value</td><td>The value to add which additional elements are required.</td></tr>
   </table>
   </dd>
 </dl>

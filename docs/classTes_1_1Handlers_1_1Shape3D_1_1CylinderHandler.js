@@ -1,6 +1,7 @@
 var classTes_1_1Handlers_1_1Shape3D_1_1CylinderHandler =
 [
     [ "CylinderHandler", "classTes_1_1Handlers_1_1Shape3D_1_1CylinderHandler.html#a623de5aeb28542a8b25d0f607ef855a0", null ],
+    [ "CreateSerialisationShape", "classTes_1_1Handlers_1_1Shape3D_1_1CylinderHandler.html#a8157efe5b11f57e9427c6cdb261e300e", null ],
     [ "DecodeTransform", "classTes_1_1Handlers_1_1Shape3D_1_1CylinderHandler.html#a62936f43fefd84f637856728aeca6d7d", null ],
     [ "EncodeAttributes", "classTes_1_1Handlers_1_1Shape3D_1_1CylinderHandler.html#a345a1f48f0e3dee42ce859fa03080b7b", null ],
     [ "Name", "classTes_1_1Handlers_1_1Shape3D_1_1CylinderHandler.html#a585dc8b76ee951cae9fdfd1493f858a6", null ],

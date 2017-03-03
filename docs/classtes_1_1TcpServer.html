@@ -153,7 +153,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="clas
 <tr class="memdesc:acd23f879f9c530f5df0d82d05e5e4602"><td class="mdescLeft">&#160;</td><td class="mdescRight">Sends a message marking the end of the current frame (and start of a new frame).  <a href="#acd23f879f9c530f5df0d82d05e5e4602">More...</a><br /></td></tr>
 <tr class="separator:acd23f879f9c530f5df0d82d05e5e4602"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8cae1c9bc490b38f032924d6b3045942"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classtes_1_1TcpServer.html#a8cae1c9bc490b38f032924d6b3045942">updateTransfers</a> (unsigned byteLimit) override</td></tr>
-<tr class="memdesc:a8cae1c9bc490b38f032924d6b3045942"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update any pending amortised data transfers (e.g., mesh transfer).  <a href="#a8cae1c9bc490b38f032924d6b3045942">More...</a><br /></td></tr>
+<tr class="memdesc:a8cae1c9bc490b38f032924d6b3045942"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update any pending resource transfers (e.g., mesh transfer).  <a href="#a8cae1c9bc490b38f032924d6b3045942">More...</a><br /></td></tr>
 <tr class="separator:a8cae1c9bc490b38f032924d6b3045942"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab8855cd210aadde57c0a728dacfd1b05"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classtes_1_1TcpServer.html#ab8855cd210aadde57c0a728dacfd1b05">referenceResource</a> (const <a class="el" href="classtes_1_1Resource.html">Resource</a> *resource) override</td></tr>
 <tr class="memdesc:ab8855cd210aadde57c0a728dacfd1b05"><td class="mdescLeft">&#160;</td><td class="mdescRight">Override.  <a href="#ab8855cd210aadde57c0a728dacfd1b05">More...</a><br /></td></tr>
@@ -938,7 +938,9 @@ virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="c
 </table>
 </div><div class="memdoc">
 
-<p>Update any pending amortised data transfers (e.g., mesh transfer). </p>
+<p>Update any pending resource transfers (e.g., mesh transfer). </p>
+<p>Transfer may be amortised by setting a <code>byteLimit</code> or enforced by a zero byte limit. Zero guarantees all outstanding resources are transfered.</p>
+<p>This method should generally be called once for every <code><a class="el" href="classtes_1_1TcpServer.html#acd23f879f9c530f5df0d82d05e5e4602" title="Sends a message marking the end of the current frame (and start of a new frame). ">updateFrame()</a></code>, normally before the frame update. This holds especially true when not amortising transfer (zero byte limit).</p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">byteLimit</td><td>Limit the packet payload size to approximately this amount of data. </td></tr>

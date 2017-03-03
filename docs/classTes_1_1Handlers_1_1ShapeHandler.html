@@ -88,7 +88,7 @@ $(document).ready(function(){initNavTree('classTes_1_1Handlers_1_1ShapeHandler.h
 <a href="#properties">Properties</a> &#124;
 <a href="classTes_1_1Handlers_1_1ShapeHandler-members.html">List of all members</a>  </div>
   <div class="headertitle">
-<div class="title">Tes.Handlers.ShapeHandler Class Reference</div>  </div>
+<div class="title">Tes.Handlers.ShapeHandler Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
 </div><!--header-->
 <div class="contents">
 
@@ -168,12 +168,15 @@ Static Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
+<tr class="memitem:a51f60a6ee1821cc9499d3d8617c2c7f2"><td class="memItemLeft" align="right" valign="top">abstract <a class="el" href="classTes_1_1Shapes_1_1Shape.html">Shapes.Shape</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Handlers_1_1ShapeHandler.html#a51f60a6ee1821cc9499d3d8617c2c7f2">CreateSerialisationShape</a> (<a class="el" href="classTes_1_1Handlers_1_1ShapeComponent.html">ShapeComponent</a> shapeComponent)</td></tr>
+<tr class="memdesc:a51f60a6ee1821cc9499d3d8617c2c7f2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a dummy shape object used to generate serialisation messages.  <a href="#a51f60a6ee1821cc9499d3d8617c2c7f2">More...</a><br /></td></tr>
+<tr class="separator:a51f60a6ee1821cc9499d3d8617c2c7f2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afaf3ab019cdeeda556bd0eb86da6d56d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Handlers_1_1ShapeHandler.html#afaf3ab019cdeeda556bd0eb86da6d56d">ConfigureShape</a> (<a class="el" href="classTes_1_1Shapes_1_1Shape.html">Shapes.Shape</a> shape, <a class="el" href="classTes_1_1Handlers_1_1ShapeComponent.html">ShapeComponent</a> shapeComponent)</td></tr>
+<tr class="memdesc:afaf3ab019cdeeda556bd0eb86da6d56d"><td class="mdescLeft">&#160;</td><td class="mdescRight">A helper functio to configure the TES <em>shape</em>  to match the Unity object <em>shapeComponent</em> .  <a href="#afaf3ab019cdeeda556bd0eb86da6d56d">More...</a><br /></td></tr>
+<tr class="separator:afaf3ab019cdeeda556bd0eb86da6d56d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af849e00336edae6623097bc42b42a6a8"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classTes_1_1Runtime_1_1Error.html">Error</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Handlers_1_1ShapeHandler.html#af849e00336edae6623097bc42b42a6a8">SerialiseObjects</a> (BinaryWriter writer, IEnumerator&lt; GameObject &gt; objects, ref uint processedCount)</td></tr>
 <tr class="memdesc:af849e00336edae6623097bc42b42a6a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Serialises a list of objects to <em>writer</em>   <a href="#af849e00336edae6623097bc42b42a6a8">More...</a><br /></td></tr>
 <tr class="separator:af849e00336edae6623097bc42b42a6a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a83f9caddc8b63b40fe8e50344f17a2e2"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classTes_1_1Runtime_1_1Error.html">Error</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Handlers_1_1ShapeHandler.html#a83f9caddc8b63b40fe8e50344f17a2e2">SerialiseObject</a> (<a class="el" href="classTes_1_1IO_1_1PacketBuffer.html">PacketBuffer</a> packet, <a class="el" href="classTes_1_1Handlers_1_1ShapeComponent.html">ShapeComponent</a> shape)</td></tr>
-<tr class="memdesc:a83f9caddc8b63b40fe8e50344f17a2e2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Serialise a single object to the <em>packet</em>   <a href="#a83f9caddc8b63b40fe8e50344f17a2e2">More...</a><br /></td></tr>
-<tr class="separator:a83f9caddc8b63b40fe8e50344f17a2e2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad5fa025ea0736f20c48af491989fd8af"><td class="memItemLeft" align="right" valign="top">virtual <a class="el" href="classTes_1_1Runtime_1_1Error.html">Error</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Handlers_1_1ShapeHandler.html#ad5fa025ea0736f20c48af491989fd8af">PostSerialiseCreateObject</a> (<a class="el" href="classTes_1_1IO_1_1PacketBuffer.html">PacketBuffer</a> packet, BinaryWriter writer, <a class="el" href="classTes_1_1Handlers_1_1ShapeComponent.html">ShapeComponent</a> shape)</td></tr>
 <tr class="memdesc:ad5fa025ea0736f20c48af491989fd8af"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called after serialising the creation message for an object.  <a href="#ad5fa025ea0736f20c48af491989fd8af">More...</a><br /></td></tr>
 <tr class="separator:ad5fa025ea0736f20c48af491989fd8af"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -366,6 +369,51 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
+<a id="afaf3ab019cdeeda556bd0eb86da6d56d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afaf3ab019cdeeda556bd0eb86da6d56d">&#9670;&nbsp;</a></span>ConfigureShape()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Tes.Handlers.ShapeHandler.ConfigureShape </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classTes_1_1Shapes_1_1Shape.html">Shapes.Shape</a>&#160;</td>
+          <td class="paramname"><em>shape</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype"><a class="el" href="classTes_1_1Handlers_1_1ShapeComponent.html">ShapeComponent</a>&#160;</td>
+          <td class="paramname"><em>shapeComponent</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>A helper functio to configure the TES <em>shape</em>  to match the Unity object <em>shapeComponent</em> . </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">shape</td><td>The shape object to configure to match the Unity representation.</td></tr>
+    <tr><td class="paramname">shapeComponent</td><td>The Unity shape representation.</td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a id="ac4cabf9fda9eab405c4b5f35129a5474"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac4cabf9fda9eab405c4b5f35129a5474">&#9670;&nbsp;</a></span>CreateObject() <span class="overload">[1/2]</span></h2>
 
@@ -438,6 +486,44 @@ MeshRenderer </li>
 <p>This method is used to create both and persistent objects. The object is then added to the appropriate cache. </p>
 
 <p>Reimplemented in <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshHandler.html#a067c7e158cbb917a35d60ae9db41cb64">Tes.Handlers.Shape3D.MeshHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1PointCloudHandler.html#a4892ca14e3cd8315060090b02d3928f1">Tes.Handlers.Shape3D.PointCloudHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshSetHandler.html#aab281baf31cc3af8702791240cab60b5">Tes.Handlers.Shape3D.MeshSetHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1Text3DHandler.html#a36e922ff3f3a9fcad8bb3e1467189d68">Tes.Handlers.Shape3D.Text3DHandler</a>, and <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1CapsuleHandler.html#a53d229de3b53d89dc0f846d3d7129546">Tes.Handlers.Shape3D.CapsuleHandler</a>.</p>
+
+</div>
+</div>
+<a id="a51f60a6ee1821cc9499d3d8617c2c7f2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a51f60a6ee1821cc9499d3d8617c2c7f2">&#9670;&nbsp;</a></span>CreateSerialisationShape()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">abstract <a class="el" href="classTes_1_1Shapes_1_1Shape.html">Shapes.Shape</a> Tes.Handlers.ShapeHandler.CreateSerialisationShape </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classTes_1_1Handlers_1_1ShapeComponent.html">ShapeComponent</a>&#160;</td>
+          <td class="paramname"><em>shapeComponent</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">protected</span><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Create a dummy shape object used to generate serialisation messages. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">shapeComponent</td><td>The component to create a shape for.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>A shape instance suitable for configuring to generate serialisation messages.</dd></dl>
+<p>Base classes should implement this method to return an instance of the appropriate <a class="el" href="classTes_1_1Shapes_1_1Shape.html" title="This is the base class for any spatial shape represented by 3rd Eye Scene. ">Shapes.Shape</a> derivation. For example, the <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1SphereHandler.html" title="Handles sphere shapes. ">Shape3D.SphereHandler</a> should return a <a class="el" href="classTes_1_1Shapes_1_1Sphere.html" title="Defines a sphere shape for remote rendering. ">Shapes.Sphere</a> object. See <a class="el" href="classTes_1_1Handlers_1_1ShapeHandler.html#af849e00336edae6623097bc42b42a6a8" title="Serialises a list of objects to writer  ">SerialiseObjects(BinaryWriter, IEnumerator&lt;GameObject&gt;, ref uint)</a> for further details. </p>
+
+<p>Implemented in <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1Text3DHandler.html#a950e31a415e088397a3d07763adbb6d5">Tes.Handlers.Shape3D.Text3DHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1CapsuleHandler.html#a7c7442cc4a4272860cb513ed6cee66ad">Tes.Handlers.Shape3D.CapsuleHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshHandler.html#adc66b4cbb129ae87adf4e794f6b4d226">Tes.Handlers.Shape3D.MeshHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1PointCloudHandler.html#aae1bc60ed76840d9aea493ea91f4c3d3">Tes.Handlers.Shape3D.PointCloudHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshSetHandler.html#a5f085ac5755b87a4ae4443284db3e9d9">Tes.Handlers.Shape3D.MeshSetHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1ConeHandler.html#a5e32eae42eeb0856a9f42a099514bdc0">Tes.Handlers.Shape3D.ConeHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1CylinderHandler.html#a8157efe5b11f57e9427c6cdb261e300e">Tes.Handlers.Shape3D.CylinderHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1ArrowHandler.html#a79c60d2987679427a79bb8e5d1d64820">Tes.Handlers.Shape3D.ArrowHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1PlaneHandler.html#ab2992307bfe720e1d5c76efeb3a49893">Tes.Handlers.Shape3D.PlaneHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1SphereHandler.html#acbe0dc9cc5f4dcac4ea6e47bc32b1697">Tes.Handlers.Shape3D.SphereHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1StarHandler.html#a588f8eb50a6da016e89d9e435e9b21b5">Tes.Handlers.Shape3D.StarHandler</a>, and <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1BoxHandler.html#ad4e1b6b1990f9411623d53633775d5a5">Tes.Handlers.Shape3D.BoxHandler</a>.</p>
 
 </div>
 </div>
@@ -538,7 +624,7 @@ ObjectFlag.Rotation </li>
 ObjectFlag.Scale </li>
 </ul>
 
-<p>Reimplemented in <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1CapsuleHandler.html#ab35dec6a086916a1bafbbcb484fc9d35">Tes.Handlers.Shape3D.CapsuleHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1ArrowHandler.html#a145b380159d951304bc8bd7743fd129f">Tes.Handlers.Shape3D.ArrowHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1ConeHandler.html#acb03f6359a3384cfa59454f9d98cf9c4">Tes.Handlers.Shape3D.ConeHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1CylinderHandler.html#a62936f43fefd84f637856728aeca6d7d">Tes.Handlers.Shape3D.CylinderHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1PlaneHandler.html#a1fabdc3cdd7532992b562ebeb3445c0a">Tes.Handlers.Shape3D.PlaneHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1SphereHandler.html#a64d25442eaf9adf14e9de3c77a2dd9fd">Tes.Handlers.Shape3D.SphereHandler</a>, and <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1StarHandler.html#a2b9cd220b54d96ad74951065987d9228">Tes.Handlers.Shape3D.StarHandler</a>.</p>
+<p>Reimplemented in <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1CapsuleHandler.html#ab35dec6a086916a1bafbbcb484fc9d35">Tes.Handlers.Shape3D.CapsuleHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1ConeHandler.html#acb03f6359a3384cfa59454f9d98cf9c4">Tes.Handlers.Shape3D.ConeHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1ArrowHandler.html#a145b380159d951304bc8bd7743fd129f">Tes.Handlers.Shape3D.ArrowHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1CylinderHandler.html#a62936f43fefd84f637856728aeca6d7d">Tes.Handlers.Shape3D.CylinderHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1PlaneHandler.html#a1fabdc3cdd7532992b562ebeb3445c0a">Tes.Handlers.Shape3D.PlaneHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1SphereHandler.html#a64d25442eaf9adf14e9de3c77a2dd9fd">Tes.Handlers.Shape3D.SphereHandler</a>, and <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1StarHandler.html#a2b9cd220b54d96ad74951065987d9228">Tes.Handlers.Shape3D.StarHandler</a>.</p>
 
 </div>
 </div>
@@ -593,7 +679,7 @@ ObjectFlag.Scale </li>
 </dl>
 <p>This extracts colour and performs the inverse operation of <a class="el" href="classTes_1_1Handlers_1_1ShapeHandler.html#aa18ad50aa42cdbe67115eba8dd9950b1" title="Decodes the transformation embedded in attributes  ">DecodeTransform</a> This method must be overridden whenever <a class="el" href="classTes_1_1Handlers_1_1ShapeHandler.html#aa18ad50aa42cdbe67115eba8dd9950b1" title="Decodes the transformation embedded in attributes  ">DecodeTransform</a> is overridden. </p>
 
-<p>Reimplemented in <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1CapsuleHandler.html#a1b711ce0a1d6873b3e7afe0df699633f">Tes.Handlers.Shape3D.CapsuleHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1Text3DHandler.html#a172edbe9fe6ef48c2852c37a3a73c5ce">Tes.Handlers.Shape3D.Text3DHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1ConeHandler.html#a833ebfad98f3daf5f6122d1e257379ba">Tes.Handlers.Shape3D.ConeHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1CylinderHandler.html#a345a1f48f0e3dee42ce859fa03080b7b">Tes.Handlers.Shape3D.CylinderHandler</a>, and <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1ArrowHandler.html#a51bbbaa7f883056f26ae4c5283481da4">Tes.Handlers.Shape3D.ArrowHandler</a>.</p>
+<p>Reimplemented in <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1CapsuleHandler.html#a1b711ce0a1d6873b3e7afe0df699633f">Tes.Handlers.Shape3D.CapsuleHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1Text3DHandler.html#a172edbe9fe6ef48c2852c37a3a73c5ce">Tes.Handlers.Shape3D.Text3DHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1CylinderHandler.html#a345a1f48f0e3dee42ce859fa03080b7b">Tes.Handlers.Shape3D.CylinderHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1ArrowHandler.html#a51bbbaa7f883056f26ae4c5283481da4">Tes.Handlers.Shape3D.ArrowHandler</a>, and <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1ConeHandler.html#a833ebfad98f3daf5f6122d1e257379ba">Tes.Handlers.Shape3D.ConeHandler</a>.</p>
 
 </div>
 </div>
@@ -801,7 +887,7 @@ ObjectMessageID.Data </li>
 <dl class="section return"><dt>Returns</dt><dd>An error code on failure.</dd></dl>
 <p>Creates either a persistent or transient object depending on the incoming message ObjectID. An ID of zero signifies a transient object. Solid or wire shapes are assigned according to the message flags. </p>
 
-<p>Reimplemented in <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1PointCloudHandler.html#aff9f68d3e10e697105f3335a8d48bc0a">Tes.Handlers.Shape3D.PointCloudHandler</a>, and <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshSetHandler.html#a479133c83be6d3bbcfe63f859e7c20e2">Tes.Handlers.Shape3D.MeshSetHandler</a>.</p>
+<p>Reimplemented in <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshSetHandler.html#a479133c83be6d3bbcfe63f859e7c20e2">Tes.Handlers.Shape3D.MeshSetHandler</a>, and <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1PointCloudHandler.html#aff9f68d3e10e697105f3335a8d48bc0a">Tes.Handlers.Shape3D.PointCloudHandler</a>.</p>
 
 </div>
 </div>
@@ -965,7 +1051,7 @@ ObjectMessageID.Data </li>
 <dl class="section return"><dt>Returns</dt><dd>ErrorCode.UnsupportedFeature</dd></dl>
 <p>Not implemented to properly handle the message, returning an appropriate error code. </p>
 
-<p>Reimplemented in <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshHandler.html#a06603a449987a2d601a5c8f058351922">Tes.Handlers.Shape3D.MeshHandler</a>, and <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1PointCloudHandler.html#a11104f016db1eb5acbb2ce37f9987fa6">Tes.Handlers.Shape3D.PointCloudHandler</a>.</p>
+<p>Reimplemented in <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1PointCloudHandler.html#a11104f016db1eb5acbb2ce37f9987fa6">Tes.Handlers.Shape3D.PointCloudHandler</a>, and <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshHandler.html#a06603a449987a2d601a5c8f058351922">Tes.Handlers.Shape3D.MeshHandler</a>.</p>
 
 </div>
 </div>
@@ -1445,7 +1531,7 @@ ObjectMessageID.Data </li>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>An error code on failure.</dd></dl>
 
-<p>Reimplemented in <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshHandler.html#a7b3d4590595d96103efeaf910d12aea1">Tes.Handlers.Shape3D.MeshHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1PointCloudHandler.html#a9938d55af9a3b7803a25e5a7cc647073">Tes.Handlers.Shape3D.PointCloudHandler</a>, and <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshSetHandler.html#afff6ad517217736ff269c14d221ed668">Tes.Handlers.Shape3D.MeshSetHandler</a>.</p>
+<p>Reimplemented in <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshHandler.html#a7b3d4590595d96103efeaf910d12aea1">Tes.Handlers.Shape3D.MeshHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshSetHandler.html#afff6ad517217736ff269c14d221ed668">Tes.Handlers.Shape3D.MeshSetHandler</a>, and <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1PointCloudHandler.html#a9938d55af9a3b7803a25e5a7cc647073">Tes.Handlers.Shape3D.PointCloudHandler</a>.</p>
 
 </div>
 </div>
@@ -1500,8 +1586,6 @@ ObjectMessageID.Data </li>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd></dd></dl>
-
-<p>Reimplemented in <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshHandler.html#a1c36af19b7464afb85388c30a5c89778">Tes.Handlers.Shape3D.MeshHandler</a>, and <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1PointCloudHandler.html#ab8d4838853e8d1c60612d2bf8ac633f2">Tes.Handlers.Shape3D.PointCloudHandler</a>.</p>
 
 </div>
 </div>
@@ -1666,54 +1750,6 @@ ObjectMessageID.Data </li>
 
 </div>
 </div>
-<a id="a83f9caddc8b63b40fe8e50344f17a2e2"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a83f9caddc8b63b40fe8e50344f17a2e2">&#9670;&nbsp;</a></span>SerialiseObject()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">virtual <a class="el" href="classTes_1_1Runtime_1_1Error.html">Error</a> Tes.Handlers.ShapeHandler.SerialiseObject </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classTes_1_1IO_1_1PacketBuffer.html">PacketBuffer</a>&#160;</td>
-          <td class="paramname"><em>packet</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype"><a class="el" href="classTes_1_1Handlers_1_1ShapeComponent.html">ShapeComponent</a>&#160;</td>
-          <td class="paramname"><em>shape</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Serialise a single object to the <em>packet</em>  </p>
-<dl class="params"><dt>Parameters</dt><dd>
-  <table class="params">
-    <tr><td class="paramname">packet</td><td>Packet to write the message to.</td></tr>
-    <tr><td class="paramname">shape</td><td>Shape object to write.</td></tr>
-  </table>
-  </dd>
-</dl>
-<dl class="section return"><dt>Returns</dt><dd>An error on failure.</dd></dl>
-
-<p>Reimplemented in <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshHandler.html#a1e8ee019479b274a4d183f0155d2b033">Tes.Handlers.Shape3D.MeshHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1PointCloudHandler.html#a9cd760715757a3aa2288c9c01d64ea35">Tes.Handlers.Shape3D.PointCloudHandler</a>, <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1MeshSetHandler.html#abdef1298e134672513586a1a10380534">Tes.Handlers.Shape3D.MeshSetHandler</a>, and <a class="el" href="classTes_1_1Handlers_1_1Shape3D_1_1Text3DHandler.html#a5dcf12ae023e08a4211f522adc396cae">Tes.Handlers.Shape3D.Text3DHandler</a>.</p>
-
-</div>
-</div>
 <a id="af849e00336edae6623097bc42b42a6a8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af849e00336edae6623097bc42b42a6a8">&#9670;&nbsp;</a></span>SerialiseObjects()</h2>
 
@@ -1764,6 +1800,15 @@ ObjectMessageID.Data </li>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>An error code on failure.</dd></dl>
+<p>Default serialisation uses the following logic on each object: </p><ul>
+<li>
+Call <a class="el" href="classTes_1_1Handlers_1_1ShapeHandler.html#a51f60a6ee1821cc9499d3d8617c2c7f2" title="Create a dummy shape object used to generate serialisation messages. ">CreateSerialisationShape(ShapeComponent)</a> to create a temporary shape to match the unity object </li>
+<li>
+Call <a class="el" href="classTes_1_1Shapes_1_1Shape.html#a7a255e88cab8bf858eb4bf7caf6b1dd5" title="Write a create message to packet . ">Shapes.Shape.WriteCreate(PacketBuffer)</a> to generate the creation message and serialise the packet. </li>
+<li>
+For complex shapes, call <a class="el" href="classTes_1_1Shapes_1_1Shape.html#acabd0ffc40ec34daf5899f1befddfe4a" title="Called only for complex shapes to write additional creation data. ">Shapes.Shape.WriteData(PacketBuffer, ref uint)</a> as required and serialise the packets. </li>
+</ul>
+<p>Using the <a class="el" href="classTes_1_1Shapes_1_1Shape.html" title="This is the base class for any spatial shape represented by 3rd Eye Scene. ">Shapes.Shape</a> classes ensures serialisation is consistent with the server code and reduces the code maintenance to one code path. </p>
 
 </div>
 </div>

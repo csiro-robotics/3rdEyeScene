@@ -30,6 +30,6 @@ var searchData=
   ['crcvalid',['CrcValid',['../classtes_1_1PacketStream.html#a4424076bb90e3f85a0d91ab5d3f2ce67a1598975982c03297f8064cdd51f1a883',1,'tes::PacketStream']]],
   ['create',['Create',['../namespaceTes_1_1Net.html#a6f70b8a8fee30d525893a070f2753e15a686e697538050e4664636337cc3b834f',1,'Tes.Net.Create()'],['../namespaceTes_1_1Net.html#a08500ff92574e075977034ae08b0279ca686e697538050e4664636337cc3b834f',1,'Tes.Net.Create()']]],
   ['current',['Current',['../classtes_1_1PacketStream.html#a1a1503c7c30c706fd02b3d8dedbb1772a1db47956c5d0142b6d96b6b87bf6b23a',1,'tes::PacketStream']]],
-  ['cyclecount',['CycleCount',['../classtes_1_1Colour.html#a830eb40fc9ab781b70987bd6069106c5a963c7cac18f1609ec538f795bc588e46',1,'tes::Colour']]],
+  ['cyclecount',['CycleCount',['../classtes_1_1Colour.html#a830eb40fc9ab781b70987bd6069106c5a963c7cac18f1609ec538f795bc588e46',1,'tes::Colour::CycleCount()'],['../namespaceTes_1_1Maths.html#a48128f1e5603f891fe7187cf394d5067a7d6426b188a1c228f035a2f852a1fb20',1,'Tes.Maths.CycleCount()']]],
   ['cylinder',['Cylinder',['../namespaceTes_1_1Net.html#aeca457a57ef15608547fa50c1a7b4f52a2ec2c2961c7ce5a114d969c1f562a563',1,'Tes::Net']]]
 ];

@@ -149,7 +149,7 @@ override long&#160;</td><td class="memItemRight" valign="bottom"><b>Position</b>
 <div class="textblock"><p>Implements a <code>MemoryStream</code> wrapper to support GZip compression. </p>
 <p>This class is a workaround for how <code>GZipStream</code> needs to be finalised and closes its wrapped stream.</p>
 <p><code>GZipStream</code> compression works by wrapping another stream. The compression stream is not finalised until the <code>GZipStream</code> is closed. Doing so closes the stream wrapped by the zip stream. This makes it impossible to access the written byte count in the memory stream or to reuse the stream.</p>
-<p>Most members are simply a pass through to the underlying <code>MemoryStream</code>. </p>
+<p>Most members are simply a pass through to the underlying <code>MemoryStream</code>. However the Close() function flushes the buffer, but leaves the <code>MemoryStream</code> open. In this way, the <code>MemoryStream</code> can continue to be used. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a3fa4c41da6f677ddd64240517f71bcda"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3fa4c41da6f677ddd64240517f71bcda">&#9670;&nbsp;</a></span>CompressionBuffer()</h2>

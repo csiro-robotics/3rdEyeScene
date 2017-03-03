@@ -17,6 +17,7 @@ var classtes_1_1SimpleMesh =
     [ "addVertex", "classtes_1_1SimpleMesh.html#a317ba433673b69512e77418fce9d726f", null ],
     [ "addVertices", "classtes_1_1SimpleMesh.html#a705dddd5dac0d6b47ffafd2f094f5f68", null ],
     [ "clear", "classtes_1_1SimpleMesh.html#a05abdf5fd851f82430898e29cbd12614", null ],
+    [ "clearData", "classtes_1_1SimpleMesh.html#a09de862dff0fda1f000eebc4d0fb1426", null ],
     [ "clone", "classtes_1_1SimpleMesh.html#ad0f812660e1d5df3ed225b5c892afdc2", null ],
     [ "colours", "classtes_1_1SimpleMesh.html#a56b247bc40b7682611523fadf70b880d", null ],
     [ "colours", "classtes_1_1SimpleMesh.html#a1db15af37de9bdb358d99ab18ee47f7c", null ],

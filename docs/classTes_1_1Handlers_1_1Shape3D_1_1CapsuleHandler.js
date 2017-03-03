@@ -2,6 +2,7 @@ var classTes_1_1Handlers_1_1Shape3D_1_1CapsuleHandler =
 [
     [ "CapsuleHandler", "classTes_1_1Handlers_1_1Shape3D_1_1CapsuleHandler.html#affb71c98a3334c3b53e8b8313eba2a4d", null ],
     [ "CreateObject", "classTes_1_1Handlers_1_1Shape3D_1_1CapsuleHandler.html#a53d229de3b53d89dc0f846d3d7129546", null ],
+    [ "CreateSerialisationShape", "classTes_1_1Handlers_1_1Shape3D_1_1CapsuleHandler.html#a7c7442cc4a4272860cb513ed6cee66ad", null ],
     [ "DecodeTransform", "classTes_1_1Handlers_1_1Shape3D_1_1CapsuleHandler.html#ab35dec6a086916a1bafbbcb484fc9d35", null ],
     [ "EncodeAttributes", "classTes_1_1Handlers_1_1Shape3D_1_1CapsuleHandler.html#a1b711ce0a1d6873b3e7afe0df699633f", null ],
     [ "InitialiseVisual", "classTes_1_1Handlers_1_1Shape3D_1_1CapsuleHandler.html#a1e0f141149a2b7a2bd3f30a26f7ab495", null ],

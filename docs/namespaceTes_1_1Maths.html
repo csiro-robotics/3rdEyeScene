@@ -142,14 +142,14 @@ Enumerations</h2></td></tr>
 &#160;&#160;<b>Gainsboro</b>, 
 <b>LightGrey</b>, 
 <b>Silver</b>, 
-<b>DarkGray</b>, 
+<b>DarkGrey</b>, 
 <br />
-&#160;&#160;<b>Gray</b>, 
-<b>DimGray</b>, 
-<b>LightSlateGray</b>, 
-<b>SlateGray</b>, 
+&#160;&#160;<b>Grey</b>, 
+<b>DimGrey</b>, 
+<b>LightSlateGrey</b>, 
+<b>SlateGrey</b>, 
 <br />
-&#160;&#160;<b>DarkSlateGray</b>, 
+&#160;&#160;<b>DarkSlateGrey</b>, 
 <b>Black</b>, 
 <b>White</b>, 
 <b>Snow</b>, 
@@ -317,8 +317,60 @@ Enumerations</h2></td></tr>
  }<tr class="memdesc:a2aec4ce77bb5400010f7dcfc4b4ea1d6"><td class="mdescLeft">&#160;</td><td class="mdescRight">Predefined colour references.  <a href="namespaceTes_1_1Maths.html#a2aec4ce77bb5400010f7dcfc4b4ea1d6">More...</a><br /></td></tr>
 </td></tr>
 <tr class="separator:a2aec4ce77bb5400010f7dcfc4b4ea1d6"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a48128f1e5603f891fe7187cf394d5067"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespaceTes_1_1Maths.html#a48128f1e5603f891fe7187cf394d5067">ColourCycle</a> { <br />
+&#160;&#160;<a class="el" href="namespaceTes_1_1Maths.html#a48128f1e5603f891fe7187cf394d5067a3c479e6e7faaf2c24763ca93d500ac4e">ColourCycle.StandardCycle</a>, 
+<a class="el" href="namespaceTes_1_1Maths.html#a48128f1e5603f891fe7187cf394d5067a131c40e992113fcd301db6f55b6d0441">ColourCycle.DeuteranomalyCycle</a>, 
+<a class="el" href="namespaceTes_1_1Maths.html#a48128f1e5603f891fe7187cf394d5067aef7520f3cf69b524e28777edbb51562a">ColourCycle.ProtanomalyCycle</a>, 
+<a class="el" href="namespaceTes_1_1Maths.html#a48128f1e5603f891fe7187cf394d5067a669152b7f7decfff26f4be27249c3420">ColourCycle.TritanomalyCycle</a>, 
+<br />
+&#160;&#160;<a class="el" href="namespaceTes_1_1Maths.html#a48128f1e5603f891fe7187cf394d5067ae6b287e890355011b8867e1ffdde0f35">ColourCycle.GreyCycle</a>, 
+<a class="el" href="namespaceTes_1_1Maths.html#a48128f1e5603f891fe7187cf394d5067a7d6426b188a1c228f035a2f852a1fb20">ColourCycle.CycleCount</a>
+<br />
+ }<tr class="memdesc:a48128f1e5603f891fe7187cf394d5067"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enumerates the various available colour cycles.  <a href="namespaceTes_1_1Maths.html#a48128f1e5603f891fe7187cf394d5067">More...</a><br /></td></tr>
+</td></tr>
+<tr class="separator:a48128f1e5603f891fe7187cf394d5067"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Enumeration Type Documentation</h2>
+<a id="a48128f1e5603f891fe7187cf394d5067"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a48128f1e5603f891fe7187cf394d5067">&#9670;&nbsp;</a></span>ColourCycle</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="namespaceTes_1_1Maths.html#a48128f1e5603f891fe7187cf394d5067">Tes.Maths.ColourCycle</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">strong</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Enumerates the various available colour cycles. </p>
+<p>Note: the colours cycles include sets which attempt to cater for various forms of colour blindness. These are not rigorously constructed and may not be as well suited as they are intended. Feel free to offer suggested improvements to these colours sets. </p>
+<dl class="section see"><dt>See also</dt><dd><a class="el" href="structTes_1_1Maths_1_1Colour.html#af13419300f27043d46f4895c5ca451e0" title="Return a colour from one of the standard ColourCycle sets. ">Colour.Cycle(uint, ColourCycle)</a></dd></dl>
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="a48128f1e5603f891fe7187cf394d5067a3c479e6e7faaf2c24763ca93d500ac4e"></a>StandardCycle&#160;</td><td class="fielddoc"><p>Standard colour set. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a48128f1e5603f891fe7187cf394d5067a131c40e992113fcd301db6f55b6d0441"></a>DeuteranomalyCycle&#160;</td><td class="fielddoc"><p>A colour set which attempts to cater for Deuteranomaly colour blindness. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a48128f1e5603f891fe7187cf394d5067aef7520f3cf69b524e28777edbb51562a"></a>ProtanomalyCycle&#160;</td><td class="fielddoc"><p>A colour set which attempts to cater for Protanomaly colour blindness. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a48128f1e5603f891fe7187cf394d5067a669152b7f7decfff26f4be27249c3420"></a>TritanomalyCycle&#160;</td><td class="fielddoc"><p>A colour set which attempts to cater for Tritanomaly colour blindness. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a48128f1e5603f891fe7187cf394d5067ae6b287e890355011b8867e1ffdde0f35"></a>GreyCycle&#160;</td><td class="fielddoc"><p>A small grey scale colour set. </p>
+</td></tr>
+<tr><td class="fieldname"><a id="a48128f1e5603f891fe7187cf394d5067a7d6426b188a1c228f035a2f852a1fb20"></a>CycleCount&#160;</td><td class="fielddoc"><p>Defines the number of available colour sets. </p>
+</td></tr>
+</table>
+
+</div>
+</div>
 <a id="a2aec4ce77bb5400010f7dcfc4b4ea1d6"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2aec4ce77bb5400010f7dcfc4b4ea1d6">&#9670;&nbsp;</a></span>PredefinedColour</h2>
 

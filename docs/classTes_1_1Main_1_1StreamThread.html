@@ -122,21 +122,27 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>Start</b> (Stream dat
 <tr class="memitem:aaf31edf70639e726063c667578311785"><td class="memItemLeft" align="right" valign="top">Stream&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Main_1_1StreamThread.html#aaf31edf70639e726063c667578311785">RequestSnapshotStream</a> (uint frameNumber)</td></tr>
 <tr class="memdesc:aaf31edf70639e726063c667578311785"><td class="mdescLeft">&#160;</td><td class="mdescRight">Request a stream for the snapshot of the given frame number.  <a href="#aaf31edf70639e726063c667578311785">More...</a><br /></td></tr>
 <tr class="separator:aaf31edf70639e726063c667578311785"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9422bcdcf877ca23dfa5ebabf1bf1903"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Main_1_1StreamThread.html#a9422bcdcf877ca23dfa5ebabf1bf1903">ReleaseSnapshotStream</a> (uint frameNumber, Stream snapshotStream, bool valid)</td></tr>
-<tr class="memdesc:a9422bcdcf877ca23dfa5ebabf1bf1903"><td class="mdescLeft">&#160;</td><td class="mdescRight">Release a snapshot stream.  <a href="#a9422bcdcf877ca23dfa5ebabf1bf1903">More...</a><br /></td></tr>
-<tr class="separator:a9422bcdcf877ca23dfa5ebabf1bf1903"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae45629abf988388c4c28348b6d572086"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Main_1_1StreamThread.html#ae45629abf988388c4c28348b6d572086">ReleaseSnapshotStream</a> (uint frameNumber, Stream snapshotStream, bool includesTransient, bool valid)</td></tr>
+<tr class="memdesc:ae45629abf988388c4c28348b6d572086"><td class="mdescLeft">&#160;</td><td class="mdescRight">Release a snapshot stream.  <a href="#ae45629abf988388c4c28348b6d572086">More...</a><br /></td></tr>
+<tr class="separator:ae45629abf988388c4c28348b6d572086"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a517887eb09a428830de644724c0dfb4c"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Main_1_1StreamThread.html#a517887eb09a428830de644724c0dfb4c">HaveSnapshot</a> (uint frameNumber)</td></tr>
 <tr class="memdesc:a517887eb09a428830de644724c0dfb4c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Is there a snapshot available for the given frame number?  <a href="#a517887eb09a428830de644724c0dfb4c">More...</a><br /></td></tr>
 <tr class="separator:a517887eb09a428830de644724c0dfb4c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
 Properties</h2></td></tr>
-<tr class="memitem:a7a880b6fac0733d130346090113e80bc"><td class="memItemLeft" align="right" valign="top">long&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Main_1_1StreamThread.html#a7a880b6fac0733d130346090113e80bc">SnapshotBytes</a><code> [get, set]</code></td></tr>
-<tr class="memdesc:a7a880b6fac0733d130346090113e80bc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Take a snapshot after this many kilo (technically kibi, but I can't bring myself to call it that) bytes.  <a href="#a7a880b6fac0733d130346090113e80bc">More...</a><br /></td></tr>
-<tr class="separator:a7a880b6fac0733d130346090113e80bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab971a7742670e51634fa90bead51993d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Main_1_1StreamThread.html#ab971a7742670e51634fa90bead51993d">AllowSnapshots</a><code> [get, set]</code></td></tr>
+<tr class="memdesc:ab971a7742670e51634fa90bead51993d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allow use of snapshots?  <a href="#ab971a7742670e51634fa90bead51993d">More...</a><br /></td></tr>
+<tr class="separator:ab971a7742670e51634fa90bead51993d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1db3824002d5a089369dcbceee82ee4a"><td class="memItemLeft" align="right" valign="top">long&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Main_1_1StreamThread.html#a1db3824002d5a089369dcbceee82ee4a">SnapshotKiloBytes</a><code> [get, set]</code></td></tr>
+<tr class="memdesc:a1db3824002d5a089369dcbceee82ee4a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Take a snapshot after this many kilo (technically kibi, but I can't bring myself to call it that) bytes.  <a href="#a1db3824002d5a089369dcbceee82ee4a">More...</a><br /></td></tr>
+<tr class="separator:a1db3824002d5a089369dcbceee82ee4a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4f8d725b56df3119ed7ffaefee147052"><td class="memItemLeft" align="right" valign="top">uint&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Main_1_1StreamThread.html#a4f8d725b56df3119ed7ffaefee147052">SnapshotMinFrames</a><code> [get, set]</code></td></tr>
 <tr class="memdesc:a4f8d725b56df3119ed7ffaefee147052"><td class="mdescLeft">&#160;</td><td class="mdescRight">Do not take a snapshot unless at least this many frames have elapsed.  <a href="#a4f8d725b56df3119ed7ffaefee147052">More...</a><br /></td></tr>
 <tr class="separator:a4f8d725b56df3119ed7ffaefee147052"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7868c6f3732ee15ccb2f96555b76d3c4"><td class="memItemLeft" align="right" valign="top"><a id="a7868c6f3732ee15ccb2f96555b76d3c4"></a>
+uint&#160;</td><td class="memItemRight" valign="bottom"><b>ShapshotSkipForwardFrames</b><code> [get, set]</code></td></tr>
+<tr class="separator:a7868c6f3732ee15ccb2f96555b76d3c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a462b058298fbf4e8b1d5a815a2fb6676"><td class="memItemLeft" align="right" valign="top"><a id="a462b058298fbf4e8b1d5a815a2fb6676"></a>
 override <a class="el" href="classTes_1_1Collections_1_1Queue.html">Queue</a>&lt; <a class="el" href="classTes_1_1IO_1_1PacketBuffer.html">PacketBuffer</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><b>PacketQueue</b><code> [get]</code></td></tr>
 <tr class="separator:a462b058298fbf4e8b1d5a815a2fb6676"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -167,9 +173,6 @@ bool&#160;</td><td class="memItemRight" valign="bottom"><b>Loop</b><code> [get, 
 <tr class="memitem:afbf2c8f435e47f1017ca9cef90ac371f"><td class="memItemLeft" align="right" valign="top"><a id="afbf2c8f435e47f1017ca9cef90ac371f"></a>
 float&#160;</td><td class="memItemRight" valign="bottom"><b>PlaybackSpeed</b><code> [get, set]</code></td></tr>
 <tr class="separator:afbf2c8f435e47f1017ca9cef90ac371f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab971a7742670e51634fa90bead51993d"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Main_1_1StreamThread.html#ab971a7742670e51634fa90bead51993d">AllowSnapshots</a><code> [get, set]</code></td></tr>
-<tr class="memdesc:ab971a7742670e51634fa90bead51993d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Allow use of snapshots?  <a href="#ab971a7742670e51634fa90bead51993d">More...</a><br /></td></tr>
-<tr class="separator:ab971a7742670e51634fa90bead51993d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8c0b43c559a530bfc05196e45258da9f"><td class="memItemLeft" align="right" valign="top"><a id="a8c0b43c559a530bfc05196e45258da9f"></a>
 bool&#160;</td><td class="memItemRight" valign="bottom"><b>Eos</b><code> [get]</code></td></tr>
 <tr class="separator:a8c0b43c559a530bfc05196e45258da9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -304,8 +307,8 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="a9422bcdcf877ca23dfa5ebabf1bf1903"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9422bcdcf877ca23dfa5ebabf1bf1903">&#9670;&nbsp;</a></span>ReleaseSnapshotStream()</h2>
+<a id="ae45629abf988388c4c28348b6d572086"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae45629abf988388c4c28348b6d572086">&#9670;&nbsp;</a></span>ReleaseSnapshotStream()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -329,6 +332,12 @@ Additional Inherited Members</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>includesTransient</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
           <td class="paramname"><em>valid</em>&#160;</td>
         </tr>
         <tr>
@@ -347,7 +356,9 @@ Additional Inherited Members</h2></td></tr>
 <p>Release a snapshot stream. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
+    <tr><td class="paramname">frameNumber</td><td>The frame number the snap shop serialised.</td></tr>
     <tr><td class="paramname">snapshotStream</td><td>The stream to release</td></tr>
+    <tr><td class="paramname">includesTransient</td><td>Does the stream include transient objects? See Snapshot remarks.</td></tr>
     <tr><td class="paramname">valid</td><td>True if the snapshot was successful.</td></tr>
   </table>
   </dd>
@@ -446,8 +457,8 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="a7a880b6fac0733d130346090113e80bc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7a880b6fac0733d130346090113e80bc">&#9670;&nbsp;</a></span>SnapshotBytes</h2>
+<a id="a1db3824002d5a089369dcbceee82ee4a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1db3824002d5a089369dcbceee82ee4a">&#9670;&nbsp;</a></span>SnapshotKiloBytes</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -456,7 +467,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">long Tes.Main.StreamThread.SnapshotBytes</td>
+          <td class="memname">long Tes.Main.StreamThread.SnapshotKiloBytes</td>
         </tr>
       </table>
   </td>

@@ -100,9 +100,20 @@ Packet Header</h1>
 <tr>
 <td>Marker </td><td align="right">4 </td><td>Identifies the start of a packet. Always the hex value 0x03e55e30. </td></tr>
 <tr>
-<td>Major version </td><td align="right">2 </td><td>The major version of the message protocol. With the minor version, </td></tr>
+<td>Major version </td><td align="right">2 </td><td>The major version of the message protocol. With the minor version, This identifies the packet header and message contents and layout. </td></tr>
+<tr>
+<td>Minor version </td><td align="right">2 </td><td>The minor version of the message protocol. </td></tr>
+<tr>
+<td>Routing ID </td><td align="right">2 </td><td>Identifies the message recipient. See <a class="el" href="docprotocol.html#secroutingids">Core Routing IDs</a>. </td></tr>
+<tr>
+<td>Message ID </td><td align="right">2 </td><td>The message ID identifies the payload contents to the handler. </td></tr>
+<tr>
+<td>Payload size </td><td align="right">2 </td><td>Size of the payload after this header. Excludes header size and CRC bytes. </td></tr>
+<tr>
+<td>Payload offset </td><td align="right">1 </td><td>For future use. Identifies a byte offset after this header where the payload begins. Initially always zero, in future this may be used to put additional data into the packet header. </td></tr>
+<tr>
+<td>Flags </td><td align="right">1 </td><td>Packet flags. See below. </td></tr>
 </table>
-<p>| | This identifies the packet header and message contents and layout. Minor version | 2 | The minor version of the message protocol. Routing ID | 2 | Identifies the message recipient. See <a class="el" href="docprotocol.html#secroutingids">Core Routing IDs</a>. Message ID | 2 | The message ID identifies the payload contents to the handler. Payload size | 2 | Size of the payload after this header. Excludes header size | | and CRC bytes. Payload offset | 1 | For future use. Identifies a byte offset after this header where | | the payload begins. Initially always zero, in future this may | | be used to put additional data into the packet header. Flags | 1 | Packet flags. See below.</p>
 <p>The initial protocol version is 0.1.</p>
 <p>The <code>Flags</code> member supports the following flags: </p><table class="doxtable">
 <tr>
@@ -135,9 +146,8 @@ Core Routing IDs</h1>
 <tr>
 <td>Material </td><td align="right">7 </td><td>Not implemented. Intended for future handling of material messages. </td></tr>
 <tr>
-<td>Shapes </td><td align="right">64+ </td><td>Shape handlers share core message structures, but identify different </td></tr>
+<td>Shapes </td><td align="right">64+ </td><td>Shape handlers share core message structures, but identify different 3D shapes and primitives. </td></tr>
 </table>
-<p>| | 3D shapes and primitives.</p>
 <h2><a class="anchor" id="secshapeids"></a>
 Shape Routing IDs</h2>
 <p>Shape handlers all use a common message structure (see TODO) using the same create, update and destroy messages. Shapes support a data message for sending additional data specific to that shape. Shapes have the following routing IDs. </p><table class="doxtable">
@@ -152,9 +162,24 @@ Shape Routing IDs</h2>
 <tr>
 <td>Cylinder </td><td align="right">67 </td><td>A cylinder primitive. </td></tr>
 <tr>
-<td>Capsule </td><td align="right">68 </td><td>A capsule primitive. A capsule is formed from two hemispheres </td></tr>
+<td>Capsule </td><td align="right">68 </td><td>A capsule primitive. A capsule is formed from two hemispheres connected by a cylinder. Often used as a physics primitive. </td></tr>
+<tr>
+<td>Plane </td><td align="right">69 </td><td>A 2D quadrilateral positioned in 3D space with a normal component.Used to represent 3D planes at a point. </td></tr>
+<tr>
+<td>Star </td><td align="right">70 </td><td>A star shape. </td></tr>
+<tr>
+<td>Arrow </td><td align="right">71 </td><td>An arrow shape made from a conical head and cylindrical body. </td></tr>
+<tr>
+<td>Mesh Shape </td><td align="right">72 </td><td>A single mesh object made up of vertices and indices with a specified draw type or topology. </td></tr>
+<tr>
+<td>Mesh Set </td><td align="right">73 </td><td>A collection of mesh objects created via Mesh Routing ID. A mesh set supports more complex mesh structures than Mesh Set allowing multiple shared mesh resources. Meshes themselves support vertex colour and vertex normals. See TODO "mesh resources". </td></tr>
+<tr>
+<td>Point Cloud </td><td align="right">74 </td><td>Similar to a mesh set, a point cloud shape supports a single, shared point cloud mesh resource. </td></tr>
+<tr>
+<td>Text 3D </td><td align="right">75 </td><td>Supports text with full 3D positioning and scale, with optional billboarding. </td></tr>
+<tr>
+<td>Text 2D </td><td align="right">76 </td><td>Supports 2D text either located in screen space, or located in 3D and projected into screen space. </td></tr>
 </table>
-<p>| | connected by a cylinder. Often used as a physics primitive. Plane | 69 | A 2D quadrilateral positioned in 3D space with a normal component. | | Used to represent 3D planes at a point. Star | 70 | A star shape. Arrow | 71 | An arrow shape made from a conical head and cylindrical body. Mesh Shape | 72 | A single mesh object made up of vertices and indices with a | | specified draw type or topology. Mesh Set | 73 | A collection of mesh objects created via Mesh Routing ID. | | A mesh set supports more complex mesh structures than Mesh Set | | allowing multiple shared mesh resources. Meshes themselves support | | vertex colour and vertex normals. See TODO "mesh resources". Point Cloud | 74 | Similar to a mesh set, a point cloud shape supports a single, | | shared point cloud mesh resource. Text 3D | 75 | Supports text with full 3D positioning and scale, with optional | | billboarding. Text 2D | 76 | Supports 2D text either located in screen space, or located in 3D | | and projected into screen space.</p>
 <h1><a class="anchor" id="secserverinfomsg"></a>
 Server Info Messages</h1>
 <p>Server info messages provide information about the server. There is currently only one server message, message ID zero. It is detailed below.</p>
@@ -162,9 +187,11 @@ Server Info Messages</h1>
 <tr>
 <th>Datum </th><th align="right">Byte Size </th><th>Description  </th></tr>
 <tr>
-<td>Time Unit </td><td align="right">8 </td><td>Specifies the time unit used in frame messages. That is, each </td></tr>
+<td>Time Unit </td><td align="right">8 </td><td>Specifies the time unit used in frame messages. That is, each time unit in other messages is scaled by this value. This value is measured in microseconds and defaults to 1000us (1 milliscond). </td></tr>
+<tr>
+<td>Default Frame Time</td><td align="right">4 </td><td>Specifies the default time to display a frame for when an end frame message does not specify a time value (zero). Generally not relevant for real time visualisation as there should always be a real frame </td></tr>
 </table>
-<p>| | time unit in other messages is scaled by this value. | | This value is measured in microseconds and defaults to 1000us | | (1 milliscond). Default Frame Time| 4 | Specifies the default time to display a frame for when an end frame | | message does not specify a time value (zero). Generally not relevant | | for real time visualisation as there should always be a real frame | | time in this case. This value is scaled by the <code>Time Unit</code> | | and defaults to 33(ms). Coordinate Frame | 1 | Specifies the server's coordinate frame. See below. Reserved | 35 | Additionaly bytes reserved for future expansion. These pad the | | structure to 48-bytes, which pads to 64-bytes when combined with | | the packet header. All bytes must be zero for correct CRC.</p>
+<p>| | time in this case. This value is scaled by the <code>Time Unit</code> and defaults to 33(ms). Coordinate Frame | 1 | Specifies the server's coordinate frame. See below. Reserved | 35 | Additionaly bytes reserved for future expansion. These pad the structure to 48-bytes, which pads to 64-bytes when combined with the packet header. All bytes must be zero for correct CRC.</p>
 <p>The coordinate frame identifies the server's basis axes. It is set from one of the following values. The coordinate frame name identifies the right, forward and up axes in turn. For example XYZ, specifies the X axis as right, Y as forward and Z as up and is right handed. Similarly XZY specifies X right, Z forward, Y up and is left handed. Some axes are prefixed with a '-' sign. This indicates the axis is flipped. </p><table class="doxtable">
 <tr>
 <th>Frame Name </th><th align="right">Value </th><th>Left/Right Handed  </th></tr>
@@ -212,9 +239,14 @@ Control Messages</h1>
 <tr>
 <td>Null </td><td align="right">0 </td><td>An invalid message ID. Not used. </td></tr>
 <tr>
-<td>Frame </td><td align="right">1 </td><td>An end of frame message causing a frame flush. Uses flags </td></tr>
+<td>Frame </td><td align="right">1 </td><td>An end of frame message causing a frame flush. Uses flags (see TODO). Value 32 stores the frame time in the server time unit (see <a class="el" href="docprotocol.html#secserverinfomsg">Server Info Messages</a>) or zero to use the default frame time. </td></tr>
+<tr>
+<td>Frame Count </td><td align="right">3 </td><td>Value 32 specifies the total number of frames. Intended only for recorded file streams to identify the target frame count. </td></tr>
+<tr>
+<td>Force Frame Flush </td><td align="right">4 </td><td>Force a frame flush without advancing the frame number or time. Intended as an internal control message only on the client. Values not used. </td></tr>
+<tr>
+<td>Reset </td><td align="right">5 </td><td>Clear the scene, dropping all existing data. Values not used. </td></tr>
 </table>
-<p>| | (see TODO). Value 32 stores the frame time in the server time unit | | (see <a class="el" href="docprotocol.html#secserverinfomsg">Server Info Messages</a>) or zero to use the default frame time. Frame Count | 3 | Value 32 specifies the total number of frames. Intended only for | | recorded file streams to identify the target frame count. Force Frame Flush | 4 | Force a frame flush without advancing the frame number or time. | | Intended as an internal control message only on the client. Values not used. Reset | 5 | Clear the scene, dropping all existing data. Values not used.</p>
 <h2><a class="anchor" id="seccontrolframemsg"></a>
 Frame Message Flags</h2>
 <p>Frame message flags are: </p><table class="doxtable">
@@ -237,9 +269,8 @@ Collated Packet Messages</h1>
 <tr>
 <td>Reserved </td><td align="right">2 </td><td>Reserved for future use (padding) </td></tr>
 <tr>
-<td>Uncompressed Bytes</td><td align="right">4 </td><td>Specifies the number of <em>uncompressed</em> bytes in the payload. This </td></tr>
+<td>Uncompressed Bytes</td><td align="right">4 </td><td>Specifies the number of <em>uncompressed</em> bytes in the payload. This is the sum of all the payload's individual packets (excluding the message header). </td></tr>
 </table>
-<p>| | is the sum of all the payload's individual packets (excluding the | | message header).</p>
 <p>It is important to note that collated packet sizes are generally limited to less than 65535 bytes due to the packet payload size restriction with one important exception (see below). When a server creates collated packets, it is free to add as much data as possible to reach the payload limit, but must not contain partial packets. That is, a packet contained in a collated packet must be wholly contained in that packet regardless of compression settings.</p>
 <p>There is an exception to the size limitation which caters to how a collated packet is used in file saving. File streams may contain a collated packet which exceeds the packet size limitation. To support this, it cannot have a CRC as the CRC location cannot be calculated based on a 16-bit payload size in the collated packet header. The collated packet can break the size restrictions by expressing that it contains more than 65535 uncompressed bytes.</p>
 <p>Collated packet data begins immediately following the collated packet header and message (above) and is expressed as a series of valid packet headers with their corresponding message payloads. These bytes may be GZIP compressed as specified by the collated packet message flags. A collated packet reader knows it has reached the end of the collated data when it has processed a number of uncompressed bytes equal to <code>Uncompressed Bytes</code> as specified in the collated packet message (this includes CRCs if present for the contained packets). The next two bytes will either be the CRC for the collated packet message (if present) or the beginning of the next packet, as identified by the packet header marker bytes.</p>
@@ -249,9 +280,8 @@ Collated Packet Flags</h2>
 <tr>
 <th>Name </th><th align="right">Value </th><th>Description  </th></tr>
 <tr>
-<td>Compress </td><td align="right">1 </td><td>Collated packet payload is GZIP compressed. Compression begins </td></tr>
+<td>Compress </td><td align="right">1 </td><td>Collated packet payload is GZIP compressed. Compression begins after the message structure. That is, neither packet header nor the message are compressed. </td></tr>
 </table>
-<p>| | after the message structure. That is, neither packet header nor | | the message are compressed.</p>
 <h1><a class="anchor" id="secmeshmsg"></a>
 Mesh Resource Messages</h1>
 <p>Mesh resource messages are used to create and populate mesh resources for viewing by the client. These resources may be referenced in other messages such as those pertaining to the Mesh Set shape type. Mesh resources are identified by an unique mesh resource ID. This ID is only unique among other mesh resources. It is the server's responsibility to ensure unique resource ID assignment.</p>
@@ -403,9 +433,16 @@ Create Shape Message</h2>
 <tr>
 <th>Datum </th><th align="right">Byte Size </th><th>Description  </th></tr>
 <tr>
-<td>Object ID </td><td align="right">4 </td><td>Unique identifies the shape within the context of the current </td></tr>
+<td>Object ID </td><td align="right">4 </td><td>Unique identifies the shape within the context of the current shape routing ID. Zero is reserved for transient shapes. </td></tr>
+<tr>
+<td>Category ID </td><td align="right">2 </td><td>Identifies the category to which the shape belongs. Zero is the catch-all default. </td></tr>
+<tr>
+<td>Flags </td><td align="right">2 </td><td>Shape creation flags. See <a class="el" href="docprotocol.html#secshapemsgflags">below</a>. </td></tr>
+<tr>
+<td>Reserved </td><td align="right">2 </td><td>Reserved. Must be zero. </td></tr>
+<tr>
+<td>Attributes </td><td align="right">* </td><td>See <a class="el" href="docprotocol.html#secshapemsgattributes">Shape Attributes</a> </td></tr>
 </table>
-<p>| | shape routing ID. Zero is reserved for transient shapes. Category ID | 2 | Identifies the category to which the shape belongs. Zero is the catch-all default. Flags | 2 | Shape creation flags. See <a class="el" href="docprotocol.html#secshapemsgflags">below</a>. Reserved | 2 | Reserved. Must be zero. Attributes | * | See <a class="el" href="docprotocol.html#secshapemsgattributes">Shape Attributes</a></p>
 <h2><a class="anchor" id="secshapemsgflags"></a>
 Shape Flags</h2>
 <p>Shapes may support the following set of flags, though not all shapes will support all flags. </p><table class="doxtable">
@@ -414,9 +451,10 @@ Shape Flags</h2>
 <tr>
 <td>Wireframe </td><td align="right">1 </td><td>The shape should be visualised using wirefame rendering if supported. </td></tr>
 <tr>
-<td>Transparent </td><td align="right">2 </td><td>The shape should be visualised as transparent. The colour alpha </td></tr>
+<td>Transparent </td><td align="right">2 </td><td>The shape should be visualised as transparent. The colour alpha channel specifies the opacity. </td></tr>
+<tr>
+<td>User </td><td align="right">256 </td><td>Shape specific flags start here. </td></tr>
 </table>
-<p>| | channel specifies the opacity. User | 256 | Shape specific flags start here.</p>
 <h2><a class="anchor" id="secshapemsgattributes"></a>
 Shape Attributes</h2>
 <p>Shape attributes are used in both shape create and update messages and contain the following data: </p><table class="doxtable">
@@ -446,9 +484,28 @@ Shape Specific Create Messages</h2>
 <tr>
 <td>Box </td><td>No </td><td>Scale sets the box edge length. E.g., (1, 1, 1) makes a unit cube. </td></tr>
 <tr>
-<td>Cone </td><td>No </td><td>- Pivot is at the apex. </td></tr>
+<td>Cone </td><td>No </td><td>Pivot is at the apex. Default direction is (0, 0, 1) away from the apex. Scale 0 is the radius at the base (also in element 1). Scale 2 is the length away from the apex. </td></tr>
+<tr>
+<td>Cylinder </td><td>No </td><td>Default direction is (0, 0, 1). Scale 0 is the radius (also in element 1). Scale 2 is the length. </td></tr>
+<tr>
+<td>Capsule </td><td>No </td><td>Default direction is (0, 0, 1). Scale 0 is the cylinder and hemisphere radius (also in element 1). Scale 2 is the cylinder length (total length is length + 2 * radius). </td></tr>
+<tr>
+<td>Plane </td><td>No </td><td>Position defines a local pivot point to centre the quad on. Rotation defines the quaternion rotation away from the default 'normal' (0, 0, 1) Scale components 0, 2, define the quad size (both are equal) Scale component 1 specifies the length to render the normal with. </td></tr>
+<tr>
+<td>Star </td><td>No </td><td>Pivot is at the centre, rotation is ignored, scale[0] specifies the radius. </td></tr>
+<tr>
+<td>Arrow </td><td>No </td><td>Pivot is at the arrow base. Default direction is (0, 0, 1) away from the base. Scale 0 is the radius (of the arrow wall) (also in element 1). Scale 2 is the length. </td></tr>
+<tr>
+<td>Mesh Shape </td><td>Yes </td><td>Writes additional data. </td></tr>
+<tr>
+<td>Mesh Set </td><td>No </td><td>Writes additional data. </td></tr>
+<tr>
+<td>Point Cloud </td><td>Yes </td><td>Writes additional data. </td></tr>
+<tr>
+<td>Text 3D </td><td>No </td><td>Supports user flags. Writes additional data. Position may defaults to screen space with (0, 0) the upper left corer and (1, 1) the lower right (Z ignored). </td></tr>
+<tr>
+<td>Text 2D </td><td>No </td><td>Supports user flags. Writes additional data. </td></tr>
 </table>
-<p>| | - Default direction is (0, 0, 1) away from the apex. | | - Scale 0 is the radius at the base (also in element 1). | | - Scale 2 is the length away from the apex. Cylinder | No | - Default direction is (0, 0, 1). | | - Scale 0 is the radius (also in element 1). | | - Scale 2 is the length. Capsule | No | - Default direction is (0, 0, 1). | | - Scale 0 is the cylinder and hemisphere radius (also in element 1). | | - Scale 2 is the cylinder length (total length is length + 2 * radius). Plane | No | - Position defines a local pivot point to centre the quad on. | | - Rotation defines the quaternion rotation away from the default 'normal' (0, 0, 1) | | - Scale components 0, 2, define the quad size (both are equal) | | - Scale component 1 specifies the length to render the normal with. Star | No | Pivot is at the centre, rotation is ignored, scale[0] specifies the radius. Arrow | No | - Pivot is at the arrow base. | | - Default direction is (0, 0, 1) away from the base. | | - Scale 0 is the radius (of the arrow wall) (also in element 1). | | - Scale 2 is the length. Mesh Shape | Yes | Writes additional data. Mesh Set | No | Writes additional data. Point Cloud | Yes | Writes additional data. Text 3D | No | Supports user flags. Writes additional data. | | - Position may defaults to screen space with (0, 0) the upper left corer and (1, 1) the lower right (Z ignored). Text 2D | No | Supports user flags. Writes additional data.</p>
 <p>The directional shapes (arrow, capsule, cone, cylinder, plane, text 3d) all use rotation as a quaternion rotation away from the default direction (0, 0, 1). It could have been overridden to specify a true direction vector. However, this was not done to better support a common set of get/set rotation methods with consistent semantics. A rotation is either ignored, or it is a quaternion rotation.</p>
 <h2><a class="anchor" id="secshapemsgmeshcreate"></a>
 Mesh Shape Create Addendum</h2>

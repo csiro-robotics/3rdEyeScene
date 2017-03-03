@@ -46,7 +46,7 @@ An application can support a 3es server and remotely render data to a connected 
 Note that the C# is slightly more difficult integrate and maintain than the C++ use case. Where the C++ server commands can easily be compiled out through the use of the C++ preprocessor, C# code must be more explicitly guarded and removed due to the limitations of the C# preprocessor.
 
 
-@subsection docorgcsharpruntime
+@subsection docorgcsharpruntime 3esRuntime (C#)
 The 3esRuntime library is a small extension to the 3esCore library to support bridging between pure C# code and the Unity viewer client. It serves to:
 - Provide utility functions to convert between 3esCore maths classes and Unity maths classes.
 - Define a common message handling protocol and base class.
@@ -68,13 +68,13 @@ Note: The C# runtime is deliberately written without exception handling. Raising
 
 
 
-@section docorgcpp C++ Core Libraries 
+@section docorgcpp C++ Core Libraries
 The C++ library organisation is much simpler than the C# libraries as the C++ code does not include a 3es client application. It is intended to supporting 3es server based and embedding 3es commands into such C++ applications.
 
 Note: The C++ server code represents the "leading" server platform, while the C# code represents the "leading" client application.
 
 
-@subsection docorgcppcore
+@subsection docorgcppcore 3es-core (C++)
 The C++ 3es-core libary supports a set of features similar to the C# 3esCore library:
 - Network message structures to support the @ref docprotocol "protocol".
 - Buffer classes to help package, send and receive network messages and calculate CRC values.

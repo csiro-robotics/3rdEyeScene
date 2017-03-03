@@ -83,6 +83,7 @@ $(document).ready(function(){initNavTree('classTes_1_1Shapes_1_1MeshBase.html','
   <div class="summary">
 <a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#pub-static-methods">Static Public Member Functions</a> &#124;
 <a href="#pro-methods">Protected Member Functions</a> &#124;
 <a href="#properties">Properties</a> &#124;
 <a href="classTes_1_1Shapes_1_1MeshBase-members.html">List of all members</a>  </div>
@@ -99,11 +100,12 @@ Inheritance diagram for Tes.Shapes.MeshBase:</div>
  <div class="center">
   <img src="classTes_1_1Shapes_1_1MeshBase.png" usemap="#Tes.Shapes.MeshBase_map" alt=""/>
   <map id="Tes.Shapes.MeshBase_map" name="Tes.Shapes.MeshBase_map">
-<area href="interfaceTes_1_1Shapes_1_1MeshResource.html" title="Represents a mesh part or object. " alt="Tes.Shapes.MeshResource" shape="rect" coords="177,56,344,80"/>
-<area href="interfaceTes_1_1Resource.html" title="An interface for tracking shared resources. " alt="Tes.Resource" shape="rect" coords="177,0,344,24"/>
-<area href="classTes_1_1Shapes_1_1PointCloud.html" title="A simple implementation of the PointCloud interface. " alt="Tes.Shapes.PointCloud" shape="rect" coords="0,168,167,192"/>
-<area href="classTes_1_1Shapes_1_1SimpleMesh.html" title="A simple MeshResource implementation. " alt="Tes.Shapes.SimpleMesh" shape="rect" coords="177,168,344,192"/>
-<area href="classTesMeshWrapper.html" title="Wraps a Unity mesh exposing it as a TES mesh. " alt="TesMeshWrapper" shape="rect" coords="354,168,521,192"/>
+<area href="interfaceTes_1_1Shapes_1_1MeshResource.html" title="Represents a mesh part or object. " alt="Tes.Shapes.MeshResource" shape="rect" coords="381,56,625,80"/>
+<area href="interfaceTes_1_1Resource.html" title="An interface for tracking shared resources. " alt="Tes.Resource" shape="rect" coords="381,0,625,24"/>
+<area href="classTes_1_1Handlers_1_1MeshResourcePlaceholder.html" title="A placeholder for a mesh resource. " alt="Tes.Handlers.MeshResourcePlaceholder" shape="rect" coords="0,168,244,192"/>
+<area href="classTes_1_1Shapes_1_1PointCloud.html" title="A simple implementation of the PointCloud interface. " alt="Tes.Shapes.PointCloud" shape="rect" coords="254,168,498,192"/>
+<area href="classTes_1_1Shapes_1_1SimpleMesh.html" title="A simple MeshResource implementation. " alt="Tes.Shapes.SimpleMesh" shape="rect" coords="508,168,752,192"/>
+<area href="classTesMeshWrapper.html" title="Wraps a Unity mesh exposing it as a TES mesh. " alt="TesMeshWrapper" shape="rect" coords="762,168,1006,192"/>
 </map>
  </div></div>
 <table class="memberdecls">
@@ -164,6 +166,12 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a0e845ce5cf6ddc1a9201e2d58218ab29"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Shapes_1_1MeshBase.html#a0e845ce5cf6ddc1a9201e2d58218ab29">Transfer</a> (<a class="el" href="classTes_1_1IO_1_1PacketBuffer.html">PacketBuffer</a> packet, int byteLimit, ref <a class="el" href="structTes_1_1TransferProgress.html">TransferProgress</a> progress)</td></tr>
 <tr class="memdesc:a0e845ce5cf6ddc1a9201e2d58218ab29"><td class="mdescLeft">&#160;</td><td class="mdescRight">Handles transfer of mesh content.  <a href="#a0e845ce5cf6ddc1a9201e2d58218ab29">More...</a><br /></td></tr>
 <tr class="separator:a0e845ce5cf6ddc1a9201e2d58218ab29"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
+Static Public Member Functions</h2></td></tr>
+<tr class="memitem:ab4170d4c53e56eac8f2390f6c09bd4bb"><td class="memItemLeft" align="right" valign="top">static ushort&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Shapes_1_1MeshBase.html#ab4170d4c53e56eac8f2390f6c09bd4bb">EstimateTransferCount</a> (int elementSize, int byteLimit, int overhead=0)</td></tr>
+<tr class="memdesc:ab4170d4c53e56eac8f2390f6c09bd4bb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Estimate the number of elements which can be transferred at the given <em>byteLimit</em>   <a href="#ab4170d4c53e56eac8f2390f6c09bd4bb">More...</a><br /></td></tr>
+<tr class="separator:ab4170d4c53e56eac8f2390f6c09bd4bb"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -340,7 +348,7 @@ Properties</h2></td></tr>
 
 <p>Implements <a class="el" href="interfaceTes_1_1Shapes_1_1MeshResource.html#a3287d4e0d3b2328f80d1d08c935c2c52">Tes.Shapes.MeshResource</a>.</p>
 
-<p>Implemented in <a class="el" href="classTes_1_1Shapes_1_1SimpleMesh.html#a9ef0774c517e5e79b495e5345a86c409">Tes.Shapes.SimpleMesh</a>, <a class="el" href="classTes_1_1Shapes_1_1PointCloud.html#a9cf8da7369bd5df9133b2b8d51ebc7a3">Tes.Shapes.PointCloud</a>, and <a class="el" href="classTesMeshWrapper.html#a84535ac98d932a86a8e4a15999816379">TesMeshWrapper</a>.</p>
+<p>Implemented in <a class="el" href="classTes_1_1Shapes_1_1SimpleMesh.html#a9ef0774c517e5e79b495e5345a86c409">Tes.Shapes.SimpleMesh</a>, <a class="el" href="classTes_1_1Shapes_1_1PointCloud.html#a9cf8da7369bd5df9133b2b8d51ebc7a3">Tes.Shapes.PointCloud</a>, <a class="el" href="classTesMeshWrapper.html#a84535ac98d932a86a8e4a15999816379">TesMeshWrapper</a>, and <a class="el" href="classTes_1_1Handlers_1_1MeshResourcePlaceholder.html#a18eda6ffc47123f01e5b94e480811cf4">Tes.Handlers.MeshResourcePlaceholder</a>.</p>
 
 </div>
 </div>
@@ -418,6 +426,59 @@ Properties</h2></td></tr>
 
 </div>
 </div>
+<a id="ab4170d4c53e56eac8f2390f6c09bd4bb"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab4170d4c53e56eac8f2390f6c09bd4bb">&#9670;&nbsp;</a></span>EstimateTransferCount()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">static ushort Tes.Shapes.MeshBase.EstimateTransferCount </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>elementSize</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>byteLimit</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>overhead</em> = <code>0</code>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">static</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Estimate the number of elements which can be transferred at the given <em>byteLimit</em>  </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">elementSize</td><td>The byte size of each element.</td></tr>
+    <tr><td class="paramname">byteLimit</td><td>The maximum number of bytes to transfer. Note: a hard limit of 0xffff is enforced.</td></tr>
+    <tr><td class="paramname">overhead</td><td>Additional byte overhead to a account for. This reduces the effectivel, total byte limit.</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>The maximum number of elements which can be accommodated in the byte limit (conservative).</dd></dl>
+
+</div>
+</div>
 <a id="a8ed3097befc500dc4f59b89342fa4a07"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8ed3097befc500dc4f59b89342fa4a07">&#9670;&nbsp;</a></span>IndexCount()</h2>
 
@@ -453,7 +514,7 @@ Properties</h2></td></tr>
 
 <p>Implements <a class="el" href="interfaceTes_1_1Shapes_1_1MeshResource.html#a1948763682fbdb46a8cc399b3ac23872">Tes.Shapes.MeshResource</a>.</p>
 
-<p>Implemented in <a class="el" href="classTes_1_1Shapes_1_1SimpleMesh.html#a0538806890e76af101a21a119a90461a">Tes.Shapes.SimpleMesh</a>, <a class="el" href="classTes_1_1Shapes_1_1PointCloud.html#a8f48ca006f0cd7e52bccaca5a8918576">Tes.Shapes.PointCloud</a>, and <a class="el" href="classTesMeshWrapper.html#a132f07633ab537ecf6ab9e64e907f2d0">TesMeshWrapper</a>.</p>
+<p>Implemented in <a class="el" href="classTes_1_1Shapes_1_1SimpleMesh.html#a0538806890e76af101a21a119a90461a">Tes.Shapes.SimpleMesh</a>, <a class="el" href="classTes_1_1Shapes_1_1PointCloud.html#a8f48ca006f0cd7e52bccaca5a8918576">Tes.Shapes.PointCloud</a>, <a class="el" href="classTesMeshWrapper.html#a132f07633ab537ecf6ab9e64e907f2d0">TesMeshWrapper</a>, and <a class="el" href="classTes_1_1Handlers_1_1MeshResourcePlaceholder.html#a08703841a9f05acf36f944b4b6f2bcc6">Tes.Handlers.MeshResourcePlaceholder</a>.</p>
 
 </div>
 </div>
@@ -491,7 +552,7 @@ Properties</h2></td></tr>
 
 <p>Implements <a class="el" href="interfaceTes_1_1Shapes_1_1MeshResource.html#a5b33b2246b2cc1f71c42ff627cee808e">Tes.Shapes.MeshResource</a>.</p>
 
-<p>Reimplemented in <a class="el" href="classTes_1_1Shapes_1_1PointCloud.html#a5b617f3c50e9c12ce6c2752a8d7ecdb3">Tes.Shapes.PointCloud</a>.</p>
+<p>Reimplemented in <a class="el" href="classTes_1_1Shapes_1_1PointCloud.html#a5b617f3c50e9c12ce6c2752a8d7ecdb3">Tes.Shapes.PointCloud</a>, and <a class="el" href="classTes_1_1Handlers_1_1MeshResourcePlaceholder.html#a43aa3eaf91cd35b062e75854772281f7">Tes.Handlers.MeshResourcePlaceholder</a>.</p>
 
 </div>
 </div>
@@ -529,7 +590,7 @@ Properties</h2></td></tr>
 
 <p>Implements <a class="el" href="interfaceTes_1_1Shapes_1_1MeshResource.html#a403c3967bd154b799b61b017085ee6e6">Tes.Shapes.MeshResource</a>.</p>
 
-<p>Reimplemented in <a class="el" href="classTes_1_1Shapes_1_1SimpleMesh.html#a87c50217e2044c9f13dde7526e45e29d">Tes.Shapes.SimpleMesh</a>, <a class="el" href="classTes_1_1Shapes_1_1PointCloud.html#ab8b64fed2776798e67adb75a382c6029">Tes.Shapes.PointCloud</a>, and <a class="el" href="classTesMeshWrapper.html#aeecbc31716531ff37c02d990340a1541">TesMeshWrapper</a>.</p>
+<p>Reimplemented in <a class="el" href="classTes_1_1Shapes_1_1SimpleMesh.html#a87c50217e2044c9f13dde7526e45e29d">Tes.Shapes.SimpleMesh</a>, <a class="el" href="classTes_1_1Shapes_1_1PointCloud.html#ab8b64fed2776798e67adb75a382c6029">Tes.Shapes.PointCloud</a>, <a class="el" href="classTesMeshWrapper.html#aeecbc31716531ff37c02d990340a1541">TesMeshWrapper</a>, and <a class="el" href="classTes_1_1Handlers_1_1MeshResourcePlaceholder.html#a1c60558501af325f3682555c254255c9">Tes.Handlers.MeshResourcePlaceholder</a>.</p>
 
 </div>
 </div>
@@ -602,7 +663,7 @@ Properties</h2></td></tr>
 
 <p>Implements <a class="el" href="interfaceTes_1_1Shapes_1_1MeshResource.html#a8afd2d4b3fe3dfa7e614e71840906b75">Tes.Shapes.MeshResource</a>.</p>
 
-<p>Implemented in <a class="el" href="classTes_1_1Shapes_1_1SimpleMesh.html#a8b0df7dce47e4dff68795deb1edc0d82">Tes.Shapes.SimpleMesh</a>, <a class="el" href="classTes_1_1Shapes_1_1PointCloud.html#adcb2a814dd7fc36aee711b2f834dfdc5">Tes.Shapes.PointCloud</a>, and <a class="el" href="classTesMeshWrapper.html#a1ea103a039894f92a7fd721ad2c5c518">TesMeshWrapper</a>.</p>
+<p>Implemented in <a class="el" href="classTes_1_1Shapes_1_1SimpleMesh.html#a8b0df7dce47e4dff68795deb1edc0d82">Tes.Shapes.SimpleMesh</a>, <a class="el" href="classTes_1_1Shapes_1_1PointCloud.html#adcb2a814dd7fc36aee711b2f834dfdc5">Tes.Shapes.PointCloud</a>, <a class="el" href="classTesMeshWrapper.html#a1ea103a039894f92a7fd721ad2c5c518">TesMeshWrapper</a>, and <a class="el" href="classTes_1_1Handlers_1_1MeshResourcePlaceholder.html#a2bef1c2a72dc5fa9c196b7a7accf687b">Tes.Handlers.MeshResourcePlaceholder</a>.</p>
 
 </div>
 </div>
@@ -1027,7 +1088,7 @@ Properties</h2></td></tr>
 
 <p>Implements <a class="el" href="interfaceTes_1_1Shapes_1_1MeshResource.html#a0efacb5a9f2ebf36831a6afc527a3d12">Tes.Shapes.MeshResource</a>.</p>
 
-<p>Implemented in <a class="el" href="classTes_1_1Shapes_1_1SimpleMesh.html#ad303f893cbf677f97a23c3e82d80919f">Tes.Shapes.SimpleMesh</a>, <a class="el" href="classTes_1_1Shapes_1_1PointCloud.html#a32379ba988be09464be16bcf14ae0f47">Tes.Shapes.PointCloud</a>, and <a class="el" href="classTesMeshWrapper.html#ae4d952827f9c8d9bf5af66cd10fd0581">TesMeshWrapper</a>.</p>
+<p>Implemented in <a class="el" href="classTes_1_1Shapes_1_1SimpleMesh.html#ad303f893cbf677f97a23c3e82d80919f">Tes.Shapes.SimpleMesh</a>, <a class="el" href="classTes_1_1Shapes_1_1PointCloud.html#a32379ba988be09464be16bcf14ae0f47">Tes.Shapes.PointCloud</a>, <a class="el" href="classTesMeshWrapper.html#ae4d952827f9c8d9bf5af66cd10fd0581">TesMeshWrapper</a>, and <a class="el" href="classTes_1_1Handlers_1_1MeshResourcePlaceholder.html#a4e4abd344fa8c242f5bd45cea348c072">Tes.Handlers.MeshResourcePlaceholder</a>.</p>
 
 </div>
 </div>
@@ -1066,7 +1127,7 @@ Properties</h2></td></tr>
 
 <p>Implements <a class="el" href="interfaceTes_1_1Shapes_1_1MeshResource.html#a2c0ca61e5e283058ab1b7e134c1722db">Tes.Shapes.MeshResource</a>.</p>
 
-<p>Implemented in <a class="el" href="classTes_1_1Shapes_1_1SimpleMesh.html#ac9df107fc6aa52073c98c549c3d22e1d">Tes.Shapes.SimpleMesh</a>, <a class="el" href="classTes_1_1Shapes_1_1PointCloud.html#a52aac66331dac2512f29807c24ee9488">Tes.Shapes.PointCloud</a>, and <a class="el" href="classTesMeshWrapper.html#a5a68bb9d74e3882973119a278d171ba5">TesMeshWrapper</a>.</p>
+<p>Implemented in <a class="el" href="classTes_1_1Shapes_1_1SimpleMesh.html#ac9df107fc6aa52073c98c549c3d22e1d">Tes.Shapes.SimpleMesh</a>, <a class="el" href="classTes_1_1Shapes_1_1PointCloud.html#a52aac66331dac2512f29807c24ee9488">Tes.Shapes.PointCloud</a>, <a class="el" href="classTesMeshWrapper.html#a5a68bb9d74e3882973119a278d171ba5">TesMeshWrapper</a>, and <a class="el" href="classTes_1_1Handlers_1_1MeshResourcePlaceholder.html#a515f50aeff68f6f2f422392beeb0fe69">Tes.Handlers.MeshResourcePlaceholder</a>.</p>
 
 </div>
 </div>
@@ -1104,7 +1165,7 @@ Properties</h2></td></tr>
 
 <p>Implements <a class="el" href="interfaceTes_1_1Shapes_1_1MeshResource.html#a8265a71b858674705efb532166deddbc">Tes.Shapes.MeshResource</a>.</p>
 
-<p>Implemented in <a class="el" href="classTes_1_1Shapes_1_1SimpleMesh.html#a80514ba708fb8062b0b3f8005c66c1af">Tes.Shapes.SimpleMesh</a>, <a class="el" href="classTes_1_1Shapes_1_1PointCloud.html#aa97fc7d2eacc25d35e7c1176e53b9e6f">Tes.Shapes.PointCloud</a>, and <a class="el" href="classTesMeshWrapper.html#afadfa8a9637c492917fdcccbe560399a">TesMeshWrapper</a>.</p>
+<p>Implemented in <a class="el" href="classTes_1_1Shapes_1_1SimpleMesh.html#a80514ba708fb8062b0b3f8005c66c1af">Tes.Shapes.SimpleMesh</a>, <a class="el" href="classTes_1_1Shapes_1_1PointCloud.html#aa97fc7d2eacc25d35e7c1176e53b9e6f">Tes.Shapes.PointCloud</a>, <a class="el" href="classTesMeshWrapper.html#afadfa8a9637c492917fdcccbe560399a">TesMeshWrapper</a>, and <a class="el" href="classTes_1_1Handlers_1_1MeshResourcePlaceholder.html#a6d31ed70a692d79710b6627cd4109733">Tes.Handlers.MeshResourcePlaceholder</a>.</p>
 
 </div>
 </div>

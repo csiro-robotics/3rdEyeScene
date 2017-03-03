@@ -14,6 +14,7 @@ var classTesComponent =
     [ "VertexColourUnlitTwoSidedMaterial", "classTesComponent.html#a8a4cd7d401868d0dbd80bd3254d41709", null ],
     [ "VoxelsMaterial", "classTesComponent.html#a2d6e063175dbd4d14d1edad1454ac4a3", null ],
     [ "WireframeTriangles", "classTesComponent.html#ad3298e7382ebe618b4cf144bcdf62839", null ],
+    [ "InputStack", "classTesComponent.html#aa4ce2d6076a5fd490e49012f15f52e39", null ],
     [ "LastBrowseLocation", "classTesComponent.html#afb73982153b35addcb8d23ed96a7fd57", null ],
     [ "Plugins", "classTesComponent.html#afa5216064b4cae9d403da31b0b30bdb9", null ]
 ];

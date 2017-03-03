@@ -116,9 +116,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a93ee769c82ceeb7a4f1b258dfd336dd9"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Util_1_1CollatedPacketEncoder.html#a93ee769c82ceeb7a4f1b258dfd336dd9">Add</a> (byte[] bytes, int offset, int length)</td></tr>
 <tr class="memdesc:a93ee769c82ceeb7a4f1b258dfd336dd9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Add bytes from the given buffer.  <a href="#a93ee769c82ceeb7a4f1b258dfd336dd9">More...</a><br /></td></tr>
 <tr class="separator:a93ee769c82ceeb7a4f1b258dfd336dd9"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4ef3a450cdfdcf42245de7450180af63"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Util_1_1CollatedPacketEncoder.html#a4ef3a450cdfdcf42245de7450180af63">Finalise</a> ()</td></tr>
-<tr class="memdesc:a4ef3a450cdfdcf42245de7450180af63"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finalise the collated packet before sending.  <a href="#a4ef3a450cdfdcf42245de7450180af63">More...</a><br /></td></tr>
-<tr class="separator:a4ef3a450cdfdcf42245de7450180af63"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afdfa1a039837ceffb689ba13ff1b0993"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Util_1_1CollatedPacketEncoder.html#afdfa1a039837ceffb689ba13ff1b0993">FinaliseEncoding</a> ()</td></tr>
+<tr class="memdesc:afdfa1a039837ceffb689ba13ff1b0993"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finalise the collated packet before sending.  <a href="#afdfa1a039837ceffb689ba13ff1b0993">More...</a><br /></td></tr>
+<tr class="separator:afdfa1a039837ceffb689ba13ff1b0993"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad04b4b174d6be575b04f2f15ab3e03bf"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Util_1_1CollatedPacketEncoder.html#ad04b4b174d6be575b04f2f15ab3e03bf">Close</a> ()</td></tr>
 <tr class="memdesc:ad04b4b174d6be575b04f2f15ab3e03bf"><td class="mdescLeft">&#160;</td><td class="mdescRight">Ignored.  <a href="#ad04b4b174d6be575b04f2f15ab3e03bf">More...</a><br /></td></tr>
 <tr class="separator:ad04b4b174d6be575b04f2f15ab3e03bf"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -220,7 +220,7 @@ Call <a class="el" href="classTes_1_1Util_1_1CollatedPacketEncoder.html#ac1f9218
 </ul>
 </li>
 <li>
-Call <a class="el" href="classTes_1_1Util_1_1CollatedPacketEncoder.html#a4ef3a450cdfdcf42245de7450180af63" title="Finalise the collated packet before sending. ">Finalise()</a> on the encoder </li>
+Call <a class="el" href="classTes_1_1Util_1_1CollatedPacketEncoder.html#afdfa1a039837ceffb689ba13ff1b0993" title="Finalise the collated packet before sending. ">FinaliseEncoding()</a> on the encoder </li>
 <li>
 Send the encoded packet. </li>
 <li>
@@ -503,8 +503,8 @@ Reset the encoder. </li>
 
 </div>
 </div>
-<a id="a4ef3a450cdfdcf42245de7450180af63"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4ef3a450cdfdcf42245de7450180af63">&#9670;&nbsp;</a></span>Finalise()</h2>
+<a id="afdfa1a039837ceffb689ba13ff1b0993"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afdfa1a039837ceffb689ba13ff1b0993">&#9670;&nbsp;</a></span>FinaliseEncoding()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -513,7 +513,7 @@ Reset the encoder. </li>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">bool Tes.Util.CollatedPacketEncoder.Finalise </td>
+          <td class="memname">bool Tes.Util.CollatedPacketEncoder.FinaliseEncoding </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -528,7 +528,6 @@ Reset the encoder. </li>
 
 <p>Finalise the collated packet before sending. </p>
 <dl class="section return"><dt>Returns</dt><dd>True on successful finalisation, false if already finalised</dd></dl>
-<p>This is poorly named given the .<a class="el" href="namespaceTes_1_1Net.html">Net</a> meaning of "Finalize()" </p>
 
 </div>
 </div>

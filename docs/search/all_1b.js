@@ -1,16 +1,7 @@
 var searchData=
 [
-  ['_7ecollatedpacket',['~CollatedPacket',['../classtes_1_1CollatedPacket.html#a728e284c02177a2ee6029856bd707e5c',1,'tes::CollatedPacket']]],
-  ['_7econnection',['~Connection',['../classtes_1_1Connection.html#aa10373cb876704831a5494fc7d88ad13',1,'tes::Connection']]],
-  ['_7econnectionmonitor',['~ConnectionMonitor',['../classtes_1_1ConnectionMonitor.html#a3aac9d9446d130c6409624dd431e1e98',1,'tes::ConnectionMonitor']]],
-  ['_7emeshresource',['~MeshResource',['../classtes_1_1MeshResource.html#a5d7b801f37806af713082360ed5c83b6',1,'tes::MeshResource']]],
-  ['_7emeshset',['~MeshSet',['../classtes_1_1MeshSet.html#a61267177dce185764de8d753c983e4f1',1,'tes::MeshSet']]],
-  ['_7emeshshape',['~MeshShape',['../classtes_1_1MeshShape.html#ad8b7511985f5582152d67cb88db7d065',1,'tes::MeshShape']]],
-  ['_7epacketbuffer',['~PacketBuffer',['../classtes_1_1PacketBuffer.html#ac67e327af80c474229b27f0ebecb9249',1,'tes::PacketBuffer']]],
-  ['_7epacketwriter',['~PacketWriter',['../classtes_1_1PacketWriter.html#a610b3612c1d888e2ef344bf71b7d9b3f',1,'tes::PacketWriter']]],
-  ['_7eresource',['~Resource',['../classtes_1_1Resource.html#ab8e062e2ec897e0e72bc1c2d9090f0ad',1,'tes::Resource']]],
-  ['_7eserver',['~Server',['../classtes_1_1Server.html#aabafcb7fcaa07828f8ad85ca19b77983',1,'tes::Server']]],
-  ['_7espinlock',['~SpinLock',['../classtes_1_1SpinLock.html#a7f0dac1b666be88237af7a26f988ad44',1,'tes::SpinLock']]],
-  ['_7etcplistensocket',['~TcpListenSocket',['../classtes_1_1TcpListenSocket.html#a90e21903d77a8a2041ca642b80ca8976',1,'tes::TcpListenSocket']]],
-  ['_7etcpsocket',['~TcpSocket',['../classtes_1_1TcpSocket.html#a2ba97aff264d7505d5303046c4f6c56e',1,'tes::TcpSocket']]]
+  ['z',['Z',['../structTes_1_1Maths_1_1Quaternion.html#aef0bcc2979cffcf61a3e25f3d76224e5',1,'Tes.Maths.Quaternion.Z()'],['../structTes_1_1Maths_1_1Vector3.html#a6ae961d5b2e853d6efcd6f825fa5ecd6',1,'Tes.Maths.Vector3.Z()'],['../structTes_1_1Net_1_1CameraMessage.html#aeb2930c79e072a256ca239e734ae116e',1,'Tes.Net.CameraMessage.Z()'],['../structTes_1_1Net_1_1ObjectAttributes.html#a55d59f73a429865a7367266f831d0cb4',1,'Tes.Net.ObjectAttributes.Z()'],['../classTes_1_1Shapes_1_1Shape.html#a2b4f9da834786f2ac1ae48fb6a9124e9',1,'Tes.Shapes.Shape.Z()']]],
+  ['zero',['zero',['../classtes_1_1Matrix3.html#a19718dbe5baa4ad072a8207e9a050656',1,'tes::Matrix3::zero()'],['../classtes_1_1Matrix4.html#a713e25a20019dff43249b347990b3c06',1,'tes::Matrix4::zero()'],['../classtes_1_1Vector3.html#a7759a8320d93aae061798d3da1ddd77e',1,'tes::Vector3::zero()'],['../classtes_1_1Vector4.html#a74148cfd71a776f231b166c8379e1630',1,'tes::Vector4::zero()'],['../structTes_1_1Maths_1_1Matrix3.html#a00959624c1e6be6e9df00835d20bded5',1,'Tes.Maths.Matrix3.Zero()'],['../structTes_1_1Maths_1_1Matrix4.html#a56febd305e3e80ad3bdf318ebe208b5e',1,'Tes.Maths.Matrix4.Zero()'],['../structTes_1_1Maths_1_1Quaternion.html#ab67d1a10c4b2ed2ae6a7ab0556b8adea',1,'Tes.Maths.Quaternion.Zero()'],['../structTes_1_1Maths_1_1Vector2.html#ae980c0d7f2a9a089d71dad2ed9999883',1,'Tes.Maths.Vector2.Zero()'],['../structTes_1_1Maths_1_1Vector3.html#a9f901855dda35ad982291188ab5fb311',1,'Tes.Maths.Vector3.Zero()'],['../namespaceTes_1_1Net.html#ad87bd0bfff480c256a5e0789a0ac6ec2ad7ed4ee1df437474d005188535f74875',1,'Tes.Net.Zero()'],['../namespaceTes_1_1Net.html#a7c29580d0f9920d635ef3bb48578589fad7ed4ee1df437474d005188535f74875',1,'Tes.Net.Zero()']]],
+  ['zxy',['zxy',['../classtes_1_1Vector3.html#a70014e07db3f72c5aadbcf36134acd87',1,'tes::Vector3']]],
+  ['zyx',['zyx',['../classtes_1_1Vector3.html#aa08b0d984638b42c4790c9944f79996c',1,'tes::Vector3']]]
 ];

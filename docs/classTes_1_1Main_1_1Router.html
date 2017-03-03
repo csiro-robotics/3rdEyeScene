@@ -92,7 +92,7 @@ $(document).ready(function(){initNavTree('classTes_1_1Main_1_1Router.html','');}
 </div><!--header-->
 <div class="contents">
 
-<p>The <a class="el" href="namespaceTes.html">Tes</a> <a class="el" href="classTes_1_1Main_1_1Router.html" title="The Tes Router is the main controll process for 3rd Eye Scene. ">Router</a> is the main controll process for 3rd Eye <a class="el" href="classTes_1_1Main_1_1Scene.html" title="Manages the scene root object. ">Scene</a>.  
+<p>The <a class="el" href="namespaceTes.html">Tes</a> <a class="el" href="classTes_1_1Main_1_1Router.html" title="The Tes Router is the main control process for 3rd Eye Scene. ">Router</a> is the main control process for 3rd Eye <a class="el" href="classTes_1_1Main_1_1Scene.html" title="Manages the scene root object. ">Scene</a>.  
  <a href="classTes_1_1Main_1_1Router.html#details">More...</a></p>
 <div class="dynheader">
 Inheritance diagram for Tes.Main.Router:</div>
@@ -159,9 +159,12 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>Reset</b> (bool parti
 <tr class="memitem:a94c3b20780af7bbed473fe10d97ca0a4"><td class="memItemLeft" align="right" valign="top"><a id="a94c3b20780af7bbed473fe10d97ca0a4"></a>
 void&#160;</td><td class="memItemRight" valign="bottom"><b>InitialiseHandlers</b> ()</td></tr>
 <tr class="separator:a94c3b20780af7bbed473fe10d97ca0a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a1069f5324a4276a30aab527834d7a599"><td class="memItemLeft" align="right" valign="top"><a id="a1069f5324a4276a30aab527834d7a599"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>HandleControlMessage</b> (<a class="el" href="classTes_1_1IO_1_1PacketBuffer.html">PacketBuffer</a> packet, BinaryReader reader)</td></tr>
-<tr class="separator:a1069f5324a4276a30aab527834d7a599"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a421f0112004b8bc9908ae3d86ea355b1"><td class="memItemLeft" align="right" valign="top"><a id="a421f0112004b8bc9908ae3d86ea355b1"></a>
+void&#160;</td><td class="memItemRight" valign="bottom"><b>HandleControlMessage</b> (<a class="el" href="classTes_1_1IO_1_1PacketBuffer.html">PacketBuffer</a> packet, BinaryReader reader, bool catchingUp)</td></tr>
+<tr class="separator:a421f0112004b8bc9908ae3d86ea355b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae8c34050201dffa60663c92d714fa5bd"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Main_1_1Router.html#ae8c34050201dffa60663c92d714fa5bd">SerialiseScene</a> (string fileName, bool allowCompression)</td></tr>
+<tr class="memdesc:ae8c34050201dffa60663c92d714fa5bd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Serialise the current scene to <em>fileName</em> .  <a href="#ae8c34050201dffa60663c92d714fa5bd">More...</a><br /></td></tr>
+<tr class="separator:ae8c34050201dffa60663c92d714fa5bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-methods"></a>
 Protected Member Functions</h2></td></tr>
@@ -174,12 +177,15 @@ virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>Start</b> ()<
 <tr class="memitem:a8d1bc3ab1d7d197ec25af9e8848bcdda"><td class="memItemLeft" align="right" valign="top"><a id="a8d1bc3ab1d7d197ec25af9e8848bcdda"></a>
 virtual void&#160;</td><td class="memItemRight" valign="bottom"><b>Update</b> ()</td></tr>
 <tr class="separator:a8d1bc3ab1d7d197ec25af9e8848bcdda"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad04fdb0e6aefef141ab66957416f3b48"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classTes_1_1Main_1_1Router.html#ad04fdb0e6aefef141ab66957416f3b48">OnPropertyChanged</a> (object sender, PropertyChangedEventArgs args)</td></tr>
+<tr class="memdesc:ad04fdb0e6aefef141ab66957416f3b48"><td class="mdescLeft">&#160;</td><td class="mdescRight">Handler for value changes in user settings.  <a href="#ad04fdb0e6aefef141ab66957416f3b48">More...</a><br /></td></tr>
+<tr class="separator:ad04fdb0e6aefef141ab66957416f3b48"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
-<tr class="memitem:a35f119ebd855eea7956fdb2f984b4422"><td class="memItemLeft" align="right" valign="top"><a id="a35f119ebd855eea7956fdb2f984b4422"></a>
-<a class="el" href="classTes_1_1Main_1_1Router_1_1ModeEventEvent.html">ModeEventEvent</a>&#160;</td><td class="memItemRight" valign="bottom"><b>_onMmodeChange</b> = new <a class="el" href="classTes_1_1Main_1_1Router_1_1ModeEventEvent.html">ModeEventEvent</a>()</td></tr>
-<tr class="separator:a35f119ebd855eea7956fdb2f984b4422"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5e3f3cd11d191173df6ddd9d08855ddc"><td class="memItemLeft" align="right" valign="top"><a id="a5e3f3cd11d191173df6ddd9d08855ddc"></a>
+<a class="el" href="classTes_1_1Main_1_1Router_1_1ModeEventEvent.html">ModeEventEvent</a>&#160;</td><td class="memItemRight" valign="bottom"><b>_onModeChange</b> = new <a class="el" href="classTes_1_1Main_1_1Router_1_1ModeEventEvent.html">ModeEventEvent</a>()</td></tr>
+<tr class="separator:a5e3f3cd11d191173df6ddd9d08855ddc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="properties"></a>
 Properties</h2></td></tr>
@@ -224,8 +230,8 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>AverageFrameTime</b>
 <tr class="separator:a73eb42062f5b3c1727eaadac47bba50d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
-<div class="textblock"><p>The <a class="el" href="namespaceTes.html">Tes</a> <a class="el" href="classTes_1_1Main_1_1Router.html" title="The Tes Router is the main controll process for 3rd Eye Scene. ">Router</a> is the main controll process for 3rd Eye <a class="el" href="classTes_1_1Main_1_1Scene.html" title="Manages the scene root object. ">Scene</a>. </p>
-<p>The <a class="el" href="classTes_1_1Main_1_1Router.html" title="The Tes Router is the main controll process for 3rd Eye Scene. ">Router</a> manages the data active streaming thread and routes incoming messages to registered handlers. </p>
+<div class="textblock"><p>The <a class="el" href="namespaceTes.html">Tes</a> <a class="el" href="classTes_1_1Main_1_1Router.html" title="The Tes Router is the main control process for 3rd Eye Scene. ">Router</a> is the main control process for 3rd Eye <a class="el" href="classTes_1_1Main_1_1Scene.html" title="Manages the scene root object. ">Scene</a>. </p>
+<p>The <a class="el" href="classTes_1_1Main_1_1Router.html" title="The Tes Router is the main control process for 3rd Eye Scene. ">Router</a> manages the data active streaming thread and routes incoming messages to registered handlers. </p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="a2437054d0d8151bcaa917aa3fe6cacdd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a2437054d0d8151bcaa917aa3fe6cacdd">&#9670;&nbsp;</a></span>Connect()</h2>
@@ -338,6 +344,51 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>AverageFrameTime</b>
 
 </div>
 </div>
+<a id="ad04fdb0e6aefef141ab66957416f3b48"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad04fdb0e6aefef141ab66957416f3b48">&#9670;&nbsp;</a></span>OnPropertyChanged()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Tes.Main.Router.OnPropertyChanged </td>
+          <td>(</td>
+          <td class="paramtype">object&#160;</td>
+          <td class="paramname"><em>sender</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">PropertyChangedEventArgs&#160;</td>
+          <td class="paramname"><em>args</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Handler for value changes in user settings. </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">sender</td><td>The settings object for which a value is changing. Generally derived from <a class="el" href="classSettings.html" title="Base class for settings which can be displayed as part of the settings panel or another properties ed...">Settings</a>, though not essential.</td></tr>
+    <tr><td class="paramname">args</td><td>Event arguments. Identifies the changed property.</td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a id="aa90fdfe62c057cdc9d21f9ebace472dd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa90fdfe62c057cdc9d21f9ebace472dd">&#9670;&nbsp;</a></span>OpenFile()</h2>
 
@@ -413,6 +464,52 @@ float&#160;</td><td class="memItemRight" valign="bottom"><b>AverageFrameTime</b>
 <li>
 <a class="el" href="namespaceTes_1_1Net.html#aeca457a57ef15608547fa50c1a7b4f52" title="Routing IDs for basic shape handlers. ">Tes.Net.ShapeID</a> </li>
 </ul>
+
+</div>
+</div>
+<a id="ae8c34050201dffa60663c92d714fa5bd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae8c34050201dffa60663c92d714fa5bd">&#9670;&nbsp;</a></span>SerialiseScene()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">bool Tes.Main.Router.SerialiseScene </td>
+          <td>(</td>
+          <td class="paramtype">string&#160;</td>
+          <td class="paramname"><em>fileName</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">bool&#160;</td>
+          <td class="paramname"><em>allowCompression</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Serialise the current scene to <em>fileName</em> . </p>
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">fileName</td><td>The file to serialise to.</td></tr>
+    <tr><td class="paramname">allowCompression</td><td>Allow compressed serialisation?</td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>True on success, false on any exception or failure (logged).</dd></dl>
 
 </div>
 </div>

@@ -17,7 +17,7 @@ var searchData=
   ['skybox',['Skybox',['../classRenderSettings.html#a80b0931cd70d7dbe9393b4283b8fd219a63fbbc4fe17b5b4262ebe7c2921518ed',1,'RenderSettings']]],
   ['snapshop',['Snapshop',['../namespaceTes_1_1Net.html#a6c6f02586fa08a101cf9ce130c06e279a5bec81a92013cc0b8cc7a3c0f0e73ace',1,'Tes::Net']]],
   ['sphere',['Sphere',['../namespaceTes_1_1Net.html#aeca457a57ef15608547fa50c1a7b4f52ab7095f057db3fefa7325ad93a04e14fd',1,'Tes::Net']]],
-  ['standardcycle',['StandardCycle',['../classtes_1_1Colour.html#a830eb40fc9ab781b70987bd6069106c5a6560aaf5136b4326653ea3b84b9a0581',1,'tes::Colour']]],
+  ['standardcycle',['StandardCycle',['../classtes_1_1Colour.html#a830eb40fc9ab781b70987bd6069106c5a6560aaf5136b4326653ea3b84b9a0581',1,'tes::Colour::StandardCycle()'],['../namespaceTes_1_1Maths.html#a48128f1e5603f891fe7187cf394d5067a3c479e6e7faaf2c24763ca93d500ac4e',1,'Tes.Maths.StandardCycle()']]],
   ['star',['Star',['../namespaceTes_1_1Net.html#aeca457a57ef15608547fa50c1a7b4f52a26f93e6e68e28a698377e941cb59f29a',1,'Tes::Net']]],
   ['started',['Started',['../namespaceTes_1_1Main.html#a0051f28fee9431fa2cbfd5be823f684ca8428552d86c0d262a542a528af490afa',1,'Tes::Main']]],
   ['stopped',['Stopped',['../namespaceTes_1_1Main.html#ae34f1583411b26c783ce3e3a1996201aac23e2b09ebe6bf4cb5e2a9abe85c0be2',1,'Tes::Main']]],

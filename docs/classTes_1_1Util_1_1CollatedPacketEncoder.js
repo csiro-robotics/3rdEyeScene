@@ -7,7 +7,7 @@ var classTes_1_1Util_1_1CollatedPacketEncoder =
     [ "Close", "classTes_1_1Util_1_1CollatedPacketEncoder.html#ad04b4b174d6be575b04f2f15ab3e03bf", null ],
     [ "Create", "classTes_1_1Util_1_1CollatedPacketEncoder.html#ad74573735b6b5491e8bb0ee310ba17a1", null ],
     [ "Destroy", "classTes_1_1Util_1_1CollatedPacketEncoder.html#a9b7a5a94ca8906a2a325a0620a1c4b0f", null ],
-    [ "Finalise", "classTes_1_1Util_1_1CollatedPacketEncoder.html#a4ef3a450cdfdcf42245de7450180af63", null ],
+    [ "FinaliseEncoding", "classTes_1_1Util_1_1CollatedPacketEncoder.html#afdfa1a039837ceffb689ba13ff1b0993", null ],
     [ "GetReferenceCount", "classTes_1_1Util_1_1CollatedPacketEncoder.html#a7e8cff2839cf644c079abc251a928400", null ],
     [ "RemoveResource", "classTes_1_1Util_1_1CollatedPacketEncoder.html#a02f6c8a9b53153766571745b37b3e22d", null ],
     [ "Reset", "classTes_1_1Util_1_1CollatedPacketEncoder.html#a1965a6f7e3c745a80737ef65a1bdb6cd", null ],
