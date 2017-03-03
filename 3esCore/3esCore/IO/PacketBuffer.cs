@@ -34,7 +34,7 @@ namespace Tes.IO
     /// </remarks>
     Complete,
     /// <summary>
-    /// Packet error has occured.
+    /// Packet error has occurred.
     /// </summary>
     Error,
     /// <summary>
@@ -186,6 +186,16 @@ namespace Tes.IO
     /// </summary>
     public int Cursor { get { return _cursor; } }
 
+    /// <summary>
+    /// Tracks the number of dropped bytes.
+    /// </summary>
+    /// <remarks>
+    /// This value is adjusted when the header marker cannot be found an identifies how many bytes are
+    /// removed from the packet before finding valid header marker. The value continually accumulates
+    /// but may be cleared by users of the packet buffer.
+    /// </remarks>
+    public int DroppedByteCount { get; set; }
+
     #region Output usage
     /// <summary>
     /// Full reset the packet.
@@ -298,6 +308,11 @@ namespace Tes.IO
       // Calculate the packet CRC.
       // Fix up the payload size.
       _header.PayloadSize = (ushort)(Math.Max(0, _currentByteCount - PacketHeader.Size));
+      if (_header.PayloadSize != _currentByteCount - PacketHeader.Size)
+      {
+        // Payload is too large.
+        return false;
+      }
       byte[] sizeBytes = BitConverter.GetBytes(Endian.ToNetwork(_header.PayloadSize));
       for (int i = 0; i < sizeBytes.Length; ++i)
       {
@@ -578,7 +593,7 @@ namespace Tes.IO
       }
       if (_currentByteCount < totalPacketSize)
       {
-        // Not enough data.
+        // Not enough data to validate yet.
         return null;
       }
 
@@ -614,9 +629,8 @@ namespace Tes.IO
     /// <param name="bytes">The data stream to append.</param>
     /// <param name="available">The number of bytes from <paramref name="bytes"/> to append.
     /// This allows the given buffer to be larger than the available data.</param>
-    /// <returns>False if the buffer is still waiting on data, true if the packet has been
-    /// completed.</returns>
-    public bool Emplace(byte[] bytes, int available)
+    /// <returns>The number of bytes added from <paramref name="bytes"/>.</returns>
+    public int Emplace(byte[] bytes, int available)
     {
       return Emplace(bytes, 0, available);
     }
@@ -632,15 +646,15 @@ namespace Tes.IO
     /// <param name="offset">Byte offset into <paramref name="bytes"/> to start reading from.</param>
     /// <param name="length">The number of bytes from <paramref name="bytes"/> to append.
     /// This allows the given buffer to be larger than the available data.</param>
-    /// <returns>False if the buffer is still waiting on data, true if the packet has been
-    /// completed.</returns>
-    public bool Emplace(byte[] bytes, int offset, int length)
+    /// <returns>The number of bytes added from <paramref name="bytes"/>.</returns>
+    public int Emplace(byte[] bytes, int offset, int length)
     {
       ResetCursor();
       EnsureBufferCapacity(_cursor + _currentByteCount + length);
       Array.Copy(bytes, offset, _internalBuffer, _currentByteCount, length);
       _currentByteCount += length;
-      return CompleteEmplace(length);
+      CompleteEmplace(length);
+      return length;
     }
 
     /// <summary>
@@ -651,14 +665,15 @@ namespace Tes.IO
     /// </remarks>
     /// <param name="stream">The stream to read bytes from.</param>
     /// <param name="available">The number of bytes to read from <paramref name="stream"/>.</param>
-    /// <returns>False if the buffer is still waiting on data, true if the packet has been
-    /// completed.</returns>
-    public bool Emplace(Stream stream, int available)
+    /// <returns>The number of bytes added from <paramref name="stream"/>.</returns>
+    public int Emplace(Stream stream, int available)
     {
       ResetCursor();
       EnsureBufferCapacity(_cursor + _currentByteCount + available);
-      _currentByteCount += stream.Read(_internalBuffer, _currentByteCount, available);
-      return CompleteEmplace(available);
+      int addedBytes = stream.Read(_internalBuffer, _currentByteCount, available);
+      _currentByteCount += addedBytes;
+      CompleteEmplace(available);
+      return addedBytes;
     }
 
     #endregion
@@ -735,7 +750,8 @@ namespace Tes.IO
     /// and <see cref="ValidHeader"/> is set to <code>true</code>. Note how this consumes bytes
     /// before the marker.
     /// 
-    /// Bytes are also consumed when the marker cannot be found.
+    /// Bytes are also consumed when the marker cannot be found, appropriately adjusting
+    /// <see cref="DroppedByteCount"/>.
     /// </remarks>
     private void ValidateHeader()
     {
@@ -771,6 +787,7 @@ namespace Tes.IO
       {
         _cursor += offset;
         _currentByteCount -= offset;
+        DroppedByteCount += offset;
       }
 
       //if (_currentByteCount >= _header.PacketSize)

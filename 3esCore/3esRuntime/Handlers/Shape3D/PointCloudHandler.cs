@@ -59,6 +59,33 @@ namespace Tes.Handlers.Shape3D
       {
         list.Clear();
       }
+      _awaitingFinalisation.Clear();
+    }
+
+    /// <summary>
+    /// Ensures mesh objects are finalised.
+    /// </summary>
+    public override void PreRender()
+    {
+      base.PreRender();
+      // Ensure meshes are finalised.
+      PointsComponent points;
+      for (int i = 0; i < _awaitingFinalisation.Count; ++i)
+      {
+        points = _awaitingFinalisation[i];
+        if (points.MeshDirty)
+        {
+          MeshCache.MeshDetails meshDetails = _meshCache.GetEntry(points.MeshID);
+          if (meshDetails != null && meshDetails.FinalMeshes != null)
+          {
+            // Build the mesh parts.
+            SetMesh(points, meshDetails);
+          }
+          points.MeshDirty = false;
+        }
+      }
+
+      _awaitingFinalisation.Clear();
     }
 
     /// <summary>
@@ -114,82 +141,27 @@ namespace Tes.Handlers.Shape3D
     }
 
     /// <summary>
-    /// Overridden to include point count and attributes.
+    /// Creates a point cloud shape for serialising <paramref name="shapeComponent"/> and its point data.
     /// </summary>
-    /// <param name="packet">Packet to write the message to.</param>
-    /// <param name="shape">Shape object to write.</param>
-    /// <returns>An error on failure.</returns>
-    protected override Error SerialiseObject(PacketBuffer packet, ShapeComponent shape)
+    /// <param name="shapeComponent">The component to create a shape for.</param>
+    /// <returns>A shape instance suitable for configuring to generate serialisation messages.</returns>
+    protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
     {
-      CreateMessage msg = new CreateMessage();
-      msg.ObjectID = shape.ObjectID;
-      msg.Category = shape.Category;
-      msg.Flags = shape.ObjectFlags;
-      EncodeAttributes(ref msg.Attributes, shape.gameObject, shape);
-      msg.Write(packet);
-
-      PointsComponent pointsComp = shape.GetComponent<PointsComponent>();
-      if (pointsComp == null)
+      PointsComponent pointsComp = shapeComponent.GetComponent<PointsComponent>();
+      if (pointsComp != null)
       {
-        return new Error(ErrorCode.SerialisationFailure, shape.ObjectID);
+        ObjectAttributes attr = new ObjectAttributes();
+        EncodeAttributes(ref attr, shapeComponent.gameObject, shapeComponent);
+
+        Shapes.PointCloudShape points = new Shapes.PointCloudShape(new MeshResourcePlaceholder(pointsComp.MeshID),
+                                                                   shapeComponent.ObjectID,
+                                                                   shapeComponent.Category,
+                                                                   (byte)pointsComp.PointSize);
+        points.SetAttributes(attr);
+
+        return points;
       }
-
-      packet.WriteBytes(BitConverter.GetBytes((UInt32)pointsComp.MeshID), true);
-      packet.WriteBytes(BitConverter.GetBytes((UInt32)pointsComp.IndexCount), true);
-      packet.WriteBytes(new byte[] { (byte)pointsComp.PointSize }, true);
-
-      return new Error();
-    }
-
-    /// <summary>
-    /// Overridden to serialise <see cref="DataMessage">data messages</see> containing
-    /// index data (if any).
-    /// </summary>
-    /// <param name="packet"></param>
-    /// <param name="writer"></param>
-    /// <param name="shape"></param>
-    /// <returns></returns>
-    protected override Error PostSerialiseCreateObject(PacketBuffer packet, BinaryWriter writer, ShapeComponent shape)
-    {
-      PointsComponent pointsComp = shape.GetComponent<PointsComponent>();
-      if (pointsComp == null)
-      {
-        return new Error(ErrorCode.SerialisationFailure, shape.ObjectID);
-      }
-
-      if (pointsComp.IndexCount == 0)
-      {
-        // Nothing to do.
-        return new Error();
-      }
-
-      uint offset = 0;
-      int[] indices = pointsComp.Indices;
-      DataMessage msg = new DataMessage();
-      msg.ObjectID = shape.ObjectID;
-      while (offset < pointsComp.IndexCount)
-      {
-        // Very rough max limit.
-        uint sectionSize = Math.Min(pointsComp.IndexCount - offset, 65000u / 4u);
-
-        packet.Reset(RoutingID, DataMessage.MessageID);
-        msg.Write(packet);
-
-        packet.WriteBytes(BitConverter.GetBytes(offset), true);
-        packet.WriteBytes(BitConverter.GetBytes(sectionSize), true);
-
-        for (uint i = 0; i < sectionSize; ++i)
-        {
-          packet.WriteBytes(BitConverter.GetBytes(indices[i + offset]), true);
-        }
-
-        packet.FinalisePacket();
-        packet.ExportTo(writer);
-
-        offset += sectionSize;
-      }
-
-      return new Error();
+      return null;
     }
 
     /// <summary>
@@ -312,7 +284,8 @@ namespace Tes.Handlers.Shape3D
         {
           // Remove from parts.
           parts.Remove(points);
-          //parts.RemoveAll((PointsComponent cmp) => { return cmp == points }));
+          _awaitingFinalisation.RemoveAll((PointsComponent cmp) => { return cmp == points; });
+          //parts.RemoveAll((PointsComponent cmp) => { return cmp == part; }));
         }
       }
       return new Error();
@@ -344,11 +317,11 @@ namespace Tes.Handlers.Shape3D
       // Try resolve the mesh from the cache now.
       if (_meshCache != null)
       {
-        MeshCache.MeshEntry meshEntry = _meshCache.GetEntry(points.MeshID);
-        if (meshEntry != null && meshEntry.FinalMeshes != null)
+        MeshCache.MeshDetails meshDetails = _meshCache.GetEntry(points.MeshID);
+        if (meshDetails != null && meshDetails.Finalised)
         {
-          // Build the mesh parts.
-          SetMesh(points, meshEntry);
+          points.MeshDirty = true;
+          _awaitingFinalisation.Add(points);
         }
       }
     }
@@ -356,15 +329,15 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Mesh resource completion notification.
     /// </summary>
-    /// <param name="meshEntry">The mesh(es) finalisd.</param>
+    /// <param name="meshDetails">The mesh(es) finalised.</param>
     /// <remarks>
-    /// Links objects waiting on <paramref name="meshEntry"/> to use the associated meshes.
+    /// Links objects waiting on <paramref name="meshDetails"/> to use the associated meshes.
     /// </remarks>
-    protected virtual void OnMeshFinalised(MeshCache.MeshEntry meshEntry)
+    protected virtual void OnMeshFinalised(MeshCache.MeshDetails meshDetails)
     {
       // Find any parts waiting on this mesh.
       List<PointsComponent> parts;
-      if (!_registeredParts.TryGetValue(meshEntry.ID, out parts))
+      if (!_registeredParts.TryGetValue(meshDetails.ID, out parts))
       {
         // Nothing waiting.
         return;
@@ -373,22 +346,23 @@ namespace Tes.Handlers.Shape3D
       // Have parts to resolve.
       foreach (PointsComponent part in parts)
       {
-        SetMesh(part, meshEntry);
+        part.MeshDirty = true;
+        _awaitingFinalisation.Add(part);
       }
     }
 
     /// <summary>
     /// Mesh resource removal notification.
     /// </summary>
-    /// <param name="meshEntry">The mesh(es) being removed.</param>
+    /// <param name="meshDetails">The mesh(es) being removed.</param>
     /// <remarks>
     /// Stops referencing the associated mesh objects.
     /// </remarks>
-    protected virtual void OnMeshRemoved(MeshCache.MeshEntry meshEntry)
+    protected virtual void OnMeshRemoved(MeshCache.MeshDetails meshDetails)
     {
       // Find objects using the removed mesh.
       List<PointsComponent> parts;
-      if (!_registeredParts.TryGetValue(meshEntry.ID, out parts))
+      if (!_registeredParts.TryGetValue(meshDetails.ID, out parts))
       {
         // Nothing using this mesh.
         return;
@@ -408,15 +382,15 @@ namespace Tes.Handlers.Shape3D
     }
 
     /// <summary>
-    /// Set the visuals of <pararef name="points"/> to use <paramref name="meshEntry"/>.
+    /// Set the visuals of <pararef name="points"/> to use <paramref name="meshDetails"/>.
     /// </summary>
     /// <param name="points">The points object</param>
-    /// <param name="meshEntry">The mesh details.</param>
+    /// <param name="meshDetails">The mesh details.</param>
     /// <remarks>
-    /// Adds multiple children to <paramref name="points"/> when <paramref name="meshEntry"/>
+    /// Adds multiple children to <paramref name="points"/> when <paramref name="meshDetails"/>
     /// contains multiple mesh objects.
     /// </remarks>
-    protected virtual void SetMesh(PointsComponent points, MeshCache.MeshEntry meshEntry)
+    protected virtual void SetMesh(PointsComponent points, MeshCache.MeshDetails meshDetails)
     {
       ShapeComponent shape = points.GetComponent<ShapeComponent>();
       // Clear all children as a hard reset.
@@ -434,16 +408,25 @@ namespace Tes.Handlers.Shape3D
       {
         // Add children for each mesh sub-sub-part.
         int partNumber = 0;
-        foreach (Mesh mesh in meshEntry.FinalMeshes)
+        foreach (Mesh mesh in meshDetails.FinalMeshes)
         {
           GameObject partMesh = new GameObject(string.Format("cloud{0}", partNumber));
-          partMesh.transform.localPosition = meshEntry.LocalPosition;
-          partMesh.transform.localRotation = meshEntry.LocalRotation;
-          partMesh.transform.localScale = meshEntry.LocalScale;
+          partMesh.transform.localPosition = meshDetails.LocalPosition;
+          partMesh.transform.localRotation = meshDetails.LocalRotation;
+          partMesh.transform.localScale = meshDetails.LocalScale;
           partMesh.AddComponent<MeshFilter>().sharedMesh = mesh;
 
           MeshRenderer renderer = partMesh.AddComponent<MeshRenderer>();
-          renderer.material = mesh.normals.Length > 0 ? _litMaterial : _unlitMaterial;
+          if (meshDetails.Topology == MeshTopology.Points)
+          {
+            // Use mesh material as is.
+            renderer.material = meshDetails.Material;
+          }
+          else
+          {
+            // Rendering a mesh with non-point topology. Set tha points based material.
+            renderer.material = mesh.normals.Length > 0 ? _litMaterial : _unlitMaterial;
+          }
           renderer.material.SetInt("PointSize", points.PointSize);
           renderer.material.color = (shape != null) ? shape.Colour : new Color32(255, 255, 255, 255);
           partMesh.transform.SetParent(points.transform, false);
@@ -453,54 +436,25 @@ namespace Tes.Handlers.Shape3D
       else
       {
         // We are going to need to remap the indexing. For this we'll
-        // copy the required vertices from the MeshEntry and create new
+        // copy the required vertices from the MeshDetails and create new
         // meshes with new indices. We could potentially share vertex data,
         // but this is difficult with the Unity vertex count limit.
-        int[] indices = points.Indices;
-
-        // Break up into parts to respect the Unity indexing limit.
-        int indexOffset = 0;
-        Color32 white = new Color32(255, 255, 255, 255);
-        while (indexOffset < indices.Length)
+        Mesh[] meshes = meshDetails.Builder.GetReindexedMeshes(points.Indices, MeshTopology.Points);
+        for (int i = 0; i < meshes.Length; ++i)
         {
-          int sectionCount = Math.Min(indices.Length - indexOffset, MeshCache.IndexCountLimit);
-
-          // Build a mesh part.
-          Vector3[] verts = new Vector3[sectionCount];
-          int[] inds = new int[sectionCount];
-          Vector3[] normals = new Vector3[sectionCount];
-          Color32[] colours = new Color32[sectionCount];
-
-          for (int i = 0; i < sectionCount; ++i)
-          {
-            // MappedVertex(ref v, ref n, ref c, meshEntry, indices[i + indexOffset]);
-            verts[i] = meshEntry.Vertices[i + indexOffset];
-            normals[i] = (meshEntry.Normals != null) ? meshEntry.Normals[i + indexOffset] : new Vector3(1, 1, 1);
-            colours[i] = (meshEntry.VertexColours != null) ? meshEntry.VertexColours[i + indexOffset] : white;
-            // Direct indexing in the rebuild.
-            inds[i] = i;
-          }
-
           // Create this mesh piece.
-          Material material = _unlitMaterial;
-          Mesh mesh = new Mesh();
-          mesh.subMeshCount = 1;
-          mesh.vertices = verts;
-          mesh.colors32 = colours;
-          if (meshEntry.Normals != null)
+          bool defaultMaterial = meshDetails.Topology == MeshTopology.Points;
+          Material material = (defaultMaterial) ? meshDetails.Material : _unlitMaterial;
+          if (!defaultMaterial && meshDetails.Builder.Normals.Length != 0)
           {
-            mesh.normals = normals;
             material = _litMaterial;
           }
-          mesh.SetIndices(inds, MeshTopology.Points, 0);
 
           GameObject child = new GameObject();
-          child.AddComponent<MeshFilter>().mesh = mesh;
+          child.AddComponent<MeshFilter>().mesh = meshes[i];
           material.SetInt("PointSize", points.PointSize);
           child.AddComponent<MeshRenderer>().material = material;
           child.transform.SetParent(points.transform, false);
-
-          indexOffset += sectionCount;
         }
       }
     }
@@ -513,5 +467,6 @@ namespace Tes.Handlers.Shape3D
     private Material _litMaterial = null;
     private Material _unlitMaterial = null;
     private MeshCache _meshCache = null;
+    private List<PointsComponent> _awaitingFinalisation = new List<PointsComponent>();
   }
 }

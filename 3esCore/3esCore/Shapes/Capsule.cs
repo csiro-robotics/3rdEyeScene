@@ -47,7 +47,6 @@ namespace Tes.Shapes
     /// Create a new capsule.
     /// </summary>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    /// <param name="category">Category to which the shape belongs.</param>
     /// <param name="startPoint">The first point of the primary axis.</param>
     /// <param name="endPoint">The second point of the primary axis.</param>
     /// <param name="radius">The shape radius.</param>

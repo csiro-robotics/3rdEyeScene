@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Tes.IO;
 using Tes.Net;
@@ -24,6 +25,10 @@ namespace Tes.Handlers.Shape3D
       /// Mesh vertices.
       /// </summary>
       public Vector3[] Vertices;
+      /// <summary>
+      /// Mesh normals.
+      /// </summary>
+      public Vector3[] Normals;
       /// <summary>
       /// Mesh indices. Sequential indices into <see cref="Vertices"/> when no explicit
       /// Indices are provided.
@@ -84,7 +89,7 @@ namespace Tes.Handlers.Shape3D
     {
       base.Initialise(root, serverRoot, materials);
     }
-	
+
     /// <summary>
     /// Overridden to release mesh resources.
     /// </summary>
@@ -101,7 +106,26 @@ namespace Tes.Handlers.Shape3D
         ResetObject(obj);
       }
 
+      _awaitingFinalisation.Clear();
       base.Reset();
+    }
+
+    /// <summary>
+    /// Finalises Unity mesh objects.
+    /// </summary>
+    public override void PreRender()
+    {
+      base.PreRender();
+      MeshDataComponent meshData;
+      ShapeComponent shape;
+      Material mat;
+      for (int i = 0; i < _awaitingFinalisation.Count; ++i)
+      {
+        meshData = _awaitingFinalisation[i];
+        shape = meshData.GetComponent<ShapeComponent>();
+        mat = SelectMaterial(shape, meshData);
+        FinaliseMesh(meshData.gameObject, shape, meshData, mat, shape.Colour);
+      }
     }
 
     /// <summary>
@@ -120,7 +144,7 @@ namespace Tes.Handlers.Shape3D
       }
       base.BeginFrame(frameNumber, maintainTransient);
     }
-    
+
     /// <summary>
     /// Overridden to add <see cref="MeshDataComponent"/>.
     /// </summary>
@@ -133,115 +157,36 @@ namespace Tes.Handlers.Shape3D
     }
 
     /// <summary>
-    /// Serialise a single object to the <paramref name="packet"/>
+    /// Creates a mesh shape for serialising <paramref name="shapeComponent"/> and its associated mesh data.
     /// </summary>
-    /// <param name="packet">Packet to write the message to.</param>
-    /// <param name="shape">Shape object to write.</param>
-    /// <returns>An error on failure.</returns>
-    protected override Error SerialiseObject(PacketBuffer packet, ShapeComponent shape)
+    /// <param name="shapeComponent">The component to create a shape for.</param>
+    /// <returns>A shape instance suitable for configuring to generate serialisation messages.</returns>
+    protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
     {
-      CreateMessage msg = new CreateMessage();
-      msg.ObjectID = shape.ObjectID;
-      msg.Category = shape.Category;
-      msg.Flags = shape.ObjectFlags;
-      EncodeAttributes(ref msg.Attributes, shape.gameObject, shape);
-      msg.Write(packet);
-      // Add vertex count.
-      MeshDataComponent meshData = shape.GetComponent<MeshDataComponent>();
-      uint count = (uint)meshData.Vertices.Length;
-      packet.WriteBytes(BitConverter.GetBytes(count), true);
-      count = (uint)meshData.Indices.Length;
-      packet.WriteBytes(BitConverter.GetBytes(count), true);
-      byte drawType = (byte)meshData.DrawType;
-      packet.WriteBytes(new byte[] { drawType }, false);
-      return new Error();
-    }
-
-    /// <summary>
-    /// Overridden to include vertex data extracted from the mesh.
-    /// </summary>
-    /// <param name="packet">Packet to write the message to.</param>
-    /// <param name="writer">Write to export completed packets to.</param>
-    /// <param name="shape">Shape object to write.</param>
-    /// <returns>An error on failure.</returns>
-    protected override Error PostSerialiseCreateObject(PacketBuffer packet, BinaryWriter writer, ShapeComponent shape)
-    {
-      DataMessage msg = new DataMessage();
-      msg.ObjectID = shape.ObjectID;
-
-      // Get the mesh to extract triangle data from.
-      MeshDataComponent meshData = shape.GetComponent<MeshDataComponent>();
-
-      if (meshData == null)
+      MeshDataComponent meshData = shapeComponent.GetComponent<MeshDataComponent>();
+      if (meshData != null)
       {
-        // Nothing to write.
-        packet.WriteBytes(BitConverter.GetBytes((uint)0), true);
-        packet.WriteBytes(BitConverter.GetBytes((uint)0), true);
-        packet.WriteBytes(new byte[] { 0 }, false);
-        packet.FinalisePacket();
-        packet.ExportTo(writer);
-        return new Error();
-      }
+        ObjectAttributes attr = new ObjectAttributes();
+        EncodeAttributes(ref attr, shapeComponent.gameObject, shapeComponent);
 
-      uint indexOffset = 0;
-      uint totalItems = (uint)meshData.Vertices.Length;
-      ushort sendCode = 0;  // 0 for vertices, 1 for indices.
-      while (indexOffset < totalItems)
-      {
-        // Very rough maximum limit.
-        const uint maxPacketVertices = ((0xff00u - 256u) / 12);
-        Vector3 v;
-        uint itemCount = (uint)(meshData.Vertices.Length - indexOffset);
-        itemCount = (itemCount <= maxPacketVertices) ? itemCount : maxPacketVertices;
-
-        packet.Reset(RoutingID, DataMessage.MessageID);
-        msg.Write(packet);
-        packet.WriteBytes(BitConverter.GetBytes(sendCode), true);
-        packet.WriteBytes(BitConverter.GetBytes(indexOffset), true);
-        packet.WriteBytes(BitConverter.GetBytes(itemCount), true);
-
-        for (int i = 0; i < itemCount; ++i)
+        Shapes.MeshShape mesh = new Shapes.MeshShape(meshData.DrawType,
+                                                     Maths.Vector3Ext.FromUnity(meshData.Vertices),
+                                                     meshData.Indices,
+                                                     shapeComponent.ObjectID,
+                                                     shapeComponent.Category,
+                                                     Maths.Vector3.Zero,
+                                                     Maths.Quaternion.Identity,
+                                                     Maths.Vector3.One);
+        mesh.SetAttributes(attr);
+        mesh.CalculateNormals = meshData.CalculateNormals;
+        if (!meshData.CalculateNormals && meshData.Normals != null && meshData.Normals.Length > 0)
         {
-          v = meshData.Vertices[i + indexOffset];
-          packet.WriteBytes(BitConverter.GetBytes(v.x), true);
-          packet.WriteBytes(BitConverter.GetBytes(v.y), true);
-          packet.WriteBytes(BitConverter.GetBytes(v.z), true);
+          mesh.Normals = Maths.Vector3Ext.FromUnity(meshData.Normals);
         }
-        packet.FinalisePacket();
-        packet.ExportTo(writer);
-        indexOffset += itemCount;
+
+        return mesh;
       }
-
-      int[] indices = meshData.Indices;
-      if (indices != null)
-      {
-        indexOffset = 0;
-        totalItems = (uint)indices.Length;
-        sendCode = 1;  // 0 for vertices, 1 for indices.
-        while (indexOffset < totalItems)
-        {
-          // Very rough maximum limit.
-          const uint maxPacketIndices = ((0xff00u - 256u) / 4);
-          uint itemCount = (uint)(indices.Length - indexOffset);
-          itemCount = (itemCount <= maxPacketIndices) ? itemCount : maxPacketIndices;
-
-          packet.Reset(RoutingID, DataMessage.MessageID);
-          msg.Write(packet);
-          packet.WriteBytes(BitConverter.GetBytes(sendCode), true);
-          packet.WriteBytes(BitConverter.GetBytes(indexOffset), true);
-          packet.WriteBytes(BitConverter.GetBytes(itemCount), true);
-
-          for (int i = 0; i < itemCount; ++i)
-          {
-            packet.WriteBytes(BitConverter.GetBytes(indices[i + indexOffset]), true);
-          }
-          packet.FinalisePacket();
-          packet.ExportTo(writer);
-          indexOffset += itemCount;
-        }
-      }
-
-      return new Error();
+      return null;
     }
 
     /// <summary>
@@ -261,6 +206,7 @@ namespace Tes.Handlers.Shape3D
 
       meshData.Vertices = new Vector3[vertexCount];
       meshData.Indices = new int[indexCount];
+      meshData.Normals = null;
       meshData.DrawType = (MeshDrawType)reader.ReadByte();
       meshData.CalculateNormals = meshData.DrawType == MeshDrawType.Triangles &&
                                   (msg.Flags & (ushort)MeshShapeFlag.CalculateNormals) != 0;
@@ -310,10 +256,45 @@ namespace Tes.Handlers.Shape3D
       // - In order.
       // - Under the overall Unity mesh indexing limit.
       MeshDataComponent meshData = obj.GetComponent<MeshDataComponent>();
-      ShapeComponent shape = obj.GetComponent<ShapeComponent>();
-      Material mat = SelectMaterial(shape, meshData);
 
-      if (receiveType == 0) // Vertices incoming
+      if (receiveType == (ushort)Shapes.MeshShape.SendDataType.Normals ||
+          receiveType == (ushort)Shapes.MeshShape.SendDataType.UniformNormal)  // Normals incoming
+      {
+        Vector3[] normals = meshData.Normals;
+
+        if (normals == null || normals.Length < meshData.Vertices.Length)
+        {
+          normals = meshData.Normals = new Vector3[meshData.Vertices.Length];
+        }
+
+        // Read new normals.
+        Vector3 n = Vector3.zero;
+        if (receiveType == (ushort)Shapes.MeshShape.SendDataType.Normals)
+        {
+          for (int i = 0; i < itemCount; ++i)
+          {
+            n.x = reader.ReadSingle();
+            n.y = reader.ReadSingle();
+            n.z = reader.ReadSingle();
+            normals[offset + i] = n;
+          }
+        }
+        else
+        {
+          // Single, shared normals. Expand into the array.
+          n.x = reader.ReadSingle();
+          n.y = reader.ReadSingle();
+          n.z = reader.ReadSingle();
+
+          for (int i = 0; i < normals.Length; ++i)
+          {
+            normals[i] = n;
+          }
+        }
+
+        // Can't finalise on normals.
+      }
+      else if (receiveType == (ushort)Shapes.MeshShape.SendDataType.Vertices) // Vertices incoming
       {
         Vector3[] vertices = meshData.Vertices;
 
@@ -330,10 +311,10 @@ namespace Tes.Handlers.Shape3D
         if (offset + itemCount == vertices.Length && meshData.Indices.Length == 0)
         {
           // Last vertices and expecting no indices.
-          FinaliseMesh(obj, shape, meshData, mat, shape.Colour);
+          _awaitingFinalisation.Add(meshData);
         }
       }
-      else if (receiveType == 1)  // Indices incoming
+      else if (receiveType == (ushort)Shapes.MeshShape.SendDataType.Indices)  // Indices incoming
       {
         // Receiving indices.
         int[] indices = meshData.Indices;
@@ -347,7 +328,7 @@ namespace Tes.Handlers.Shape3D
         if (offset + itemCount == indices.Length)
         {
           // Last indices.
-          FinaliseMesh(obj, shape, meshData, mat, shape.Colour);
+          _awaitingFinalisation.Add(meshData);
         }
       }
       else
@@ -391,6 +372,9 @@ namespace Tes.Handlers.Shape3D
       case MeshDrawType.Points:
         mat = Materials[MaterialLibrary.PointsUnlit];
         break;
+      case MeshDrawType.Voxels:
+        mat = Materials[MaterialLibrary.Voxels];
+        break;
       default:
       case MeshDrawType.Lines:
         mat = Materials[MaterialLibrary.VertexColourLit];
@@ -413,7 +397,7 @@ namespace Tes.Handlers.Shape3D
           }
         }
         else if (meshData.CalculateNormals)
-        { 
+        {
           mat = Materials[MaterialLibrary.VertexColourLit];
         }
         else
@@ -446,6 +430,8 @@ namespace Tes.Handlers.Shape3D
       {
         GameObject.Destroy(obj.transform.GetChild(i).gameObject);
       }
+
+      _awaitingFinalisation.RemoveAll((MeshDataComponent cmp) => { return cmp == meshData; });
     }
 
     /// <summary>
@@ -460,6 +446,8 @@ namespace Tes.Handlers.Shape3D
     {
       MeshFilter meshFilter = obj.GetComponent<MeshFilter>();
       MeshTopology topology = MeshCache.DrawTypeToTopology(meshData.DrawType);
+      bool haveNormals = (meshData.Normals != null && meshData.Vertices != null &&
+                          meshData.Normals.Length == meshData.Vertices.Length);
       if (meshData.Vertices.Length < 65000)
       {
         if (meshFilter == null)
@@ -471,6 +459,14 @@ namespace Tes.Handlers.Shape3D
         obj.GetComponent<MeshFilter>().mesh = mesh;
         mesh.subMeshCount = 1;
         mesh.vertices = meshData.Vertices;
+        if (haveNormals)
+        {
+          mesh.normals = meshData.Normals;
+        }
+        else
+        {
+          mesh.normals = null;
+        }
 
         if (meshData.Indices.Length > 0)
         {
@@ -496,9 +492,9 @@ namespace Tes.Handlers.Shape3D
         }
 
         mesh.RecalculateBounds();
-        if (meshData.CalculateNormals)
-        { 
-          mesh.RecalculateNormals();
+        if (meshData.CalculateNormals && !haveNormals)
+        {
+          //mesh.RecalculateNormals();
         }
       }
       else
@@ -546,26 +542,37 @@ namespace Tes.Handlers.Shape3D
           elementCount = Math.Min(itemsPerMesh, indices.Length - indexOffset);
 
           Vector3[] partVerts = new Vector3[elementCount];
+          Vector3[] partNorms = (haveNormals) ? new Vector3[elementCount] : null;
           int[] partInds = new int[elementCount];
 
           for (int i = 0; i < elementCount; ++i)
           {
             partVerts[i] = meshData.Vertices[indices[i + indexOffset]];
+            if (partNorms != null)
+            {
+              partNorms[i] = meshData.Normals[indices[i + indexOffset]];
+            }
             partInds[i] = i;
           }
 
           part.transform.SetParent(obj.transform, false);
           partMesh.vertices = partVerts;
+          if (partNorms != null)
+          {
+            partMesh.normals = partNorms;
+          }
           partMesh.SetIndices(partInds, topology, 0);
           partMesh.RecalculateBounds();
-          if (meshData.CalculateNormals)
+          if (meshData.CalculateNormals && !haveNormals)
           {
-            partMesh.RecalculateNormals();
+            //partMesh.RecalculateNormals();
           }
 
           indexOffset += elementCount;
         }
       }
     }
+
+    private List<MeshDataComponent> _awaitingFinalisation = new List<MeshDataComponent>();
   }
 }

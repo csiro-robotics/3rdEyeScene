@@ -65,7 +65,6 @@ namespace Tes.Net
     /// <returns>True on success.</returns>
     public bool Write(PacketBuffer packet)
     {
-      packet.WriteBytes(BitConverter.GetBytes(MessageID), true);
       packet.WriteBytes(BitConverter.GetBytes(CategoryID), true);
       packet.WriteBytes(BitConverter.GetBytes(ParentID), true);
       ushort active = (ushort)(DefaultActive ? 1 : 0);

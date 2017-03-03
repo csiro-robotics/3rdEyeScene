@@ -27,4 +27,198 @@ Use Cases
 - QA testing
   - Record test sessions and attach 3es files to bug reports.
 
+Integrating 3rd Eye Scene Server Code
+-------------------------------------
+The 3rd Eye Scene core includes code for both a C++ and a C# based server. This section focuses on integrating the C++ code to debug an application. The example presented here is the 3rd-occupancy example included in the TES source code release.
+
+Before sending TES messages, a `tes::Server` object must be declared and initialised as shown below.
+
+```
+tes::Server *g_tesServer = nullptr;  // Global declaration.
+
+void initialiseTes()
+{
+  // Configure settings: compression and collation on (required by compression)
+  tes::ServerSettings settings(tes::SF_Compress | tes::SF_Collate);
+  // Setup server info to the client.
+  tes::ServerInfoMessage serverInfo;
+  tes::initDefaultServerInfo(&info);
+  // Coordinate axes listed as left/right, forward, up
+  info.coordinateFrame = tes::XYZ;
+
+  // Create teh server.
+  g_tesServer = tes::Server::create(settings, serverinfo);
+  // Setup asynchronous connection monitoring.
+  // Connections must be commited synchronously.
+  g_tesServer->start(tes::ConnectionMonitor::Asynchronous);
+
+  // Optional: wait 1000ms for the first connection before continuing.
+  if (g_tesServer->connectionMonitor()->waitForConnections(1000) > 0)
+  {
+    g_tesServer->connectionMonitor()->commitConnections();
+  }
+}
+```
+
+Several key server methods must be called periodically to manage the connection. These calls are listed and explained below.
+
+```
+void endFrame(float dt = 0.0f)
+{
+  // Mark the end of frame. Flushed collated packets.
+  g_tesServer->updateFrame(dt);
+  // In synchronous mode, listen for incomming connections.
+  if (g_tesServer->connectionMonitor()->mode() == tes::ConnectionMonitor::Synchronous)
+  {
+    g_tesServer->connectionMonitor()->monitorConnections();
+  }
+  // Activate any newly accepted connections and expire old ones.
+  g_tesServer->connectionMonitor()->commitConnections();
+  // Update any bulk resource data transfer.
+  g_tesServer->updateTransfers(0);
+}
+```
+
+Once the server has been created and initialised it becomes possible to invoke object creation and update commands. The code below shows the creation and animation of a box shape as well as the creation of some transient objects.
+
+```
+void animateBox(tes::Server &server)
+{
+  // Declare a box.
+  tes::Box box(
+    1,  // ID
+    tes::Vector3f(0, 0, 0), // Position
+    tes::Vector3f(0.2f, 0.1f, 0.5f)); // Dimensions
+
+  box.setColour(tes::Colour(0, 0, 255));
+
+  // Create the box on the client.
+  server.create(box);
+
+  const steps = 90;
+  for (int i = 0; i <= steps; ++i)
+  {
+    // Update the box.
+    box.setPosZ(std::sin(tes::deg2Rad(i / float(steps) * float(M_PI)));
+    server.update(box);
+    server.updateFrame(1.0f / float(steps));
+    server.updateTransfers();
+  }
+
+  // Destroy the box.
+  server.destroy(box);
+  server.updateFrame(0.0f);
+  server.updateTransfers();
+}
+```
+
+Using Categories
+----------------
+Categories may be used to logically group objects in the viewer client. Objects from specific categories can be hidden and shown as a group. Categrories are form a hierarchy, with each category having an optional parent. The code below shows an example category initialisation.
+
+```
+void defineCategory(tes::Server &server, const char *name, uint16_t category, uint16_t parent, bool defaultActive)
+{
+  tes::CategoryNameMessage msg;
+  msg.categoryId = category;
+  msg.parentId = parent;
+  const size_t nameLen = (name) ? strlen(name) : 0;
+  msg.name = name;
+  tes::sendMessage(server, tes::MtCategory, tes::CategoryNameMessage::MessageId, msg);
+}
+
+void initCategories()
+{
+  // CAT_Xxx are members of an enum. This builds the following tree:
+  // - Map
+  // - Populate
+  //   - Rays
+  //   - Free
+  //   - Occupied
+  // - Info
+  defineCategory(*g_tesServer, "Map", CAT_Map, 0, true);
+  defineCategory(*g_tesServer, "Populate", CAT_Populate, 0, true);
+  defineCategory(*g_tesServer, "Rays", CAT_Rays, CAT_Populate, true);
+  defineCategory(*g_tesServer, "Free", CAT_FreeCells, CAT_Populate, false);
+  defineCategory(*g_tesServer, "Occupied", CAT_OccupiedCells, CAT_Populate, true);
+  defineCategory(*g_tesServer, "Info", CAT_Info, 0, true);
+}
+```
+
+Using the Macro Interface
+-------------------------
+It is also possible to use preprocessor macros to invoke must 3rd Eye Scene API calls. This is to support removing all debugging code via the preprocessor thereby eliminating all associated overhead. The examples above can be rewritten using the macro interface as shown below. The `animateBox2()` function is equivalent to the `animateBox()` function, but uses transient objects instead of updating a single object.
+
+```
+// Declare global server pointer.
+TES_SERVER_DECL(g_tesServer);
+
+void initialiseTes()
+{
+  // Initialise TES
+  TES_SETTINGS(settings, tes::SF_Compress | tes::SF_Collate);
+  // Initialise server info.
+  TES_SERVER_INFO(info, tes::XYZ);
+  // Create the server. Use tesServer declared globally above.
+  TES_SERVER_CREATE(g_tesServer, settings, &info);
+
+  // Start the server and wait for the connection monitor to start.
+  TES_SERVER_START(*g_tesServer, tes::ConnectionMonitor::Asynchronous);
+  TES_SERVER_START_WAIT(*g_tesServer, 1000);
+}
+
+void initCategories()
+{
+  // CAT_Xxx are members of an enum. This builds the following tree:
+  // - Map
+  // - Populate
+  //   - Rays
+  //   - Free
+  //   - Occupied
+  // - Info
+  TES_CATEGORY(*g_tesServer, "Map", CAT_Map, 0, true);
+  TES_CATEGORY(*g_tesServer, "Populate", CAT_Populate, 0, true);
+  TES_CATEGORY(*g_tesServer, "Rays", CAT_Rays, CAT_Populate, true);
+  TES_CATEGORY(*g_tesServer, "Free", CAT_FreeCells, CAT_Populate, false);
+  TES_CATEGORY(*g_tesServer, "Occupied", CAT_OccupiedCells, CAT_Populate, true);
+  TES_CATEGORY(*g_tesServer, "Info", CAT_Info, 0, true);
+}
+
+void animateBox(tes::Server &server)
+{
+  // Create a box on the client.
+  TES_BOX(server, TES_COLOUR(Blue),
+          1,  // ID
+          tes::Vector3(0.0f), // Position
+          tes::Vector3f(0.2f, 0.1f, 0.5f)); // Dimensions
+
+  for (int i = 0; i <= steps; ++i)
+  {
+    // Update the box.
+    TES_POS_UPDATE(server, Box, 1, tes::Vector3f(0, 0, std::sin(tes::deg2Rad(i / float(steps) * float(M_PI))));
+    TES_SERVER_UPDATE(1.0f / float(steps));
+  }
+
+  // Destroy the box.
+  TES_BOX_END(server, 1);
+  TES_SERVER_UPDATE(0.0f);
+}
+
+void animateBox2(tes::Server &server)
+{
+  for (int i = 0; i <= steps; ++i)
+  {
+    // Create a transient box on each iteration.
+    TES_BOX(server, TES_COLOUR(Blue),
+            0,  // Transient ID
+            tes::Vector3(0.0f, 0.0f,
+                std::sin(tes::deg2Rad(i / float(steps) * float(M_PI)))), // Position
+            tes::Vector3f(0.2f, 0.1f, 0.5f)); // Dimensions
+    TES_SERVER_UPDATE(1.0f / float(steps));
+  }
+
+  TES_SERVER_UPDATE(0.0f);
+}
+```
+
 Additional documentation can be found at [https://data61.github.io/3rdEyeScene/](https://data61.github.io/3rdEyeScene/)

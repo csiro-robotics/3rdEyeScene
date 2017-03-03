@@ -42,6 +42,21 @@ namespace Tes.Maths
     }
 
     /// <summary>
+    /// Convert an array of TES colours to unity colours.
+    /// </summary>
+    /// <param name="colours">The array of colours to convert.</param>
+    /// <returns>The converted array.</returns>
+    public static UnityEngine.Color32[] FromUnity(Colour[] colours)
+    {
+      UnityEngine.Color32[] converted = new UnityEngine.Color32[colours.Length];
+      for (int i = 0; i < colours.Length; ++i)
+      {
+        converted[i] = ToUnity(colours[i]);
+      }
+      return converted;
+    }
+
+    /// <summary>
     /// Set from a Unity colour.
     /// </summary>
     /// <returns>The TES equivalent colour.</returns>
@@ -49,6 +64,44 @@ namespace Tes.Maths
     public static Colour FromUnity(UnityEngine.Color uc)
     {
       return new Colour((byte)(uc.r * 255.0f), (byte)(uc.g * 255.0f), (byte)(uc.b * 255.0f), (byte)(uc.a * 255.0f));
+    }
+
+    /// <summary>
+    /// Convert an array of unity colours to TES colours.
+    /// </summary>
+    /// <param name="ucolours">The array of colours to convert.</param>
+    /// <returns>The converted array.</returns>
+    public static Colour[] FromUnity(UnityEngine.Color32[] ucolours)
+    {
+      if (ucolours != null)
+      {
+        Colour[] converted = new Colour[ucolours.Length];
+        for (int i = 0; i < ucolours.Length; ++i)
+        {
+          converted[i] = FromUnity(ucolours[i]);
+        }
+        return converted;
+      }
+      return null;
+    }
+
+    /// <summary>
+    /// Convert an array of unity colours to TES uint representation.
+    /// </summary>
+    /// <param name="ucolours">The array of colours to convert.</param>
+    /// <returns>The converted array.</returns>
+    public static uint[] FromUnityUInts(UnityEngine.Color32[] ucolours)
+    {
+      if (ucolours != null)
+      {
+        uint[] converted = new uint[ucolours.Length];
+        for (int i = 0; i < ucolours.Length; ++i)
+        {
+          converted[i] = FromUnity(ucolours[i]).Value;
+        }
+        return converted;
+      }
+      return null;
     }
   }
 }

@@ -73,8 +73,9 @@ namespace Tes.Shapes
     {
       Position = origin;
       Direction = dir;
+      // Must set length as setting the angle derives the radius.
+      ScaleZ = length;
       Angle = angle;
-      Length = length;
     }
 
     /// <summary>
@@ -90,9 +91,9 @@ namespace Tes.Shapes
     {
       Vector3 axis = basePoint - origin;
       Position = origin;
-      Length = axis.Magnitude;
+      ScaleZ = axis.Magnitude;
+      ScaleX = ScaleY = radius;
       Direction = (Length > 1e-6f) ? axis / Length : DefaultDirection;
-      Angle = (Length > 1e-6f) ? (float)Math.Atan(radius / Length) : 0;
     }
 
     /// <summary>
@@ -102,11 +103,18 @@ namespace Tes.Shapes
     {
       get
       {
-        return ScaleX;
+        // ScaleX/Y encode the radius of the cone base.
+        // Convert to angle angle as:
+        //   tan(theta) = radius / length
+        //   theta = atan(radius / length)
+        return (ScaleZ != 0.0f) ? (float)Math.Atan(ScaleX / ScaleZ) : 0.0f;
       }
       set
       {
-        ScaleX = ScaleY = value;
+        // ScaleX/Y encode the radius of the cone base.
+        // Convert the given angle as:
+        //   radius = length * tan(theta)
+        ScaleX = ScaleY = ScaleZ * (float)Math.Tan(value);
       }
     }
 
@@ -116,7 +124,13 @@ namespace Tes.Shapes
     public float Length
     {
       get { return ScaleZ; }
-      set { ScaleZ = value; }
+      set
+      {
+        // Changing the length requires maintaining the angle, so we must adjust the radius to suit.
+        float angle = Angle;
+        ScaleZ = value;
+        Angle = angle;
+      }
     }
 
     /// <summary>

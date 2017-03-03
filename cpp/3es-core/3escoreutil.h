@@ -69,6 +69,49 @@ namespace tes
 
   template Colour _3es_coreAPI toColour(const Vector4<float> &v);
   template Colour _3es_coreAPI toColour(const Vector4<double> &v);
+
+
+  /// Calculate the next power of 2 equal to or greater than @p v.
+  /// @param The base, integer value.
+  template <typename T>
+  inline T ceilPowerOf2(T v)
+  {
+    size_t next;
+    bool isPow2;
+    isPow2 = v && !(v & (v - 1));
+    next = T(1) << (T(1) + T(std::floor(std::log2(float(v)))));
+    return isPow2 ? v : next;
+  }
+
+
+  /// @overload
+  template <>
+  inline unsigned ceilPowerOf2(unsigned v)
+  {
+    v--;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v++;
+    return v;
+  }
+
+
+  /// @overload
+  template <>
+  inline int ceilPowerOf2(int v)
+  {
+    v--;
+    v |= v >> 1;
+    v |= v >> 2;
+    v |= v >> 4;
+    v |= v >> 8;
+    v |= v >> 16;
+    v++;
+    return v;
+  }
 }
 
 #endif // _3ESCOREUTIL_H_

@@ -31,7 +31,9 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// The <see cref="MeshCache"/> resource ID from which to attain vertex data.
     /// </summary>
-    public uint MeshID { get; set; }
+    public uint MeshID { get { return _meshID; } set { _meshID = value; } }
+    [SerializeField]
+    private uint _meshID;
     /// <summary>
     /// Number of indices used as a window into the mesh.
     /// </summary>
@@ -61,7 +63,15 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Point render size override. Zero to use the default.
     /// </summary>
-    public int PointSize { get; set; }
+    public int PointSize { get { return _pointSize; } set { _pointSize = value; } }
+
+    /// <summary>
+    /// True if the mesh is dirty and needs updating.
+    /// </summary>
+    public bool MeshDirty { get; set; }
+
+    [SerializeField]
+    private int _pointSize;
 
     private int[] _indices = null;
   }

@@ -16,5 +16,7 @@ var namespaceDialogs =
     [ "MessageBox", "classDialogs_1_1MessageBox.html", "classDialogs_1_1MessageBox" ],
     [ "MessageBoxUI", "classDialogs_1_1MessageBoxUI.html", "classDialogs_1_1MessageBoxUI" ],
     [ "OpenFileDialog", "classDialogs_1_1OpenFileDialog.html", "classDialogs_1_1OpenFileDialog" ],
-    [ "SaveFileDialog", "classDialogs_1_1SaveFileDialog.html", "classDialogs_1_1SaveFileDialog" ]
+    [ "SaveFileDialog", "classDialogs_1_1SaveFileDialog.html", "classDialogs_1_1SaveFileDialog" ],
+    [ "ToolTipInfo", "classDialogs_1_1ToolTipInfo.html", "classDialogs_1_1ToolTipInfo" ],
+    [ "ToolTipOverlay", "classDialogs_1_1ToolTipOverlay.html", "classDialogs_1_1ToolTipOverlay" ]
 ];

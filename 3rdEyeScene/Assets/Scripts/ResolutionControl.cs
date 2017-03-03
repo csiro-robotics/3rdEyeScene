@@ -13,20 +13,26 @@ class ResolutionControl : MonoBehaviour
   }
 
   /// <summary>
-  /// Update looking for resolution change requests.
+  /// Increase the resolution one step.
   /// </summary>
-  void Update()
+  public void IncreaseResolution()
   {
 #if !UNITY_EDITOR
-    if (Input.GetButtonDown("Resolution") &&
-        (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl)))
-    {
-      float sizeChange = Input.GetAxis("Resolution");
-      if (sizeChange != 0)
-      {
-        UpdateResolution(sizeChange > 0);
-      }
-    }
+    UpdateResolution(true);
+#else  // !UNITY_EDITOR
+    Debug.Log("IncreaseResolution");
+#endif // !UNITY_EDITOR
+  }
+
+  /// <summary>
+  /// Decrease the resolution one step.
+  /// </summary>
+  public void DecreaseResolution()
+  {
+#if !UNITY_EDITOR
+    UpdateResolution(false);
+#else  // !UNITY_EDITOR
+    Debug.Log("DecreaseResolution");
 #endif // !UNITY_EDITOR
   }
 

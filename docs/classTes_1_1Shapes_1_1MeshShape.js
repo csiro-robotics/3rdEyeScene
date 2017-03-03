@@ -1,5 +1,11 @@
 var classTes_1_1Shapes_1_1MeshShape =
 [
+    [ "SendDataType", "classTes_1_1Shapes_1_1MeshShape.html#a8811bec5ed2179efa89385e2984471cd", [
+      [ "Vertices", "classTes_1_1Shapes_1_1MeshShape.html#a8811bec5ed2179efa89385e2984471cdae4bb6129669488aedeeb0ae27bb91770", null ],
+      [ "Indices", "classTes_1_1Shapes_1_1MeshShape.html#a8811bec5ed2179efa89385e2984471cda0a8e4b49c88d90e6d64cb6535deed2c7", null ],
+      [ "Normals", "classTes_1_1Shapes_1_1MeshShape.html#a8811bec5ed2179efa89385e2984471cda4ab971a51f0335cbf8d9c2c65d379e99", null ],
+      [ "UniformNormal", "classTes_1_1Shapes_1_1MeshShape.html#a8811bec5ed2179efa89385e2984471cda05a6de2ffe972a713613341a311442b9", null ]
+    ] ],
     [ "MeshShape", "classTes_1_1Shapes_1_1MeshShape.html#ad54b8b1f8b339f0b71512ee2526d2f5d", null ],
     [ "MeshShape", "classTes_1_1Shapes_1_1MeshShape.html#a38deb92e1089ce9d2d583a976c431473", null ],
     [ "MeshShape", "classTes_1_1Shapes_1_1MeshShape.html#a3b54c6d5963c1146e6d82cb2d2eb3177", null ],
@@ -25,8 +31,10 @@ var classTes_1_1Shapes_1_1MeshShape =
     [ "MeshShape", "classTes_1_1Shapes_1_1MeshShape.html#a23716442a3f95bd1c45d837f7c8deacd", null ],
     [ "MeshShape", "classTes_1_1Shapes_1_1MeshShape.html#aace648da9ec5926262102ad782dd0efa", null ],
     [ "Clone", "classTes_1_1Shapes_1_1MeshShape.html#a8d2af9fade30a8ddf29ff703da3817de", null ],
+    [ "SetUniformNormal", "classTes_1_1Shapes_1_1MeshShape.html#a0e733a56d5270a283fe313b07ba76e64", null ],
     [ "WriteCreate", "classTes_1_1Shapes_1_1MeshShape.html#a7905d5d0bb781713f05ccf9044c213c4", null ],
     [ "WriteData", "classTes_1_1Shapes_1_1MeshShape.html#a75968a92d1b36e9629a6b5ec2f2fcff3", null ],
     [ "CalculateNormals", "classTes_1_1Shapes_1_1MeshShape.html#a580fd88fb47f973984ee76c15728b445", null ],
-    [ "DrawType", "classTes_1_1Shapes_1_1MeshShape.html#a24cf0d5926a450fc4898fee13c58ca18", null ]
+    [ "DrawType", "classTes_1_1Shapes_1_1MeshShape.html#a24cf0d5926a450fc4898fee13c58ca18", null ],
+    [ "Normals", "classTes_1_1Shapes_1_1MeshShape.html#a065f689c4193413c62231d4edfbcd158", null ]
 ];

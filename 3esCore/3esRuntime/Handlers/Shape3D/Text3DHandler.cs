@@ -95,7 +95,7 @@ namespace Tes.Handlers.Shape3D
     {
       Transform transform = obj.transform;
       // Convert position to Unity position.
-      Vector3 pos = Scene.UnityToRemote(obj.transform.position, _frame);
+      Vector3 pos = FrameTransform.UnityToRemote(obj.transform.position, _frame);
       attr.X = pos.x;
       attr.Y = pos.y;
       attr.Z = pos.z;
@@ -123,35 +123,6 @@ namespace Tes.Handlers.Shape3D
     }
 
     /// <summary>
-    /// Serialise a text object.
-    /// </summary>
-    /// <param name="packet"></param>
-    /// <param name="shape"></param>
-    /// <returns></returns>
-    protected override Error SerialiseObject(PacketBuffer packet, ShapeComponent shape)
-    {
-      CreateMessage msg = new CreateMessage();
-      msg.ObjectID = shape.ObjectID;
-      msg.Category = shape.Category;
-      msg.Flags = shape.ObjectFlags;
-      EncodeAttributes(ref msg.Attributes, shape.gameObject, shape);
-      msg.Write(packet);
-      TextMesh text = shape.GetComponent<TextMesh>();
-      if (text != null)
-      {
-        ushort strlen = (ushort)System.Text.Encoding.Default.GetByteCount(text.text);
-        if (_encodingBuffer == null || _encodingBuffer.Length < strlen)
-        {
-          _encodingBuffer = new byte[strlen];
-        }
-        System.Text.Encoding.Default.GetBytes(text.text, 0, text.text.Length, _encodingBuffer, 0);
-        packet.WriteBytes(BitConverter.GetBytes(strlen), true);
-        packet.WriteBytes(_encodingBuffer, false, 0, strlen);
-      }
-      return new Error();
-    }
-
-    /// <summary>
     /// Handle additional <see cref="CreateMessage"/> data.
     /// </summary>
     /// <param name="obj"></param>
@@ -162,7 +133,7 @@ namespace Tes.Handlers.Shape3D
     protected override Error PostHandleMessage(GameObject obj, CreateMessage msg, PacketBuffer packet, BinaryReader reader)
     {
       // Convert position to Unity position.
-      obj.transform.localPosition = Scene.RemoteToUnity(obj.transform.localPosition, _frame);
+      obj.transform.localPosition = FrameTransform.RemoteToUnity(obj.transform.localPosition, _frame);
 
       // Read the text in the buffer.
       int textLength = reader.ReadUInt16();
@@ -212,7 +183,7 @@ namespace Tes.Handlers.Shape3D
       }
 
       // Convert position to Unity position.
-      obj.transform.localPosition = Scene.RemoteToUnity(obj.transform.localPosition, _frame);
+      obj.transform.localPosition = FrameTransform.RemoteToUnity(obj.transform.localPosition, _frame);
 
       if (shapeComp != null && (msg.Flags & (ushort)Text3DFlag.SceenFacing) != (shapeComp.ObjectFlags & (ushort)Text3DFlag.SceenFacing))
       {
@@ -231,7 +202,23 @@ namespace Tes.Handlers.Shape3D
       return new Error();
     }
 
+    /// <summary>
+    /// Creates a text shape for serialisation.
+    /// </summary>
+    /// <param name="shapeComponent">The component to create a shape for.</param>
+    /// <returns>A shape instance suitable for configuring to generate serialisation messages.</returns>
+    protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
+    {
+      TextMesh text = shapeComponent.GetComponent<TextMesh>();
+      if (text != null)
+      {
+        Shapes.Shape shape = new Shapes.Text3D(text.text);
+        ConfigureShape(shape, shapeComponent);
+        return shape;
+      }
+      return null;
+    }
+
     private CoordinateFrame _frame = ServerInfoMessage.Default.CoordinateFrame;
-    private byte[] _encodingBuffer = new byte[1024];
   }
 }

@@ -1,5 +1,6 @@
 var classTes_1_1Collections_1_1Queue =
 [
+    [ "Clear", "classTes_1_1Collections_1_1Queue.html#a845d6d792463d154d464a45ce84a0487", null ],
     [ "Dequeue", "classTes_1_1Collections_1_1Queue.html#a0cd2f8b28a3b27023dc2ba04d53aaca1", null ],
     [ "Enqueue", "classTes_1_1Collections_1_1Queue.html#a6e18c83239a66792deb65e9d72f4a480", null ],
     [ "Peek", "classTes_1_1Collections_1_1Queue.html#a464d2fc8eceb3b8442710bdf04538d48", null ],

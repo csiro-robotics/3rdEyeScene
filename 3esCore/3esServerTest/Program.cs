@@ -219,7 +219,7 @@ namespace Tes
         plane.Normal = new Vector3(1.0f, 1.0f, 0.0f).Normalised;
         plane.Scale = 1.5f;
         plane.NormalLength = 0.5f;
-        plane.Colour = Colour.Colours[(int)PredefinedColour.LightSlateGray].Value;
+        plane.Colour = Colour.Colours[(int)PredefinedColour.LightSlateGrey].Value;
         shapes.Add(plane);
         if (!noMove)
         {

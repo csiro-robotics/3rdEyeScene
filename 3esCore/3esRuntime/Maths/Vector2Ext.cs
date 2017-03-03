@@ -28,6 +28,21 @@ namespace Tes.Maths
     }
 
     /// <summary>
+    /// Convert an array of TES vectors to unity vectors.
+    /// </summary>
+    /// <param name="vecs">The array of vectors to convert.</param>
+    /// <returns>The converted array.</returns>
+    public static UnityEngine.Vector2[] ToUnity(Vector2[] vecs)
+    {
+      UnityEngine.Vector2[] uvecs = new UnityEngine.Vector2[vecs.Length];
+      for (int i = 0; i < vecs.Length; ++i)
+      {
+        uvecs[i] = ToUnity(vecs[i]);
+      }
+      return uvecs;
+    }
+
+    /// <summary>
     /// Convert an Unity vector to a TES vector2.
     /// </summary>
     /// <param name="v">The TES vector to modify.</param>
@@ -49,6 +64,25 @@ namespace Tes.Maths
     public static Vector2 FromUnity(UnityEngine.Vector3 uv)
     {
       return new Vector2(uv.x, uv.y);
+    }
+
+    /// <summary>
+    /// Convert an array of unity vectors to TES vectors.
+    /// </summary>
+    /// <param name="uvecs">The array of vectors to convert.</param>
+    /// <returns>The converted array.</returns>
+    public static Vector2[] FromUnity(UnityEngine.Vector2[] uvecs)
+    {
+      if (uvecs != null)
+      {
+        Vector2[] tesVectors = new Vector2[uvecs.Length];
+        for (int i = 0; i < uvecs.Length; ++i)
+        {
+          tesVectors[i] = FromUnity(uvecs[i]);
+        }
+        return tesVectors;
+      }
+      return null;
     }
   }
 }

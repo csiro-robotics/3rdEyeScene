@@ -49,7 +49,7 @@ namespace Tes
       Vector3 boxPos = new Vector3();
       Box box = new Box(0, Vector3.Zero, boxSize, Quaternion.Identity);
 
-      box.Colour = Colour.Colours[(int)PredefinedColour.LightSlateGray].Value;
+      box.Colour = Colour.Colours[(int)PredefinedColour.LightSlateGrey].Value;
       box.Wireframe = true;
 
       for (int z = startZ; z <= endZ; ++z)

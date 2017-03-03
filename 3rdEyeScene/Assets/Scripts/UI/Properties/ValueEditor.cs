@@ -13,6 +13,7 @@ namespace UI.Properties
   public class ValueEditor : MonoBehaviour
   {
     public UnityEngine.UI.Text NameField = null;
+    public Dialogs.ToolTipInfo ToolTipDisplay = null;
 
     /// <summary>
     /// Get the value of the underlying property as the requested type.
@@ -105,9 +106,20 @@ namespace UI.Properties
         notify.PropertyChanged += OnPropertyChanged;
       }
 
-      if (_property != null && NameField != null)
+      if (_property != null)
       {
-        NameField.text = _property.Name;
+        if (NameField != null)
+        {
+          NameField.text = _property.Name;
+        }
+        if (ToolTipDisplay != null)
+        {
+          TooltipAttribute tta = PropertyEditors.FindAttribute<TooltipAttribute>(_property);
+          if (tta != null)
+          {
+            ToolTipDisplay.ToolTip = tta.Tooltip;
+          }
+        }
       }
 
       OnSetTarget();

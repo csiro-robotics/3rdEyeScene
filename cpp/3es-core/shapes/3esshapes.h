@@ -9,6 +9,7 @@
 #include "3escapsule.h"
 #include "3escone.h"
 #include "3escylinder.h"
+#include "3esmeshplaceholder.h"
 #include "3esmeshshape.h"
 #include "3esmeshset.h"
 #include "3esplane.h"

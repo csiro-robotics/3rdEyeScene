@@ -62,11 +62,12 @@ namespace tes
   enum ControlId
   {
     CIdNull,
-    CIdFrame,           ///< Defines a new frame. Value is the delta time in microseconds.
+    CIdFrame,           ///< Defines a new frame. @c value32 is the delta time in microseconds.
     CIdCoordinateFrame, ///< Specifies the a change in coordinate frame view.
-    CIdFrameCount,      ///< Set the total number of frames to expect. More for serialised streams.
-    CIdForceFrameFlush, ///< Forces a frame update (render) without advancing the time. 
+    CIdFrameCount,      ///< Set the total number of frames to expect (@c value32). More for serialised streams.
+    CIdForceFrameFlush, ///< Forces a frame update (render) without advancing the time.
     CIdReset,           ///< Clear the scene. This drops all existing data.
+    CIdSnapshot,        ///< Request a frame snapshot during playback. @c value32 is the frame number to snap.
   };
 
   /// Message IDs for @c MtCategory routing.
@@ -86,16 +87,22 @@ namespace tes
   };
 
   /// Flags controlling the creation and appearance of an object.
-  enum ObjectFlag
+  enum
   {
     OFNone = 0, ///< No flags. Default appearance.
     OFWire = (1 << 0), ///< Show the object as a wireframe mesh.
     OFTransparent = (1 << 1), ///< The object supports transparency. Use the colour alpha channel.
     OFTwoSided = (1 << 2),  ///< Use a two sided shader.
 
-    OFUser = (1 << 8) ///< Use flags start here.
-  };
+    OFUpdateMode = (1 << 3),  ///< Update attributes using only explicitly specified flags from the following.
+    OFPosition = (1 << 4),    ///< Update position data.
+    OFRotation = (1 << 5),    ///< Update rotation data.
+    OFScale = (1 << 6),       ///< Update scale data.
+    OFColour = (1 << 7),      ///< Update colour data.
+    OFColor = OFColour,       ///< Spelling alias for colour.
 
+    OFUser = (1 << 12)        ///< Use flags start here.
+  };
 
   /// Additional attributes for point data sources.
   enum PointsAttributeFlag
@@ -254,7 +261,7 @@ namespace tes
     uint16_t nameLength;
     /// The name string @em without a null terminator. Must be exactly
     /// @c nameLength bytes.
-    char *name;
+    const char *name;
 
     /// Read message content.
     /// @param reader The stream to read from.
@@ -273,7 +280,7 @@ namespace tes
       {
         return false;
       }
-      
+
       reader.readRaw((uint8_t *)nameBuffer, nameLength);
       nameBuffer[nameLength] = '\0';
 
@@ -473,7 +480,7 @@ namespace tes
     enum { MessageId = OIdUpdate };
 
     uint32_t id;        ///< Object creation id. Zero if defining a transient/single frame message.
-    uint16_t flags;     ///< Update flags.
+    uint16_t flags;     ///< Update flags from @c ObjectFlag.
     ObjectAttributes attributes;  ///< Initial transformation and colour.
 
     /// Read message content.

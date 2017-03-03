@@ -248,7 +248,7 @@ namespace Tes.Maths
       this[0, index] = axis[0];
       this[1, index] = axis[1];
       this[2, index] = axis[2];
-      this[2, index] = index < 3 ? 0 : 1;
+      this[3, index] = index < 3 ? 0 : 1;
     }
 
     /// <summary>

@@ -17,7 +17,7 @@ namespace tes
   template <typename T>
   inline T degToRad(const T &angle = T(1))
   {
-    return angle / T(180) * M_PI;
+    return angle / T(180) * T(M_PI);
   }
 
 
@@ -27,7 +27,7 @@ namespace tes
   template <typename T>
   inline T radToDeg(const T &angle = T(1))
   {
-    return angle * T(180) / M_PI;
+    return angle * T(180) / T(M_PI);
   }
 
 

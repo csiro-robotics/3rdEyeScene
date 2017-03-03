@@ -3,7 +3,7 @@ using Dialogs;
 
 public class TestOFScript : MonoBehaviour
 {
-	public FileDialogUI BrowseUI;
+  public FileDialogUI BrowseUI;
   public MessageBoxUI _messageUI;
   //private OpenFileDialog _ofDialog;
   private FileDialog _fileDialog;
@@ -11,7 +11,7 @@ public class TestOFScript : MonoBehaviour
   public void ShowSaveDialog()
   {
     if (_fileDialog == null && BrowseUI != null)
-    { 
+    {
       //_fileDialog = new OpenFileDialog(new TrueFileSystem(), BrowseUI);
       _fileDialog = new SaveFileDialog(new TrueFileSystem(), BrowseUI, _messageUI);
       _fileDialog.AddExtension = true;
@@ -48,12 +48,12 @@ public class TestOFScript : MonoBehaviour
   }
 
   void Start()
-	{
+  {
     //ShowSaveDialog();
-	}
+  }
 
-	void OnDisable()
-	{
+  void OnDisable()
+  {
     _fileDialog = null;
-	}
+  }
 }

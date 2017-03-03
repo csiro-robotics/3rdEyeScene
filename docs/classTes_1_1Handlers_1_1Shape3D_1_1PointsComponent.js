@@ -7,6 +7,7 @@ var classTes_1_1Handlers_1_1Shape3D_1_1PointsComponent =
     ] ],
     [ "IndexCount", "classTes_1_1Handlers_1_1Shape3D_1_1PointsComponent.html#a06718b61caf38cdb278d3b81622dd663", null ],
     [ "Indices", "classTes_1_1Handlers_1_1Shape3D_1_1PointsComponent.html#a9832b90d4be395f9d496a7d7b10f9728", null ],
+    [ "MeshDirty", "classTes_1_1Handlers_1_1Shape3D_1_1PointsComponent.html#a6b603794df6053533b2b02a712c2076b", null ],
     [ "MeshID", "classTes_1_1Handlers_1_1Shape3D_1_1PointsComponent.html#aea9721c54539daeecc0219576fc7f51c", null ],
     [ "PointSize", "classTes_1_1Handlers_1_1Shape3D_1_1PointsComponent.html#a2c607deffd88bc68ff7754e637225f22", null ]
 ];

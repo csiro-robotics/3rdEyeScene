@@ -55,6 +55,34 @@ namespace Tes.Handlers.Shape3D
       {
         list.Clear();
       }
+      _awaitingFinalisation.Clear();
+    }
+
+
+    /// <summary>
+    /// Ensures mesh objects are finalised.
+    /// </summary>
+    public override void PreRender()
+    {
+      base.PreRender();
+      // Ensure meshes are finalised.
+      ShapeComponent part;
+      for (int i = 0; i < _awaitingFinalisation.Count; ++i)
+      {
+        part = _awaitingFinalisation[i];
+        if (part.Dirty)
+        {
+          MeshCache.MeshDetails meshDetails = _meshCache.GetEntry(part.ObjectID);
+          if (meshDetails != null && meshDetails.FinalMeshes != null)
+          {
+            // Build the mesh parts.
+            SetMesh(part, meshDetails);
+          }
+          part.Dirty = false;
+        }
+      }
+
+      _awaitingFinalisation.Clear();
     }
 
     /// <summary>
@@ -110,44 +138,37 @@ namespace Tes.Handlers.Shape3D
     }
 
     /// <summary>
-    /// Overridden to include mesh part data.
+    /// Creates a mesh set shape for serialising the mesh and its resource references.
     /// </summary>
-    /// <param name="packet">Packet to write the message to.</param>
-    /// <param name="shape">Shape object to write.</param>
-    /// <returns>An error on failure.</returns>
-    protected override Error SerialiseObject(PacketBuffer packet, ShapeComponent shape)
+    /// <param name="shapeComponent">The component to create a shape for.</param>
+    /// <returns>A shape instance suitable for configuring to generate serialisation messages.</returns>
+    protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
     {
-      CreateMessage msg = new CreateMessage();
-      msg.ObjectID = shape.ObjectID;
-      msg.Category = shape.Category;
-      msg.Flags = shape.ObjectFlags;
-      EncodeAttributes(ref msg.Attributes, shape.gameObject, shape);
-      msg.Write(packet);
-
-      // Get the mesh to extract line data from.
-      // Note: Might be more accurate to count the children as follows:
-      //    partCount = (UInt16)(shape.GetComponentsInChildren<ShapeComponent>().Length - 1);
-      // We use -1 to account for the 'shape' object itself.
-      UInt16 partCount = (UInt16)shape.gameObject.transform.childCount;
-      ObjectAttributes partAttributes = new ObjectAttributes();
-      packet.WriteBytes(BitConverter.GetBytes(partCount), true);
+      // Start by building the resource list.
+      int partCount = shapeComponent.transform.childCount;
+      ObjectAttributes attrs = new ObjectAttributes();
+      Shapes.MeshSet meshSet = new Shapes.MeshSet(shapeComponent.ObjectID, shapeComponent.Category);
+      EncodeAttributes(ref attrs, shapeComponent.gameObject, shapeComponent);
+      meshSet.SetAttributes(attrs);
       for (int i = 0; i < partCount; ++i)
       {
         // Write the mesh ID
-        ShapeComponent part = shape.transform.GetChild(i).GetComponent<ShapeComponent>();
-        if (part != null)
+        ShapeComponent partSrc = shapeComponent.transform.GetChild(i).GetComponent<ShapeComponent>();
+        if (partSrc != null)
         {
-          packet.WriteBytes(BitConverter.GetBytes((UInt32)part.ObjectID), true);
-          EncodeAttributes(ref partAttributes, part.gameObject, part);
+          MeshResourcePlaceholder part = new MeshResourcePlaceholder(partSrc.ObjectID);
+          // Encode attributes into target format.
+          EncodeAttributes(ref attrs, partSrc.gameObject, partSrc);
+          // And convert to matrix.
+          meshSet.AddPart(part, attrs.GetTransform());
         }
         else
         {
-          packet.WriteBytes(BitConverter.GetBytes((UInt32)0u), true);
+          Debug.LogError(string.Format("Failed to extract child {0} for mesh set {1}.", i, shapeComponent.name));
+          return null;
         }
-        partAttributes.Write(packet);
       }
-
-      return new Error();
+      return meshSet;
     }
 
     /// <summary>
@@ -215,10 +236,12 @@ namespace Tes.Handlers.Shape3D
           // Try resolve the mesh part.
           if (_meshCache != null)
           {
-            MeshCache.MeshEntry meshEntry = _meshCache.GetEntry(part.ObjectID);
-            if (meshEntry != null && meshEntry.FinalMeshes != null)
+            MeshCache.MeshDetails meshDetails = _meshCache.GetEntry(part.ObjectID);
+            if (meshDetails != null && meshDetails.Finalised)
             {
-              SetMesh(part, meshEntry);
+              part.Dirty = true;
+              _awaitingFinalisation.Add(part);
+              //SetMesh(part, meshDetails);
             }
           }
         }
@@ -280,7 +303,8 @@ namespace Tes.Handlers.Shape3D
           {
             // Remove from parts.
             parts.Remove(part);
-            //parts.RemoveAll((ShapeComponent cmp) => { return cmp == parts }));
+            _awaitingFinalisation.RemoveAll((ShapeComponent cmp) => { return cmp == part; });
+            //parts.RemoveAll((ShapeComponent cmp) => { return cmp == part; }));
           }
         }
       }
@@ -291,15 +315,15 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Mesh resource completion notification.
     /// </summary>
-    /// <param name="meshEntry">The mesh(es) finalisd.</param>
+    /// <param name="meshDetails">The mesh(es) finalised.</param>
     /// <remarks>
-    /// Links objects waiting on <paramref name="meshEntry"/> to use the associated meshes.
+    /// Links objects waiting on <paramref name="meshDetails"/> to use the associated meshes.
     /// </remarks>
-    protected virtual void OnMeshFinalised(MeshCache.MeshEntry meshEntry)
+    protected virtual void OnMeshFinalised(MeshCache.MeshDetails meshDetails)
     {
       // Find any parts waiting on this mesh.
       List<ShapeComponent> parts;
-      if (!_registeredParts.TryGetValue(meshEntry.ID, out parts))
+      if (!_registeredParts.TryGetValue(meshDetails.ID, out parts))
       {
         // Nothing waiting.
         return;
@@ -308,22 +332,23 @@ namespace Tes.Handlers.Shape3D
       // Have parts to resolve.
       foreach (ShapeComponent part in parts)
       {
-        SetMesh(part, meshEntry);
+        part.Dirty = true;
+        _awaitingFinalisation.Add(part);
       }
     }
 
     /// <summary>
     /// Mesh resource removal notification.
     /// </summary>
-    /// <param name="meshEntry">The mesh(es) being removed.</param>
+    /// <param name="meshDetails">The mesh(es) being removed.</param>
     /// <remarks>
     /// Stops referencing the associated mesh objects.
     /// </remarks>
-    protected virtual void OnMeshRemoved(MeshCache.MeshEntry meshEntry)
+    protected virtual void OnMeshRemoved(MeshCache.MeshDetails meshDetails)
     {
       // Find objects using the removed mesh.
       List<ShapeComponent> parts;
-      if (!_registeredParts.TryGetValue(meshEntry.ID, out parts))
+      if (!_registeredParts.TryGetValue(meshDetails.ID, out parts))
       {
         // Nothing using this mesh.
         return;
@@ -341,20 +366,20 @@ namespace Tes.Handlers.Shape3D
     }
 
     /// <summary>
-    /// Set the visuals of <pararef name="partObject"/> to use <paramref name="meshEntry"/>.
+    /// Set the visuals of <pararef name="partObject"/> to use <paramref name="meshDetails"/>.
     /// </summary>
     /// <param name="partObject">The part object</param>
-    /// <param name="meshEntry">The mesh details.</param>
+    /// <param name="meshDetails">The mesh details.</param>
     /// <remarks>
-    /// Adds multiple children to <paramref name="partObject"/> when <paramref name="meshEntry"/>
+    /// Adds multiple children to <paramref name="partObject"/> when <paramref name="meshDetails"/>
     /// contains multiple mesh objects.
     /// </remarks>
-    protected virtual void SetMesh(ShapeComponent partObject, MeshCache.MeshEntry meshEntry)
+    protected virtual void SetMesh(ShapeComponent partObject, MeshCache.MeshDetails meshDetails)
     {
       // Clear all children as a hard reset.
       foreach (Transform child in partObject.GetComponentsInChildren<Transform>())
       {
-        if (child.gameObject != partObject)
+        if (child.gameObject != partObject.gameObject)
         {
           child.parent = null;
           GameObject.Destroy(child.gameObject);
@@ -363,19 +388,19 @@ namespace Tes.Handlers.Shape3D
 
       // Add children for each mesh sub-sub-part.
       int subPartNumber = 0;
-      foreach (Mesh mesh in meshEntry.FinalMeshes)
+      foreach (Mesh mesh in meshDetails.FinalMeshes)
       {
         GameObject partMesh = new GameObject();
         partMesh.name = string.Format("sub-part{0}", subPartNumber);
-        partMesh.transform.localPosition = meshEntry.LocalPosition;
-        partMesh.transform.localRotation = meshEntry.LocalRotation;
-        partMesh.transform.localScale = meshEntry.LocalScale;
+        partMesh.transform.localPosition = meshDetails.LocalPosition;
+        partMesh.transform.localRotation = meshDetails.LocalRotation;
+        partMesh.transform.localScale = meshDetails.LocalScale;
 
         MeshFilter filter = partMesh.AddComponent<MeshFilter>();
         filter.sharedMesh = mesh;
 
         MeshRenderer renderer = partMesh.AddComponent<MeshRenderer>();
-        renderer.material = meshEntry.Material;
+        renderer.material = meshDetails.Material;
         renderer.material.color = partObject.Colour;
         partMesh.transform.SetParent(partObject.transform, false);
 
@@ -385,5 +410,6 @@ namespace Tes.Handlers.Shape3D
 
     private Dictionary<uint, List<ShapeComponent>> _registeredParts = new Dictionary<uint, List<ShapeComponent>>();
     private MeshCache _meshCache = null;
+    private List<ShapeComponent> _awaitingFinalisation = new List<ShapeComponent>();
   }
 }

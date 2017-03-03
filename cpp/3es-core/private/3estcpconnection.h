@@ -89,6 +89,9 @@ namespace tes
     /// Note: the @c _lock must be locked before calling this function.
     void flushCollatedPacket();
 
+    /// Send pending collated/compressed data without using the threadding guard.
+    void flushCollatedPacketUnguarded();
+
     /// Write data to the client. Handles collation and compression if enabled.
     ///
     /// Note: the @c _lock must be locked before calling this function.

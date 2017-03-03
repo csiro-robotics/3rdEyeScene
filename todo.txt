@@ -1,31 +1,27 @@
 Bugs:
+- TES_MESHSET_XXX() macros do not cater for defining the associated resources. Parameterisation needs to change.
+- Large data frames have been known to end up an odd state whereby some data from the previous are still visible and not all data from the next frame are visible.
+  - Possibly a thread safety issue on the concurrent queue.
 - Custom socket bugs (workaround using Qt sockets):
   - On OSX there is sporadic lag.
   - Large packets go missing.
-- Large steps often render before the catching the target frame.
-  - Add a check to Router.Update() on whether the thread is at the target frame. Keep looping while not.
-    - Also include a time limit to prevent deadlock.
-- Large data frames have been known to end up an odd state whereby some data from the previous are still visible and not all data from the next frame are visible.
-  - Possibly a thread safety issue on the concurrent queue.
+
 
 TODO:
-- Complete C++ TCP socket support built on POCO
+- Modify StreamThread to support collated packets
+  - Change recording compression from file level to use collated packets and work on chunked compression.
+    . Better for snapshots as seeking is allowed.
+- Profile StreamThread packet decoding and improve performance.
+  - Current playback speed bottleneck when stepping.
 - "Server" implementation which writes directly to a local file.
-- Revise MeshSet/MeshShape.
-  - Revised MeshSet to support overriding indexing.
-  - Meshes to support instancing topology. Ideal for visualising voxels.
+- Change shape shaders to support GPU instancing.
+- Consider adding batched object creation messages.
 - Consolidate C# shape constructors and improve consistency.
-- When recording on the client: periodically serialise the world state as a key frame.
-  - Serialise after every N bytes written.
-  - During playback, note the file positions on each key frame and use these for faster step back operations.
-  - Post soft reset notification to MessageHandler objects.
-    - Have MeshCache keep its resources, but marked as uncreated to help reduce memory reallocation. 
 - Client log for error messages.
+- UI:
   - Handler options and UI
   - Camera Selection UI
-- Playback speed control.
-- Scene Graph UI
-- Make sure modal dialogs work properly blocking input to background layers.
+  - Scene Graph UI
 - Export to PLY file (because PLY is easy).
 - Annotation frames.
   - Skip/step by annotation frames.
@@ -34,10 +30,21 @@ TODO:
 - Client rendering override modes:
   - Solid/wireframe overlay
   - Wireframe override
+- Complete C++ TCP socket support built on POCO
+- PROTOCOL CHANGE: Reduce object overhead. Creating many objects is expensive in data throughput and packet processing.
+  - Modify ObjectAttributes structure (for update messages only?) to have a 1-byte flag member which identifies which of colour, position, rotation and scale data are present.
+  - Consider moving major/minor version members of PacketHeader into ServerSettings message.
+  - Support batch object creation?
+- Tidy up and fix up Router catcup logic and _currentFrame management.
 
 Maybe:
+- GL-TF scene serialiser for the client.
+  - For loading reference model and exporting the current scene.
+- GL-TF handler extension
+  - Too expensive for primitives, but may be good for complex data.
 - Support splitting recording files at around 2GB.
 - TCP socket support built on asio.
+- Consider supporting variable Endian encoding in messages, identified by the byte order of the header marker.
 
 Performance improvements:
 - Need to investigate how to do more object management off the main thread. Not well supported by Unity as it doesn't allow objects to be created on other threads.

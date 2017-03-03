@@ -13,5 +13,6 @@ var searchData=
   ['playing',['Playing',['../namespaceTes_1_1Main.html#ae34f1583411b26c783ce3e3a1996201aac9dbb2b7c84159b632d71e512eba8428',1,'Tes::Main']]],
   ['pointcloud',['PointCloud',['../namespaceTes_1_1Net.html#aeca457a57ef15608547fa50c1a7b4f52aee9349b5cdfd717c7e1234edce6b72fa',1,'Tes::Net']]],
   ['points',['Points',['../namespaceTes_1_1Net.html#ae91fc83c3db89d7e0b7c0ed317cd15a1a75dd5f1160a3f02b6fae89c54361a1b3',1,'Tes::Net']]],
-  ['protanomalycycle',['ProtanomalyCycle',['../classtes_1_1Colour.html#a830eb40fc9ab781b70987bd6069106c5a4acf2f863755b5061b90a1407075195e',1,'tes::Colour']]]
+  ['position',['Position',['../namespaceTes_1_1Net.html#ac98cc1f309cf100349b8c74ebe23ad2da52f5e0bc3859bc5f5e25130b6c7e8881',1,'Tes::Net']]],
+  ['protanomalycycle',['ProtanomalyCycle',['../classtes_1_1Colour.html#a830eb40fc9ab781b70987bd6069106c5a4acf2f863755b5061b90a1407075195e',1,'tes::Colour::ProtanomalyCycle()'],['../namespaceTes_1_1Maths.html#a48128f1e5603f891fe7187cf394d5067aef7520f3cf69b524e28777edbb51562a',1,'Tes.Maths.ProtanomalyCycle()']]]
 ];

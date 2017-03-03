@@ -22,6 +22,11 @@ public class EdlCamera : MonoBehaviour
   private ViewCamera _edlSourceCamera = null;
 
   /// <summary>
+  /// Get the camera object from which to source a render target for EDL.
+  /// </summary>
+  public ViewCamera EdlSourceCamera { get { return _edlSourceCamera; } }
+
+  /// <summary>
   /// The EDL shader used to blit the other camera and apply EDL effects.
   /// </summary>
   [SerializeField]

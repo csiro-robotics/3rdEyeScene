@@ -46,8 +46,8 @@ public class Avatar : MonoBehaviour
   {
     get
     {
-      bool speed = Input.GetButton("Fast");
-      bool slow = Input.GetButton("Slow");
+      bool speed = _inputLayer.GetButton("Fast");
+      bool slow = _inputLayer.GetButton("Slow");
       if (speed && slow)
       {
         // Mostly to avoid issues in classes with Ctrl+Shift+R reload.
@@ -116,6 +116,13 @@ public class Avatar : MonoBehaviour
     set { _thirdEyeScene = value; }
   }
 
+  [SerializeField]
+  private string _inputLayerName = "Scene";
+  public string InputLayerName
+  {
+    get { return _inputLayerName; }
+  }
+
   public bool MouseMove { get; set; }
 
   public void SetAllowMouseMove(bool enable)
@@ -130,6 +137,11 @@ public class Avatar : MonoBehaviour
     if (_thirdEyeScene != null)
     {
       _cameras = _thirdEyeScene.GetHandler((ushort)Tes.Net.RoutingID.Camera) as Tes.Handlers.CameraHandler;
+      _inputLayer = _thirdEyeScene.InputStack.GetLayer(_inputLayerName);
+    }
+    if (_inputLayer == null)
+    {
+      Debug.LogError("Unable to resolve input layer for avatar control.");
     }
   }
 
@@ -138,9 +150,9 @@ public class Avatar : MonoBehaviour
     // Look for mode switch.
     UpdateMode();
 
-    if (Input.GetAxis("SpeedAdjust") != 0)
+    if (_inputLayer.GetAxis("SpeedAdjust") != 0)
     {
-      float speedChange = Input.GetAxis("SpeedAdjust");
+      float speedChange = _inputLayer.GetAxis("SpeedAdjust");
       BaseSpeedMultiplier = Mathf.Clamp(BaseSpeedMultiplier + speedChange * BaseSpeedMultiplier,
                                         MinBaseSpeedMultipler, MaxBaseSpeedMultipler);
     }
@@ -158,7 +170,7 @@ public class Avatar : MonoBehaviour
       _mode = Mode.User;
       if (MouseMove)
       {
-        if (Input.GetButton("CameraActive"))
+        if (_inputLayer.GetButton("CameraActive"))
         {
           UpdateRotation(Time.deltaTime);
         }
@@ -172,7 +184,7 @@ public class Avatar : MonoBehaviour
   {
     if (_cameras != null)
     {
-      if (Input.GetKeyDown(KeyCode.BackQuote))
+      if (_inputLayer.GetKeyDown(KeyCode.BackQuote))
       {
         // Restore user mode.
         PrepareUserMode();
@@ -180,7 +192,7 @@ public class Avatar : MonoBehaviour
       }
       else
       {
-        if (Input.GetKeyDown(KeyCode.Alpha0))
+        if (_inputLayer.GetKeyDown(KeyCode.Alpha0))
         {
           // Recorded camera request.
           _cameras.ActiveCameraID = 255;
@@ -193,7 +205,7 @@ public class Avatar : MonoBehaviour
         {
           for (int i = 1; i < 10; ++i)
           {
-            if (Input.GetKeyDown(KeyCode.Alpha0 + i))
+            if (_inputLayer.GetKeyDown(KeyCode.Alpha0 + i))
             {
               _cameras.ActiveCameraID = i;
               if (_cameras.ActiveCamera != null)
@@ -273,8 +285,8 @@ public class Avatar : MonoBehaviour
     Transform pitchTransform = (Camera != null) ? Camera.transform : gameObject.transform;
     Transform yawTransform = gameObject.transform;
 
-    deltaYaw = Input.GetAxis("Horizontal") * MouseSensitivity;
-    deltaPitch = Input.GetAxis("Vertical") * MouseSensitivity;
+    deltaYaw = _inputLayer.GetAxis("Horizontal") * MouseSensitivity;
+    deltaPitch = _inputLayer.GetAxis("Vertical") * MouseSensitivity;
     deltaPitch *= (CameraSettings.Instance.InvertY) ? -1.0f : 1.0f;
 
     localEulerAngles = pitchTransform.localEulerAngles;
@@ -307,9 +319,9 @@ public class Avatar : MonoBehaviour
   protected void UpdateLocomotion(float dt)
   {
     float moveRate = MovementRate * dt;
-    float forward = moveRate * Input.GetAxis("LinearMove");
-    float strafe = moveRate * Input.GetAxis("StrafeMove");
-    float elevation = moveRate * Input.GetAxis("ElevationMove");
+    float forward = moveRate * _inputLayer.GetAxis("LinearMove");
+    float strafe = moveRate * _inputLayer.GetAxis("StrafeMove");
+    float elevation = moveRate * _inputLayer.GetAxis("ElevationMove");
 
     Vector3 move = Vector3.zero;
     move += forward * ((Camera != null) ? Camera.transform.forward : gameObject.transform.forward);
@@ -321,4 +333,5 @@ public class Avatar : MonoBehaviour
 
   private Mode _mode = Mode.User;
   private Tes.Handlers.CameraHandler _cameras = null;
+  private InputSystem.InputLayer _inputLayer = null;
 }

@@ -16,6 +16,7 @@ var classAvatar =
     [ "BaseMovementRate", "classAvatar.html#a29484173d9db1fbdb00ef4363bc223fc", null ],
     [ "Camera", "classAvatar.html#a50af9d2c0bf1af71bcfaeff60a86e208", null ],
     [ "HighSpeedMultiplier", "classAvatar.html#a57f52e1944d4f3c61045d6d238faa1a9", null ],
+    [ "InputLayerName", "classAvatar.html#a7d26a47b17575dabc7101f6a74d461c4", null ],
     [ "LowSpeedMultiplier", "classAvatar.html#a03f9b87ba95b57ef147529891ef993c0", null ],
     [ "MouseMove", "classAvatar.html#a0c8a989e0ed4f64a25f9b2ba18dca3b3", null ],
     [ "MouseSensitivity", "classAvatar.html#aa62736ca1ed20573fc8198b3d92d790a", null ],

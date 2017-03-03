@@ -23,7 +23,7 @@ namespace Tes.Shapes
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
     /// <param name="category">Category to which the shape belongs.</param>
     public MeshSet(uint id, ushort category)
-      : base((ushort)ShapeID.Mesh, id, category)
+      : base((ushort)ShapeID.MeshSet, id, category)
     {
     }
 

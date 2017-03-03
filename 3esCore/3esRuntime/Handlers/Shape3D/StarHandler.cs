@@ -45,11 +45,32 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Override to ensure uniform scaling.
     /// </summary>
-    protected override void DecodeTransform(ObjectAttributes attributes, Transform transform)
+    protected override void DecodeTransform(ObjectAttributes attributes, Transform transform, ObjectFlag flags)
     {
-      transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
-      transform.localRotation = Quaternion.identity; // Irrelevant for stars.
-      transform.localScale = new Vector3(attributes.ScaleX, attributes.ScaleX, attributes.ScaleX);
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Position) != 0)
+      {
+        transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
+      }
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Rotation) != 0)
+      {
+        transform.localRotation = Quaternion.identity; // Irrelevant for stars.
+      }
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Scale) != 0)
+      {
+        transform.localScale = new Vector3(attributes.ScaleX, attributes.ScaleX, attributes.ScaleX);
+      }
+    }
+
+    /// <summary>
+    /// Creates a star shape for serialisation.
+    /// </summary>
+    /// <param name="shapeComponent">The component to create a shape for.</param>
+    /// <returns>A shape instance suitable for configuring to generate serialisation messages.</returns>
+    protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
+    {
+      Shapes.Shape shape = new Shapes.Star();
+      ConfigureShape(shape, shapeComponent);
+      return shape;
     }
 
     private Mesh _solidMesh;

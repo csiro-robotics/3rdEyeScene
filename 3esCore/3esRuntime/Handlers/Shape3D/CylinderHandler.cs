@@ -45,14 +45,23 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Override to decode ScaleX as radius and ScaleZ as length.
     /// </summary>
-    protected override void DecodeTransform(ObjectAttributes attributes, Transform transform)
+    protected override void DecodeTransform(ObjectAttributes attributes, Transform transform, ObjectFlag flags)
     {
       float radius = attributes.ScaleX;
       float length = attributes.ScaleZ;
-      transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
-      transform.localRotation = new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW);
-      // Unity uses Y up;
-      transform.localScale = new Vector3(radius, length, radius);
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Position) != 0)
+      {
+        transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
+      }
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Rotation) != 0)
+      {
+        transform.localRotation = new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW);
+      }
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Scale) != 0)
+      {
+        // Unity uses Y up;
+        transform.localScale = new Vector3(radius, length, radius);
+      }
     }
 
     /// <summary>
@@ -61,6 +70,7 @@ namespace Tes.Handlers.Shape3D
     protected override void EncodeAttributes(ref ObjectAttributes attr, GameObject obj, ShapeComponent comp)
     {
       Transform transform = obj.transform;
+      attr.Colour = ShapeComponent.ConvertColour(comp.Colour);
       attr.X = transform.localPosition.x;
       attr.Y = transform.localPosition.y;
       attr.Z = transform.localPosition.z;
@@ -71,6 +81,18 @@ namespace Tes.Handlers.Shape3D
       attr.ScaleX = attr.ScaleY = transform.localScale.x;
       // Unity uses Y up;
       attr.ScaleZ = transform.localScale.y;
+    }
+
+    /// <summary>
+    /// Creates an cylinder shape for serialisation.
+    /// </summary>
+    /// <param name="shapeComponent">The component to create a shape for.</param>
+    /// <returns>A shape instance suitable for configuring to generate serialisation messages.</returns>
+    protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
+    {
+      Shapes.Shape shape = new Shapes.Cylinder();
+      ConfigureShape(shape, shapeComponent);
+      return shape;
     }
 
     private Mesh _solidMesh;

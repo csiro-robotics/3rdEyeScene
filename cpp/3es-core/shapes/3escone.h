@@ -42,14 +42,16 @@ namespace tes
   {
     setPosition(point);
     setDirection(dir);
-    setScale(Vector3f(angle, angle, length));
+    setLength(length);
+    setAngle(angle);
+    //setScale(Vector3f(angle, angle, length));
   }
 
 
   inline Cone &Cone::setAngle(float angle)
   {
-    Vector3f s = Shape::scale();
-    s.x = s.y = angle;
+    Vector3f s = scale();
+    s.x = s.y = s.z * std::tan(angle);
     setScale(s);
     return *this;
   }
@@ -58,14 +60,23 @@ namespace tes
   inline float Cone::angle() const
   {
     return scale().x;
+    // scale X/Y encode the radius of the cone base.
+    // Convert to angle angle as:
+    //   tan(theta) = radius / length
+    //   theta = atan(radius / length)
+    const Vector3f s = scale();
+    const float length = s.z;
+    const float radius = s.x;
+    return (length != 0.0f) ? std::atan(radius/ length) : 0.0f;
   }
 
 
   inline Cone &Cone::setLength(float length)
   {
-    Vector3f s = Shape::scale();
-    s.z = length;
-    setScale(s);
+    // Changing the length requires maintaining the angle, so we must adjust the radius to suit.
+    const float angle = this->angle();
+    _data.attributes.scale[2] = length;
+    setAngle(angle);
     return *this;
   }
 

@@ -13,23 +13,38 @@ namespace Tes.Handlers
     /// <summary>
     /// Object ID, unique in its shape handler. Zero for transient objects.
     /// </summary>
-    public uint ObjectID { get; set; }
+    public uint ObjectID { get { return _objectID; } set { _objectID = value; } }
+    [SerializeField]
+    private uint _objectID;
     /// <summary>
     /// Object's filtering category.
     /// </summary>
-    public ushort Category { get; set; }
+    public ushort Category { get { return _category; } set { _category = value; } }
+    [SerializeField]
+    private ushort _category;
     /// <summary>
     /// <see cref="ObjectFlag"/>
     /// </summary>
-    public ushort ObjectFlags { get; set; }
+    public ushort ObjectFlags { get { return _objectFlags; } set { _objectFlags = value; } }
+    [SerializeField]
+    private ushort _objectFlags;
     /// <summary>
     /// Object colour.
     /// </summary>
-    public Color32 Colour { get; set; }
+    public Color32 Colour { get { return _colour; } set { _colour = value; } }
+    [SerializeField]
+    private Color32 _colour;
     /// <summary>
     /// An extension value which can be used contextually by various shape types.
     /// </summary>
-    public int ExtendedValue { get; set; }
+    public int ExtendedValue { get { return _extendedValue; } set { _extendedValue = value; } }
+    [SerializeField]
+    private int _extendedValue;
+
+    /// <summary>
+    /// May be used to flag a dirty status. Specific to the owning shape handler.
+    /// </summary>
+    public bool Dirty { get; set; }
 
     /// <summary>
     /// Translates a 3es colour to a native, Unity colour.

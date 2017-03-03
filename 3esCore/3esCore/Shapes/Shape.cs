@@ -94,6 +94,16 @@ namespace Tes.Shapes
     public ushort Category { get { return _data.Category; } set { _data.Category = value; } }
 
     /// <summary>
+    /// Direct access to the <see cref="ObjectFlag"/> set for this shape.
+    /// </summary>
+    /// <value>The flags.</value>
+    public ushort Flags
+    {
+      get { return _data.Flags; }
+      set { _data.Flags = value; }
+    }
+
+    /// <summary>
     /// Gets or sets the wire frame display flag.
     /// </summary>
     public bool Wireframe
@@ -110,6 +120,24 @@ namespace Tes.Shapes
     {
       get { return (_data.Flags & (ushort)ObjectFlag.Transparent) != 0; }
       set { _data.Flags &= (ushort)~ObjectFlag.Transparent; _data.Flags |= value ? (ushort)ObjectFlag.Transparent : (ushort)0; }
+    }
+
+    /// <summary>
+    /// Exposes shape details via an <see cref="ObjectAttributes"/> structure.
+    /// </summary>
+    /// <returns>The attributes.</returns>
+    public ObjectAttributes GetAttributes()
+    {
+      return _data.Attributes;
+    }
+
+    /// <summary>
+    /// Sets shape details via an <see cref="ObjectAttributes"/> structure.
+    /// </summary>
+    /// <param name="attr">The attributes to set.</param>
+    public void SetAttributes(ObjectAttributes attr)
+    {
+      _data.Attributes = attr;
     }
 
     /// <summary>

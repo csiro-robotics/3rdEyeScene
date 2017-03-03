@@ -76,8 +76,10 @@
     <Compile Include="Runtime\DataThread.cs" />
     <Compile Include="Runtime\Error.cs" />
     <Compile Include="Runtime\ErrorCode.cs" />
+    <Compile Include="Runtime\FrameTransform.cs" />
     <Compile Include="Runtime\Info.cs" />
     <Compile Include="Runtime\MaterialLibrary.cs" />
+    <Compile Include="Runtime\MeshBuilder.cs" />
     <Compile Include="Runtime\MessageHandler.cs" />
     <Compile Include="Maths\ColourExt.cs" />
     <Compile Include="Maths\Vector2Ext.cs" />
@@ -93,6 +95,7 @@
     <Compile Include="Tessellate\Sphere.cs" />
     <Compile Include="Tessellate\SphereVector3Hash.cs" />
     <Compile Include="Tessellate\Star.cs" />
+    <Compile Include="Handlers\MeshResourcePlaceholder.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\3esCore\3esCore.csproj">

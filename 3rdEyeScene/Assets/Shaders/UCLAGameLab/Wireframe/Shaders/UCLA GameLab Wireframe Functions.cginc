@@ -1,3 +1,5 @@
+// Upgrade NOTE: replaced 'UNITY_INSTANCE_ID' with 'UNITY_VERTEX_INPUT_INSTANCE_ID'
+
 //Algorithms and shaders based on code from this journal
 //http://cgg-journal.com/2008-2/06/index.html
 
@@ -14,7 +16,7 @@ struct VertexInput {
   float3 normal : NORMAL;
   float4 texcoord : TEXCOORD0;
   float4  color : COLOR;
-  UNITY_INSTANCE_ID
+  UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
 // Vertex to Geometry

@@ -41,8 +41,8 @@ void tes::sphereInitialise(std::vector<Vector3f> &vertices, std::vector<unsigned
   // We start with two hexagonal rings to approximate the sphere.
   // All subdivision occurs on a unit radius sphere, at the origin. We translate and
   // scale the vertices at the end.
-  vertices.clear();
-  indices.clear();
+  vertices.resize(0);
+  indices.resize(0);
 
   static const float ringControlAngle = 25.0f / 180.0f * float(M_PI);
   static const float ringHeight = std::sin(ringControlAngle);

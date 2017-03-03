@@ -11,7 +11,7 @@ namespace UI.Properties
 
     protected override void Start()
     {
-      // Make bindings. Remove then add in case they were bound in the editor.		protected virtual void OnValueChanged()
+      // Make bindings. Remove then add in case they were bound in the editor.    protected virtual void OnValueChanged()
       if (Dropdown == null)
       {
         Dropdown = GetComponentInChildren<Dropdown>();
@@ -37,6 +37,7 @@ namespace UI.Properties
         {
           Dropdown.OptionData opt = new Dropdown.OptionData();
           opt.text = strings[i];
+          options.Add(opt);
         }
       }
 

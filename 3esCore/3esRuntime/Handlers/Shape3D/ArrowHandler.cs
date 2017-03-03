@@ -45,13 +45,22 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Override to decode ScaleX as radius and ScaleZ as length.
     /// </summary>
-    protected override void DecodeTransform(ObjectAttributes attributes, Transform transform)
+    protected override void DecodeTransform(ObjectAttributes attributes, Transform transform, ObjectFlag flags)
     {
       float length = attributes.ScaleZ;
       float radius = attributes.ScaleX;
-      transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
-      transform.localRotation = new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW);
-      transform.localScale = new Vector3(radius, radius, length);
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Position) != 0)
+      {
+        transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
+      }
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Rotation) != 0)
+      {
+        transform.localRotation = new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW);
+      }
+      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Scale) != 0)
+      {
+        transform.localScale = new Vector3(radius, radius, length);
+      }
     }
 
     /// <summary>
@@ -68,11 +77,20 @@ namespace Tes.Handlers.Shape3D
       attr.RotationY = transform.localRotation.y;
       attr.RotationZ = transform.localRotation.z;
       attr.RotationW = transform.localRotation.w;
-      attr.ScaleZ = transform.localScale.z;
-      // Convert base radius back to an angle.
-      // Conceptually the calculation is:
-      //    angle = asin(radius / length)
-      attr.ScaleX = attr.ScaleY = Mathf.Asin(transform.localScale.x / attr.ScaleZ);
+      attr.ScaleX = transform.localScale.x;
+      attr.ScaleY = attr.ScaleZ = transform.localScale.z;
+    }
+
+    /// <summary>
+    /// Creates an arrow shape for serialisation.
+    /// </summary>
+    /// <param name="shapeComponent">The component to create a shape for.</param>
+    /// <returns>A shape instance suitable for configuring to generate serialisation messages.</returns>
+    protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
+    {
+      Shapes.Shape shape = new Shapes.Arrow();
+      ConfigureShape(shape, shapeComponent);
+      return shape;
     }
 
     private Mesh _solidMesh;

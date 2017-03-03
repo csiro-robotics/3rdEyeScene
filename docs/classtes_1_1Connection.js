@@ -1,13 +1,13 @@
 var classtes_1_1Connection =
 [
     [ "~Connection", "classtes_1_1Connection.html#aa10373cb876704831a5494fc7d88ad13", null ],
-    [ "active", "classtes_1_1Connection.html#a0f87d2fd53455527107a39f8ca36d4ae", null ],
-    [ "address", "classtes_1_1Connection.html#acc52a5b36cb80d52109b790d179ef8d4", null ],
+    [ "active", "classtes_1_1Connection.html#a575ab64e03c64d469d4706f823492908", null ],
+    [ "address", "classtes_1_1Connection.html#a3e6e967276ac719c69887179057288b9", null ],
     [ "close", "classtes_1_1Connection.html#a5ad4d743cd75f9c00866533bb394b9f7", null ],
     [ "create", "classtes_1_1Connection.html#a36a1cb106e995637af342cebb9322304", null ],
     [ "destroy", "classtes_1_1Connection.html#a85e88c8239bdb84a92cce3f9f5d64162", null ],
-    [ "isConnected", "classtes_1_1Connection.html#a4b7b46604f02ed1620cff3fed1beaba1", null ],
-    [ "port", "classtes_1_1Connection.html#ad9d551f33bfd345937ac22d8d704f648", null ],
+    [ "isConnected", "classtes_1_1Connection.html#acf8d6c5af91ecae1cd3c2679fd4b1516", null ],
+    [ "port", "classtes_1_1Connection.html#a21494b29ce1943baae1a89663af53b3e", null ],
     [ "referenceResource", "classtes_1_1Connection.html#a0daed0900872bd41451b61f80d5fe545", null ],
     [ "releaseResource", "classtes_1_1Connection.html#a3cb88d8778f3811f9c37bfcc827e34ef", null ],
     [ "send", "classtes_1_1Connection.html#a8008482993204ade9cdb166e6de2fdbf", null ],

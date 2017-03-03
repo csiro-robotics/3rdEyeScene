@@ -9,7 +9,7 @@ namespace UI.Properties
 
     protected override void Start()
     {
-      // Make bindings. Remove then add in case they were bound in the editor.		protected virtual void OnValueChanged()
+      // Make bindings. Remove then add in case they were bound in the editor.    protected virtual void OnValueChanged()
       if (Toggle == null)
       {
         Toggle = GetComponentInChildren<Toggle>();

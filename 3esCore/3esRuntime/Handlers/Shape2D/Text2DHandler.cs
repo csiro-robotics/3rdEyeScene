@@ -346,34 +346,67 @@ namespace Tes.Handlers.Shape2D
     public override Error Serialise(BinaryWriter writer, ref SerialiseInfo info)
     {
       PacketBuffer packet = new PacketBuffer();
-      PacketHeader header = PacketHeader.Create(RoutingID, CreateMessage.MessageID);
-      CreateMessage msg = new CreateMessage();
-      byte[] encoded = new byte[1024];
       info.TransientCount = info.PersistentCount = 0u;
-      msg.Reserved = 0;
-      packet.WriteHeader(header);
 
-      foreach (TextEntry entry in TransientText.Entries)
+      if (!Serialise(TransientText, packet, writer, ref info.TransientCount))
       {
-        ++info.TransientCount;
-        WriteEntry(entry, packet, msg, ref encoded);
-        if (packet.FinalisePacket())
-        {
-          packet.ExportTo(writer);
-        }
+        return new Error(ErrorCode.SerialisationFailure);
       }
 
-      foreach (TextEntry entry in PersistentText.Entries)
+      if (!Serialise(PersistentText, packet, writer, ref info.PersistentCount))
       {
-        ++info.PersistentCount;
-        WriteEntry(entry, packet, msg, ref encoded);
-        if (packet.FinalisePacket())
-        {
-          packet.ExportTo(writer);
-        }
+        return new Error(ErrorCode.SerialisationFailure);
       }
 
       return new Error();
+    }
+
+    private static bool Serialise(Text2DManager textManager, PacketBuffer packet, BinaryWriter writer, ref uint count)
+    {
+      Shapes.Text2D shape = new Shapes.Text2D(null);
+      uint progressMarker = 0;
+      int dataResult = 1;
+      bool shapeOk = true;
+
+      foreach (TextEntry entry in textManager.Entries)
+      {
+        ++count;
+        shape.ID = entry.ID;
+        shape.Category = entry.Category;
+        shape.Flags = entry.ObjectFlags;
+        shape.SetPosition(entry.Position.x, entry.Position.y, entry.Position.z);
+        shape.Text = entry.Text;
+        shape.WriteCreate(packet);
+
+        shapeOk = packet.FinalisePacket();
+        if (shapeOk)
+        {
+          packet.ExportTo(writer);
+
+          if (shape.IsComplex)
+          {
+            dataResult = 1;
+            while (dataResult > 0 && shapeOk)
+            {
+              shape.WriteData(packet, ref progressMarker);
+              shapeOk = packet.FinalisePacket();
+              if (shapeOk)
+              {
+                packet.ExportTo(writer);
+              }
+            }
+
+            shapeOk = dataResult == 0;
+          }
+        }
+
+        if (!shapeOk)
+        {
+          return false;
+        }
+      }
+
+      return true;
     }
 
     /// <summary>
@@ -385,35 +418,6 @@ namespace Tes.Handlers.Shape2D
     {
       PersistentText.CategoryActive(categoryId, active);
       TransientText.CategoryActive(categoryId, active);
-    }
-
-    /// <summary>
-    /// Serialise a single text entry.
-    /// </summary>
-    /// <param name="entry"></param>
-    /// <param name="packet"></param>
-    /// <param name="msg"></param>
-    /// <param name="encoded"></param>
-    private void WriteEntry(TextEntry entry, PacketBuffer packet, CreateMessage msg, ref byte[] encoded)
-    {
-      ushort strlen;
-      packet.Reset(RoutingID, CreateMessage.MessageID);
-      msg.ObjectID = entry.ID;
-      msg.Category = entry.Category;
-      msg.Flags = entry.ObjectFlags;
-      msg.Attributes.X = entry.Position.x;
-      msg.Attributes.Y = entry.Position.y;
-      msg.Attributes.Z = entry.Position.z;
-      msg.Write(packet);
-
-      strlen = (ushort)System.Text.Encoding.Default.GetByteCount(entry.Text);
-      if (encoded.Length < strlen)
-      {
-        encoded = new byte[strlen];
-      }
-      System.Text.Encoding.Default.GetBytes(entry.Text, 0, entry.Text.Length, encoded, 0);
-      packet.WriteBytes(BitConverter.GetBytes(strlen), true);
-      packet.WriteBytes(encoded, false, 0, strlen);
     }
 
     /// <summary>

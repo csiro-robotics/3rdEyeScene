@@ -187,7 +187,7 @@ int TcpServer::updateFrame(float dt, bool flush)
     return 0;
   }
 
-  std::lock_guard<Lock> guard(_lock);
+  std::unique_lock<Lock> guard(_lock);
   int transferred = 0;
   bool error = false;
   for (TcpConnection *con : _connections)
@@ -201,6 +201,20 @@ int TcpServer::updateFrame(float dt, bool flush)
     {
       error = true;
     }
+  }
+
+  // Async mode: commit new connections after the current frame is sent.
+  // We do it after a frame update to prevent doubling up on creation messages.
+  // Consider this: the application code uses a callback on new connections
+  // to create objects to reflect the current state, invoked when commitConnections()
+  // is called. If we did this before the end of frame transfer, then we may
+  // generate create messages in the callback for objects which have buffered
+  // create messages. Alternatively, if the server is not in collated mode, the
+  // we'll get different behaviour between collated and uncollated modes.
+  guard.unlock();
+  if (_monitor->mode() == tes::ConnectionMonitor::Asynchronous)
+  {
+    _monitor->commitConnections();
   }
 
   return (!error) ? transferred : -transferred;
@@ -393,7 +407,7 @@ void TcpServer::updateConnections(const std::vector<TcpConnection *> &connection
     }
   }
 
-  _connections.clear();
+  _connections.resize(0);
   std::for_each(connections.begin(), connections.end(),
                 [this] (TcpConnection *con){ _connections.push_back(con);});
 

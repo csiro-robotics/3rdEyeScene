@@ -73,19 +73,25 @@ namespace UI
     /// </summary>
     public void Clear()
     {
-      TreeViewItem item;
       // Prevent rebuilding the visuals.
       _propagatingBindings = true;
-      // Remove backwards for better List<> management.
-      for (int i = Root.ChildCount - 1; i >= 0; --i)
-      {
-        item = Root.GetChild(i);
-        RemoveItem(item);
-        Destroy(item.Visual.gameObject);
-      }
+      Clear(Root);
       _propagatingBindings = false;
       // Update/clear the UI.
       RebuildVisuals();
+    }
+
+    private void Clear(TreeViewItem item)
+    {
+      // Remove backwards for better List<> management.
+      TreeViewItem child;
+      for (int i = item.ChildCount - 1; i >= 0; --i)
+      {
+        child = item.GetChild(i);
+        Clear(child);
+        RemoveItem(child);
+        Destroy(child.Visual.gameObject);
+      }
     }
 
     /// <summary>
@@ -125,8 +131,8 @@ namespace UI
       item.OnChildAdded += OnAdd;
       item.OnChildRemoved += OnRemove;
       item.OnExpandChange += OnExpansionChange;
-      item.Visual.SetParent(null, false);
       item.Visual.gameObject.SetActive(false);
+      item.Visual.SetParent(ScrollView.content, false);
       // Recur on children to ensure they are also bound.
       for (int i = 0; i < item.ChildCount; ++i)
       {
@@ -152,7 +158,7 @@ namespace UI
       item.OnChildAdded -= OnAdd;
       item.OnChildRemoved -= OnRemove;
       item.OnExpandChange -= OnExpansionChange;
-      item.Visual.SetParent(null, false);
+      //item.Visual.SetParent(null, false);
       item.Visual.gameObject.SetActive(false);
 
       // Recur on children to ensure they are also unbound.
@@ -191,24 +197,21 @@ namespace UI
     /// Add the visual to the scroll view and recur on children.
     /// </summary>
     /// <param name="item">The item to add the visual for.</param>
-    private void AddVisuals(TreeViewItem item, int depth)
+    private void AddVisuals(TreeViewItem item, int depth, bool visible = true)
     {
       TreeViewItem child;
       // Add visual.
-      item.Visual.gameObject.SetActive(true);
+      item.Visual.gameObject.SetActive(visible);
       item.Visual.transform.SetParent(ScrollView.content, false);
       if (item.Indent != null)
       {
         item.Indent.minWidth = depth * Indent;
       }
-      if (item.Expanded)
+      // Add children.
+      for (int i = 0; i < item.ChildCount; ++i)
       {
-        // Add children.
-        for (int i = 0; i < item.ChildCount; ++i)
-        {
-          child = item.GetChild(i);
-          AddVisuals(child, depth + 1);
-        }
+        child = item.GetChild(i);
+        AddVisuals(child, depth + 1, visible && item.Expanded);
       }
     }
 

@@ -41,7 +41,7 @@ namespace Tes.Handlers
     public TransientShapeCache(int initialCapacity)
     {
       _initialCapacity = initialCapacity;
-      _cache = new GameObject[initialCapacity];
+      _cache = new GameObject[_initialCapacity];
     }
 
     /// <summary>

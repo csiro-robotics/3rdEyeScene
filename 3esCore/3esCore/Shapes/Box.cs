@@ -68,7 +68,6 @@ namespace Tes.Shapes
     /// <param name="category">Category to which the shape belongs.</param>
     /// <param name="pos">Defines the centre of the shape.</param>
     /// <param name="scale">The box edge lengths or extents.</param>
-    /// <param name="rot">A quaternion rotation applied to the shape.</param>
     public Box(uint id, ushort category, Vector3 pos, Vector3 scale)
     : this(id, category, pos, scale, Quaternion.Identity)
     {

@@ -322,7 +322,6 @@ namespace Tes.Handlers
       info.TransientCount = info.PersistentCount = 0u;
 
       PacketBuffer packet = new PacketBuffer(1024);
-      PacketHeader header = PacketHeader.Create(RoutingID, CategoryNameMessage.MessageID);
       CategoryNameMessage msg = new CategoryNameMessage();
       foreach (Category cat in _categories.Values)
       {
@@ -331,7 +330,7 @@ namespace Tes.Handlers
         msg.ParentID = cat.ParentID;
         msg.DefaultActive = cat.Active;
         msg.Name = cat.Name;
-        packet.WriteHeader(header);
+        packet.Reset(RoutingID, CategoryNameMessage.MessageID);
         msg.Write(packet);
         packet.FinalisePacket();
         packet.ExportTo(writer);

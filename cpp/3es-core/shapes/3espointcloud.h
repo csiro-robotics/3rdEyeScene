@@ -6,7 +6,8 @@
 
 #include "3es-core.h"
 
-#include "3esmeshset.h"
+#include "3escolour.h"
+#include "3esmeshresource.h"
 
 namespace tes
 {

@@ -80,7 +80,6 @@ namespace UI
       visual.Toggle.isOn = category.Active;
       visual.ID = category.ID;
       visual.ParentID = category.ParentID;
-      visual.Toggle.isOn = !expanded;
       visual.Toggle.onValueChanged.AddListener((bool on) => OnToggle(visual, on));
       TreeViewItem treeItem = new TreeViewItem(visual.CategoryName,
                                                visual.gameObject.transform as RectTransform,

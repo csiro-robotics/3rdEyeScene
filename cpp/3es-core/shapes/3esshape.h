@@ -52,6 +52,7 @@ namespace tes
 
     /// Sets the wireframe flag value for this shape. Only before sending create.
     /// Not all shapes will respect the flag.
+    /// @return @c *this.
     Shape &setWireframe(bool wire);
     /// Returns true if the wireframe flag is set.
     /// @return True if wireframe flag is set.
@@ -59,6 +60,7 @@ namespace tes
 
     /// Sets the transparent flag value for this shape. Only before sending create.
     /// Not all shapes will respect the flag.
+    /// @return @c *this.
     Shape &setTransparent(bool transparent);
     /// Returns true if the transparent flag is set.
     /// @return True if transparent flag is set.
@@ -66,10 +68,20 @@ namespace tes
 
     /// Sets the two sided shader flag value for this shape. Only before sending create.
     /// Not all shapes will respect the flag.
+    /// @return @c *this.
     Shape &setTwoSided(bool twoSided);
     /// Returns true if the two sided shader flag is set.
     /// @return True if two sided flag is set.
     bool isTwoSided() const;
+
+    /// Set the full set of @c ObjectFlag values.
+    /// This affects attributes such as @c isTwoSided() and @c isWireframe().
+    /// @param flags New flag values to write.
+    /// @return @c *this.
+    Shape &setFlags(uint16_t flags);
+    /// Retrieve the full set of @c ObjectFlag values.
+    /// @return Active flag set.
+    uint16_t flags() const;
 
     Shape &setPosition(const V3Arg &pos);
     Vector3f position() const;
@@ -265,6 +277,19 @@ namespace tes
   inline bool Shape::isTwoSided() const
   {
     return (_data.flags & OFTwoSided) != 0;
+  }
+
+
+  inline Shape &Shape::setFlags(uint16_t flags)
+  {
+    _data.flags = flags;
+    return *this;
+  }
+
+
+  inline uint16_t Shape::flags() const
+  {
+    return _data.flags;
   }
 
 

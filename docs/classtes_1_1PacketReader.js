@@ -1,8 +1,8 @@
 var classtes_1_1PacketReader =
 [
     [ "PacketReader", "classtes_1_1PacketReader.html#af98bb5bc6d96c4cd05e5f2143c64cc60", null ],
-    [ "bytesAvailable", "classtes_1_1PacketReader.html#a4cadc579993cf657e6d0163dde1750e7", null ],
-    [ "calculateCrc", "classtes_1_1PacketReader.html#a0a2391988b158ebe75a89d1195675e89", null ],
+    [ "bytesAvailable", "classtes_1_1PacketReader.html#a82ecec3b8e14bf965c1a60a0f2548ae1", null ],
+    [ "calculateCrc", "classtes_1_1PacketReader.html#aeea5080c739d2df8b7fd491b0e3429cb", null ],
     [ "checkCrc", "classtes_1_1PacketReader.html#a93b3fbd884f0b35e82459eacce60e723", null ],
     [ "operator>>", "classtes_1_1PacketReader.html#acff327fce98d611fe6bb7aac281eaa02", null ],
     [ "readArray", "classtes_1_1PacketReader.html#ace4a696c93ffa927338ba9d82dac8268", null ],

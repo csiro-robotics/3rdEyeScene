@@ -93,6 +93,7 @@ namespace Tes.Server
         {
           _packet.FinalisePacket();
           wrote = SendInternal(_packet.Data, 0, _packet.Count, true);
+          FlushCollatedPacket();
         }
       }
       finally
@@ -284,6 +285,7 @@ namespace Tes.Server
     /// </remarks>
     protected int SendInternal(byte[] data, int offset, int length, bool flushCollated)
     {
+      bool sendDirect = true;
       _sendLock.Lock();
       try
       {
@@ -295,14 +297,21 @@ namespace Tes.Server
             FlushCollatedPacket();
           }
           int added = _collator.Add(data, offset, length);
-          if (flushCollated)
+          // Flush on request, or if we failed to add to the packet. We'll send the data by itself afterwards.
+          if (flushCollated || added == -1)
           {
             // Final flush?
             FlushCollatedPacket();
           }
-          return added;
+          if (added != -1)
+          {
+            sendDirect = false;
+            return added;
+          }
+          // At this point we may send without collation or compression.
         }
-        else
+        
+        if (sendDirect)
         {
           if (_client != null && _client.Connected)
           {
@@ -319,6 +328,8 @@ namespace Tes.Server
           }
           return length;
         }
+
+        return -1;
       }
       finally
       {
@@ -334,7 +345,7 @@ namespace Tes.Server
     /// </remarks>
     private void FlushCollatedPacket()
     {
-      if (_collator.CollatedBytes > 0 && _collator.Finalise())
+      if (_collator.CollatedBytes > 0 && _collator.FinaliseEncoding())
       {
         int byteCount = _collator.Count;
         // TODO: catch exception and mark client as disconnected.
@@ -406,7 +417,7 @@ namespace Tes.Server
           if (_currentResource != null)
           {
             // Update a part transfer.
-            _currentResource.Resource.Transfer(packet, Math.Max(1, byteLimit - transferred), ref _currentResourceProgress);
+            _currentResource.Resource.Transfer(packet, Math.Max(0, byteLimit - transferred), ref _currentResourceProgress);
             if (packet.FinalisePacket())
             {
               int sendRes = Send(packet.Data, 0, packet.Count);

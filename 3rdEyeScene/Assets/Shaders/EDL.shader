@@ -72,8 +72,14 @@ Shader "Hidden/EDL"
           float2 N_rel_pos = uvRadius * _NeighbourAddress[c];
           float2 N_abs_pos = uv + N_rel_pos;
 
+#if UNITY_VERSION >= 550
+          // Rerverse depth buffer implemented in Unity 5.5 and beyond.
+          float neighbourDepth = logToLinear(1.0f - UNITY_SAMPLE_DEPTH(tex2D(depthTex, N_abs_pos)));
+          // float neighbourDepth = Linear01Depth(1.0f - UNITY_SAMPLE_DEPTH(tex2D(depthTex, N_abs_pos)));
+#else  // UNITY_VERSION >= 550
           float neighbourDepth = logToLinear(UNITY_SAMPLE_DEPTH(tex2D(depthTex, N_abs_pos)));
           // float neighbourDepth = Linear01Depth(UNITY_SAMPLE_DEPTH(tex2D(depthTex, N_abs_pos)));
+#endif // UNITY_VERSION >= 550
 
           if (neighbourDepth != 0.0)
           {
@@ -92,8 +98,14 @@ Shader "Hidden/EDL"
       {
         float2 uv = i.uv;
         sampler2D depthTex = _DepthTexture;
+#if UNITY_VERSION >= 550
+        // Rerverse depth buffer implemented in Unity 5.5 and beyond.
+        float depthValue = logToLinear(1.0f - UNITY_SAMPLE_DEPTH(tex2D(depthTex, uv)));
+        //float depthValue = Linear01Depth(1.0f - UNITY_SAMPLE_DEPTH(tex2D(depthTex, uv)));
+#else  // UNITY_VERSION >= 550
         float depthValue = logToLinear(UNITY_SAMPLE_DEPTH(tex2D(depthTex, uv)));
-        //float depthValue = Linear01Depth(UNITY_SAMPLE_DEPTH(tex2D(depthTex, uv)));
+        //float depthValue = Linear01Depth (UNITY_SAMPLE_DEPTH(tex2D(depthTex, uv)));
+#endif // UNITY_VERSION >= 550
 
         // The following code may be required in some instances. If the EDL image is flipped
         // then enable this code and uncomment the uniform declaration of '_MainTex_TexelSize'

@@ -60,6 +60,26 @@ namespace tes
       copy->references = 1;
       return copy;
     }
+
+    inline void clear(unsigned componentFlags)
+    {
+      clearArrays();
+      transform = Matrix4f::identity;
+      id = 0;
+      tint = 0xffffffffu;
+      components = componentFlags;
+      drawType = DtTriangles;
+    }
+
+    inline void clearArrays()
+    {
+      // Should only be called if the reference count is 1.
+      vertices.resize(0);
+      indices.resize(0);
+      colours.resize(0);
+      normals.resize(0);
+      uvs.resize(0);
+    }
   };
 }
 
@@ -110,16 +130,39 @@ SimpleMesh::~SimpleMesh()
 
 void SimpleMesh::clear()
 {
+  // Note: _imp may change before leaving this function, but the guard will hold
+  // a reference to the correct lock.
+  std::unique_lock<SpinLock> guard(_imp->lock);
   if (_imp->references == 1)
   {
-    delete _imp;
+    _imp->clear(Vertex | Index);
   }
   else
   {
     --_imp->references;
+    _imp = new SimpleMeshImp(Vertex | Index);
   }
+}
 
-  _imp = new SimpleMeshImp(Vertex | Index);
+
+void SimpleMesh::clearData()
+{
+  // Note: _imp may change before leaving this function, but the guard will hold
+  // a reference to the correct lock.
+  std::unique_lock<SpinLock> guard(_imp->lock);
+  if (_imp->references == 1)
+  {
+    _imp->clearArrays();
+  }
+  else
+  {
+    SimpleMeshImp *old = _imp;
+    --_imp->references;
+    _imp = new SimpleMeshImp(Vertex | Index);
+    *_imp = *old;
+    _imp->references = 1;
+    _imp->clearArrays();
+  }
 }
 
 

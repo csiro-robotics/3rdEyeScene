@@ -15,11 +15,11 @@ var index =
     [ "Library Organisation", "docorganisation.html", [
       [ "C# Core Libraries", "docorganisation.html#docorgcsharp", [
         [ "3esCore (C#)", "docorganisation.html#docorgcsharpcore", null ],
-        [ "docorgcsharpruntime", "docorganisation.html#docorgcsharpruntime", null ],
+        [ "3esRuntime (C#)", "docorganisation.html#docorgcsharpruntime", null ],
         [ "3esrec (C#)", "docorganisation.html#docorgcsharprec", null ]
       ] ],
       [ "C++ Core Libraries", "docorganisation.html#docorgcpp", [
-        [ "docorgcppcore", "docorganisation.html#docorgcppcore", null ]
+        [ "3es-core (C++)", "docorganisation.html#docorgcppcore", null ]
       ] ]
     ] ],
     [ "Building 3rd Eye Scene", "docbuild.html", [

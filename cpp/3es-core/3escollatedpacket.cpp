@@ -625,6 +625,10 @@ void CollatedPacket::expand(unsigned expandBy)
     }
 #endif // TES_ZLIB
   }
+  else
+  {
+    memcpy(newBuffer, _buffer, InitialCursorOffset);
+  }
   delete[] _buffer;
   _buffer = newBuffer;
   _bufferSize = newBufferSize;
