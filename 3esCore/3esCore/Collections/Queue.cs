@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using Tes.Thread;
+using Tes.Threading;
 
 namespace Tes.Collections
 {

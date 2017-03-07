@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using Tes.Net;
 using Tes.IO;
 using Tes.Shapes;
-using Tes.Thread;
+using Tes.Threading;
 using Tes.Util;
 
 namespace Tes.Server

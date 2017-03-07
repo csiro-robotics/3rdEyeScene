@@ -32,7 +32,10 @@ namespace Tes.IO.Compression
         short[]      right;
         byte[]       codeLengthArray;
 #if DEBUG
-        uint[]       codeArrayDebug;
+    // disable csharp compiler warning #0414: field assigned unused value
+#pragma warning disable 0414
+    uint[]       codeArrayDebug;
+#pragma warning restore 0414
 #endif
 
         int tableMask;         

@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3esrec", "3esrec\3esrec.csp
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3esRuntime", "3esRuntime\3esRuntime.csproj", "{13D0C0D8-035F-4A6D-8148-BA96EE9EBF9E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3esServerTest", "3esServerTest\3esServerTest.csproj", "{689AE501-F550-41EE-BCAB-4DA1AA50DC8E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GZipTest", "GZipTest\GZipTest.csproj", "{689AE501-F550-41EE-BCAB-4DA1AA50DC8E}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3esExamplePlugin", "plugin\3esExamplePlugin\3esExamplePlugin.csproj", "{BBAD5963-CDCE-4A2B-9072-295F946280E6}"
 EndProject

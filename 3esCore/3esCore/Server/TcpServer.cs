@@ -2,7 +2,7 @@
 using Tes.IO;
 using Tes.Net;
 using Tes.Shapes;
-using Tes.Thread;
+using Tes.Threading;
 
 namespace Tes.Server
 {

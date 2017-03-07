@@ -1,7 +1,6 @@
-using System;
 using System.Threading;
 
-namespace Tes.Thread
+namespace Tes.Threading
 {
   /// <summary>
   /// A spin lock using atomic operations.
@@ -52,6 +51,24 @@ namespace Tes.Thread
     public void Unlock()
     {
       Interlocked.CompareExchange(ref _lock, 0, 1);
+    }
+
+    /// <summary>
+    /// For future System.Threading.SpinLock compatability. Aliases <see cref="TryLock()"/>.
+    /// </summary>
+    /// <param name="lockTaken">True if the lock is attained.</param>
+    public void Enter(ref bool lockTaken)
+    {
+      lockTaken = TryLock();
+    }
+
+    /// <summary>
+    /// For future System.Threading.SpinLock compatability. Aliases <see cref="Unlock()"/>.
+    /// </summary>
+    /// <param name="useMemoryBarrier">Not used.</param>
+    public void Exit(bool useMemoryBarrier)
+    {
+      Unlock();
     }
 
     /// <summary>

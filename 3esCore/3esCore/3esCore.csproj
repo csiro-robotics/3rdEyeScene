@@ -1,5 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -33,35 +32,6 @@
     <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="IO\Compression\readme.txt" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="IO\Compression\BlockType.cs" />
-    <Compile Include="IO\Compression\CompressionMode.cs" />
-    <Compile Include="IO\Compression\CopyEncoder.cs" />
-    <Compile Include="IO\Compression\Crc32Helper.cs" />
-    <Compile Include="IO\Compression\DeflateInput.cs" />
-    <Compile Include="IO\Compression\DeflaterManaged.cs" />
-    <Compile Include="IO\Compression\DeflateStream.cs" />
-    <Compile Include="IO\Compression\DeflateStreamAsyncResult.cs" />
-    <Compile Include="IO\Compression\FastEncoder.cs" />
-    <Compile Include="IO\Compression\FastEncoderStatics.cs" />
-    <Compile Include="IO\Compression\FastEncoderWindow.cs" />
-    <Compile Include="IO\Compression\FileFormats.cs" />
-    <Compile Include="IO\Compression\GZipDecoder.cs" />
-    <Compile Include="IO\Compression\GZipStream.cs" />
-    <Compile Include="IO\Compression\GZipUtils.cs" />
-    <Compile Include="IO\Compression\HuffmanTree.cs" />
-    <Compile Include="IO\Compression\IDeflater.cs" />
-    <Compile Include="IO\Compression\Inflater.cs" />
-    <Compile Include="IO\Compression\InflaterState.cs" />
-    <Compile Include="IO\Compression\InputBuffer.cs" />
-    <Compile Include="IO\Compression\InvalidDataException.cs" />
-    <Compile Include="IO\Compression\Match.cs" />
-    <Compile Include="IO\Compression\MatchState.cs" />
-    <Compile Include="IO\Compression\OutputBuffer.cs" />
-    <Compile Include="IO\Compression\OutputWindow.cs" />
-    <Compile Include="IO\Compression\SR.cs" />
     <Compile Include="Maths\IntUtil.cs" />
     <Compile Include="Maths\Matrix4.cs" />
     <Compile Include="Maths\Quaternion.cs" />
@@ -71,7 +41,6 @@
     <Compile Include="Net\CoordinateFrame.cs" />
     <Compile Include="Net\IConnection.cs" />
     <Compile Include="Net\MeshShapeFlag.cs" />
-    <Compile Include="Net\TcpClientUtil.cs" />
     <Compile Include="Server\ConnectionMonitor.cs" />
     <Compile Include="Server\IConnectionMonitor.cs" />
     <Compile Include="Server\IServer.cs" />
@@ -121,13 +90,14 @@
     <Compile Include="Net\RoutingID.cs" />
     <Compile Include="Net\ControlMessageID.cs" />
     <Compile Include="Net\PointsAttributeFlag.cs" />
+    <Compile Include="Net\TcpClientUtil.cs" />
     <Compile Include="Net\Text2DFlag.cs" />
     <Compile Include="Net\Text3DFlag.cs" />
     <Compile Include="Net\UpdateFlag.cs" />
     <Compile Include="Net\DataMessage.cs" />
     <Compile Include="Net\UpdateMessage.cs" />
     <Compile Include="Net\DestroyMessage.cs" />
-    <Compile Include="Thread\SpinLock.cs" />
+    <Compile Include="Threading\SpinLock.cs" />
     <Compile Include="Collections\Queue.cs" />
     <Compile Include="IO\PacketHeader.cs" />
     <Compile Include="IO\PacketBuffer.cs" />
@@ -141,5 +111,39 @@
     <Compile Include="Shapes\MeshBase.cs" />
     <Compile Include="Maths\Colour.cs" />
     <Compile Include="Util\CompressionBuffer.cs" />
+    <Compile Include="IO\Compression\BlockType.cs" />
+    <Compile Include="IO\Compression\CompressionMode.cs" />
+    <Compile Include="IO\Compression\CopyEncoder.cs" />
+    <Compile Include="IO\Compression\Crc32Helper.cs" />
+    <Compile Include="IO\Compression\DeflateInput.cs" />
+    <Compile Include="IO\Compression\DeflateStream.cs" />
+    <Compile Include="IO\Compression\DeflateStreamAsyncResult.cs" />
+    <Compile Include="IO\Compression\DeflaterManaged.cs" />
+    <Compile Include="IO\Compression\FastEncoder.cs" />
+    <Compile Include="IO\Compression\FastEncoderStatics.cs" />
+    <Compile Include="IO\Compression\FastEncoderWindow.cs" />
+    <Compile Include="IO\Compression\FileFormats.cs" />
+    <Compile Include="IO\Compression\GZipDecoder.cs" />
+    <Compile Include="IO\Compression\GZipStream.cs" />
+    <Compile Include="IO\Compression\GZipUtils.cs" />
+    <Compile Include="IO\Compression\HuffmanTree.cs" />
+    <Compile Include="IO\Compression\IDeflater.cs" />
+    <Compile Include="IO\Compression\Inflater.cs" />
+    <Compile Include="IO\Compression\InflaterState.cs" />
+    <Compile Include="IO\Compression\InputBuffer.cs" />
+    <Compile Include="IO\Compression\InvalidDataException.cs" />
+    <Compile Include="IO\Compression\Match.cs" />
+    <Compile Include="IO\Compression\MatchState.cs" />
+    <Compile Include="IO\Compression\OutputBuffer.cs" />
+    <Compile Include="IO\Compression\OutputWindow.cs" />
+    <Compile Include="IO\Compression\SR.cs" />
+    <Compile Include="Buffers\ArrayPool.cs" />
+    <Compile Include="Buffers\DefaultArrayPool.cs" />
+    <Compile Include="Buffers\DefaultArrayPoolBucket.cs" />
+    <Compile Include="Buffers\Utilities.cs" />
+    <Compile Include="SR.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="IO\Compression\readme.txt" />
   </ItemGroup>
 </Project>

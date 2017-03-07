@@ -12,9 +12,9 @@ namespace Tes.IO.Compression {
         // disable csharp compiler warning #0414: field assigned unused value
 #pragma warning disable 0414
         public bool isWrite;
-#pragma warning restore 0414
 
         private object m_AsyncObject;               // Caller's async object.
+#pragma warning restore 0414
         private object m_AsyncState;                // Caller's state object.
         private AsyncCallback m_AsyncCallback;      // Caller's callback method.
 

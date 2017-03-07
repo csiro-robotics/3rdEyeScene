@@ -49,7 +49,7 @@ namespace Tes.Server
         return true;
       }
 
-      _lock = new Tes.Thread.SpinLock();
+      _lock = new Threading.SpinLock();
 
       switch (mode)
       {
@@ -251,7 +251,7 @@ namespace Tes.Server
     /// <summary>
     /// Mutex guard for maintaining connections.
     /// </summary>
-    private Tes.Thread.SpinLock _lock = null;
+    private Threading.SpinLock _lock = null;
     /// <summary>
     /// TCP server socket.
     /// </summary>
