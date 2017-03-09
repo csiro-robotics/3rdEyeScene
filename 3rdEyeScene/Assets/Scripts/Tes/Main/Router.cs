@@ -561,6 +561,16 @@ namespace Tes.Main
 
     protected virtual void Start()
     {
+      // Ensure the array buffers are allocated without thread contension.
+      // This is being a little cautious because the Shared property is meant
+      // to make the allocation using System.Thread.Volatile, which doesn't exist
+      // in the Unity .Net runtime.
+      {
+        var a = Buffers.ArrayPool<byte>.Shared;
+        var b = Buffers.ArrayPool<short>.Shared;
+        var c = Buffers.ArrayPool<int>.Shared;
+        var d = Buffers.ArrayPool<uint>.Shared;
+      }
       if (_scene == null)
       {
         _scene = new Scene();
@@ -869,6 +879,9 @@ namespace Tes.Main
               Debug.LogError(string.Format("Unsupported routing ID: {0} {1}", packet.Header.RoutingID, RoutingIDName(packet.Header.RoutingID)));
             }
           }
+          // Release the internal buffer (rented) now rather than waiting for the GC thread.
+          packet.Dispose();
+          packet = null;
         }
       }
       catch (Exception e)
@@ -1060,7 +1073,7 @@ namespace Tes.Main
     /// <item>A <see cref="ControlMessage"/> using <see cref="ControlMessageID.FrameCount"/>
     /// to identify the frame count.</item>
     /// </list>
-    /// 
+    ///
     /// Both messages should be in uncompressed space, thus the writer should not be using a
     /// zip stream. The frame count written here is zero and is finalised by calling
     /// <see cref="FinaliseFrameCount(BinaryWriter, uint)"/> once the final frame count is
@@ -1097,11 +1110,11 @@ namespace Tes.Main
     /// By convention, a recording stream includes a <see cref="ControlMessage"/> with ID
     /// <see cref="ControlMessageID.FrameCount"/> to identify the total number of frames in
     /// the stream. This is expected towards the start of the stream before compression begins.
-    /// 
+    ///
     /// This method rewinds the stream supporting <paramref name="writer"/>, searches for the
     /// frame count <see cref="ControlMessage"/> and modifies its <see cref="ControlMessage.Value32"/>
     /// to match <paramref name="frameCount"/>.
-    /// 
+    ///
     /// The method supports the underlying <paramref name="writer"/> stream to be either <c>GZipStream</c>
     /// or an uncompressed stream. However, in order to succeed, the true stream (underpinning the
     /// zip stream) must support seeking and the message must appear in the uncompressed section.

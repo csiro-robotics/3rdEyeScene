@@ -82,8 +82,10 @@ namespace Tes.IO.Compression {
             int i;
             Debug.Assert(bufPos == 2*FastEncoderWindowSize, "only call this at the end of the window");
 
+#if VERIFY_HASHES
             // verify that the hash table is correct
             VerifyHashes();   // Debug only code
+#endif //VERIFY_HASHES
 
             Array.Copy(window, bufPos - FastEncoderWindowSize, window, 0, FastEncoderWindowSize);
 
@@ -116,8 +118,9 @@ namespace Tes.IO.Compression {
             // (and will be caught by our ASSERTs).
             Array.Clear(window, FastEncoderWindowSize, window.Length - FastEncoderWindowSize);  
 #endif
-
+#if VERIFY_HASHES
             VerifyHashes(); // debug: verify hash table is correct
+#endif //VERIFY_HASHES
 
             bufPos = FastEncoderWindowSize;
             bufEnd = bufPos;
@@ -178,7 +181,9 @@ namespace Tes.IO.Compression {
             int matchLen;
             int matchPos = 0;
 
+#if VERIFY_HASHES
             VerifyHashes();   // Debug only code
+#endif //VERIFY_HASHES
             if (bufEnd - bufPos <= 3) {
                 // The hash value becomes corrupt when we get within 3 characters of the end of the
                 // input window, since the hash value is based on 3 characters.  We just stop

@@ -1,5 +1,8 @@
 // Disable Xml comment warnings.
 #pragma warning disable 1591
+
+using Tes.Buffers;
+
 namespace Tes.IO.Compression
 {
     using System;
@@ -112,28 +115,47 @@ namespace Tes.IO.Compression
         // Calculate the huffman code for each character based on the code length for each character.
         // This algorithm is described in standard RFC 1951
         uint[] CalculateHuffmanCode() {
-            uint[]  bitLengthCount  = new uint[17];
-            foreach( int codeLength in codeLengthArray) {
+            uint[] bitLengthCount = null;
+            uint[] nextCode = null;
+            uint[] code = null;
+            try
+            {
+              bitLengthCount = ArrayPool<uint>.Shared.Rent(17);
+              // Rented array may not be clear.
+              Array.Clear(bitLengthCount, 0, 17);
+              foreach (int codeLength in codeLengthArray)
+              {
                 bitLengthCount[codeLength]++;
-            }
-            bitLengthCount[0] = 0;  // clear count for length 0
+              }
+              bitLengthCount[0] = 0;  // clear count for length 0
 
-            uint[] nextCode = new uint[17];
-            uint tempCode   = 0;
-            for (int bits = 1; bits <= 16; bits++) {
-                tempCode = (tempCode + bitLengthCount[bits-1]) << 1;
+              nextCode = ArrayPool<uint>.Shared.Rent(17);
+              // Rented array may not be clear.
+              Array.Clear(nextCode, 0, 17);
+              uint tempCode = 0;
+              for (int bits = 1; bits <= 16; bits++)
+              {
+                tempCode = (tempCode + bitLengthCount[bits - 1]) << 1;
                 nextCode[bits] = tempCode;
-            }
+              }
 
-            uint[] code = new uint[MaxLiteralTreeElements];
-            for (int i = 0; i < codeLengthArray.Length; i++) {
+              code = new uint[MaxLiteralTreeElements];
+              for (int i = 0; i < codeLengthArray.Length; i++)
+              {
                 int len = codeLengthArray[i];
 
-                if (len > 0) {
-                    code[i] = FastEncoderStatics.BitReverse(nextCode[len], len);
-                    nextCode[len]++;
+                if (len > 0)
+                {
+                  code[i] = FastEncoderStatics.BitReverse(nextCode[len], len);
+                  nextCode[len]++;
                 }
-            }       
+              }
+            }
+            finally
+            {
+              if (bitLengthCount != null) ArrayPool<uint>.Shared.Return(bitLengthCount);
+              if (nextCode != null) ArrayPool<uint>.Shared.Return(nextCode);
+            }
             return code;
         }
 

@@ -1,9 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.InteropServices;
-using Tes;
-using Tes.IO;
-using Tes.Net;
+using Tes.Buffers;
 
 namespace Tes.IO
 {
@@ -129,7 +126,7 @@ namespace Tes.IO
   /// <item>Optionally reset and reuse the packet with <see cref="Reset(ushort, ushort)"/></item>
   /// </list>
   /// </remarks>
-  public class PacketBuffer
+  public class PacketBuffer : IDisposable
   {
     /// <summary>
     /// Packet status.
@@ -149,15 +146,42 @@ namespace Tes.IO
     /// Create a packet with the given initial buffer size.
     /// </summary>
     /// <param name="initialBufferSize">The initial buffer size (bytes)</param>
-    public PacketBuffer(int initialBufferSize)
+    /// <param name="useBufferPool">Allow the use of the <see cref="T:ArrayPool"/>?</param>
+    public PacketBuffer(int initialBufferSize, bool useBufferPool = true)
     {
       if (initialBufferSize <= 0)
       {
         initialBufferSize = 1024;
       }
-      _internalBuffer = new byte[initialBufferSize];
+      if (useBufferPool)
+      {
+        _internalBuffer = ArrayPool<byte>.Shared.Rent(initialBufferSize);
+        _rentedBuffer = true;
+      }
+      else
+      {
+        _internalBuffer = new byte[initialBufferSize];
+        _rentedBuffer = false;
+      }
       _cursor = _currentByteCount = 0;
       ValidHeader = false;
+    }
+
+    /// <summary>
+    /// Returns the internal buffer pack to the <see cref="T:ArrayPool"/> when using a rented buffer.
+    /// </summary>
+    /// <remarks>Call <see cref="Dispose"/> when you are finished using the <see cref="T:Tes.IO.PacketBuffer"/>. The
+    /// <see cref="Dispose"/> method leaves the <see cref="T:Tes.IO.PacketBuffer"/> in an unusable state. After calling
+    /// <see cref="Dispose"/>, you must release all references to the <see cref="T:Tes.IO.PacketBuffer"/> so the garbage
+    /// collector can reclaim the memory that the <see cref="T:Tes.IO.PacketBuffer"/> was occupying.</remarks>
+    public void Dispose()
+    {
+      if (_rentedBuffer && _internalBuffer != null)
+      {
+        ArrayPool<byte>.Shared.Return(_internalBuffer);
+        _internalBuffer = null;
+        _rentedBuffer = false;
+      }
     }
 
     /// <summary>
@@ -446,7 +470,7 @@ namespace Tes.IO
         skipBytes += PacketHeader.Size + Header.PayloadOffset;
       }
 
-      return new MemoryStream(_internalBuffer, skipBytes, _internalBuffer.Length - skipBytes, false);
+      return new MemoryStream(_internalBuffer, skipBytes, _currentByteCount - skipBytes, false);
     }
 
     /// <summary>
@@ -918,9 +942,20 @@ namespace Tes.IO
     {
       if (required > _internalBuffer.Length)
       {
-        // Need to resize the internal buffer.
         int newSize = Maths.IntUtil.NextPowerOf2(required);
-        Array.Resize(ref _internalBuffer, newSize);
+        if (_rentedBuffer)
+        {
+          // Rented buffer. Return the buffer and ask for a buffer one.
+          byte[] newBuffer = ArrayPool<byte>.Shared.Rent(newSize);
+          Array.Copy(_internalBuffer, newBuffer, _internalBuffer.Length);
+          ArrayPool<byte>.Shared.Return(_internalBuffer);
+          _internalBuffer = newBuffer;
+        }
+        else
+        {
+          // Need to resize the internal buffer.
+          Array.Resize(ref _internalBuffer, newSize);
+        }
       }
     }
 
@@ -934,6 +969,11 @@ namespace Tes.IO
     /// Internal byte buffer.
     /// </summary>
     private byte[] _internalBuffer;
+    /// <summary>
+    /// True if the <see cref="_internalBuffer"/> has been rented from <see cref="T:ArrayPool" /> and needs
+    /// to be returned.
+    /// </summary>
+    private bool _rentedBuffer;
     /// <summary>
     /// Read cursor, tracking the start of valid bytes. Reset on <see cref="Append(byte[], int)"/>
     /// or <see cref="Emplace(byte[], int)"/>.
