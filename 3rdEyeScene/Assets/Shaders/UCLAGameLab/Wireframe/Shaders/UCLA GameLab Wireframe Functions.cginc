@@ -1,3 +1,5 @@
+// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
 // Upgrade NOTE: replaced 'UNITY_INSTANCE_ID' with 'UNITY_VERTEX_INPUT_INSTANCE_ID'
 
 //Algorithms and shaders based on code from this journal
@@ -49,7 +51,7 @@ sampler2D _MainTex;			// Texture used for the line
 UCLAGL_v2g UCLAGL_vert(VertexInput v)
 {
   UCLAGL_v2g output;
-  output.pos =  mul(UNITY_MATRIX_MVP, v.vertex);
+  output.pos =  UnityObjectToClipPos(v.vertex);
   //output.color = v.color;
   output.color = float4(1, 1, 1, 1);
   output.uv = TRANSFORM_TEX (v.texcoord, _MainTex);//v.texcoord;

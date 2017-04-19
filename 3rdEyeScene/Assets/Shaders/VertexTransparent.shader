@@ -1,4 +1,6 @@
-﻿Shader "VertexColour/VertexTransparent"
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+Shader "VertexColour/VertexTransparent"
 {
   Properties
   {
@@ -41,7 +43,7 @@
       FragmentInput vert(VertexInput v)
       {
         FragmentInput o;
-        o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+        o.vertex = UnityObjectToClipPos(v.vertex);
         o.colour = _Color * _Tint * v.colour;
         return o;
       }
