@@ -52,7 +52,7 @@ Shader "Points/PointsLit"
   {
     GeometryInput o;
     o.pos = mul(unity_ObjectToWorld, v.vertex);
-    o.normal = mul(UNITY_MATRIX_MV, float4(v.normal, 0.0f));
+    o.normal = mul(UNITY_MATRIX_MV, v.normal);
     o.colour = v.colour;
     return o;
   }

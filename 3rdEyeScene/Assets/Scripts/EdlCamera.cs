@@ -181,7 +181,14 @@ public class EdlCamera : MonoBehaviour
   /// <summary>
   /// Pre render which applies the EDL effect.
   /// </summary>
-  void OnPreRender()
+  /// <remarks>
+  /// Note: pre Unity 5.6 this method was set to <c>OnPreRender()</c> with the
+  /// blit call set as follows: <c>Graphics.Blit(_edlSourceCamera.RenderTarget, null, mat, -1)</c>
+  /// and worked well. However, since 5.6, something has changed under OpenGL and the fix has been to
+  /// change the method to <c>OnRenderImage()</c> and blit to <c>dest</c> while ignoring
+  /// <c>source</c>. This has been noted as it may have other side effects.
+  /// </remarks>
+  void OnRenderImage(RenderTexture src, RenderTexture dest)
   {
     // Fetch material to use. Either the EDL material, or a screen blit.
     Material mat = EdlMaterial;
@@ -198,7 +205,7 @@ public class EdlCamera : MonoBehaviour
       }
 
       // Render the other camera to this one.
-      Graphics.Blit(_edlSourceCamera.RenderTarget, null, mat, -1);
+      Graphics.Blit(_edlSourceCamera.RenderTarget, dest, mat, -1);
     }
   }
 }

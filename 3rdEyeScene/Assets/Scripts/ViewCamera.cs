@@ -8,17 +8,17 @@ using System;
 /// <remarks>
 /// The rendered results of this camera are available in <see cref="RenderTarget"/> and
 /// <see cref="DepthTarget"/>, capturing the colour and depth buffers respectively.
-/// 
+///
 /// The recommended setup is to a view camera which renders the scene and a main camera which
 /// blits the scene with appropriate effects and renders the UI.
-/// 
+///
 /// The scene/view camera should have the following properties:
 /// <list type="bullet">
 /// <item>Tag not equal to "MainCamera".</item>
 /// <item>Culling must cleared of "UI".</item>
 /// <item>Depth set to 0. Less than the main camera to render first.</item>
 /// </list>
-/// 
+///
 /// The Main Camera should be set up with these properties:
 /// <list type="bullet">
 /// <item>Tag set to "MainCamera"</item>
@@ -27,7 +27,7 @@ using System;
 /// <item>Must have a script acessing a <see cref="ViewCamera"/></item>
 /// <item>Depth set to 1. Greater than the <see cref="ViewCamera"/> to render later.</item>
 /// </list>
-/// 
+///
 /// The main camera should also have a script which has the <c>OnPostRender()</c> method shown
 /// below.
 /// <code lang="C#">
@@ -35,7 +35,7 @@ using System;
 /// {
 ///   // Camera to render from.
 ///   public ViewCamera _sourceCamera = null;
-/// 
+///
 ///   void OnPreRender()
 ///   {
 ///     if (_sourceCamera != null)
@@ -106,6 +106,8 @@ public class ViewCamera : MonoBehaviour
     if (ScreenWidth != Screen.width || ScreenHeight != Screen.height)
     {
       Camera camera = gameObject.GetComponent<Camera>();
+      // Avoid an OpenGL/Vulkan warning:
+      camera.targetTexture = null;
       // Update the render buffers whenever the screen size changes.
       ScreenWidth = Screen.width;
       ScreenHeight = Screen.height;
