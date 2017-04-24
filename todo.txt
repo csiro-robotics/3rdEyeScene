@@ -3,8 +3,7 @@ Bugs:
 - Large data frames have been known to end up an odd state whereby some data from the previous are still visible and not all data from the next frame are visible.
   - Possibly a thread safety issue on the concurrent queue.
 - Custom socket bugs (workaround using Qt sockets):
-  - On OSX there is sporadic lag.
-  - Large packets go missing.
+  - Large packets go missing. I suspect this is fixed by improvements to packet size limits.
 
 
 TODO:
@@ -30,7 +29,6 @@ TODO:
 - Client rendering override modes:
   - Solid/wireframe overlay
   - Wireframe override
-- Complete C++ TCP socket support built on POCO
 - PROTOCOL CHANGE: Reduce object overhead. Creating many objects is expensive in data throughput and packet processing.
   - Modify ObjectAttributes structure (for update messages only?) to have a 1-byte flag member which identifies which of colour, position, rotation and scale data are present.
   - Consider moving major/minor version members of PacketHeader into ServerSettings message.
@@ -43,7 +41,7 @@ Maybe:
 - GL-TF handler extension
   - Too expensive for primitives, but may be good for complex data.
 - Support splitting recording files at around 2GB.
-- TCP socket support built on asio.
+- TCP socket support built on POCO and/or asio.
 - Consider supporting variable Endian encoding in messages, identified by the byte order of the header marker.
 
 Performance improvements:

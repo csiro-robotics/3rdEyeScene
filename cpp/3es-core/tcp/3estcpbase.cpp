@@ -555,7 +555,8 @@ namespace tcpbase
       }
 #else  // WIN32
       int err = errno;
-      if (err != EAGAIN && err != EWOULDBLOCK && err != ECONNRESET)
+      // EPIPE trips on disconnect.
+      if (err != EAGAIN && err != EWOULDBLOCK && err != ECONNRESET && err != EPIPE)
       {
         fprintf(stderr, "send error: %s\n", sockErrStr(err));
         return false;
