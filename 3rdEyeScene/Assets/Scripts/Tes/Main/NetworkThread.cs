@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.Sockets;
 using Tes.IO;
 using Tes.Net;
-using Tes.Util;
 using UnityEngine;
 
 namespace Tes.Main
@@ -212,7 +211,7 @@ namespace Tes.Main
               connector.Abort();
               connector = null;
               if (!_connection.AutoReconnect)
-              { 
+              {
                 // Failed connection and no auto reconnect.
                 Status = NetworkThreadStatus.ConnectionFailed;
                 break;
@@ -221,7 +220,7 @@ namespace Tes.Main
           }
 
           if (socket == null)
-          { 
+          {
             // Wait the timeout period before attempting to reconnect.
             yield return Workthread.CreateWait(connectionPollTimeSec);
           }
@@ -247,7 +246,7 @@ namespace Tes.Main
                 // if not collated.
                 _collatedDecoder.SetPacket(completedPacket);
                 while ((completedPacket = _collatedDecoder.Next()) != null)
-                { 
+                {
                   if (completedPacket.Header.RoutingID == (ushort)RoutingID.Control)
                   {
                     ushort controlMessageId = completedPacket.Header.MessageID;
@@ -279,7 +278,7 @@ namespace Tes.Main
 
         // Disconnected.
         if (socket != null)
-        { 
+        {
           socket.LingerState.Enabled = false;
           socket.Close();
           socket = null;

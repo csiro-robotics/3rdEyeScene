@@ -3,10 +3,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using Tes.IO;
-// System.IO.Compression unavailable under Unity. Use the replacement.
-using Tes.IO.Compression;
 using Tes.Net;
-using Tes.Util;
 
 namespace Tes
 {
@@ -292,8 +289,9 @@ This program attempts to connect to and record a Third Eye Scene server.
         writer = null;
         headerStream = null;
 
-        // Now wrap the file in a GZip stream to start compression.
-        stream = new GZipStream(fileStream, CompressionMode.Compress);
+        // Now wrap the file in a compression stream to start compression.
+        //stream = new GZipStream(fileStream, CompressionMode.Compress);
+        stream = new CollationStream(fileStream);
 
         return new NetworkWriter(stream);
       }
@@ -369,10 +367,11 @@ This program attempts to connect to and record a Third Eye Scene server.
       writer.BaseStream.Flush();
 
       Stream outStream = null;
-      GZipStream zipStream = writer.BaseStream as GZipStream;
+			CollationStream zipStream = writer.BaseStream as CollationStream;
       if (zipStream != null)
       {
         outStream = zipStream.BaseStream;
+        zipStream.Flush();
       }
       else
       {

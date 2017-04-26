@@ -41,6 +41,13 @@ namespace Tes.Main
       /// </summary>
       public uint FrameNumber = 0;
       /// <summary>
+      /// The (end of) frame number at the StreamOffset.
+      /// </summary>
+      /// <remarks>
+      /// This may be less than FrameNumber, in which case we have to ignore intervening frames.
+      /// </remarks>
+      public uint OffsetFrameNumber = 0;
+      /// <summary>
       /// Does this snapshot include transient objects? See class remarks.
       /// </summary>
       public bool IncludesTransient = false;
@@ -140,7 +147,7 @@ namespace Tes.Main
     {
       get
       {
-        return _catcingUp;
+        return _catchingUp;
       }
     }
 
@@ -188,10 +195,8 @@ namespace Tes.Main
         return false;
       }
 
-      // We have up until the first end frame to switch to compressed data.
-      _allowCompressStream = true;
       _currentFrame = 0;
-      _stream = dataStream;
+      _packetStream = new PacketStreamReader(dataStream);
       CleanupSnapshots();
       return true;
     }
@@ -203,13 +208,13 @@ namespace Tes.Main
         // Already started.
         return false;
       }
-      _stream = dataStream;
+      _packetStream = new PacketStreamReader(dataStream);
       return Start();
     }
 
     public override bool Start()
     {
-      if (Started || _stream == null)
+      if (Started || _packetStream == null)
       {
         return false;
       }
@@ -232,13 +237,13 @@ namespace Tes.Main
         Paused = false;
         _thread.Stop();
         _thread = null;
-        if (_stream != null)
+        if (_packetStream != null)
         {
-          if (_stream.CanRead)
+          if (_packetStream.CanRead)
           {
-            _stream.Close();
+            _packetStream.Close();
           }
-          _stream = null;
+          _packetStream = null;
         }
       }
       return true;
@@ -257,20 +262,22 @@ namespace Tes.Main
 
     private IEnumerator Run()
     {
-      PacketHeader header = new PacketHeader();
-      byte[] headerBuffer = new byte[PacketHeader.Size];
       System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
       long elapsedUs = 0;
-      int bytesRead = 0;
+      // Last position in the stream we can seek to.
+      long lastSeekablePosition = 0;
+      long lastSnapshotPosition = 0;
+      long bytesRead = 0;
       bool allowYield = false;
+      bool failedSnapshot = false;
+      bool atSeekablePosition = false;
       // Every N bytes we will request a Snapshot to save the current scene state and improve step playback.
       long processedBytes = 0;
-      long bytesSinceLastSnapshot = 0;
       uint lastSnapshotFrame = 0;
-      bool endOfStream = false;
+      uint lastSeekableFrame = 0;
 
       stopwatch.Start();
-      while (!_quitFlag && _stream != null) // && _stream.Position + PacketHeader.Size <= _stream.Length)
+      while (!_quitFlag && _packetStream != null) // && _packetStream.Position + PacketHeader.Size <= _packetStream.Length)
       {
         if (_paused && _targetFrame == 0)
         {
@@ -285,7 +292,7 @@ namespace Tes.Main
         if (_targetFrame == 0)
         {
           // Not stepping. Check time elapsed.
-          _catcingUp = false;
+          _catchingUp = false;
           stopwatch.Stop();
           stopwatch.Start();
           elapsedUs = stopwatch.ElapsedTicks / (System.Diagnostics.Stopwatch.Frequency / (1000L * 1000L));
@@ -307,18 +314,18 @@ namespace Tes.Main
             {
               // Stepping back.
               processedBytes = 0;
-              bytesSinceLastSnapshot = 0;
               lastSnapshotFrame = 0;
+              lastSeekablePosition = 0;
+              lastSeekableFrame = 0;
               ResetStream();
-              endOfStream = false;
-              Snapshot snapshot = TrySnapshot(_targetFrame);
+              Snapshot snapshot = (!failedSnapshot) ? TrySnapshot(_targetFrame) : null;
+              failedSnapshot = snapshot == null;
               if (snapshot != null)
               {
                 lastSnapshotFrame = _currentFrame = snapshot.FrameNumber;
                 processedBytes = snapshot.StreamOffset;
-                _allowCompressStream = false;
               }
-              _catcingUp = _currentFrame + 1 < _targetFrame;
+              _catchingUp = _currentFrame + 1 < _targetFrame;
               stopwatch.Reset();
               stopwatch.Start();
             }
@@ -326,14 +333,14 @@ namespace Tes.Main
             {
               // Also try snapshots when stepping forwards large frame counts.
               // No need to reset the stream as we do when stepping back.
-              Snapshot snapshot = TrySnapshot(_targetFrame, _currentFrame);
+              Snapshot snapshot = (!failedSnapshot) ? TrySnapshot(_targetFrame, _currentFrame) : null;
+              failedSnapshot = snapshot == null;
               if (snapshot != null)
               {
                 lastSnapshotFrame = _currentFrame = snapshot.FrameNumber;
                 processedBytes = snapshot.StreamOffset;
-                _allowCompressStream = false;
               }
-              _catcingUp = _currentFrame + 1 < _targetFrame;
+              _catchingUp = _currentFrame + 1 < _targetFrame;
               stopwatch.Reset();
               stopwatch.Start();
             }
@@ -351,69 +358,77 @@ namespace Tes.Main
         try
         {
           allowYield = false;
-          endOfStream = false;
-          while (!allowYield && !endOfStream)
+          while (!allowYield && !_packetStream.EndOfStream)
           {
-            if (_allowCompressStream && Util.GZipUtil.IsGZipStream(_stream))
+            PacketBuffer packet = _packetStream.NextPacket(ref bytesRead);
+            processedBytes += bytesRead;
+            _paused = _paused || bytesRead == 0 && !_loop;
+            allowYield = true;
+
+            // Can we update the stream seek position?
+            atSeekablePosition = false;
+            if (!_packetStream.DecodingCollated && _packetStream.CanSeek && _currentFrame > 0)
             {
-              _allowCompressStream = false;
-              _gzipStreamStart = _stream.Position;
-              _stream = new GZipStream(_stream, CompressionMode.Decompress);
+              lastSeekablePosition = _packetStream.Position;
+              // May be one off when the end of frame is now.
+              lastSeekableFrame = _currentFrame;
+              atSeekablePosition = true;
             }
 
-            bytesRead = _stream.Read(headerBuffer, 0, headerBuffer.Length);
-            endOfStream = bytesRead == 0;
-            processedBytes += bytesRead;
-            bytesSinceLastSnapshot += bytesRead;
-            _paused = _paused || bytesRead == 0 && !_loop;
-
-            allowYield = true;
-            if (bytesRead == headerBuffer.Length)
+            if (packet != null)
             {
-              allowYield = false;
-              if (header.Read(new NetworkReader(new MemoryStream(headerBuffer, false))))
+              // Read the header. Determine the expected size and read that much more data.
+              if (packet.Status == PacketBufferStatus.Complete)
               {
-                // Read the header. Determine the expected size and read that much more data.
-                int crcSize = ((header.Flags & (byte)PacketFlag.NoCrc) == 0) ? Crc16.CrcSize : 0;
-                PacketBuffer packet = new PacketBuffer(header.PacketSize + crcSize);
-                packet.Emplace(headerBuffer, bytesRead);
-                processedBytes += packet.Emplace(_stream, header.PacketSize + crcSize - bytesRead);
-                if (packet.Status == PacketBufferStatus.Complete)
+                allowYield = false;
+                // Check for end of frame messages to yield on.
+                // TODO: check frame elapsed time as well.
+                if (packet.Header.RoutingID == (ushort)RoutingID.Control)
                 {
-                  // Check for end of frame messages to yield on.
-                  // TODO: check frame elapsed time as well.
-                  if (header.RoutingID == (ushort)RoutingID.Control)
+                  // Store frame number for setting of lastSeekableFrame. See below.
+                  uint preControlMsgFrame = _currentFrame;
+                  // HandleControlMessage() returns true on an end of frame event.
+                  if (HandleControlMessage(packet, (ControlMessageID)packet.Header.MessageID))
                   {
-                    // HandleControlMessage() returns true on an end of frame event.
-                    if (HandleControlMessage(packet, (ControlMessageID)header.MessageID))
+                    // Clear snapshot failure if at target frame.
+                    failedSnapshot = failedSnapshot && !(_targetFrame == 0 || _currentFrame == _targetFrame);
+
+                    if (atSeekablePosition)
                     {
-                      // Ended a frame. Check for snapshot. We'll queue the request after the end of
-                      // frame message below.
-                      if (bytesSinceLastSnapshot >= _snapshotKiloBytes * 1024 &&
-                          lastSnapshotFrame < _currentFrame &&
-                          _currentFrame - lastSnapshotFrame >= _snapshotMinFrames)
-                      {
-                        // We may request a snapshot now.
-                        lastSnapshotFrame = _currentFrame;
-                        bytesSinceLastSnapshot = 0;
-                        RequestSnapshot(lastSnapshotFrame, processedBytes);
-                      }
-                      // Make sure we yield so as to support the later check to avoid flooding the packet queue.
-                      allowYield = true;
+                      // We don't use _currentFrame here as we will have just incremented it, so we actually
+                      // want the frame before. We use a cached copy just in case in future we can be here
+                      // for other reasons.
+                      lastSeekableFrame = preControlMsgFrame;
+                      Debug.Log(string.Format("Last seekable: {0}", lastSeekableFrame));
                     }
+                    // Ended a frame. Check for snapshot. We'll queue the request after the end of
+                    // frame message below.
+                    // DO NOT SUBMIT: re-enable byte check.
+                    //if (lastSeekablePosition - lastSnapshotPosition >= _snapshotKiloBytes * 1024 &&
+                    if (lastSeekablePosition > lastSnapshotPosition &&
+                        lastSnapshotFrame < _currentFrame &&
+                        _currentFrame - lastSnapshotFrame >= _snapshotMinFrames)
+                    {
+                      // A snapshot is due. However, the stream may not be seekable to the current location.
+                      // We may request a snapshot now.
+                      lastSnapshotFrame = _currentFrame;
+                      lastSnapshotPosition = lastSeekablePosition;
+                      RequestSnapshot(lastSnapshotFrame, lastSeekableFrame, lastSeekablePosition);
+                    }
+                    // Make sure we yield so as to support the later check to avoid flooding the packet queue.
+                    allowYield = true;
                   }
-                  else if (header.RoutingID == (ushort)RoutingID.ServerInfo)
-                  {
-                    HandleServerInfo(packet);
-                  }
-                  _packetQueue.Enqueue(packet);
                 }
-                // else notify error.
-                else
+                else if (packet.Header.RoutingID == (ushort)RoutingID.ServerInfo)
                 {
-                  Debug.LogError(string.Format("Failed to decode packet: {0}", packet.Status.ToString()));
+                  HandleServerInfo(packet);
                 }
-                allowYield = allowYield || _targetFrame == 0 && _frameDelayUs > 0 && !_catcingUp;
+                _packetQueue.Enqueue(packet);
+                allowYield = allowYield || _targetFrame == 0 && _frameDelayUs > 0 && !_catchingUp;
+              }
+              else
+              {
+                Debug.LogError(string.Format("Incomplete packet, ID: {0}", LookupRoutingIDName(packet.Header.RoutingID)));
               }
             }
             else if (bytesRead == 0 && allowYield && _loop)
@@ -426,7 +441,6 @@ namespace Tes.Main
         catch (Exception e)
         {
           _quitFlag = true;
-          _allowCompressStream = false;
           bytesRead = 0;
           Debug.LogException(e);
           allowYield = true;
@@ -444,6 +458,7 @@ namespace Tes.Main
         }
       }
 
+      _catchingUp = false;
       Eos = true;
     }
 
@@ -454,9 +469,9 @@ namespace Tes.Main
 
     private void OnStop()
     {
-      if (_stream != null)
+      if (_packetStream != null)
       {
-        _stream.Close();
+        _packetStream.Close();
       }
     }
 
@@ -531,7 +546,6 @@ namespace Tes.Main
       // Forward playback. Update current frame.
       lock(this)
       {
-        _allowCompressStream = false;
         ++_currentFrame;
 
         if (_currentFrame < _targetFrame)
@@ -576,7 +590,7 @@ namespace Tes.Main
           _totalFrames = _currentFrame;
         }
       }
-      _catcingUp = _currentFrame + 1 < _targetFrame;
+      _catchingUp = _currentFrame + 1 < _targetFrame;
     }
 
     #region Snapshots
@@ -673,42 +687,47 @@ namespace Tes.Main
       {
         // Ensure stream has been reset.
         Stream snapStream = new FileStream(snapshot.TemporaryFilePath, FileMode.Open, FileAccess.Read);
-        if (_stream as GZipStream != null)
-        {
-          ResetStream();
-        }
-        long streamPos = 0;
-
-        if (_gzipStreamStart == 0)
-        {
-          // No compression. Just seek in _stream.
-          _stream.Seek(snapshot.StreamOffset, SeekOrigin.Begin);
-          streamPos = _stream.Position;
-        }
-        else
-        {
-          // Restart the stream, at the GZip stream and seek to the target position.
-          _stream.Seek(_gzipStreamStart, SeekOrigin.Begin);
-          _stream = new GZipStream(_stream, CompressionMode.Decompress);
-
-          // Read bytes up to the snapshot.
-          byte[] buffer = new byte[1024];
-          long read = 0;
-          streamPos = _gzipStreamStart;
-          do
-          {
-            read = _stream.Read(buffer, 0, (int)Math.Min(snapshot.StreamOffset - streamPos, buffer.LongLength));
-            streamPos += read;
-          } while (read > 0 && streamPos < snapshot.StreamOffset);
-        }
+        _packetStream.Seek(snapshot.StreamOffset, SeekOrigin.Begin);
+        long streamPos = _packetStream.Position;
 
         // Decode the snapshot data.
         if (streamPos == snapshot.StreamOffset)
         {
           if (DecodeSnapshotStream(snapStream))
           {
-            _currentFrame = snapshot.FrameNumber;
-            Debug.Log(string.Format("Restored frame: {0}", _currentFrame));
+            uint currentFrame = snapshot.OffsetFrameNumber;
+
+            // Now consume messages from the stream until we are at the requested frame.
+            while (currentFrame < snapshot.FrameNumber)
+            {
+              long bytesRead = 0;
+              PacketBuffer packet = _packetStream.NextPacket(ref bytesRead);
+              if (packet != null)
+              {
+                if (packet.Status == PacketBufferStatus.Complete)
+                {
+                  if (packet.Header.RoutingID == (ushort)RoutingID.Control &&
+                      packet.Header.MessageID == (ushort)ControlMessageID.EndFrame)
+                  {
+                    ++currentFrame;
+                  }
+                }
+              }
+              else
+              {
+                // Failed.
+                Debug.LogError(string.Format("Failed to process extra snapshot packets"));
+                return false;
+              }
+            }
+
+            _currentFrame = currentFrame;
+
+            Debug.Log(string.Format("Restored frame: {0} -> {1}", _currentFrame, _targetFrame));
+            if (_targetFrame == _currentFrame)
+            {
+              _targetFrame = 0;
+            }
             return true;
           }
           Debug.LogError(string.Format("Failed to decode snapshot for frame {0}", snapshot.FrameNumber));
@@ -747,7 +766,7 @@ namespace Tes.Main
       {
         do
         {
-          if (allowCompression && Util.GZipUtil.IsGZipStream(snapStream))
+          if (allowCompression && GZipUtil.IsGZipStream(snapStream))
           {
             allowCompression = false;
             snapStream = new GZipStream(snapStream, CompressionMode.Decompress);
@@ -920,7 +939,7 @@ namespace Tes.Main
     /// </summary>
     /// <param name="frameNumber">The snapshot frame number.</param>
     /// <param name="streamOffset">The stream position/bytes read (total) on this frame.</param>
-    private void RequestSnapshot(uint frameNumber, long streamOffset)
+    private void RequestSnapshot(uint frameNumber, uint offsetFrameNumber, long streamOffset)
     {
       if (HaveSnapshot(frameNumber) || !AllowSnapshots)
       {
@@ -930,6 +949,7 @@ namespace Tes.Main
       // Add a placeholder.
       Snapshot snapshot = new Snapshot();
       snapshot.FrameNumber = frameNumber;
+      snapshot.OffsetFrameNumber = offsetFrameNumber;
       snapshot.StreamOffset = streamOffset;
       lock (_snapshots)
       {
@@ -964,30 +984,17 @@ namespace Tes.Main
     {
       _packetQueue.Clear();
       _packetQueue.Enqueue(BuildResetPacket());
-
-      GZipStream zipStream = _stream as GZipStream;
-      if (zipStream != null)
-      {
-        // Switch to uncompressed mode.
-        _stream = zipStream.BaseStream;
-      }
-
-      _stream.Flush();
-      _stream.Seek(0, SeekOrigin.Begin);
+      _packetStream.Reset();
       _currentFrame = 0;
       _frameDelayUs = _frameOverrunUs = 0;
-      _catcingUp = false;
-      _allowCompressStream = true;
+      _catchingUp = false;
     }
 
 
     //private Queue<PacketBuffer> _packetQueue = new Queue<PacketBuffer>();
     private Tes.Collections.Queue<PacketBuffer> _packetQueue = new Tes.Collections.Queue<PacketBuffer>();
-    private Stream _stream = null;
-    /// <summary>
-    /// Start of the GZip stream in the core stream if known. Byte position.
-    /// </summary>
-    private long _gzipStreamStart = 0;
+    private PacketStreamReader _packetStream = null;
+
     private Workthread _thread = null;
     /// <summary>
     /// Tracks the current frame number. Updated every  Initialised via the <see cref="ControlMessageID.EndFrame"/> message.
@@ -1028,10 +1035,6 @@ namespace Tes.Main
     private ulong _timeUnit = ServerInfoMessage.Default.TimeUnit;
     private float _playbackSpeed;
     private bool _quitFlag = false;
-    /// <summary>
-    /// Change to compressed stream still allowed? (Until first frame or made switch).
-    /// </summary>
-    private bool _allowCompressStream = true;
     private volatile bool _paused = false;
     /// <summary>
     /// Set when the current frame is behind the target frame.
@@ -1040,7 +1043,7 @@ namespace Tes.Main
     /// Should be cleared before processing the last frame so that the last frame is
     /// processed with this flag false.
     /// </remarks>
-    private volatile bool _catcingUp = false;
+    private volatile bool _catchingUp = false;
     private volatile bool _loop = false;
     /// <summary>
     /// A list of frame snapshots to improve step back behaviour.

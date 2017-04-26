@@ -64,7 +64,6 @@
     <Compile Include="Shapes\Star.cs" />
     <Compile Include="Shapes\Text2D.cs" />
     <Compile Include="Shapes\Text3D.cs" />
-    <Compile Include="Util\CollatedPacketDecoder.cs" />
     <Compile Include="IO\Endian.cs" />
     <Compile Include="IO\NetworkReader.cs" />
     <Compile Include="IO\NetworkWriter.cs" />
@@ -101,7 +100,6 @@
     <Compile Include="Collections\Queue.cs" />
     <Compile Include="IO\PacketHeader.cs" />
     <Compile Include="IO\PacketBuffer.cs" />
-    <Compile Include="Util\CollatedPacketEncoder.cs" />
     <Compile Include="Maths\Matrix3.cs" />
     <Compile Include="Maths\Rotation.cs" />
     <Compile Include="Shapes\SimpleMesh.cs" />
@@ -110,7 +108,6 @@
     <Compile Include="Maths\FloatUtil.cs" />
     <Compile Include="Shapes\MeshBase.cs" />
     <Compile Include="Maths\Colour.cs" />
-    <Compile Include="Util\CompressionBuffer.cs" />
     <Compile Include="IO\Compression\BlockType.cs" />
     <Compile Include="IO\Compression\CompressionMode.cs" />
     <Compile Include="IO\Compression\CopyEncoder.cs" />
@@ -142,6 +139,12 @@
     <Compile Include="Buffers\DefaultArrayPoolBucket.cs" />
     <Compile Include="Buffers\Utilities.cs" />
     <Compile Include="SR.cs" />
+    <Compile Include="IO\CollationStream.cs" />
+    <Compile Include="IO\CollatedPacketDecoder.cs" />
+    <Compile Include="IO\CollatedPacketEncoder.cs" />
+    <Compile Include="IO\CompressionBuffer.cs" />
+    <Compile Include="IO\PacketStreamReader.cs" />
+    <Compile Include="IO\GZipUtil.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="IO\Compression\readme.txt" />

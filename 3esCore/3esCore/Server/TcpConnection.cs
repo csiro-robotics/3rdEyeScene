@@ -6,7 +6,6 @@ using Tes.Net;
 using Tes.IO;
 using Tes.Shapes;
 using Tes.Threading;
-using Tes.Util;
 
 namespace Tes.Server
 {
@@ -26,7 +25,7 @@ namespace Tes.Server
       EndPoint = _client.Client.RemoteEndPoint as IPEndPoint;
       ServerFlags = serverFlags;
       _collator = new CollatedPacketEncoder((serverFlags & ServerFlag.Compress) == ServerFlag.Compress);
-      _collator.Reset();
+      //_collator.Reset();
       _currentResourceProgress.Reset();
     }
 

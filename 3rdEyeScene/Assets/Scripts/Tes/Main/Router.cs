@@ -295,7 +295,14 @@ namespace Tes.Main
         }
       }
 
-      return string.Empty;
+      // Not found in the lists. Find the appropriate hander and use its name.
+      MessageHandler handler = Handlers.HandlerFor(id);
+      if (handler != null)
+      {
+        return handler.Name;
+      }
+
+      return id.ToString();
     }
 
     /// <summary>
@@ -317,6 +324,7 @@ namespace Tes.Main
         return false;
       }
       StreamThread thread = new StreamThread();
+      thread.RoutingIDName = RoutingIDName;
       _dataThread = thread;
       PlaybackSettings playbackSettings = PlaybackSettings.Instance;
       if (playbackSettings != null)
@@ -358,6 +366,7 @@ namespace Tes.Main
     {
       Reset();
       NetworkThread thread = new NetworkThread();
+      thread.RoutingIDName = RoutingIDName;
       // Run in background with a network thread.
       Application.runInBackground = true;
       _dataThread = thread;
@@ -720,7 +729,7 @@ namespace Tes.Main
           handler.Mode = handler.Mode & ~MessageHandler.ModeFlags.IgnoreTransient;
         }
 
-        Application.runInBackground = _dataThread != null && (!_dataThread.Paused && _dataThread.CatchingUp);
+        Application.runInBackground = _dataThread != null && (!_dataThread.Paused || _dataThread.CatchingUp);
       }
     }
 

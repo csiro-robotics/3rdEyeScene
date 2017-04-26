@@ -81,6 +81,27 @@ namespace Tes.Main
     public abstract void Quit();
 
     /// <summary>
+    /// Delegate used to convert a routing ID to a meaninful string. Used in logging
+    /// </summary>
+    public delegate string RoutingIDNameDelegate(ushort routingID);
+
+    /// <summary>
+    /// When not null, used to convert a routing ID to a meaningful name for logging.
+    /// </summary>
+    public RoutingIDNameDelegate RoutingIDName;
+
+    /// <summary>
+    /// A utility function for invoking <see cref="RoutingIDName"/> when non null.
+    /// </summary>
+    /// <param name="routingID">Routing ID to lookup.</param>
+    /// <returns>The name associated with <paramref name="routingID"/> or empty when <paramref name="routingID"/>
+    /// as a string.</returns>
+    public string LookupRoutingIDName(ushort routingID)
+    {
+      return RoutingIDName != null ? RoutingIDName(routingID) : routingID.ToString();
+    }
+
+    /// <summary>
     /// Create a reset packet.
     /// </summary>
     protected PacketBuffer BuildResetPacket()
