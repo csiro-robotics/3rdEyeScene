@@ -126,13 +126,13 @@ namespace Tes.IO
     /// </remarks>
     public override long Seek(long offset, SeekOrigin origin)
     {
-      Reset();
-
-      if (origin == SeekOrigin.Begin && offset == 0)
+      if (origin == SeekOrigin.Begin)
       {
-        return 0;
+        Reset(offset);
+        return Position;
       }
 
+      Reset(0L);
       return _activeStream.Seek(offset, origin);
     }
 
@@ -162,9 +162,23 @@ namespace Tes.IO
     /// </summary>
     public void Reset()
     {
+      Reset(0L);
+    }
+
+    /// <summary>
+    /// Reset the stream to the given seekable position. Provides common code to <see cref="Reset()"/>
+    /// and <see cref="Seek(long, SeekOrigin)"/>.
+    /// </summary>
+    /// <param name="streamPosition">The stream position to set. Must be a valid seekable position
+    /// for the current stream.</param>
+    /// <remarks>
+    /// See class comments on seeking.
+    /// </remarks>
+    protected void Reset(long streamPosition)
+    {
       _activeStream = BaseStream;
       _activeStream.Flush();
-      _activeStream.Position = 0;
+      _activeStream.Position = streamPosition;
       _isGZipStream = false;
       EndOfStream = false;
       _decoder.SetPacket(null);

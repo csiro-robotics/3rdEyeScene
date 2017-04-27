@@ -819,6 +819,7 @@
 #define TES_POINTCLOUDSHAPE(...)
 #define TES_POINTS(...)
 #define TES_POINTS_E(...)
+#define TES_VOXELS(...)
 #define TES_SPHERE(...)
 #define TES_SPHERE_T(...)
 #define TES_SPHERE_W(...)

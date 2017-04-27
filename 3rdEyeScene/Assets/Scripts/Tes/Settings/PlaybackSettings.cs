@@ -14,7 +14,7 @@ public class PlaybackSettings : Settings
   [Browsable(true), Tooltip("Enable scene snapshots to cache frames during playback and stepping?")]
   public bool AllowSnapshots
   {
-    get { return PlayerPrefsX.GetBool("playback.snapshots", true); }
+    get { return PlayerPrefsX.GetBool("playback.snapshots", false); }
     set { PlayerPrefsX.SetBool("playback.snapshots", value); Notify("AllowSnapshots"); }
   }
 
@@ -22,7 +22,7 @@ public class PlaybackSettings : Settings
     Tooltip("Create a snapshot after reading this many kilobytes from the playback stream.")]
   public int SnapshotEveryKb
   {
-    get { return PlayerPrefs.GetInt("playback.snapshotKb", 512); }
+    get { return PlayerPrefs.GetInt("playback.snapshotKb", 1024); }
     set { PlayerPrefs.SetInt("playback.snapshotKb", value); Notify("SnapshotEveryKb"); }
   }
 
@@ -30,7 +30,7 @@ public class PlaybackSettings : Settings
     Tooltip("Try restore snapshot when skipping forwards at least this number of frames.")]
   public int SnapshotSkipForwardFrames
   {
-    get { return PlayerPrefs.GetInt("playback.snapshotSkipForwardFrames", 100); }
+    get { return PlayerPrefs.GetInt("playback.snapshotSkipForwardFrames", 20); }
     set { PlayerPrefs.SetInt("playback.snapshotSkipForwardFrames", value); Notify("SnapshotSkipForwardFrames"); }
   }
 

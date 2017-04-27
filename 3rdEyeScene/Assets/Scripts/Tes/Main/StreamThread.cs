@@ -404,13 +404,14 @@ namespace Tes.Main
                     // Ended a frame. Check for snapshot. We'll queue the request after the end of
                     // frame message below.
                     // DO NOT SUBMIT: re-enable byte check.
-                    //if (lastSeekablePosition - lastSnapshotPosition >= _snapshotKiloBytes * 1024 &&
-                    if (lastSeekablePosition > lastSnapshotPosition &&
+                    if (lastSeekablePosition - lastSnapshotPosition >= _snapshotKiloBytes * 1024 &&
                         lastSnapshotFrame < _currentFrame &&
                         _currentFrame - lastSnapshotFrame >= _snapshotMinFrames)
                     {
                       // A snapshot is due. However, the stream may not be seekable to the current location.
                       // We may request a snapshot now.
+                      Debug.Log(string.Format("Request snapshot for frame {0} from frame {1} after {2} KiB",
+                        _currentFrame, lastSeekableFrame, lastSeekablePosition - lastSnapshotPosition));
                       lastSnapshotFrame = _currentFrame;
                       lastSnapshotPosition = lastSeekablePosition;
                       RequestSnapshot(lastSnapshotFrame, lastSeekableFrame, lastSeekablePosition);
@@ -711,6 +712,12 @@ namespace Tes.Main
                   {
                     ++currentFrame;
                   }
+                }
+                else
+                {
+                  // Failed.
+                  Debug.LogError(string.Format("Incomplete packet during processing of extra snapshot packets"));
+                  return false;
                 }
               }
               else
