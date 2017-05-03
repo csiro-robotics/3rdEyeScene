@@ -45,6 +45,17 @@ namespace Dialogs
       set { _positionOffset = value; }
     }
 
+    [SerializeField, Range(0, 10)]
+    private float _toolTipDelay = 1.0f;
+    /// <summary>
+    /// Delay before showing the tooltip for the current control (seconds).
+    /// </summary>
+    public float ToolTipDelay
+    {
+      get { return _toolTipDelay; }
+      set { _toolTipDelay = value; }
+    }
+
     /// <summary>
     /// A helper to extract a Text object from the <see  cref="ToolTipUIText"/>
     /// </summary>
@@ -93,10 +104,27 @@ namespace Dialogs
 
       if (toolTipObj != null)
       {
-        ShowToolTip(toolTipObj, pointerPosition.position + _positionOffset);
+        if (_currentToolTip == null)
+        {
+          _hoverTime = ToolTipDelay;
+          _currentToolTip = toolTipObj;
+          _hover = true;
+        }
+        else
+        {
+          _hoverTime -= Time.deltaTime;
+        }
+
+        if (_hoverTime <= 0)
+        {
+          _hoverTime = 0;
+          ShowToolTip(toolTipObj, pointerPosition.position + _positionOffset);
+        }
       }
       else
       {
+        _hoverTime = 0.0f;
+        _hover = false;
         HideToolTip();
       }
     }
@@ -109,7 +137,7 @@ namespace Dialogs
     private void ShowToolTip(ToolTipInfo info, Vector2 pointerPos)
     {
       bool positionToolTip = false;
-      if (_currentToolTip != info)
+      if (_currentToolTip != info || _hover)
       {
         // Changing or new tool tip.
         positionToolTip = true;
@@ -141,6 +169,8 @@ namespace Dialogs
           }
         }
       }
+
+      _hover = false;
     }
 
     /// <summary>
@@ -249,5 +279,13 @@ namespace Dialogs
 
     private List<RaycastResult> _hits = new List<RaycastResult>();
     private ToolTipInfo _currentToolTip = null;
+    /// <summary>
+    /// Hover time remaining.
+    /// </summary>
+    private float _hoverTime = 0;
+    /// <summary>
+    /// Currently hovering before dislay?
+    /// </summary>
+    private bool _hover = false;
   }
 }

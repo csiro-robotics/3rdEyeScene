@@ -7,11 +7,6 @@ Bugs:
 
 
 TODO:
-- Modify StreamThread to support collated packets
-  - Change recording compression from file level to use collated packets and work on chunked compression.
-    . Better for snapshots as seeking is allowed.
-- Profile StreamThread packet decoding and improve performance.
-  - Current playback speed bottleneck when stepping.
 - "Server" implementation which writes directly to a local file.
 - Change shape shaders to support GPU instancing.
 - Consider adding batched object creation messages.
