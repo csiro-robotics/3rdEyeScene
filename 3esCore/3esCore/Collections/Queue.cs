@@ -93,6 +93,35 @@ namespace Tes.Collections
     }
 
     /// <summary>
+    /// Push a list of <paramref name="items"/> onto the queue tail.
+    /// </summary>
+    /// <param name="items"></param>
+    /// <remarks>
+    /// The synchronsiation lock is held until all items are added so this may cause
+    /// inefficiencies in blocking other threads.
+    /// </remarks>
+    public void Enqueue(IList<T> items)
+    {
+      bool haveLock = false;
+      try
+      {
+        _lock.Lock();
+        haveLock = true;
+        foreach (T item in items)
+        {
+          _internalQueue.Enqueue(item);
+        }
+      }
+      finally
+      {
+        if (haveLock)
+        {
+          _lock.Unlock();
+        }
+      }
+    }
+
+    /// <summary>
     /// Pop the head of the queue.
     /// </summary>
     /// <seealso cref="TryDequeue(ref T)"/>

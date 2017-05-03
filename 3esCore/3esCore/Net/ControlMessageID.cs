@@ -43,7 +43,8 @@ namespace Tes.Net
     /// Reset the simulation state. All current objects and data are dropped and destroyed.
     /// </summary>
     /// <remarks>
-    /// This is primarily intended for internal use in playback mode.
+    /// This is primarily intended for internal use in playback mode. The <c>Value32</c> is used to
+    /// identify the frame number to which we are resetting.
     /// </remarks>
     Reset,
     /// <summary>

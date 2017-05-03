@@ -134,6 +134,16 @@ namespace Tes.Main
     public uint CurrentFrame { get { return _currentFrame; } }
 
     /// <summary>
+    /// Reports the previous frame viewed.
+    /// </summary>
+    /// <remarks>
+    /// This will generally be <c>CurrentFrame - 1</c> during normal playback. When stepping back, this will
+    /// report <c>CurrentFrame + 1</c> and when stepping between non-sequential frames, this value will report
+    /// the last requested frame.
+    /// </remarks>
+    public uint PreviousFrame { get { return _previousFrame; } }
+
+    /// <summary>
     /// Reports the total number of frames.
     /// </summary>
     /// <remarks>
@@ -445,6 +455,7 @@ namespace Tes.Main
       {
         FileStream fileStream = new FileStream(filePath, FileMode.Create);
         _currentFrame = 0;
+        _previousFrame = 0;
         _totalFrames = 0;
 
         bool ok;
@@ -487,6 +498,7 @@ namespace Tes.Main
       {
         _dataThread.Paused = true;
         _dataThread.TargetFrame = _currentFrame + 1;
+        _previousFrame = _currentFrame;
         Application.runInBackground = true;
       }
     }
@@ -498,7 +510,8 @@ namespace Tes.Main
         _dataThread.Paused = true;
         if (_currentFrame > 0)
         {
-          _dataThread.TargetFrame = _currentFrame - 1; ;
+          _dataThread.TargetFrame = _currentFrame - 1;
+          _previousFrame = _currentFrame;
         }
         Application.runInBackground = true;
       }
@@ -510,6 +523,7 @@ namespace Tes.Main
       {
         _dataThread.Paused = true;
         _dataThread.TargetFrame = 1;
+        _previousFrame = _currentFrame;
         Application.runInBackground = true;
       }
     }
@@ -520,6 +534,21 @@ namespace Tes.Main
       {
         _dataThread.Paused = true;
         _dataThread.TargetFrame = _dataThread.TotalFrames;
+        _previousFrame = _currentFrame;
+        Application.runInBackground = true;
+      }
+    }
+
+    /// <summary>
+    /// Step to the <see cref="PreviousFrame"/>.
+    /// </summary>
+    public void StepPrevious()
+    {
+      if (_dataThread != null && !_dataThread.IsLiveStream)
+      {
+        _dataThread.Paused = true;
+        _dataThread.TargetFrame = _previousFrame;
+        _previousFrame = _currentFrame;
         Application.runInBackground = true;
       }
     }
@@ -530,6 +559,7 @@ namespace Tes.Main
       {
         _dataThread.Paused = true;
         _dataThread.TargetFrame = targetFrame;
+        _previousFrame = _currentFrame;
         Application.runInBackground = true;
       }
     }
@@ -565,12 +595,12 @@ namespace Tes.Main
       {
         handler.Reset();
       }
-      _currentFrame = _totalFrames = 0u;
+      _previousFrame = _currentFrame = _totalFrames = 0u;
     }
 
     protected virtual void Start()
     {
-      // Ensure the array buffers are allocated without thread contension.
+      // Ensure the array buffers are allocated without thread contention.
       // This is being a little cautious because the Shared property is meant
       // to make the allocation using System.Thread.Volatile, which doesn't exist
       // in the Unity .Net runtime.
@@ -664,10 +694,13 @@ namespace Tes.Main
                         case ControlMessageID.Reset:
                           // Drop pending packets.
                           _pendingPackets.Clear();
+                          catchUp = UpdateCatchup(catchUp, true);
+                          uint previousFrame = _currentFrame;
                           // Reset all the data handlers, but not the data thread.
                           ResetScene();
                           // Force a frame flush.
-                          EndFrame(0, catchUp);
+                          EndFrame(message.Value32, catchUp);
+                          _previousFrame = previousFrame;
                           break;
                         case ControlMessageID.Snapshop:
                           catchUp = UpdateCatchup(catchUp, true);
@@ -839,9 +872,19 @@ namespace Tes.Main
 
         if (inCatchUp != needCatchUp)
         {
-          foreach (MessageHandler handler in Handlers.Handlers)
+          if (needCatchUp)
           {
-            handler.Mode = handler.Mode | MessageHandler.ModeFlags.IgnoreTransient;
+            foreach (MessageHandler handler in Handlers.Handlers)
+            {
+              handler.Mode = handler.Mode | MessageHandler.ModeFlags.IgnoreTransient;
+            }
+          }
+          else
+          {
+            foreach (MessageHandler handler in Handlers.Handlers)
+            {
+              handler.Mode = handler.Mode & ~MessageHandler.ModeFlags.IgnoreTransient;
+            }
           }
         }
       }
@@ -915,6 +958,11 @@ namespace Tes.Main
         else
         {
           _totalFrames = _dataThread.TotalFrames;
+        }
+
+        if (Mode != RouterMode.Paused)
+        {
+          _previousFrame = _currentFrame;
         }
         _currentFrame = (_dataThread.IsLiveStream) ? _totalFrames : frameNumber;
       }
@@ -1323,6 +1371,10 @@ namespace Tes.Main
     /// Duplicates the current frame number from the data thread to update only when relevant.
     /// </summary>
     private uint _currentFrame = 0;
+    /// <summary>
+    /// The last frame viewed.
+    /// </summary>
+    private uint _previousFrame = 0;
     /// <summary>
     /// Duplicates the total frame number from the data thread to update only when relevant.
     /// </summary>

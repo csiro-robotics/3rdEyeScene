@@ -104,14 +104,16 @@ namespace Tes.Main
     /// <summary>
     /// Create a reset packet.
     /// </summary>
-    protected PacketBuffer BuildResetPacket()
+    /// <param name="forFrameNumber">Used to set <c>Value32</c> in the <see cref="ControlMessage"/>.</param>
+    /// This identifies the frame we are resetting to.
+    protected PacketBuffer BuildResetPacket(uint forFrameNumber = 0)
     {
       PacketBuffer packet = new PacketBuffer(PacketHeader.Size + 32);
       ControlMessage message = new ControlMessage();
 
       // Write reset
       message.ControlFlags = 0;
-      message.Value32 = 0;
+      message.Value32 = forFrameNumber;
       message.Value64 = 0;
 
       packet.Reset((ushort)RoutingID.Control, (ushort)ControlMessageID.Reset);

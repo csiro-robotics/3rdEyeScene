@@ -271,8 +271,6 @@ namespace Tes.Main
       bool allowYield = false;
       bool failedSnapshot = false;
       bool atSeekablePosition = false;
-      // Every N bytes we will request a Snapshot to save the current scene state and improve step playback.
-      long processedBytes = 0;
       uint lastSnapshotFrame = 0;
       uint lastSeekableFrame = 0;
 
@@ -313,17 +311,35 @@ namespace Tes.Main
             if (_targetFrame < _currentFrame)
             {
               // Stepping back.
-              processedBytes = 0;
               lastSnapshotFrame = 0;
               lastSeekablePosition = 0;
               lastSeekableFrame = 0;
-              ResetStream();
-              Snapshot snapshot = (!failedSnapshot) ? TrySnapshot(_targetFrame) : null;
-              failedSnapshot = snapshot == null;
-              if (snapshot != null)
+              bool restoredSnapshot = false;
+              if (AllowSnapshots && !failedSnapshot)
               {
-                lastSnapshotFrame = _currentFrame = snapshot.FrameNumber;
-                processedBytes = snapshot.StreamOffset;
+                Snapshot snapshot;
+                if (TrySnapshot(out snapshot, _targetFrame))
+                {
+                  // No failures. Does not meek we have a valid snapshot.
+                  if (snapshot != null)
+                  {
+                    lastSnapshotFrame = _currentFrame = snapshot.FrameNumber;
+                    restoredSnapshot = true;
+                  }
+                }
+                else
+                {
+                  // Failed a snapshot. Disallow further snapshots.
+                  // TODO: consider just invalidating the failed snapshot.
+                  failedSnapshot = true;
+                }
+              }
+
+              // Not available, not allowed or failed snapshot.
+              if (!restoredSnapshot)
+              {
+                _packetStream.Reset();
+                ResetQueue(0);
               }
               _catchingUp = _currentFrame + 1 < _targetFrame;
               stopwatch.Reset();
@@ -331,18 +347,28 @@ namespace Tes.Main
             }
             else if (_targetFrame > _currentFrame + ShapshotSkipForwardFrames)
             {
-              // Also try snapshots when stepping forwards large frame counts.
-              // No need to reset the stream as we do when stepping back.
-              Snapshot snapshot = (!failedSnapshot) ? TrySnapshot(_targetFrame, _currentFrame) : null;
-              failedSnapshot = snapshot == null;
-              if (snapshot != null)
+              // Skipping forward a fair number of frames. Try for a snapshot.
+              if (AllowSnapshots && !failedSnapshot)
               {
-                lastSnapshotFrame = _currentFrame = snapshot.FrameNumber;
-                processedBytes = snapshot.StreamOffset;
+                // Ok to try for a snapshot.
+                Snapshot snapshot;
+                if (TrySnapshot(out snapshot, _targetFrame, _currentFrame))
+                {
+                  // No failure. Check if we have a snapshot.
+                  if (snapshot != null)
+                  {
+                    lastSnapshotFrame = _currentFrame = snapshot.FrameNumber;
+                    _catchingUp = _currentFrame + 1 < _targetFrame;
+                    stopwatch.Reset();
+                    stopwatch.Start();
+                  }
+                }
+                else
+                {
+                  // Failed. Stream has been reset.
+                  failedSnapshot = true;
+                }
               }
-              _catchingUp = _currentFrame + 1 < _targetFrame;
-              stopwatch.Reset();
-              stopwatch.Start();
             }
           }
         }
@@ -361,7 +387,6 @@ namespace Tes.Main
           while (!allowYield && !_packetStream.EndOfStream)
           {
             PacketBuffer packet = _packetStream.NextPacket(ref bytesRead);
-            processedBytes += bytesRead;
             _paused = _paused || bytesRead == 0 && !_loop;
             allowYield = true;
 
@@ -602,27 +627,26 @@ namespace Tes.Main
     /// <param name="targetFrame">The frame number we are trying to achieve.</param>
     /// <param name="currentFrame">The current frame number. A valid snapshot must occur after this number.</param>
     /// <returns>The frame number reached by the snapshot.</returns>
-    private Snapshot TrySnapshot(uint targetFrame, uint currentFrame = 0)
+    /// <remarks>
+    /// Calling this change the <see cref="_packetStream"/> position. It is recommended the stream be reset
+    /// on failure along with calling <see cref="ResetQueue(uint)"/>.
+    /// </remarks>
+    private bool TrySnapshot(out Snapshot snapshot, uint targetFrame, uint currentFrame = 0)
     {
-      if (!AllowSnapshots)
-      {
-        return null;
-      }
+      snapshot = null;
       lock (_snapshots)
       {
-        Snapshot bestShot = null;
-        foreach (Snapshot snapshot in _snapshots)
+        foreach (Snapshot snap in _snapshots)
         {
           // Suitable snapshot if it's before the target frame, or
           // at the target frame and includes transient objects.
           // See Snapshot class remarks.
-          if (snapshot.FrameNumber > currentFrame &&
-              (snapshot.FrameNumber < targetFrame ||
-                snapshot.IncludesTransient && snapshot.FrameNumber == targetFrame))
+          if (snap.Valid &&
+             (snap.FrameNumber < targetFrame || snap.IncludesTransient && snap.FrameNumber == targetFrame))
           {
-            if (snapshot.Valid)
+            if (snap.FrameNumber > currentFrame)
             {
-              bestShot = snapshot;
+              snapshot = snap;
             }
           }
           else
@@ -631,16 +655,16 @@ namespace Tes.Main
           }
         }
 
-        if (bestShot != null)
+        if (snapshot != null)
         {
-          if (RestoreSnapshot(bestShot))
+          if (RestoreSnapshot(snapshot))
           {
-            return bestShot;
+            return true;
           }
         }
       }
 
-      return null;
+      return false;
     }
 
     private Snapshot FindSnapshot(uint targetFrame)
@@ -677,6 +701,11 @@ namespace Tes.Main
     /// </summary>
     /// <param name="snapshot">To restore</param>
     /// <returns>True on success.</returns>
+    /// <remarks>
+    /// On success, the <see cref="PacketQueue"/> is cleared, a reset packet pushed followed by the
+    /// decoded snapshot packets. On failure <see cref="ResetStream()"/> is called which includes
+    /// queueing a reset packet.
+    /// </remarks>
     private bool RestoreSnapshot(Snapshot snapshot)
     {
       if (!snapshot.Valid || string.IsNullOrEmpty(snapshot.TemporaryFilePath) || !File.Exists(snapshot.TemporaryFilePath))
@@ -688,15 +717,17 @@ namespace Tes.Main
       {
         // Ensure stream has been reset.
         Stream snapStream = new FileStream(snapshot.TemporaryFilePath, FileMode.Open, FileAccess.Read);
+        System.Collections.Generic.List<PacketBuffer> decodedPackets = new System.Collections.Generic.List<PacketBuffer>();
         _packetStream.Seek(snapshot.StreamOffset, SeekOrigin.Begin);
         long streamPos = _packetStream.Position;
 
         // Decode the snapshot data.
         if (streamPos == snapshot.StreamOffset)
         {
-          if (DecodeSnapshotStream(snapStream))
+          if (DecodeSnapshotStream(snapStream, decodedPackets))
           {
             uint currentFrame = snapshot.OffsetFrameNumber;
+            uint droppedPacketCount = 0;
 
             // Now consume messages from the stream until we are at the requested frame.
             while (currentFrame < snapshot.FrameNumber)
@@ -707,6 +738,7 @@ namespace Tes.Main
               {
                 if (packet.Status == PacketBufferStatus.Complete)
                 {
+                  ++droppedPacketCount;
                   if (packet.Header.RoutingID == (ushort)RoutingID.Control &&
                       packet.Header.MessageID == (ushort)ControlMessageID.EndFrame)
                   {
@@ -728,8 +760,12 @@ namespace Tes.Main
               }
             }
 
+            // Migrate to the packet queue.
+            ResetQueue(currentFrame);
+            _packetQueue.Enqueue(decodedPackets);
             _currentFrame = currentFrame;
 
+            Debug.Log(string.Format("Dropped {0} additional packets to catch up to frame {1}.", droppedPacketCount, _currentFrame));
             Debug.Log(string.Format("Restored frame: {0} -> {1}", _currentFrame, _targetFrame));
             if (_targetFrame == _currentFrame)
             {
@@ -745,18 +781,17 @@ namespace Tes.Main
         Debug.LogException(e);
       }
 
-      // Failed. Reset the stream.
-      ResetStream();
       return false;
     }
 
     /// <summary>
-    /// Decode the contents of the stream in <paramref name="snapshot"/> and add packets to
-    /// the outgoing queue.
+    /// Decode the contents of the <paramref name="snapshotStream"/> and add packets to
+    /// <paramref name="packets"/>.
     /// </summary>
-    /// <param name="snapshot"></param>
+    /// <param name="snapStream">The snapshot stream to decode</param>
+    /// <param name="packets">The packet list to add to.</param>
     /// <returns></returns>
-    private bool DecodeSnapshotStream(Stream snapStream)
+    private bool DecodeSnapshotStream(Stream snapStream, System.Collections.Generic.List<PacketBuffer> packets)
     {
       if (snapStream == null)
       {
@@ -768,6 +803,7 @@ namespace Tes.Main
       int bytesRead = 0;
       PacketHeader header = new PacketHeader();
       byte[] headerBuffer = new byte[PacketHeader.Size];
+      uint queuedPacketCount = 0;
 
       try
       {
@@ -794,8 +830,9 @@ namespace Tes.Main
               if (packet.Status == PacketBufferStatus.Complete)
               {
                 // Check for end of frame messages to yield on.
-                _packetQueue.Enqueue(packet);
+                packets.Add(packet);
                 ok = true;
+                ++queuedPacketCount;
               }
               else
               {
@@ -814,6 +851,8 @@ namespace Tes.Main
             }
           }
         } while (ok && bytesRead != 0);
+
+        Debug.Log(string.Format("Decoded {0} packets from snapshot", queuedPacketCount));
       }
       catch (Exception e)
       {
@@ -982,21 +1021,16 @@ namespace Tes.Main
 #endregion
 
     /// <summary>
-    /// Reset playback.
+    /// Resets the packet queue, clearing the contents and enqueing a reset packet.
     /// </summary>
-    /// <remarks>
-    /// This pushes a reset packet into the outgoing packet queue, then resets the stream position.
-    /// </remarks>
-    void ResetStream()
+    void ResetQueue(uint currentFrame)
     {
       _packetQueue.Clear();
-      _packetQueue.Enqueue(BuildResetPacket());
-      _packetStream.Reset();
-      _currentFrame = 0;
+      _packetQueue.Enqueue(BuildResetPacket(currentFrame));
+      _currentFrame = currentFrame;
       _frameDelayUs = _frameOverrunUs = 0;
       _catchingUp = false;
     }
-
 
     //private Queue<PacketBuffer> _packetQueue = new Queue<PacketBuffer>();
     private Tes.Collections.Queue<PacketBuffer> _packetQueue = new Tes.Collections.Queue<PacketBuffer>();

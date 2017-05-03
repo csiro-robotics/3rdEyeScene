@@ -14,7 +14,7 @@ public class PlaybackSettings : Settings
   [Browsable(true), Tooltip("Enable scene snapshots to cache frames during playback and stepping?")]
   public bool AllowSnapshots
   {
-    get { return PlayerPrefsX.GetBool("playback.snapshots", false); }
+    get { return PlayerPrefsX.GetBool("playback.snapshots", true); }
     set { PlayerPrefsX.SetBool("playback.snapshots", value); Notify("AllowSnapshots"); }
   }
 
