@@ -271,6 +271,8 @@ namespace Tes.Main
       bool allowYield = false;
       bool failedSnapshot = false;
       bool atSeekablePosition = false;
+      // HACK: when restoring snapshots to precise frames we don't do the main update. Needs to be cleaned up.
+      bool skipUpdate = false;
       uint lastSnapshotFrame = 0;
       uint lastSeekableFrame = 0;
 
@@ -325,6 +327,7 @@ namespace Tes.Main
                   {
                     lastSnapshotFrame = _currentFrame = snapshot.FrameNumber;
                     restoredSnapshot = true;
+                    skipUpdate = _currentFrame == snapshot.FrameNumber;
                   }
                 }
                 else
@@ -359,8 +362,7 @@ namespace Tes.Main
                   {
                     lastSnapshotFrame = _currentFrame = snapshot.FrameNumber;
                     _catchingUp = _currentFrame + 1 < _targetFrame;
-                    stopwatch.Reset();
-                    stopwatch.Start();
+                    skipUpdate = _currentFrame == snapshot.FrameNumber;
                   }
                 }
                 else
@@ -383,7 +385,16 @@ namespace Tes.Main
 
         try
         {
-          allowYield = false;
+          allowYield = skipUpdate;
+
+          if (skipUpdate)
+          {
+            // HACK: more unclean code. When skipping a frame update we need to ensure the frame number is in sync.
+            // For that reason we force a frame flush with the current frame number.
+            _packetQueue.Enqueue(CreateFrameFlushPacket(_currentFrame));
+            skipUpdate = false;
+          }
+
           while (!allowYield && !_packetStream.EndOfStream)
           {
             PacketBuffer packet = _packetStream.NextPacket(ref bytesRead);
@@ -1018,7 +1029,31 @@ namespace Tes.Main
       }
     }
 
-#endregion
+    #endregion
+
+    /// <summary>
+    /// Creates a frame flush packet targeting the given frame number.
+    /// </summary>
+    /// <param name="frameNumber">Optional frame number to flush with (zero for none).</param>
+    /// <returns></returns>
+    /// <remarks>
+    /// The returned packet will ensure visualisation of a frame and that the current frame is set
+    /// to <paramref name="frameNumber"/>. Transient objects are preserved.
+    /// </remarks>
+    PacketBuffer CreateFrameFlushPacket(uint frameNumber)
+    {
+      PacketBuffer packet = new PacketBuffer();
+      ControlMessage message = new ControlMessage();
+
+      message.ControlFlags = (uint)EndFrameFlag.Persist;
+      message.Value32 = 0;
+      message.Value64 = frameNumber;
+
+      packet.Reset((ushort)RoutingID.Control, (ushort)ControlMessageID.ForceFrameFlush);
+      message.Write(packet);
+      packet.FinalisePacket();
+      return packet;
+    }
 
     /// <summary>
     /// Resets the packet queue, clearing the contents and enqueing a reset packet.

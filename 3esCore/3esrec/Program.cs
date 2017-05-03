@@ -367,7 +367,7 @@ This program attempts to connect to and record a Third Eye Scene server.
       writer.BaseStream.Flush();
 
       Stream outStream = null;
-			CollationStream zipStream = writer.BaseStream as CollationStream;
+      CollationStream zipStream = writer.BaseStream as CollationStream;
       if (zipStream != null)
       {
         outStream = zipStream.BaseStream;

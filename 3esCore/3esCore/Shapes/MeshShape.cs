@@ -492,6 +492,16 @@ namespace Tes.Shapes
 
         progressMarker += itemCount;
       }
+      else if (totalVertices == 0 && totalIndices == 0)
+      {
+        // Won't have written anything with zero vertex/index counts. Write zeros to
+        // ensure a well formed message.
+        offset = itemCount = 0;
+        sendCode = (ushort)SendDataType.Vertices; // Sending Zero vertices.
+        packet.WriteBytes(BitConverter.GetBytes(sendCode), true);
+        packet.WriteBytes(BitConverter.GetBytes(offset), true);
+        packet.WriteBytes(BitConverter.GetBytes(itemCount), true);
+      }
 
       // Return 1 while there are more vertices to process.
       return (progressMarker < totalNormals + totalVertices + totalIndices) ? 1 : 0;

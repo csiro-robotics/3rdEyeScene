@@ -59,30 +59,30 @@ namespace Tes.IO
     /// </summary>
     public override bool CanRead { get { return false; } }
 
-		/// <summary>
-		/// <c>false</c>
-		/// </summary>
-		public override bool CanSeek { get { return false; } }
+    /// <summary>
+    /// <c>false</c>
+    /// </summary>
+    public override bool CanSeek { get { return false; } }
 
-		/// <summary>
-		/// <c>false</c>
-		/// </summary>
-		public override bool CanWrite { get { return true; } }
+    /// <summary>
+    /// <c>false</c>
+    /// </summary>
+    public override bool CanWrite { get { return true; } }
 
     /// <summary>
     /// Returns the number of bytes written plus the oustanding buffered bytes.
     /// </summary>
     public override long Length { get { return Position; } }
 
-		/// <summary>
+    /// <summary>
     /// Get returns the number of bytes written plus the oustanding buffered bytes.
     /// Set is not supported (exception).
-		/// </summary>
-		public override long Position
+    /// </summary>
+    public override long Position
     {
       get
       {
-    		return BaseStream.Position + (_collator.CollatedBytes > 0 ? _collator.Count : 0);
+        return BaseStream.Position + (_collator.CollatedBytes > 0 ? _collator.Count : 0);
       }
 
       set
@@ -120,7 +120,7 @@ namespace Tes.IO
     /// <param name="origin">Ignored.</param>
     public override long Seek(long offset, SeekOrigin origin)
     {
-			throw new NotSupportedException();
+      throw new NotSupportedException();
     }
 
     /// <summary>
@@ -129,7 +129,7 @@ namespace Tes.IO
     /// <param name="value">Ignored.</param>
     public override void SetLength(long value)
     {
-			throw new NotSupportedException();
+      throw new NotSupportedException();
     }
 
     /// <summary>
@@ -144,24 +144,24 @@ namespace Tes.IO
     /// </remarks>
     public override void Write(byte[] buffer, int offset, int count)
     {
-			if (_collator.CollatedBytes + count >= CollatedPacketEncoder.MaxPacketSize)
-			{
-				// Additional bytes would be too much. Flush collated
-				FlushCollatedPacket();
-			}
-			int added = _collator.Add(buffer, offset, count);
-			// Check if we failed to add to the packet. We'll send the data by itself afterwards.
-			if (added == -1)
-			{
+      if (_collator.CollatedBytes + count >= CollatedPacketEncoder.MaxPacketSize)
+      {
+        // Additional bytes would be too much. Flush collated
+        FlushCollatedPacket();
+      }
+      int added = _collator.Add(buffer, offset, count);
+      // Check if we failed to add to the packet. We'll send the data by itself afterwards.
+      if (added == -1)
+      {
         // Failed to add. Flush the packet, then try again. If that fails we write uncompressed.
-				FlushCollatedPacket();
+        FlushCollatedPacket();
         added = _collator.Add(buffer, offset, count);
         if (added == -1)
         {
           // Cannot collate this data. Write uncompressed.
           BaseStream.Write(buffer, offset, count);
         }
-			}
+      }
     }
 
     /// <summary>
@@ -169,13 +169,13 @@ namespace Tes.IO
     /// </summary>
     private void FlushCollatedPacket()
     {
-			if (_collator.CollatedBytes > 0 && _collator.FinaliseEncoding())
+      if (_collator.CollatedBytes > 0 && _collator.FinaliseEncoding())
       {
         int byteCount = _collator.Count;
         BaseStream.Write(_collator.Buffer, 0, byteCount);
         _collator.Reset();
       }
-		}
+    }
 
     private CollatedPacketEncoder _collator;
     private bool _compressionEnabled = true;
