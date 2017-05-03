@@ -205,6 +205,8 @@ This program attempts to connect to and record a Third Eye Scene server.
           recordingWriter.Flush();
           recordingWriter.Close();
           recordingWriter = null;
+          // GC to force flushing streams.
+          GC.Collect();
         }
 
         if (!Quiet)
