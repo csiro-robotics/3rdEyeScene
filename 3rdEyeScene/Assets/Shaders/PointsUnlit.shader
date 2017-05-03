@@ -145,8 +145,8 @@ Shader "Points/PointsUnlit"
 
     Pass
     {
-      //Tags {"RenderType" = "Opaque" "LightMode" = "ShadowCaster" }
-      Tags{ "RenderType" = "Opaque" "LightMode" = "ForwardBase" "Queue" = "Geometry" }
+      //Tags{ "RenderType" = "Opaque" "LightMode" = "ForwardBase" "Queue" = "Geometry" }
+      Tags{ "Queue" = "Opaque" "RenderType" = "Opaque" }
       LOD 200
 
       CGPROGRAM
