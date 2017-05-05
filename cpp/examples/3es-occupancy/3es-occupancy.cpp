@@ -160,7 +160,6 @@ int populateMap(const Options &opt)
   if (!loader.open(opt.cloudFile.c_str(), opt.trajectoryFile.c_str()))
   {
     fprintf(stderr, "Error loading cloud %s with trajectory %s \n", opt.cloudFile.c_str(), opt.trajectoryFile.c_str());
-    TES_SERVER_STOP(*g_tesServer);
     return -2;
   }
 
@@ -592,6 +591,6 @@ int main(int argc, char *argv[])
   initialiseDebugCategories(opt);
 
   int res = populateMap(opt);
-  TES_SERVER_STOP(*g_tesServer);
+  TES_SERVER_STOP(g_tesServer);
   return res;
 }

@@ -170,10 +170,16 @@
 
 /// Stop the server. The server is closed and disposed and is no longer valid for use after
 /// this call.
+/// No the @p server argument must be a pointer as it is first checked against null, then
+/// cleared to @c nullptr.
 /// @param server The @c Server or @c Connection object. Must be a dereferenced pointer.
-#define TES_SERVER_STOP(server) \
-  (server).close(); \
-  (server).dispose();
+#define TES_SERVER_STOP(serverPtr) \
+  if (serverPtr) \
+  { \
+    (serverPtr)->close(); \
+    (serverPtr)->dispose(); \
+    (serverPtr) = nullptr; \
+  }
 
 /// Check if @p server is enabled.
 /// @param server The @c Server or @c Connection object. Must be a dereferenced pointer.
