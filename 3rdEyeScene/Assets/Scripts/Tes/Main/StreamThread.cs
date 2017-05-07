@@ -271,6 +271,7 @@ namespace Tes.Main
       bool allowYield = false;
       bool failedSnapshot = false;
       bool atSeekablePosition = false;
+      bool wasPaused = _paused;
       // HACK: when restoring snapshots to precise frames we don't do the main update. Needs to be cleaned up.
       bool skipUpdate = false;
       uint lastSnapshotFrame = 0;
@@ -281,6 +282,7 @@ namespace Tes.Main
       {
         if (_paused && _targetFrame == 0)
         {
+          wasPaused = true;
           // Wait for pause change a notification object.
           if (!_thread.Wait())
           {
@@ -293,11 +295,22 @@ namespace Tes.Main
         {
           // Not stepping. Check time elapsed.
           _catchingUp = false;
+
+          // Measure elapsed time. Stop and restart the timer to get the elapsed time.
           stopwatch.Stop();
           stopwatch.Start();
+          // Should this have _frameOverrunUs added?
           elapsedUs = stopwatch.ElapsedTicks / (System.Diagnostics.Stopwatch.Frequency / (1000L * 1000L));
-          // Scale by playback speed.
           elapsedUs = (long)(elapsedUs * (double)_playbackSpeed);
+
+          if (wasPaused && !_paused)
+          {
+            // Just unpaused. Force an immediate frame update.
+            elapsedUs = _frameDelayUs;
+          }
+          wasPaused = false;
+
+          // Scale by playback speed.
           if (elapsedUs < _frameDelayUs)
           {
             // Too soon. Yield and wait some more.

@@ -377,7 +377,7 @@ namespace Tes.Handlers.Shape3D
         break;
       default:
       case MeshDrawType.Lines:
-        mat = Materials[MaterialLibrary.VertexColourLit];
+        mat = Materials[MaterialLibrary.VertexColourUnlit];
         break;
       case MeshDrawType.Triangles:
         // Check wire frame.
