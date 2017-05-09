@@ -217,6 +217,7 @@ namespace Tes.IO
       }
 
       // Read next packet.
+      _headerStream.SetLength(PacketHeader.Size);
       int bytesRead = _activeStream.Read(_headerStream.GetBuffer(), 0, PacketHeader.Size);
       if (bytesRead <= 0)
       {

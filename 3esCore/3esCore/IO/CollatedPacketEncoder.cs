@@ -135,7 +135,7 @@ namespace Tes.IO
         // TODO: throw exception.
         return -1;
       }
-      return Add(packet.Data, 0, packet.Cursor);
+      return Add(packet.Data, packet.Cursor, packet.Count);
     }
 
     /// <summary>

@@ -481,10 +481,20 @@ namespace Tes.Main
                 Debug.LogError(string.Format("Incomplete packet, ID: {0}", LookupRoutingIDName(packet.Header.RoutingID)));
               }
             }
-            else if (bytesRead == 0 && allowYield && _loop)
+          }
+
+          if (_packetStream.EndOfStream)
+          {
+            allowYield = true;
+            if (_loop)
             {
               // Restart
               TargetFrame = 1;
+            }
+            else
+            {
+              // Playback complete. Autopause.
+              Paused = true;
             }
           }
         }
