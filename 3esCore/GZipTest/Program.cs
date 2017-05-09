@@ -9,9 +9,9 @@ namespace Tes
   {
     static void Usage()
     {
-			Console.WriteLine("Usage:");
-			Console.WriteLine("GZipTest c|d <file>");
-			Console.WriteLine("Use c to compress <file>, d to decompress a GZip <file>");
+      Console.WriteLine("Usage:");
+      Console.WriteLine("GZipTest c|d <file>");
+      Console.WriteLine("Use c to compress <file>, d to decompress a GZip <file>");
     }
 
 
@@ -57,17 +57,17 @@ namespace Tes
           outFileName = Path.Combine(Path.GetDirectoryName(fileName), Path.GetFileNameWithoutExtension(fileName));
         }
 
-				using (GZipStream zip = new GZipStream(new FileStream(fileName, FileMode.Open), CompressionMode.Decompress))
-				{
-					using (FileStream outfile = new FileStream(outFileName, FileMode.Create))
-					{
-						while ((bytesRead = zip.Read(buffer, 0, buffer.Length)) > 0)
-						{
+        using (GZipStream zip = new GZipStream(new FileStream(fileName, FileMode.Open), CompressionMode.Decompress))
+        {
+          using (FileStream outfile = new FileStream(outFileName, FileMode.Create))
+          {
+            while ((bytesRead = zip.Read(buffer, 0, buffer.Length)) > 0)
+            {
               outfile.Write(buffer, 0, bytesRead);
-						}
-					}
-				}
-			}
+            }
+          }
+        }
+      }
       else
       {
         Console.WriteLine("Unknown command");

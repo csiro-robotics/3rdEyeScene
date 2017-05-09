@@ -41,7 +41,7 @@ public class EdlCamera : MonoBehaviour
   /// Defines the range of the EDL shadowing. Increase for wider shadows.
   /// </summary>
   [SerializeField, Range(1, 10)]
-  private float _edlRadius = 3;
+  private float _edlRadius = 2;
   /// <summary>
   /// Defines the range of the EDL shadowing. Increase for wider shadows.
   /// </summary>
