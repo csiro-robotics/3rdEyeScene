@@ -452,7 +452,6 @@ namespace Tes.Main
                     }
                     // Ended a frame. Check for snapshot. We'll queue the request after the end of
                     // frame message below.
-                    // DO NOT SUBMIT: re-enable byte check.
                     if (lastSeekablePosition - lastSnapshotPosition >= _snapshotKiloBytes * 1024 &&
                         lastSnapshotFrame < _currentFrame &&
                         _currentFrame - lastSnapshotFrame >= _snapshotMinFrames)
