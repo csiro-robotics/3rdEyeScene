@@ -50,6 +50,15 @@ namespace Tes.Net
     public fixed byte Reserved[ReservedBytes];
 
     /// <summary>
+    /// Derived property checking if the <see cref="CoordinateFrame"/> is left handled.
+    /// </summary>
+    /// <value><c>true</c> the coordinate frame is left handed; otherwise, <c>false</c>.</value>
+    public bool IsLeftHanded
+    {
+      get { return CoordinateFrame >= CoordinateFrame.LeftHanded; }
+    }
+
+    /// <summary>
     /// Instantiates the default server info message.
     /// </summary>
     /// <remarks>

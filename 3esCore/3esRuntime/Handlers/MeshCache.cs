@@ -267,14 +267,13 @@ namespace Tes.Handlers
       VoxelsMaterial = materials[MaterialLibrary.Voxels];
     }
 
-
-    /// <summary>
-    /// Reset the cache.
-    /// </summary>
-    /// <remarks>
-    /// Does not invoke <see cref="OnMeshRemoved"/> events.
-    /// </remarks>
-    public override void Reset()
+		/// <summary>
+		/// Reset the cache.
+		/// </summary>
+		/// <remarks>
+		/// Does not invoke <see cref="OnMeshRemoved"/> events.
+		/// </remarks>
+		public override void Reset()
     {
       _meshes.Clear();
     }
@@ -944,11 +943,13 @@ namespace Tes.Handlers
         else if (haveNormals)
         {
           meshDetails.Material = PointsLitMaterial;
+          meshDetails.Material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
         }
         else
         {
           meshDetails.Material = PointsUnlitMaterial;
-        }
+					meshDetails.Material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
+				}
         //if (entry.VertexColours == null)
         //{
         //  entry.VertexColours = new Color32[entry.VertexCount];

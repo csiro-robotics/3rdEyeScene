@@ -77,15 +77,6 @@ namespace Tes.Handlers.Shape3D
     }
 
     /// <summary>
-    /// Cache the coordinate frame.
-    /// </summary>
-    /// <param name="info"></param>
-    public override void UpdateServerInfo(ServerInfoMessage info)
-    {
-      _frame = info.CoordinateFrame;
-    }
-    
-    /// <summary>
     /// Encode transform attributes for text.
     /// </summary>
     /// <param name="attr"></param>
@@ -95,7 +86,7 @@ namespace Tes.Handlers.Shape3D
     {
       Transform transform = obj.transform;
       // Convert position to Unity position.
-      Vector3 pos = FrameTransform.UnityToRemote(obj.transform.position, _frame);
+      Vector3 pos = FrameTransform.UnityToRemote(obj.transform.position, ServerInfo.CoordinateFrame);
       attr.X = pos.x;
       attr.Y = pos.y;
       attr.Z = pos.z;
@@ -133,7 +124,7 @@ namespace Tes.Handlers.Shape3D
     protected override Error PostHandleMessage(GameObject obj, CreateMessage msg, PacketBuffer packet, BinaryReader reader)
     {
       // Convert position to Unity position.
-      obj.transform.localPosition = FrameTransform.RemoteToUnity(obj.transform.localPosition, _frame);
+      obj.transform.localPosition = FrameTransform.RemoteToUnity(obj.transform.localPosition, ServerInfo.CoordinateFrame);
 
       // Read the text in the buffer.
       int textLength = reader.ReadUInt16();
@@ -183,7 +174,7 @@ namespace Tes.Handlers.Shape3D
       }
 
       // Convert position to Unity position.
-      obj.transform.localPosition = FrameTransform.RemoteToUnity(obj.transform.localPosition, _frame);
+      obj.transform.localPosition = FrameTransform.RemoteToUnity(obj.transform.localPosition, ServerInfo.CoordinateFrame);
 
       if (shapeComp != null && (msg.Flags & (ushort)Text3DFlag.SceenFacing) != (shapeComp.ObjectFlags & (ushort)Text3DFlag.SceenFacing))
       {
@@ -218,7 +209,5 @@ namespace Tes.Handlers.Shape3D
       }
       return null;
     }
-
-    private CoordinateFrame _frame = ServerInfoMessage.Default.CoordinateFrame;
   }
 }

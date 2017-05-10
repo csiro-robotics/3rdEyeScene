@@ -87,6 +87,17 @@ namespace Tes.Runtime
     /// <value>The routing ID.</value>
     public abstract ushort RoutingID { get; }
 
+		/// <summary>
+		/// Stored server information.
+		/// </summary>
+		/// <remarks>
+		/// Normally updated in <see cref="UpdateServerInfo(Net.ServerInfoMessage)"/>.
+		/// </remarks>
+		public Net.ServerInfoMessage ServerInfo
+    {
+      get; protected set;
+    }
+
     /// <summary>
     /// Called to initialise the handler with various 3rd Eye Scene components.
     /// </summary>
@@ -105,7 +116,7 @@ namespace Tes.Runtime
     /// Called on all handlers whenever the server info changes.
     /// </summary>
     /// <param name="info">Server information.</param>
-    public virtual void UpdateServerInfo(Net.ServerInfoMessage info) { }
+    public virtual void UpdateServerInfo(Net.ServerInfoMessage info) { ServerInfo = info; }
 
     /// <summary>
     /// Clear all data in the handler. This resets it to the default, initialised state.

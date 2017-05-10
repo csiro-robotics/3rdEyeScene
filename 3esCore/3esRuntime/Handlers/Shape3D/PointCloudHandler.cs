@@ -427,8 +427,9 @@ namespace Tes.Handlers.Shape3D
             // Rendering a mesh with non-point topology. Set tha points based material.
             renderer.material = mesh.normals.Length > 0 ? _litMaterial : _unlitMaterial;
           }
-          renderer.material.SetInt("PointSize", points.PointSize);
-          renderer.material.color = (shape != null) ? shape.Colour : new Color32(255, 255, 255, 255);
+          renderer.material.SetInt("_PointSize", points.PointSize);
+					renderer.material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
+					renderer.material.color = (shape != null) ? shape.Colour : new Color32(255, 255, 255, 255);
           partMesh.transform.SetParent(points.transform, false);
           ++partNumber;
         }
@@ -452,7 +453,8 @@ namespace Tes.Handlers.Shape3D
 
           GameObject child = new GameObject();
           child.AddComponent<MeshFilter>().mesh = meshes[i];
-          material.SetInt("PointSize", points.PointSize);
+          material.SetInt("_PointSize", points.PointSize);
+          material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
           child.AddComponent<MeshRenderer>().material = material;
           child.transform.SetParent(points.transform, false);
         }
@@ -460,7 +462,7 @@ namespace Tes.Handlers.Shape3D
     }
 
 
-    /// <summary>
+    /// <summary>g
     /// Mapping of Mesh ID to PointsComponents.
     /// </summary>
     private Dictionary<uint, List<PointsComponent>> _registeredParts = new Dictionary<uint, List<PointsComponent>>();
