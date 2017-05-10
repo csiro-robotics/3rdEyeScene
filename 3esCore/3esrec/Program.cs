@@ -291,9 +291,13 @@ This program attempts to connect to and record a Third Eye Scene server.
         writer = null;
         headerStream = null;
 
+        // FIXME: things got a little convoluted here.
+        // It it turns out we were trying to compress compressed data by using CollationStream.
+        // Until I can resolve the intention (compress uncompressed data or repackage compressed data)
+        // I'm doing no compression here.
         // Now wrap the file in a compression stream to start compression.
-        //stream = new GZipStream(fileStream, CompressionMode.Compress);
-        stream = new CollationStream(fileStream);
+        //stream = new CollationStream(fileStream);
+        stream = fileStream;
 
         return new NetworkWriter(stream);
       }

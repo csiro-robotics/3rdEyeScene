@@ -25,10 +25,10 @@ namespace Tes.IO
   /// <item>Send the encoded packet.</item>
   /// <item>Reset the encoder.</item>
   /// </list>
-  /// 
+  ///
   /// See <see cref="CollatedPacketDecoder"/> for notes on why <code>System.IO.Compression</code>
   /// is not used.
-  /// 
+  ///
   /// Derives the <see cref="IConnection"/> interface for compatibility.
   /// </remarks>
   public class CollatedPacketEncoder : IConnection
@@ -90,7 +90,7 @@ namespace Tes.IO
     /// <code>
     ///   writer.Send(packet.Buffer, 0, packet.Count)
     /// </code>
-    /// 
+    ///
     /// Use with care.
     /// </remarks>
     public byte[] Buffer { get { return _dataStream.BaseStream.GetBuffer(); } }
@@ -135,6 +135,7 @@ namespace Tes.IO
         // TODO: throw exception.
         return -1;
       }
+      // FIMXE: should the last argument be packet.Count - packet.Cursor?
       return Add(packet.Data, packet.Cursor, packet.Count);
     }
 

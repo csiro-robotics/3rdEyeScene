@@ -88,7 +88,7 @@ namespace Tes.IO
   /// </summary>
   /// <remarks>
   /// A <code>PacketBuffer</code> can be used in two ways: input and output
-  /// 
+  ///
   /// An input packet is used to collate data coming from a network or file stream.
   /// Bytes are read from the stream and added to the <code>PacketBuffer</code> by
   /// calling <see cref="Append(byte[], int)"/>. Individual messages are extracted using
@@ -96,28 +96,28 @@ namespace Tes.IO
   /// containing data for a single message. Data are read from this message by
   /// obtaining a <code>Stream</code> from <see cref="CreateReadStream(bool)"/>.
   /// This is summarised below:
-  /// 
+  ///
   /// <list type="bullet">
   /// <item>Add data by calling <see cref="Append(byte[], int)"/> until it returns <code>true</code>.</item>
   /// <item>Extract messages by calling <see cref="PopPacket(out bool)"/></item>
   /// <item>Read from extracted messages by creating a stream using <see cref="CreateReadStream(bool)"/></item>
   /// </list>
-  /// 
+  ///
   /// Output packets are used to generate content for writing to a network or file
   /// stream. An output packet first requires a <see cref="PacketHeader"/>, which is
   /// added to the buffer via <see cref="WriteHeader(PacketHeader)"/>. Message data are then written
   /// to the buffer by calling <see cref="WriteBytes(byte[], bool, int, int)"/>. Note that data should only be added to the
   /// buffer in network byte order (Big Endian). This conversion must occur before calling
   /// <see cref="WriteBytes(byte[], bool, int, int)"/>.
-  /// 
+  ///
   /// Once all data are written, the packet is finalised calling <see cref="FinalisePacket(bool)"/> and
   /// may be exported by calling one of the export methods: <see cref="ExportTo(BinaryWriter)"/>. Once exported
   /// a <code>PacketBuffer</code> may be reused by calling <see cref="Reset()"/> and starting the
   /// process from the beginning. Alternatively, the existing header may be preserved by calling
   /// <see cref="Reset(ushort, ushort)"/> and updating only the <see cref="PacketHeader.RoutingID"/>.
-  /// 
+  ///
   /// The output process is summarised below:
-  /// 
+  ///
   /// <list type="bullet">
   /// <item>Create and write a new header to the packet using <see cref="WriteHeader(PacketHeader)"/></item>
   /// <item>Write message data in network byte order using <see cref="WriteBytes(byte[], bool, int, int)"/></item>
@@ -201,7 +201,7 @@ namespace Tes.IO
     /// <code>
     ///   writer.Send(packet.Data, packet.Cursor, packet.Count)
     /// </code>
-    /// 
+    ///
     /// Use with care.
     /// </remarks>
     public byte[] Data { get { return _internalBuffer; } }
@@ -247,7 +247,7 @@ namespace Tes.IO
         WriteHeader(header);
       }
       else
-      { 
+      {
         _cursor = _currentByteCount = 0;
         _header.RoutingID = routingId;
         _header.MessageID = messageId;
@@ -264,12 +264,12 @@ namespace Tes.IO
     /// <param name="header"></param>
     /// <remarks>
     /// Intended for use in packet export only.
-    /// 
+    ///
     /// The <see cref="Header"/> is set to match <paramref name="header"/>,
     /// <see cref="ValidHeader"/> becomes <code>true</code> and the status
     /// changes to <see cref="PacketBufferStatus.Collating"/>. The given
     /// <paramref name="header"/> is immediately written to the packet buffer.
-    /// 
+    ///
     /// Message data may then be written to the buffer and the packet completed by
     /// calling <see cref="FinalisePacket(bool)"/>, which fixes the packet size.
     /// </remarks>
@@ -345,7 +345,7 @@ namespace Tes.IO
 
       // Calculate the CRC.
       if (addCrc)
-      { 
+      {
         ushort crc = Crc16.Crc.Calculate(_internalBuffer, (uint)_currentByteCount);
         // Don't do Endian swap here. WriteBytes does it.
         WriteBytes(BitConverter.GetBytes(crc), true);
@@ -376,6 +376,7 @@ namespace Tes.IO
       }
       if (_currentByteCount > 0)
       {
+        // FIXME: Should the last argument be _currentByteCount - _cursor?
         writer.Write(_internalBuffer, _cursor, _currentByteCount);
       }
       return _currentByteCount;
@@ -396,7 +397,7 @@ namespace Tes.IO
     public ushort PeekUInt16(int offset)
     {
       if (0 <= offset && offset < _currentByteCount)
-      { 
+      {
         return Endian.FromNetwork(BitConverter.ToUInt16(_internalBuffer, offset));
       }
       return 0;
@@ -486,13 +487,13 @@ namespace Tes.IO
     /// As data bytes are appended, the buffer code searches for a valid header,
     /// consuming all bytes until a valid header is found - i.e., bytes before the
     /// valid header are lost.
-    /// 
+    ///
     /// Once a valid header is found, <code>Append()</code> waits for sufficient bytes
     /// to complete the packet as specified in the validated header. At this point
     /// <code>Append()</code> returns <code>true</code>. Available packets
     /// may be extracted by calling <see cref="PopPacket(out bool)"/> until that method
     /// returns null.
-    /// 
+    ///
     /// Calling <code>Append()</code> will change the <see cref="PacketBuffer.Status"/>
     /// as follows:
     /// <list type="table">
@@ -537,7 +538,7 @@ namespace Tes.IO
       {
         int crcSize = ((_header.Flags & (byte)PacketFlag.NoCrc) == 0) ? Crc16.CrcSize : 0;
         if (_currentByteCount >= _header.PacketSize + crcSize)
-        { 
+        {
           Status = PacketBufferStatus.Available;
           return true;
         }
@@ -570,7 +571,7 @@ namespace Tes.IO
       {
         int crcSize = ((_header.Flags & (byte)PacketFlag.NoCrc) == 0) ? Crc16.CrcSize : 0;
         if (_currentByteCount >= _header.PacketSize + crcSize)
-        { 
+        {
           Status = PacketBufferStatus.Available;
           return true;
         }
@@ -592,10 +593,10 @@ namespace Tes.IO
     /// packet as a self contained <code>PacketBuffer</code>. When completed packets
     /// are available, this method returns each available completed packet as a single,
     /// self contained item.
-    /// 
+    ///
     /// The bytes making up the completed packet are removed from this packet buffer
     /// while excess bytes are preserved.
-    /// 
+    ///
     /// A null packet buffer may also be returned when there is enough data for a packet,
     /// but the CRC check fails. This case is detected when null is returned as <paramref name="crcOk"/>
     /// is <code>false</code> (failed CRC) as opposed to null returned and <paramref name="crcOk"/>
@@ -725,7 +726,7 @@ namespace Tes.IO
       {
         int crcSize = ((_header.Flags & (byte)PacketFlag.NoCrc) == 0) ? Crc16.CrcSize : 0;
         if (_currentByteCount >= _header.PacketSize + crcSize)
-        { 
+        {
           return true;
         }
       }
@@ -773,7 +774,7 @@ namespace Tes.IO
     /// <see cref="PacketHeader.Marker"/> followed by sufficient bytes to complete the <see cref="PacketHeader"/>
     /// and <see cref="ValidHeader"/> is set to <code>true</code>. Note how this consumes bytes
     /// before the marker.
-    /// 
+    ///
     /// Bytes are also consumed when the marker cannot be found, appropriately adjusting
     /// <see cref="DroppedByteCount"/>.
     /// </remarks>
@@ -903,7 +904,7 @@ namespace Tes.IO
       // Check the CRC flag.
       byte packetFlags = _internalBuffer[_cursor + PacketHeader.FlagsOffset];
       if ((packetFlags & (byte)PacketFlag.NoCrc) == 0)
-      { 
+      {
         ushort crc = Crc16.Crc.Calculate(_internalBuffer, (uint)_cursor, (uint)(packetSize - Crc16.CrcSize));
         byte[] crcBytes = new byte[2];
         crcBytes[0] = _internalBuffer[_cursor + packetSize - 2];
