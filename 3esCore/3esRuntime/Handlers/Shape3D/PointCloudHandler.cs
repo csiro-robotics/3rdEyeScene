@@ -15,7 +15,7 @@ namespace Tes.Handlers.Shape3D
   /// Whilst very similar to meshes, point cloud shapes do not support referencing an
   /// external mesh. The point data are encoded in a series of
   /// <see cref="DataMessage">DataMessages</see>.
-  /// 
+  ///
   /// Note: objects from the <see cref="MeshCache"/> can be marked for redefinition. In this case
   /// objects maintain the last valid visuals until a new finalisation message arrives.
   /// </remarks>
@@ -428,8 +428,8 @@ namespace Tes.Handlers.Shape3D
             renderer.material = mesh.normals.Length > 0 ? _litMaterial : _unlitMaterial;
           }
           renderer.material.SetInt("_PointSize", points.PointSize);
-					renderer.material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
-					renderer.material.color = (shape != null) ? shape.Colour : new Color32(255, 255, 255, 255);
+          renderer.material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
+          renderer.material.color = (shape != null) ? shape.Colour : new Color32(255, 255, 255, 255);
           partMesh.transform.SetParent(points.transform, false);
           ++partNumber;
         }

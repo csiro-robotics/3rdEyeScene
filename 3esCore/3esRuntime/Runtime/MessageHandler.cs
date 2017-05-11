@@ -87,13 +87,13 @@ namespace Tes.Runtime
     /// <value>The routing ID.</value>
     public abstract ushort RoutingID { get; }
 
-		/// <summary>
-		/// Stored server information.
-		/// </summary>
-		/// <remarks>
-		/// Normally updated in <see cref="UpdateServerInfo(Net.ServerInfoMessage)"/>.
-		/// </remarks>
-		public Net.ServerInfoMessage ServerInfo
+    /// <summary>
+    /// Stored server information.
+    /// </summary>
+    /// <remarks>
+    /// Normally updated in <see cref="UpdateServerInfo(Net.ServerInfoMessage)"/>.
+    /// </remarks>
+    public Net.ServerInfoMessage ServerInfo
     {
       get; protected set;
     }

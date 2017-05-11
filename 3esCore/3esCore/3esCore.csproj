@@ -98,6 +98,7 @@
     <Compile Include="Net\DestroyMessage.cs" />
     <Compile Include="Threading\SpinLock.cs" />
     <Compile Include="Collections\Queue.cs" />
+    <Compile Include="IO\CollatedPacketEncoder.cs" />
     <Compile Include="IO\PacketHeader.cs" />
     <Compile Include="IO\PacketBuffer.cs" />
     <Compile Include="Maths\Matrix3.cs" />
@@ -141,8 +142,7 @@
     <Compile Include="SR.cs" />
     <Compile Include="IO\CollationStream.cs" />
     <Compile Include="IO\CollatedPacketDecoder.cs" />
-    <Compile Include="IO\CollatedPacketEncoder.cs" />
-    <Compile Include="IO\CompressionBuffer.cs" />
+    <Compile Include="IO\ReusableMemoryStream.cs" />
     <Compile Include="IO\PacketStreamReader.cs" />
     <Compile Include="IO\GZipUtil.cs" />
   </ItemGroup>

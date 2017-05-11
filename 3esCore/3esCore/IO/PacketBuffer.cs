@@ -376,8 +376,29 @@ namespace Tes.IO
       }
       if (_currentByteCount > 0)
       {
-        // FIXME: Should the last argument be _currentByteCount - _cursor?
-        writer.Write(_internalBuffer, _cursor, _currentByteCount);
+        writer.Write(_internalBuffer, _cursor, _currentByteCount - _cursor);
+      }
+      return _currentByteCount;
+    }
+
+    /// <summary>
+    /// Exports the packet contents to the given <code>Stream</code>.
+    /// </summary>
+    /// <param name="stream">The <code>Stream</code> to export available bytes to.</param>
+    /// <returns>The number of bytes written</returns>
+    /// <remarks>
+    /// Export does not validate the packet status, exporting available bytes as is.
+    /// </remarks>
+    /// <exception cref="InvalidPacketStatusException">Thrown when the status is not <see cref="PacketBufferStatus.Complete"/>.</exception>
+    public int ExportTo(Stream stream)
+    {
+      if (Status != PacketBufferStatus.Complete)
+      {
+        throw new InvalidPacketStatusException(PacketBufferStatus.Complete, Status);
+      }
+      if (_currentByteCount > 0)
+      {
+        stream.Write(_internalBuffer, _cursor, _currentByteCount - _cursor);
       }
       return _currentByteCount;
     }

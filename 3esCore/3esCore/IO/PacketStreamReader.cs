@@ -217,20 +217,49 @@ namespace Tes.IO
       }
 
       // Read next packet.
+      int bytesRead = 0;
+      _headerStream.Position = 0;
       _headerStream.SetLength(PacketHeader.Size);
-      int bytesRead = _activeStream.Read(_headerStream.GetBuffer(), 0, PacketHeader.Size);
-      if (bytesRead <= 0)
+
+      if (!_searchForHeader)
       {
-        EndOfStream = bytesRead == 0;
-        _headerStream.SetLength(0);
+        bytesRead = _activeStream.Read(_headerStream.GetBuffer(), 0, PacketHeader.Size);
+      }
+      else
+      {
+        _searchForHeader = false;
+        // Look for the marker bytes.
+        UInt32 marker = 0;
+        int markerSize = 4;
+        while (!EndOfStream && marker != PacketHeader.PacketMarker)
+        {
+          bytesRead = _activeStream.Read(_headerStream.GetBuffer(), 0, markerSize);
+          marker = Endian.FromNetwork(BitConverter.ToUInt32(_headerStream.GetBuffer(), 0));
+        }
+
+        if (marker != PacketHeader.PacketMarker)
+        {
+          // Failed.
+          EndOfStream = true;
+          return null;
+        }
+
+        bytesRead += _activeStream.Read(_headerStream.GetBuffer(), markerSize, PacketHeader.Size - markerSize);
+      }
+
+      if (bytesRead < PacketHeader.Size)
+      {
+        EndOfStream = true;
         return null;
       }
+
       _headerStream.SetLength(bytesRead);
 
       // Decode header.
       if (!_header.Read(new NetworkReader(_headerStream)))
       {
         // TODO: Throw exception
+        _searchForHeader = true;
         return null;
       }
 
@@ -238,12 +267,12 @@ namespace Tes.IO
       int crcSize = ((_header.Flags & (byte)PacketFlag.NoCrc) == 0) ? Crc16.CrcSize : 0;
       packet = new PacketBuffer(_header.PacketSize + crcSize);
       packet.Emplace(_headerStream.GetBuffer(), bytesRead);
-      _headerStream.Seek(0, SeekOrigin.Begin);
       processedBytes += packet.Emplace(_activeStream, _header.PacketSize + crcSize - bytesRead);
       if (packet.Status != PacketBufferStatus.Complete)
       {
         // TODO: throw exception
-        return null;
+        _searchForHeader = true;
+        return packet;
       }
 
       // Decoder packet.
@@ -261,5 +290,9 @@ namespace Tes.IO
     private MemoryStream _headerStream = new MemoryStream(PacketHeader.Size);
     private PacketHeader _header = new PacketHeader();
     private bool _isGZipStream = false;
+    /// <summary>
+    /// True when we need to search for a header. Occurs after an invalid header or packet completion failure.
+    /// </summary>
+    private bool _searchForHeader = false;
   }
 }

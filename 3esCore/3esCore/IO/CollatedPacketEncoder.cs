@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.IO;
 using Tes.IO;
 using Tes.IO.Compression;
@@ -54,28 +54,10 @@ namespace Tes.IO
     public CollatedPacketEncoder(bool compress, int initialBufferSize = 64 * 1024)
     {
       CollatedBytes = 0;
-      _collationStream = _dataStream = new CompressionBuffer(initialBufferSize);
+      _collationBuffer  = new ReusableMemoryStream(initialBufferSize);
+      _finalisedBuffer = new ReusableMemoryStream(initialBufferSize);
       _packet = new PacketBuffer();
-
-      // Prime the output stream, writing the initial header.
-      PacketHeader header = PacketHeader.Create((ushort)RoutingID.CollatedPacket, 0);
-
-      CollatedPacketMessage msg = new CollatedPacketMessage();
-      msg.Flags = (ushort)((compress) ? CollatedPacketFlag.GZipCompressed : 0u);
-      msg.Reserved = 0;
-      msg.UncompressedBytes = 0;
-
-      NetworkWriter writer = new NetworkWriter(_dataStream);
-      header.Write(writer);
-      msg.Write(writer);
-
-      _resetPosition = (int)_dataStream.Position;
-
       CompressionEnabled = compress;
-      if (compress)
-      {
-        _collationStream = new GZipStream(_dataStream, CompressionMode.Compress);
-      }
     }
 
     /// <summary>
@@ -93,11 +75,11 @@ namespace Tes.IO
     ///
     /// Use with care.
     /// </remarks>
-    public byte[] Buffer { get { return _dataStream.BaseStream.GetBuffer(); } }
+    public byte[] Buffer { get { return _finalisedBuffer.GetBuffer(); } }
     /// <summary>
     /// The total number of bytes written to <see cref="Buffer"/>.
     /// </summary>
-    public int Count { get { return (int)_dataStream.Position; } }
+    public int Count { get { return (int)_finalisedBuffer.Position; } }
     /// <summary>
     /// The number of bytes written to <see cref="Buffer"/> excluding the <see cref="Overhead"/>.
     /// </summary>
@@ -108,19 +90,12 @@ namespace Tes.IO
     /// </summary>
     public void Reset()
     {
-      if (!_finalised)
-      {
-        FinaliseEncoding();
-      }
       _finalised = false;
       CollatedBytes = 0;
-      SetPayloadSize(0);
-      SetUncompressedBytesSize(0);
-      _dataStream.Seek(_resetPosition, SeekOrigin.Begin);
-      if (CompressionEnabled)
-      {
-        _collationStream = new GZipStream(_dataStream, CompressionMode.Compress);
-      }
+      //SetPayloadSize(0);
+      //SetUncompressedBytesSize(0);
+      _collationBuffer.Position = 0;
+      _finalisedBuffer.Position = 0;
     }
 
     /// <summary>
@@ -166,7 +141,7 @@ namespace Tes.IO
         return -1;
       }
 
-      _collationStream.Write(bytes, offset, length);
+      _collationBuffer.Write(bytes, offset, length);
       CollatedBytes += length;
       return length;
     }
@@ -182,18 +157,67 @@ namespace Tes.IO
         return false;
       }
 
-      // Finalise compression. Stream must be closed.
-      _collationStream.Close();
-      // Ensure a valid state.
-      _collationStream = _dataStream;
-      //SetPayloadSize((ushort)(Count + CollatedPacketMessage.Size));
-      SetPayloadSize((ushort)(Count - PacketHeader.Size));
-      // Update the payload and uncompressed sizes.
-      SetUncompressedBytesSize((ushort)CollatedBytes);
+      bool compressionSuccess = false;
+      if (CompressionEnabled)
+      {
+        // Compress the raw buffer into the compression buffer then validate it's smaller.
+        _finalisedBuffer.Position = 0;
+
+        // First write the standard header for this buffer.
+        // Prime the output stream, writing the initial header.
+        PacketHeader header = PacketHeader.Create((ushort)RoutingID.CollatedPacket, 0);
+
+        CollatedPacketMessage msg = new CollatedPacketMessage();
+        msg.Flags = (ushort)CollatedPacketFlag.GZipCompressed;
+        msg.Reserved = 0;
+        msg.UncompressedBytes = 0;
+
+        NetworkWriter writer = new NetworkWriter(_finalisedBuffer);
+        header.Write(writer);
+        msg.Write(writer);
+
+        int overhead = (int)_finalisedBuffer.Position;
+
+        // Now compress the collated packets.
+        GZipStream compressionStream = new GZipStream(_finalisedBuffer, CompressionMode.Compress);
+        compressionStream.Write(_collationBuffer.GetBuffer(), 0, (int)_collationBuffer.Position);
+        compressionStream.Close();
+        if (_finalisedBuffer.Position < _collationBuffer.Position + overhead)
+        {
+          // The compressed data are smaller, so we accept it.
+          SetPayloadSize((ushort)(Count - PacketHeader.Size));
+          // Update the payload and uncompressed sizes.
+          SetUncompressedBytesSize((ushort)CollatedBytes);
+          compressionSuccess = true;
+        }
+      }
+
+      if (!compressionSuccess)
+      {
+        // No compression or compression failed to reduce the data size. Write header then copy wrap packets.
+        PacketHeader header = PacketHeader.Create((ushort)RoutingID.CollatedPacket, 0);
+
+        _finalisedBuffer.Position = 0;
+
+        CollatedPacketMessage msg = new CollatedPacketMessage();
+        msg.Flags = 0;
+        msg.Reserved = 0;
+        msg.UncompressedBytes = 0;
+
+        NetworkWriter writer = new NetworkWriter(_finalisedBuffer);
+        header.Write(writer);
+        msg.Write(writer);
+
+        _finalisedBuffer.Write(_collationBuffer.GetBuffer(), 0, (int)_collationBuffer.Position);
+        // The compressed data are smaller, so we accept it.
+        SetPayloadSize((ushort)(Count - PacketHeader.Size));
+        // Update the payload and uncompressed sizes.
+        SetUncompressedBytesSize((ushort)CollatedBytes);
+      }
 
       // Calculate the CRC
-      ushort crc = Crc16.Crc.Calculate(_dataStream.BaseStream.GetBuffer(), (uint)_dataStream.Position);
-      new NetworkWriter(_dataStream).Write(crc);
+      ushort crc = Crc16.Crc.Calculate(_finalisedBuffer.GetBuffer(), (uint)_finalisedBuffer.Position);
+      new NetworkWriter(_finalisedBuffer).Write(crc);
       _finalised = true;
       return true;
     }
@@ -386,32 +410,24 @@ namespace Tes.IO
     /// <param name="bytes">Bytes to write.</param>
     protected void WriteHeaderData(int dstOffset, byte[] bytes)
     {
-      long restorePos = _dataStream.Position;
-      _dataStream.Seek(dstOffset, SeekOrigin.Begin);
-      _dataStream.Write(bytes, 0, bytes.Length);
-      _dataStream.Seek(restorePos, SeekOrigin.Begin);
+      long restorePos = _finalisedBuffer.Position;
+      _finalisedBuffer.Seek(dstOffset, SeekOrigin.Begin);
+      _finalisedBuffer.Write(bytes, 0, bytes.Length);
+      _finalisedBuffer.Seek(restorePos, SeekOrigin.Begin);
     }
 
     /// <summary>
-    /// Buffer stream to write into
+    /// Raw packet data collation stream.
     /// </summary>
-    /// <remarks>
-    /// Matches <see cref="_dataStream"/> when uncompressed. Otherwise it wraps
-    /// <see cref="_dataStream"/> in a GZip stream.
-    /// </remarks>
-    private Stream _collationStream = null;
+    private ReusableMemoryStream _collationBuffer = null;
     /// <summary>
-    /// Internal memory buffer.
+    /// Stream into which data are compressed.
     /// </summary>
-    private CompressionBuffer _dataStream = null;
+    private ReusableMemoryStream _finalisedBuffer = null;
     /// <summary>
     /// Buffer used in methods implementing the <see cref="IConnection"/> interface.
     /// </summary>
     private PacketBuffer _packet = null;
-    /// <summary>
-    /// Position to seek to on reset.
-    /// </summary>
-    private int _resetPosition = 0;
     /// <summary>
     /// Finalisation flag.
     /// </summary>

@@ -115,13 +115,13 @@ namespace tes
     /// Add bytes to the packet. Use with care as the @p buffer should always
     /// start with a valid @c PacketHeader in network byte order.
     /// @param buffer The data to add.
-    /// @param bufferSize The number of bytes in @p buffer.
+    /// @param byteCount The number of bytes in @p buffer.
     /// @return The <tt>packet.packetSize()</tt> on success, or -1 on failure.
-    int add(const uint8_t *buffer, uint16_t bufferSize);
+    int add(const uint8_t *buffer, uint16_t byteCount);
 
     /// Finalises the collated packet for sending. This includes completing
     /// compression and calculating the CRC.
-    /// @return True on successful finalisation, false when already finalised. 
+    /// @return True on successful finalisation, false when already finalised.
     bool finalise();
 
     /// Access the internal buffer pointer.
@@ -209,18 +209,20 @@ namespace tes
     /// Initialise the buffer.
     /// @param compress Enable compression?
     /// @param bufferSize Initial buffer size.
-    /// @param maxPacketSize Maximum buffer size. 
+    /// @param maxPacketSize Maximum buffer size.
     void init(bool compress, unsigned bufferSize, unsigned maxPacketSize);
 
     /// Expand the internal buffer size by @p expandBy bytes up to @c maxPacketSize().
     /// @param expandBy Minimum number of bytes to expand by.
-    void expand(unsigned expandBy);
+    static void expand(unsigned expandBy, uint8_t *&buffer, unsigned &bufferSize, unsigned currentDataCount, unsigned maxPacketSize);
 
-    PacketHeader *_header;    ///< Header pointer in the @c _buffer.
-    CollatedPacketMessage *_message;  ///< Message pointer in @c _buffer.
     CollatedPacketZip *_zip;  ///< Present and used when compression is enabled.
-    uint8_t *_buffer;         ///< Internal buffer. 
+    uint8_t *_buffer;         ///< Internal buffer.
+    /// Buffer used to finalise collation. Deflating may not be successful, so we can try and fail with this buffer.
+    uint8_t *_finalBuffer;
     unsigned _bufferSize;     ///< current size of @c _buffer.
+    unsigned _finalBufferSize;///< current size of @c _finalBuffer.
+    unsigned _finalPacketCursor;  ///< End of data in @c _finalBuffer
     unsigned _cursor;         ///< Current write position in @c _buffer.
     unsigned _maxPacketSize;  ///< Maximum @p _bufferSize.
     bool _finalised;          ///< Finalisation flag.
@@ -242,7 +244,7 @@ namespace tes
 
   inline unsigned CollatedPacket::collatedBytes() const
   {
-    return _cursor - InitialCursorOffset;
+    return _cursor;
   }
 }
 

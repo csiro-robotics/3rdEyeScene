@@ -495,7 +495,7 @@ namespace Tes.Handlers.Shape3D
           render.material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
         }
 
-				mesh.RecalculateBounds();
+        mesh.RecalculateBounds();
         if (meshData.CalculateNormals && !haveNormals)
         {
           //mesh.RecalculateNormals();
@@ -542,11 +542,11 @@ namespace Tes.Handlers.Shape3D
           {
             render.material.SetColor("_BackColour", colour);
           }
-					if (meshData.DrawType == MeshDrawType.Points)
-					{
-						render.material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
-					}
-					partMesh.subMeshCount = 1;
+          if (meshData.DrawType == MeshDrawType.Points)
+          {
+            render.material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
+          }
+          partMesh.subMeshCount = 1;
           elementCount = Math.Min(itemsPerMesh, indices.Length - indexOffset);
 
           Vector3[] partVerts = new Vector3[elementCount];
