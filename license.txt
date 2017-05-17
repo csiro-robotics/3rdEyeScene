@@ -17,7 +17,7 @@ The following third party components are distributed with the Software.  You agr
 ___________________________________________________________________
 Unity 3D https://unity3d.com/
 ZLib http://www.zlib.net/
-Microsoft .Net System.IO.Compress ported by Hitcents (http://www.hitcents.com/) from .Net open source:
+DotNetZip http://dotnetzip.codeplex.com/wikipage?title=CS-Examples&referringTitle=Examples
 UCLA Game Lab wireframe shaders http://games.ucla.edu/
 CMake project configuration http://www.cmake.org/
 Doxygen documentation http://www.stack.nl/~dimitri/doxygen/

@@ -2,11 +2,11 @@
 using System.Collections;
 using System.IO;
 using System.Runtime.InteropServices;
+using Ionic.Zlib;
+using UnityEngine;
 using Tes.Collections;
 using Tes.IO;
-using Tes.IO.Compression;
 using Tes.Net;
-using UnityEngine;
 
 namespace Tes.Main
 {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Ionic.Zlib;
 
 namespace Tes.IO
 {
@@ -213,7 +214,7 @@ namespace Tes.IO
       if (!_isGZipStream && GZipUtil.IsGZipStream(_activeStream))
       {
         _isGZipStream = true;
-        _activeStream = new Compression.GZipStream(_activeStream, Compression.CompressionMode.Decompress);
+        _activeStream = new GZipStream(_activeStream, CompressionMode.Decompress);
       }
 
       // Read next packet.

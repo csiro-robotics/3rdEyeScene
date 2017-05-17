@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using Ionic.Zlib;
 using Tes.IO;
 using Tes.Net;
 
@@ -366,7 +367,7 @@ This program attempts to connect to and record a Third Eye Scene server.
             stream = new CollationStream(fileStream, false);
             break;
           case Mode.FileCompression:
-            stream = new IO.Compression.GZipStream(fileStream, IO.Compression.CompressionMode.Compress);
+            stream = new GZipStream(fileStream, CompressionMode.Compress, CompressionLevel.BestCompression);
             break;
           case Mode.Uncompressed:
             stream = fileStream;

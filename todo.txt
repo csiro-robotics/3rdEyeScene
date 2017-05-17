@@ -1,10 +1,8 @@
 Bugs:
-- Compression has little impact on file stream size.
+- Suspect: object recycling in ShapeHandler appears to sometimes activate invalid objects.
 
 TODO for v1.0:
 - Client log UI and output window.
-- Resolve compression issues.
-  - Update GZipStream to the latest open source version from the .Net core and support maximal compression
 - Consolidate C# shape constructors and improve consistency.
 - PROTOCOL CHANGE: Reduce object overhead. Creating many objects is expensive in data throughput and packet processing.
   - Modify ObjectAttributes structure (for update messages only?) to have a 1-byte flag member which identifies which of colour, position, rotation and scale data are present.

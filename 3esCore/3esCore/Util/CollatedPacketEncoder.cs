@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
+using Ionic.Zlib;
 using Tes.IO;
-using Tes.IO.Compression;
 using Tes.Net;
 using Tes.Shapes;
 
@@ -74,7 +74,7 @@ namespace Tes.Util
       CompressionEnabled = compress;
       if (compress)
       {
-        _collationStream = new GZipStream(_dataStream, CompressionMode.Compress);
+        _collationStream = new GZipStream(_dataStream, CompressionMode.Compress, CompressionLevel.BestCompression);
       }
     }
 
@@ -119,7 +119,7 @@ namespace Tes.Util
       _dataStream.Seek(_resetPosition, SeekOrigin.Begin);
       if (CompressionEnabled)
       {
-        _collationStream = new GZipStream(_dataStream, CompressionMode.Compress);
+        _collationStream = new GZipStream(_dataStream, CompressionMode.Compress, CompressionLevel.BestCompression);
       }
     }
 

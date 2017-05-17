@@ -1,6 +1,5 @@
 ﻿using System.IO;
-using Tes.IO;
-using Tes.IO.Compression;
+using Ionic.Zlib;
 using Tes.Net;
 
 namespace Tes.IO
@@ -10,16 +9,10 @@ namespace Tes.IO
   /// </summary>
   /// <remarks>
   /// Unity does not support classes from <code>System.IO.Compression</code>, thus we
-  /// can't use <code>GZipStream</code> from there directly. Fortunately, with Microsoft releasing
-  /// much of the .Net core as open source code, some helpful people at
-  /// http://www.hitcents.com/ have migrated the <code>GZipStream</code> into a Unity
-  /// asset. This has been imported into the <code>Tes.IO.Compression</code> namespace.
-  /// 
-  /// The zip code asset is available from here: https://www.assetstore.unity3d.com/en/#!/content/31902
-  /// Courtesy of http://www.hitcents.com/
-  /// 
-  /// Note: This class is currently very slow in decoding collated and compress packets.
-  /// Needs to be improved to have less buffer allocation.
+  /// can't use <code>GZipStream</code> from there directly. Whilst .Net Core source code is available
+  /// and can be ported, the managed implementation supports only one, default compression level.
+  /// The default .Net Core GZip implementation uses native ZLib, which cannot be supported herre to maintain
+  /// higher platform independence. In the end we use a DotNetZip NuGet package.
   /// </remarks>
   public class CollatedPacketDecoder
   {
