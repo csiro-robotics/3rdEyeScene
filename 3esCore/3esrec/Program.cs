@@ -17,7 +17,7 @@ namespace Tes
       FileCompression,
       Uncompressed,
 
-      Default = Uncompressed
+      Default = CollateAndCompress
     }
 
     public bool Quit { get; set; }
