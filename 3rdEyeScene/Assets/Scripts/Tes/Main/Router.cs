@@ -341,8 +341,9 @@ namespace Tes.Main
       {
         thread.AllowSnapshots = playbackSettings.AllowSnapshots;
         thread.SnapshotKiloBytes = playbackSettings.SnapshotEveryKb;
+        thread.SnapshotMinFrames = (uint)Math.Max(0, playbackSettings.SnapshotEveryFrames);
         thread.ShapshotSkipForwardFrames = (uint)Math.Max(0, playbackSettings.SnapshotSkipForwardFrames);
-        thread.SnapshotMinFrames = (uint)Math.Max(0, playbackSettings.SnapshotFrameSeparation);
+        thread.SnapshotFrames = (uint)Math.Max(0, playbackSettings.SnapshotFrameSeparation);
         thread.Loop = playbackSettings.Looping;
       }
       thread.PlaybackSpeed = PlaybackSpeed;
@@ -832,6 +833,10 @@ namespace Tes.Main
           else if (string.Compare(args.PropertyName, "SnapshotEveryKb") == 0)
           {
             streamThread.SnapshotKiloBytes = playback.SnapshotEveryKb;
+          }
+          else if (string.Compare(args.PropertyName, "SnapshotEveryFrames") == 0)
+          {
+            streamThread.SnapshotFrames = (uint)Math.Min(0, playback.SnapshotEveryFrames);
           }
           else if (string.Compare(args.PropertyName, "ShapshotSkipForwardFrames") == 0)
           {

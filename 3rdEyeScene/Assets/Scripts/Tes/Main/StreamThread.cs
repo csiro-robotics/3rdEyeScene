@@ -91,6 +91,16 @@ namespace Tes.Main
     }
     private uint _snapshotMinFrames = 5;
 
+    /// <summary>
+    /// Do not take a snapshot unless at least this many frames have elapsed.
+    /// </summary>
+    public uint SnapshotFrames
+    {
+      get { lock (this) { return _snapshotFrames; } }
+      set { lock (this) { _snapshotFrames = value; } }
+    }
+    private uint _snapshotFrames = 100;
+
     public uint ShapshotSkipForwardFrames
     {
       get { lock (this) { return _shapshotSkipForwardFrames; } }
@@ -452,7 +462,8 @@ namespace Tes.Main
                     }
                     // Ended a frame. Check for snapshot. We'll queue the request after the end of
                     // frame message below.
-                    if (lastSeekablePosition - lastSnapshotPosition >= _snapshotKiloBytes * 1024 &&
+                    if ((lastSeekablePosition - lastSnapshotPosition >= _snapshotKiloBytes * 1024 ||
+                        _currentFrame - lastSnapshotFrame >= _snapshotFrames) &&
                         lastSnapshotFrame < _currentFrame &&
                         _currentFrame - lastSnapshotFrame >= _snapshotMinFrames)
                     {
@@ -943,9 +954,18 @@ namespace Tes.Main
           if (_snapshots[i].FrameNumber == frameNumber)
           {
             snapshot = _snapshots[i];
-            snapshot.TemporaryFilePath = Path.GetFullPath(Path.Combine("temp", Path.GetRandomFileName()));
-            snapshot.OpenStream = new FileStream(snapshot.TemporaryFilePath, FileMode.Create);
-            return snapshot.OpenStream;
+            //snapshot.TemporaryFilePath = Path.GetFullPath(Path.Combine("temp", Path.GetRandomFileName()));
+            snapshot.TemporaryFilePath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
+            Debug.Log(string.Format("Snapshot path {0}", snapshot.TemporaryFilePath));
+            try
+            {
+              snapshot.OpenStream = new FileStream(snapshot.TemporaryFilePath, FileMode.Create);
+              return snapshot.OpenStream;
+            }
+            catch (Exception e)
+            {
+              Debug.LogException(e);
+            }
           }
         }
       }
