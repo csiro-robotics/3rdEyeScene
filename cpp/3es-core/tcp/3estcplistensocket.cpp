@@ -124,6 +124,11 @@ TcpSocket *TcpListenSocket::accept(unsigned timeoutMs)
   struct timeval timeout;
   fd_set fdRead;
 
+  if (_detail->listenSocket < 0)
+  {
+    return nullptr;
+  }
+
   // use select() to avoid blocking on accept()
 
   FD_ZERO(&fdRead);          // Clear the set of selected objects

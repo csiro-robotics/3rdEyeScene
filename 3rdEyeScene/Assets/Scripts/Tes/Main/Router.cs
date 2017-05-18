@@ -2,13 +2,13 @@
 using System.IO;
 using System.Net;
 using System.Collections.Generic;
-using Tes.IO;
-using Tes.IO.Compression;
-using Tes.Net;
-using Tes.Runtime;
+using System.ComponentModel;
+using Ionic.Zlib;
 using UnityEngine;
 using UnityEngine.Events;
-using System.ComponentModel;
+using Tes.IO;
+using Tes.Net;
+using Tes.Runtime;
 
 namespace Tes.Main
 {
@@ -341,8 +341,9 @@ namespace Tes.Main
       {
         thread.AllowSnapshots = playbackSettings.AllowSnapshots;
         thread.SnapshotKiloBytes = playbackSettings.SnapshotEveryKb;
+        thread.SnapshotMinFrames = (uint)Math.Max(0, playbackSettings.SnapshotEveryFrames);
         thread.ShapshotSkipForwardFrames = (uint)Math.Max(0, playbackSettings.SnapshotSkipForwardFrames);
-        thread.SnapshotMinFrames = (uint)Math.Max(0, playbackSettings.SnapshotFrameSeparation);
+        thread.SnapshotFrames = (uint)Math.Max(0, playbackSettings.SnapshotFrameSeparation);
         thread.Loop = playbackSettings.Looping;
       }
       thread.PlaybackSpeed = PlaybackSpeed;
@@ -464,6 +465,7 @@ namespace Tes.Main
         WriteCameraPosition(writer, Camera.main, 255);
         WriteFrameFlush(writer);
         _recordingWriter = writer;
+        _recordingFileStream = fileStream;
       }
       catch (Exception e)
       {
@@ -480,10 +482,11 @@ namespace Tes.Main
     {
       if (_recordingWriter != null)
       {
-        FinaliseFrameCount(_recordingWriter, CurrentFrame);
+        FinaliseFrameCount(_recordingWriter, _recordingFileStream, CurrentFrame);
         _recordingWriter.Flush();
         _recordingWriter.Close();
         _recordingWriter = null;
+        _recordingFileStream = null;
       }
     }
 
@@ -831,6 +834,10 @@ namespace Tes.Main
           {
             streamThread.SnapshotKiloBytes = playback.SnapshotEveryKb;
           }
+          else if (string.Compare(args.PropertyName, "SnapshotEveryFrames") == 0)
+          {
+            streamThread.SnapshotFrames = (uint)Math.Min(0, playback.SnapshotEveryFrames);
+          }
           else if (string.Compare(args.PropertyName, "ShapshotSkipForwardFrames") == 0)
           {
             streamThread.ShapshotSkipForwardFrames = (uint)Math.Max(0, playback.SnapshotSkipForwardFrames);
@@ -1029,7 +1036,7 @@ namespace Tes.Main
       // Now wrap the file in a GZip stream to start compression if we are not already doing so.
       if (allowCompression && fileStream as GZipStream == null)
       {
-        writer = new NetworkWriter(new GZipStream(fileStream, CompressionMode.Compress));
+        writer = new NetworkWriter(new GZipStream(fileStream, CompressionMode.Compress, CompressionLevel.BestCompression));
       }
       else
       {
@@ -1133,7 +1140,7 @@ namespace Tes.Main
     ///
     /// Both messages should be in uncompressed space, thus the writer should not be using a
     /// zip stream. The frame count written here is zero and is finalised by calling
-    /// <see cref="FinaliseFrameCount(BinaryWriter, uint)"/> once the final frame count is
+    /// <see cref="FinaliseFrameCount(BinaryWriter, Stream, uint)"/> once the final frame count is
     /// known.
     /// </remarks>
     private void WriteRecordingHeader(BinaryWriter writer)
@@ -1162,6 +1169,7 @@ namespace Tes.Main
     /// Finalises the frame count in the stream underpinning <paramref name="writer"/>.
     /// </summary>
     /// <param name="writer">The binary writer and stream to export to.</param>
+    /// <param name="outStream">The stream underpinning <paramref name="writer" />. May be otherwise inaccessible.
     /// <param name="frameCount">The total number of frames.</param>
     /// <remarks>
     /// By convention, a recording stream includes a <see cref="ControlMessage"/> with ID
@@ -1177,7 +1185,7 @@ namespace Tes.Main
     /// zip stream) must support seeking and the message must appear in the uncompressed section.
     /// The method fails if these conditions are not met.
     /// </remarks>
-    private void FinaliseFrameCount(BinaryWriter writer, uint frameCount)
+    private void FinaliseFrameCount(BinaryWriter writer, Stream outStream, uint frameCount)
     {
       // Rewind the stream to the beginning and find the first RoutingID.Control message
       // with a ControlMessageID.FrameCount ID. This should be the second message in the stream.
@@ -1189,17 +1197,6 @@ namespace Tes.Main
       // extract the stream that is writing to instead as we can't rewind compression streams
       // and we wrote the header raw.
       writer.BaseStream.Flush();
-
-      Stream outStream = null;
-      GZipStream zipStream = writer.BaseStream as GZipStream;
-      if (zipStream != null)
-      {
-        outStream = zipStream.BaseStream;
-      }
-      else
-      {
-        outStream = writer.BaseStream;
-      }
 
       // Check we are allowed to seek the stream.
       if (!outStream.CanSeek)
@@ -1384,6 +1381,10 @@ namespace Tes.Main
     /// We are not recording if it is null and we are if it is non-null.
     /// </summary>
     private BinaryWriter _recordingWriter = null;
+    /// <summary>
+    /// The file stream underpinning the <c>_recordingWriter</c>.
+    /// </summary>
+    private Stream _recordingFileStream = null;
     /// <summary>
     /// Initialised to the latest incoming server info message received (normally on connection).
     /// </summary>

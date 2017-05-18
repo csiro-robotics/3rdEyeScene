@@ -26,6 +26,14 @@ public class PlaybackSettings : Settings
     set { PlayerPrefs.SetInt("playback.snapshotKb", value); Notify("SnapshotEveryKb"); }
   }
 
+  [Browsable(true), SetRange(1, 10000),
+    Tooltip("Create a snapshot after this number of frames elapses.")]
+  public int SnapshotEveryFrames
+  {
+    get { return PlayerPrefs.GetInt("playback.snapshotFrames", 100); }
+    set { PlayerPrefs.SetInt("playback.snapshotFrames", value); Notify("SnapshotEveryFrames"); }
+  }
+
   [Browsable(true), SetRange(1, 1000),
     Tooltip("Try restore snapshot when skipping forwards at least this number of frames.")]
   public int SnapshotSkipForwardFrames

@@ -490,7 +490,10 @@ void TcpConnection::flushCollatedPacketUnguarded()
     _collation->finalise();
     unsigned byteCount = 0;
     const uint8_t *bytes = _collation->buffer(byteCount);
-    _client->write(bytes, (int)byteCount);
+    if (bytes && byteCount)
+    {
+      _client->write(bytes, (int)byteCount);
+    }
     _collation->reset();
   }
 }

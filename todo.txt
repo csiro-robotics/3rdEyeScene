@@ -1,20 +1,21 @@
 Bugs:
-- TES_MESHSET_XXX() macros do not cater for defining the associated resources. Parameterisation needs to change.
-- Large data frames have been known to end up an odd state whereby some data from the previous are still visible and not all data from the next frame are visible.
-  - Possibly a thread safety issue on the concurrent queue.
-- Custom socket bugs (workaround using Qt sockets):
-  - Large packets go missing. I suspect this is fixed by improvements to packet size limits.
+- Suspect: object recycling in ShapeHandler appears to sometimes activate invalid objects.
 
+TODO for v1.0:
+- Client log UI and output window.
+- Consolidate C# shape constructors and improve consistency.
+- PROTOCOL CHANGE: Reduce object overhead. Creating many objects is expensive in data throughput and packet processing.
+  - Modify ObjectAttributes structure (for update messages only?) to have a 1-byte flag member which identifies which of colour, position, rotation and scale data are present.
+  - Consider moving major/minor version members of PacketHeader into ServerSettings message.
+  - Support batch object creation?
 
 TODO:
 - "Server" implementation which writes directly to a local file.
 - Change shape shaders to support GPU instancing.
 - Consider adding batched object creation messages.
-- Consolidate C# shape constructors and improve consistency.
-- Client log for error messages.
 - UI:
-  - Handler options and UI
   - Camera Selection UI
+  - Handler options and UI
   - Scene Graph UI
 - Export to PLY file (because PLY is easy).
 - Annotation frames.
@@ -24,11 +25,7 @@ TODO:
 - Client rendering override modes:
   - Solid/wireframe overlay
   - Wireframe override
-- PROTOCOL CHANGE: Reduce object overhead. Creating many objects is expensive in data throughput and packet processing.
-  - Modify ObjectAttributes structure (for update messages only?) to have a 1-byte flag member which identifies which of colour, position, rotation and scale data are present.
-  - Consider moving major/minor version members of PacketHeader into ServerSettings message.
-  - Support batch object creation?
-- Tidy up and fix up Router catcup logic and _currentFrame management.
+- Tidy up client StreamThread and Router update loops.
 
 Maybe:
 - GL-TF scene serialiser for the client.

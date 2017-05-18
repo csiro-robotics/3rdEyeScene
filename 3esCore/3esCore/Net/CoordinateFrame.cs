@@ -35,6 +35,11 @@ namespace Tes.Net
     YZ_X,
     ZX_Y,
     ZYX,
+
+    /// <summary>
+    /// First left handed coordinate frame.
+    /// </summary>
+    LeftHanded = XY_Z
     // Restore Xml comment warnings.
 #pragma warning restore 1591
   }

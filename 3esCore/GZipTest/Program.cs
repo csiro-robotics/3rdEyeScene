@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Diagnostics;
-using Tes.IO.Compression;
+using Ionic.Zlib;
 
 namespace Tes
 {
@@ -41,7 +41,7 @@ namespace Tes
 
         using (FileStream readin = new FileStream(fileName, FileMode.Open))
         {
-          using (GZipStream zip = new GZipStream(new FileStream(outFileName, FileMode.Create), CompressionMode.Compress))
+          using (GZipStream zip = new GZipStream(new FileStream(outFileName, FileMode.Create), CompressionMode.Compress, CompressionLevel.BestCompression))
           {
             while ((bytesRead = readin.Read(buffer, 0, buffer.Length)) > 0)
             {

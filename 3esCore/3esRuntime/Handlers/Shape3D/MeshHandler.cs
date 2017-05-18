@@ -490,6 +490,10 @@ namespace Tes.Handlers.Shape3D
         {
           render.material.SetColor("_BackColour", colour);
         }
+        if (meshData.DrawType == MeshDrawType.Points)
+        {
+          render.material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
+        }
 
         mesh.RecalculateBounds();
         if (meshData.CalculateNormals && !haveNormals)
@@ -537,6 +541,10 @@ namespace Tes.Handlers.Shape3D
           if (shape.TwoSided)
           {
             render.material.SetColor("_BackColour", colour);
+          }
+          if (meshData.DrawType == MeshDrawType.Points)
+          {
+            render.material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
           }
           partMesh.subMeshCount = 1;
           elementCount = Math.Min(itemsPerMesh, indices.Length - indexOffset);

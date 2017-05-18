@@ -30,6 +30,9 @@
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="DotNetZip">
+      <HintPath>..\packages\DotNetZip.1.10.1\lib\net20\DotNetZip.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Maths\IntUtil.cs" />
@@ -98,6 +101,7 @@
     <Compile Include="Net\DestroyMessage.cs" />
     <Compile Include="Threading\SpinLock.cs" />
     <Compile Include="Collections\Queue.cs" />
+    <Compile Include="IO\CollatedPacketEncoder.cs" />
     <Compile Include="IO\PacketHeader.cs" />
     <Compile Include="IO\PacketBuffer.cs" />
     <Compile Include="Maths\Matrix3.cs" />
@@ -108,32 +112,6 @@
     <Compile Include="Maths\FloatUtil.cs" />
     <Compile Include="Shapes\MeshBase.cs" />
     <Compile Include="Maths\Colour.cs" />
-    <Compile Include="IO\Compression\BlockType.cs" />
-    <Compile Include="IO\Compression\CompressionMode.cs" />
-    <Compile Include="IO\Compression\CopyEncoder.cs" />
-    <Compile Include="IO\Compression\Crc32Helper.cs" />
-    <Compile Include="IO\Compression\DeflateInput.cs" />
-    <Compile Include="IO\Compression\DeflateStream.cs" />
-    <Compile Include="IO\Compression\DeflateStreamAsyncResult.cs" />
-    <Compile Include="IO\Compression\DeflaterManaged.cs" />
-    <Compile Include="IO\Compression\FastEncoder.cs" />
-    <Compile Include="IO\Compression\FastEncoderStatics.cs" />
-    <Compile Include="IO\Compression\FastEncoderWindow.cs" />
-    <Compile Include="IO\Compression\FileFormats.cs" />
-    <Compile Include="IO\Compression\GZipDecoder.cs" />
-    <Compile Include="IO\Compression\GZipStream.cs" />
-    <Compile Include="IO\Compression\GZipUtils.cs" />
-    <Compile Include="IO\Compression\HuffmanTree.cs" />
-    <Compile Include="IO\Compression\IDeflater.cs" />
-    <Compile Include="IO\Compression\Inflater.cs" />
-    <Compile Include="IO\Compression\InflaterState.cs" />
-    <Compile Include="IO\Compression\InputBuffer.cs" />
-    <Compile Include="IO\Compression\InvalidDataException.cs" />
-    <Compile Include="IO\Compression\Match.cs" />
-    <Compile Include="IO\Compression\MatchState.cs" />
-    <Compile Include="IO\Compression\OutputBuffer.cs" />
-    <Compile Include="IO\Compression\OutputWindow.cs" />
-    <Compile Include="IO\Compression\SR.cs" />
     <Compile Include="Buffers\ArrayPool.cs" />
     <Compile Include="Buffers\DefaultArrayPool.cs" />
     <Compile Include="Buffers\DefaultArrayPoolBucket.cs" />
@@ -141,12 +119,11 @@
     <Compile Include="SR.cs" />
     <Compile Include="IO\CollationStream.cs" />
     <Compile Include="IO\CollatedPacketDecoder.cs" />
-    <Compile Include="IO\CollatedPacketEncoder.cs" />
-    <Compile Include="IO\CompressionBuffer.cs" />
+    <Compile Include="IO\ReusableMemoryStream.cs" />
     <Compile Include="IO\PacketStreamReader.cs" />
     <Compile Include="IO\GZipUtil.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="IO\Compression\readme.txt" />
+    <None Include="packages.config" />
   </ItemGroup>
 </Project>

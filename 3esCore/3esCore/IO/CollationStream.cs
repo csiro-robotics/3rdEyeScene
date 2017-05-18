@@ -23,10 +23,11 @@ namespace Tes.IO
     /// Createa a collation stream wrapping <paramref name="baseStream"/>.
     /// </summary>
     /// <param name="baseStream">The stream to write into after collation.</param>
-    public CollationStream(Stream baseStream)
+    /// <param name="compress">Enable compression? Otherwise we collated without compression.</param>
+    public CollationStream(Stream baseStream, bool compress = true)
     {
       BaseStream = baseStream;
-      _collator = new CollatedPacketEncoder(true);
+      _collator = new CollatedPacketEncoder(compress);
     }
 
     /// <summary>
