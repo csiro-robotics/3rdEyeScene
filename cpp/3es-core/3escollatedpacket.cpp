@@ -61,7 +61,7 @@ namespace
     header->routingId = MtCollatedPacket;
     networkEndianSwap(header->routingId);
     header->messageId = 0;
-    header->payloadSize = payloadSize + sizeof(CollatedPacketMessage);
+    header->payloadSize = (uint16_t)(payloadSize + sizeof(CollatedPacketMessage));
     networkEndianSwap(header->payloadSize);
     header->payloadOffset = 0;
     header->flags = 0;

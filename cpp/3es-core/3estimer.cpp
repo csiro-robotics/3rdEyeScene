@@ -3,6 +3,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <cstring>
 #include <sstream>
 
 #ifdef _MSC_VER

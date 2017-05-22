@@ -636,7 +636,7 @@ This program attempts to connect to and record a Third Eye Scene server.
         }
         else if (args[i] == "--ip")
         {
-          if (i + i < args.Length)
+          if (i + 1 < args.Length)
           {
             ipStr = args[++i];
           }
