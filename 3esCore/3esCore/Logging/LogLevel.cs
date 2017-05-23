@@ -1,4 +1,3 @@
-
 namespace Tes.Logging
 {
   /// <summary>

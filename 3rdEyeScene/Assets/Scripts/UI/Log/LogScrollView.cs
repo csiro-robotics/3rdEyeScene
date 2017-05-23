@@ -48,6 +48,14 @@ namespace UI.Log
 
     public void Filter(int level, int exclusiveCategory = 0)
     {
+      if (_filterLevel == level && _exclusiveCategory == exclusiveCategory)
+      {
+        return;
+      }
+
+      _filterLevel = level;
+      _exclusiveCategory = exclusiveCategory;
+
       RectTransform content = ScrollView.content.transform as RectTransform;
       for (int i = 0; i < content.childCount; ++i)
       {

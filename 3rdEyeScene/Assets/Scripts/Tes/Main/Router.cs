@@ -627,14 +627,8 @@ namespace Tes.Main
       Log.AddTarget(new LogAdaptor());
     }
 
-    bool once = true;
     protected virtual void Update()
     {
-      if (once)
-      {
-        Log.Error("hi");
-        once = false;
-      }
       try
       {
         if (_dataThread != null)

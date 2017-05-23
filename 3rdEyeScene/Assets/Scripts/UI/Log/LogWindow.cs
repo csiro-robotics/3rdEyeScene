@@ -57,6 +57,11 @@ namespace UI.Log
       _worstLevel = LogLevel.Diagnostic;
     }
 
+    public void SetLogLevel(int level)
+    {
+      _logView.Filter(level);
+    }
+
     public void Toggle()
     {
       _logPanel.gameObject.SetActive(!_logPanel.gameObject.activeSelf);

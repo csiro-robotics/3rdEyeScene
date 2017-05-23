@@ -1,11 +1,4 @@
-﻿// Copyright (c) CSIRO 2016
-// Commonwealth Scientific and Industrial Research Organisation (CSIRO) 
-// ABN 41 687 119 230
-//
-// author Kazys Stepanas
-//
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Tes.Logging
 {

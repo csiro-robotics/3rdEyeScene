@@ -1,5 +1,4 @@
-﻿
-namespace Tes.Logging
+﻿namespace Tes.Logging
 {
   /// <summary>
   /// Log interface supporting level based and categorised logging.

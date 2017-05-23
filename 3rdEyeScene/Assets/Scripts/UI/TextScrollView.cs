@@ -58,6 +58,10 @@ namespace UI
           ScrollToBottom();
         }
       }
+      else
+      {
+        newItem.SetParent(ScrollView.content.transform);
+      }
     }
 
     public void ScrollToBottom()
