@@ -13,21 +13,21 @@ namespace Dialogs
   /// This models the <c>System.Windows.Forms.SaveFileDialog</c> in general operation.
   /// An exact API match is not possible due to engine constraints - for example, blocking is not
   /// possible - and some features are not yet implemented.
-  /// 
+  ///
   /// Due to the Unity engine differences from Windows Forms, the dialog must be provided
   /// with a seperate object which represents the user interface. For flexibility, the dialog
   /// also supports an interface class to describe the file system. The interfaces used
   /// are <see cref="FileDialogView"/> and <see cref="FileSystemModel"/> respectively.
-  /// 
+  ///
   /// The <see cref="FileDialogView"/> must be implemented by a <see cref="UnityEngine.MonoBehaviour"/>
   /// object which implements the user interface objects. The default implementation is <see cref="FileDialogUI"/>
   /// which uses the Unity uGUI system. A default implementation object is also provided, but the dialog UI
   /// may be attached to any compatible UI object.
-  /// 
+  ///
   /// The <see cref="FileSystem"/> class implements the <see cref="FileSystemModel"/> as a reflection of
   /// the local file system. However, a logical file system may be provided, such as a virtual, in game
   /// file system, by providing an alternative implementation.
-  /// 
+  ///
   /// The <see cref="OpenFileDialog"/> and <see cref="SaveFileDialog"/> classes accept a view and file system
   /// model on construction and pass it to this class.
   /// </remarks>
@@ -142,13 +142,13 @@ namespace Dialogs
     /// <code>
     ///   "Display1|Filter1|Display2|Filter2|..."
     /// </code>
-    /// 
+    ///
     /// The display item is what the user sees, while the filter is what is logically applied.
     /// For example, below is a filter for exectuable, text or all files:
     /// <code>
     ///   "Executable Files (*.exe)|*.exe|Text Files (*.txt)|*.txt|All files (*.*)|*.*"
     /// </code>
-    /// 
+    ///
     /// The filter string may contain a list of semicolon separated items. Below is an example
     /// or a JPEG image filter supporting two JPEG extensions:
     /// <code>
@@ -309,7 +309,7 @@ namespace Dialogs
         }
 
         if (_fileNames.Count > 0 && ValidateFiles(_fileNames))
-        { 
+        {
           Close(DialogResult.OK);
         }
       }
@@ -333,7 +333,7 @@ namespace Dialogs
       }
       else if (args.Target == "FileFilter")
       {
-        string restr = UI.FileFilter;
+        string restr = UI.ActiveFileFilter;
         restr = restr.Replace(".", @"\.").Replace('?', '.').Replace("*", ".*");
         _activeFilter = new Regex(restr);
         // Refresh display.
@@ -467,7 +467,7 @@ namespace Dialogs
         for (int i = 0; i < filenames.Count; ++i)
         {
           if (!File.Exists(filenames[i]))
-          { 
+          {
             if (string.IsNullOrEmpty(Path.GetExtension(filenames[i])))
             {
               // Missing extension.
@@ -486,7 +486,7 @@ namespace Dialogs
     /// <returns>True if the path is usable for completion.</returns>
     /// <remarks>
     /// Used by <see cref="SetFileDialogLocation"/>.
-    /// 
+    ///
     /// For open file dialogs, the path must exist.
     /// </remarks>
     protected virtual bool ValidateCompletionPath(string fullFilePath)
@@ -516,7 +516,7 @@ namespace Dialogs
       if (location.Type != FileItemType.Null)
       {
         if (updateLocation)
-        { 
+        {
           UI.CurrentLocation = location;
         }
         UI.ShowItems(UI.CurrentLocation, FileSystem.ListChildren(location, _activeFilter));
