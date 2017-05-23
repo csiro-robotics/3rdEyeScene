@@ -13,7 +13,7 @@ namespace UI
     public static string ConnectionHostHistoryKey { get { return "history-connection-host"; } }
     public static string ConnectionPortHistoryKey { get { return "history-connection-port"; } }
     public static string HistorySizeKey { get { return "connection-history-size"; } }
-    
+
     public HistoryEntry HistoryViewEntryUI;
     public ScrollRect HistoryContentUI;
     private RectTransform _historyContentTransform = null;
@@ -39,7 +39,7 @@ namespace UI
         PlayerPrefs.SetInt(HistorySizeKey, _historySize);
       }
     }
-    
+
     public bool AutoReconnect
     {
       get
@@ -53,7 +53,7 @@ namespace UI
         }
         return false;
       }
-      
+
       set
       {
         foreach (UnityEngine.UI.Toggle toggle in GetComponentsInChildren<UnityEngine.UI.Toggle>())
@@ -66,7 +66,7 @@ namespace UI
         }
       }
     }
-    
+
     public string CurrentHost
     {
       get
@@ -80,14 +80,14 @@ namespace UI
             break;
           }
         }
-        
+
         if (host.Length > 0)
         {
           return host;
         }
         return "127.0.0.1";
       }
-      
+
       set
       {
         foreach (UnityEngine.UI.InputField input in GetComponentsInChildren<UnityEngine.UI.InputField>())
@@ -100,7 +100,7 @@ namespace UI
         }
       }
     }
-    
+
     public int CurrentPort
     {
       get
@@ -114,14 +114,14 @@ namespace UI
             break;
           }
         }
-        
+
         if (port != 0)
         {
           return port;
         }
         return 33500;
       }
-      
+
       set
       {
         foreach (UnityEngine.UI.InputField input in GetComponentsInChildren<UnityEngine.UI.InputField>())
@@ -134,7 +134,7 @@ namespace UI
         }
       }
     }
-    
+
     public IPEndPoint LastConnection
     {
       get
@@ -147,7 +147,7 @@ namespace UI
         }
         return new IPEndPoint(IPAddress.Loopback, 33500);
       }
-      
+
       set
       {
         IPEndPoint previousLast = LastConnection;
@@ -165,7 +165,7 @@ namespace UI
         }
       }
     }
-    
+
     public IEnumerable<IPEndPoint> History
     {
       get
@@ -179,14 +179,14 @@ namespace UI
         }
       }
     }
-    
+
     public void Add(IPEndPoint endPoint)
     {
       if (endPoint == null)
       {
         return;
       }
-      
+
       List<IPEndPoint> historyList = new List<IPEndPoint>();
       IEnumerator<IPEndPoint> iter = History.GetEnumerator();
       while (iter.MoveNext())
@@ -196,14 +196,14 @@ namespace UI
           historyList.Add(iter.Current);
         }
       }
-      
+
       historyList.Insert(0, endPoint);
       // Limit the history size.
       if (historyList.Count > _historySize)
       {
         historyList.RemoveAt(historyList.Count - 1);
       }
-      
+
       // Now save the updated history.
       string[] hosts = new string[historyList.Count];
       int[] ports = new int[historyList.Count];
@@ -214,10 +214,10 @@ namespace UI
         ports[i] = addr.Port;
         ++i;
       }
-      
+
       PlayerPrefsX.SetStringArray(ConnectionHostHistoryKey, hosts);
       PlayerPrefsX.SetIntArray(ConnectionPortHistoryKey, ports);
-      
+
       // Update the scroll view to match.
       UpdateView();
     }
@@ -231,7 +231,7 @@ namespace UI
       }
       catch (System.Exception e)
       {
-        Debug.LogException(e);
+        Tes.Logging.Log.Exception(e);
         // Close();
       }
     }
@@ -249,7 +249,7 @@ namespace UI
       {
         Controller.Connect(endPoint, autoReconnect);
       }
-      
+
       Close();
     }
 
@@ -314,7 +314,7 @@ namespace UI
         _portEntry.enabled = true;
       }
     }
-    
+
     void Close()
     {
       ToolsManager tools = transform.parent.GetComponent<ToolsManager>();
@@ -323,7 +323,7 @@ namespace UI
         tools.SetActivePanel(null);
       }
     }
-    
+
     void Start()
     {
       _historySize = PlayerPrefs.GetInt(HistorySizeKey, _historySize);
@@ -337,7 +337,7 @@ namespace UI
       {
         return;
       }
-      
+
       // Update existing UI objects to match the history order.
       // Add new items when we run out of existing items.
       // Update the layout at the end if required.
@@ -380,18 +380,18 @@ namespace UI
           entry = entryObj.GetComponent<HistoryEntry>();
           entryTransform = entryObj.GetComponent<RectTransform>();
         }
-        
+
         if (entryObj == null || entry == null || entryTransform == null)
         {
           if (entryObj) { GameObject.Destroy(entryObj); }
           continue;
         }
-        
+
         entry.Connection = connection;
         entry.Connections = this;
         entryTransform.SetParent(HistoryContentTransform, false);
       }
-      
+
       if (updateLayout)
       {
         HistoryContentUI.LayoutContentV();

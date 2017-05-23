@@ -1,8 +1,7 @@
 ﻿﻿using System;
 using System.IO;
-using System.Net;
-using System.Net.Sockets;
 using Tes.IO;
+using Tes.Logging;
 using Tes.Net;
 
 namespace Tes
@@ -79,7 +78,8 @@ This program provides information about a 3rd Eye Scene file.
       bool foundServerInfo = false;
       while (!Quit && !packetStream.EndOfStream)
       {
-        packet = packetStream.NextPacket(ref bytesRead);
+				Log.Flush();
+				packet = packetStream.NextPacket(ref bytesRead);
 
         if (packet == null)
         {

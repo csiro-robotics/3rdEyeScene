@@ -122,6 +122,10 @@
     <Compile Include="IO\ReusableMemoryStream.cs" />
     <Compile Include="IO\PacketStreamReader.cs" />
     <Compile Include="IO\GZipUtil.cs" />
+    <Compile Include="Logging\ILog.cs" />
+    <Compile Include="Logging\Log.cs" />
+    <Compile Include="Logging\LogLevel.cs" />
+    <Compile Include="Logging\LogCategories.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -6,6 +6,7 @@ using Ionic.Zlib;
 using UnityEngine;
 using Tes.Collections;
 using Tes.IO;
+using Tes.Logging;
 using Tes.Net;
 
 namespace Tes.Main
@@ -458,7 +459,7 @@ namespace Tes.Main
                       // want the frame before. We use a cached copy just in case in future we can be here
                       // for other reasons.
                       lastSeekableFrame = preControlMsgFrame;
-                      Debug.Log(string.Format("Last seekable: {0}", lastSeekableFrame));
+                      Log.Diag("Last seekable: {0}", lastSeekableFrame);
                     }
                     // Ended a frame. Check for snapshot. We'll queue the request after the end of
                     // frame message below.
@@ -469,8 +470,8 @@ namespace Tes.Main
                     {
                       // A snapshot is due. However, the stream may not be seekable to the current location.
                       // We may request a snapshot now.
-                      Debug.Log(string.Format("Request snapshot for frame {0} from frame {1} after {2} KiB",
-                        _currentFrame, lastSeekableFrame, lastSeekablePosition - lastSnapshotPosition));
+                      Log.Diag("Request snapshot for frame {0} from frame {1} after {2} KiB",
+                        _currentFrame, lastSeekableFrame, lastSeekablePosition - lastSnapshotPosition);
                       lastSnapshotFrame = _currentFrame;
                       lastSnapshotPosition = lastSeekablePosition;
                       RequestSnapshot(lastSnapshotFrame, lastSeekableFrame, lastSeekablePosition);
@@ -488,7 +489,7 @@ namespace Tes.Main
               }
               else
               {
-                Debug.LogError(string.Format("Incomplete packet, ID: {0}", LookupRoutingIDName(packet.Header.RoutingID)));
+                Log.Error("Incomplete packet, ID: {0}", LookupRoutingIDName(packet.Header.RoutingID));
               }
             }
           }
@@ -512,7 +513,7 @@ namespace Tes.Main
         {
           _quitFlag = true;
           bytesRead = 0;
-          Debug.LogException(e);
+          Log.Exception(e);
           allowYield = true;
         }
 
@@ -792,14 +793,14 @@ namespace Tes.Main
                 else
                 {
                   // Failed.
-                  Debug.LogError(string.Format("Incomplete packet during processing of extra snapshot packets"));
+                  Log.Error("Incomplete packet during processing of extra snapshot packets");
                   return false;
                 }
               }
               else
               {
                 // Failed.
-                Debug.LogError(string.Format("Failed to process extra snapshot packets"));
+                Log.Error("Failed to process extra snapshot packets");
                 return false;
               }
             }
@@ -809,20 +810,20 @@ namespace Tes.Main
             _packetQueue.Enqueue(decodedPackets);
             _currentFrame = currentFrame;
 
-            Debug.Log(string.Format("Dropped {0} additional packets to catch up to frame {1}.", droppedPacketCount, _currentFrame));
-            Debug.Log(string.Format("Restored frame: {0} -> {1}", _currentFrame, _targetFrame));
+            Log.Diag("Dropped {0} additional packets to catch up to frame {1}.", droppedPacketCount, _currentFrame);
+            Log.Diag("Restored frame: {0} -> {1}", _currentFrame, _targetFrame);
             if (_targetFrame == _currentFrame)
             {
               _targetFrame = 0;
             }
             return true;
           }
-          Debug.LogError(string.Format("Failed to decode snapshot for frame {0}", snapshot.FrameNumber));
+          Log.Error("Failed to decode snapshot for frame {0}", snapshot.FrameNumber);
         }
       }
       catch (Exception e)
       {
-        Debug.LogException(e);
+        Log.Exception(e);
       }
 
       return false;
@@ -883,10 +884,10 @@ namespace Tes.Main
                 switch (packet.Status)
                 {
                 case PacketBufferStatus.CrcError:
-                  Debug.LogError("Failed to decode packet CRC.");
+                  Log.Error("Failed to decode packet CRC.");
                   break;
                 case PacketBufferStatus.Collating:
-                  Debug.LogError("Insufficient data for packet.");
+                  Log.Error("Insufficient data for packet.");
                   break;
                 default:
                   break;
@@ -896,12 +897,12 @@ namespace Tes.Main
           }
         } while (ok && bytesRead != 0);
 
-        Debug.Log(string.Format("Decoded {0} packets from snapshot", queuedPacketCount));
+        Log.Diag("Decoded {0} packets from snapshot", queuedPacketCount);
       }
       catch (Exception e)
       {
         ok = false;
-        Debug.LogException(e);
+        Log.Exception(e);
       }
 
       return ok;
@@ -956,7 +957,7 @@ namespace Tes.Main
             snapshot = _snapshots[i];
             //snapshot.TemporaryFilePath = Path.GetFullPath(Path.Combine("temp", Path.GetRandomFileName()));
             snapshot.TemporaryFilePath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
-            Debug.Log(string.Format("Snapshot path {0}", snapshot.TemporaryFilePath));
+            Log.Diag("Snapshot path {0}", snapshot.TemporaryFilePath);
             try
             {
               snapshot.OpenStream = new FileStream(snapshot.TemporaryFilePath, FileMode.Create);
@@ -964,7 +965,7 @@ namespace Tes.Main
             }
             catch (Exception e)
             {
-              Debug.LogException(e);
+              Log.Exception(e);
             }
           }
         }

@@ -44,7 +44,7 @@ namespace UI
     }
 
     /// <summary>
-    /// Update the 
+    /// Update the
     /// </summary>
     void Update()
     {
@@ -86,7 +86,7 @@ namespace UI
     /// Invoked whenver the slider controll value changes.
     /// </summary>
     /// <remarks>
-    /// This includes programatting and user changes, so we have to take care in the handling logic.
+    /// This includes programattic and user changes, so we have to take care in the handling logic.
     /// </remarks>
     public void OnFrameSlide()
     {
@@ -103,7 +103,7 @@ namespace UI
           _sliderTargetFrame = targetFrame;
           _sliderResponseTimer = SliderResponseTimeout;
           CurrentFrame.text = targetFrame.ToString();
-          //Debug.Log(string.Format("Slide to: {0}", targetFrame));
+          //Log.Diag("Slide to: {0}", targetFrame);
         }
       }
     }

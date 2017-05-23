@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using Ionic.Zlib;
 using Tes.IO;
+using Tes.Logging;
 using Tes.Net;
 
 namespace Tes
@@ -181,11 +182,13 @@ This program attempts to connect to and record a Third Eye Scene server.
             {
               Connected = true;
             }
-          }
+						Log.Flush();
+					}
           else
           {
-            // Wait the timeout period before attempting to reconnect.
-            System.Threading.Thread.Sleep(connectionPollTimeSecMs);
+						Log.Flush();
+						// Wait the timeout period before attempting to reconnect.
+						System.Threading.Thread.Sleep(connectionPollTimeSecMs);
           }
         }
 
@@ -253,10 +256,12 @@ This program attempts to connect to and record a Third Eye Scene server.
                 // TODO: Log CRC failure.
               }
             }
+            Log.Flush();
           }
           else
           {
-            System.Threading.Thread.Sleep(0);
+						Log.Flush();
+						System.Threading.Thread.Sleep(0);
           }
         }
 

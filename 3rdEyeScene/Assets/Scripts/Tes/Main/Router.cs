@@ -7,6 +7,7 @@ using Ionic.Zlib;
 using UnityEngine;
 using UnityEngine.Events;
 using Tes.IO;
+using Tes.Logging;
 using Tes.Net;
 using Tes.Runtime;
 
@@ -350,7 +351,7 @@ namespace Tes.Main
       Stream inputStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
       if (!thread.Start(inputStream))
       {
-        Debug.LogError(string.Format("Failed to start stream thread with file: {0}", fileName));
+        Log.Error("Failed to start stream thread with file: {0}", fileName);
         _dataThread.Quit();
         _dataThread.Join();
         _dataThread = null;
@@ -440,7 +441,7 @@ namespace Tes.Main
         StopRecording();
         _recordOnConnectPath = filePath;
         Dialogs.MessageBox.Show(null, string.Format("Record on connect to: {0}", _recordOnConnectPath), "Record on Connect");
-        Debug.Log("Record on connect " + filePath);
+        Log.Info("Record on connect " + filePath);
         return true;
       }
 
@@ -469,7 +470,7 @@ namespace Tes.Main
       }
       catch (Exception e)
       {
-        Debug.LogException(e);
+        Log.Exception(e);
       }
 
       return _recordingWriter != null;
@@ -622,10 +623,18 @@ namespace Tes.Main
       {
         PlaybackSettings.Instance.PropertyChanged += OnPropertyChanged;
       }
+
+      Log.AddTarget(new LogAdaptor());
     }
 
+    bool once = true;
     protected virtual void Update()
     {
+      if (once)
+      {
+        Log.Error("hi");
+        once = false;
+      }
       try
       {
         if (_dataThread != null)
@@ -660,7 +669,7 @@ namespace Tes.Main
               }
               _recordOnConnectPath = null;
 
-              //Debug.Log(string.Format("Routing ID: {0}:{1}", RoutingIDName(packet.Header.RoutingID), packet.Header.MessageID));
+              //Log.Diag("Routing ID: {0}:{1}", RoutingIDName(packet.Header.RoutingID), packet.Header.MessageID);
 
               // New message. First handle command/control messages.
               if (packet.Status == PacketBufferStatus.Complete)
@@ -734,7 +743,7 @@ namespace Tes.Main
               }
               else
               {
-                Debug.LogError(string.Format("Dropping bad packet with routing ID: {0}", packet.Header.RoutingID));
+                Log.Error("Dropping bad packet with routing ID: {0}", packet.Header.RoutingID);
               }
             }
           }
@@ -757,6 +766,8 @@ namespace Tes.Main
         {
           handler.PreRender();
         }
+
+        Log.Flush();
       }
       finally
       {
@@ -807,7 +818,7 @@ namespace Tes.Main
       }
       else
       {
-        Debug.LogError("Malformed control message.");
+        Log.Error("Malformed control message.");
       }
     }
 
@@ -935,7 +946,7 @@ namespace Tes.Main
             }
             else
             {
-              Debug.LogError(string.Format("Unsupported routing ID: {0} {1}", packet.Header.RoutingID, RoutingIDName(packet.Header.RoutingID)));
+              Log.Error("Unsupported routing ID: {0} {1}", packet.Header.RoutingID, RoutingIDName(packet.Header.RoutingID));
             }
           }
           // Release the internal buffer (rented) now rather than waiting for the GC thread.
@@ -1015,7 +1026,7 @@ namespace Tes.Main
     private BinaryWriter SerialiseScene(Stream fileStream, bool allowCompression, out bool success)
     {
       //string fileName = (fileStream as FileStream != null) ? (fileStream as FileStream).Name : "<unknown>";
-      //Debug.Log(string.Format("SerialiseScene({0}, [out])", fileName));
+      //Log.Diag("SerialiseScene({0}, [out])", fileName);
       // Write the recording header uncompressed to the file.
       // We'll rewind here later and update the frame count.
       // Write to a memory stream to prevent corruption of the file stream when we wrap it
@@ -1050,17 +1061,17 @@ namespace Tes.Main
       foreach (MessageHandler handler in _handlers.Handlers)
       {
         err = handler.Serialise(writer, ref info);
-        //Debug.Log(string.Format("{0}: P: {1} T: {2}", handler.Name, info.PersistentCount, info.TransientCount));
+        //Log.Diag("{0}: P: {1} T: {2}", handler.Name, info.PersistentCount, info.TransientCount);
         totalInfo.PersistentCount += info.PersistentCount;
         totalInfo.TransientCount += info.TransientCount;
         if (err.Failed)
         {
-          Debug.LogError(string.Format("Failed to serialise handler: {0}", handler.Name));
-          Debug.LogError(err.ToString());
+          Log.Error("Failed to serialise handler: {0}", handler.Name);
+          Log.Error(err.ToString());
           success = false;
         }
       }
-      //Debug.Log(string.Format("Total: P: {0} T: {1}", totalInfo.PersistentCount, totalInfo.TransientCount));
+      //Log.Diag("Total: P: {0} T: {1}", totalInfo.PersistentCount, totalInfo.TransientCount);
 
       return writer;
     }
@@ -1077,7 +1088,7 @@ namespace Tes.Main
       StreamThread streamThread = _dataThread as StreamThread;
       if (streamThread == null)
       {
-        Debug.LogError("Received snapshot request while not using a StreamThread. Ignored.");
+        Log.Error("Received snapshot request while not using a StreamThread. Ignored.");
         return;
       }
 

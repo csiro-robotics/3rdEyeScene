@@ -2,6 +2,7 @@
 using System.Net;
 using System.Net.Sockets;
 using Tes.IO;
+using Tes.Logging;
 using Tes.Net;
 using UnityEngine;
 
@@ -328,13 +329,13 @@ namespace Tes.Main
           case 10061: // WSAECONNREFUSED
             break;
           default:
-            Debug.LogException(e);
+            Log.Exception(e);
             break;
         }
       }
       catch (System.Exception e)
       {
-        Debug.LogException(e);
+        Log.Exception(e);
       }
 
       return null;
