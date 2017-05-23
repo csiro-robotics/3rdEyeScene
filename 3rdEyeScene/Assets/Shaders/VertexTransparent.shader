@@ -15,6 +15,7 @@ Shader "VertexColour/VertexTransparent"
     LOD 200
     Blend SrcAlpha OneMinusSrcAlpha
     ZWrite Off
+    Cull Off
 
     Pass
     {
