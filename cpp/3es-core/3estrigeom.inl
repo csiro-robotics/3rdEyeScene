@@ -315,7 +315,7 @@ namespace tes
       //if determinant is near zero, ray lies in plane of triangle or ray is parallel to plane of triangle
       det = e0.dot(P);
       //NOT CULLING
-      if (det > -epsilon && det < epsilon) return 0;
+      if (det > -epsilon && det < epsilon) return false;
       inv_det = T(1) / det;
 
       //calculate distance from v0 to ray origin
@@ -324,7 +324,7 @@ namespace tes
       //Calculate u parameter and test bound
       u = TT.dot(P) * inv_det;
       //The intersection lies outside of the triangle
-      if (u < T(0) || u > T(1)) return 0;
+      if (u < T(0) || u > T(1)) return false;
 
       //Prepare to test v parameter
       Q = TT.cross(e0);
@@ -332,7 +332,7 @@ namespace tes
       //Calculate V parameter and test bound
       v = dir.dot(Q) * inv_det;
       //The intersection lies outside of the triangle
-      if (v < T(0) || u + v  > T(1)) return 0;
+      if (v < T(0) || u + v  > T(1)) return false;
 
       t = e1.dot(Q) * inv_det;
 

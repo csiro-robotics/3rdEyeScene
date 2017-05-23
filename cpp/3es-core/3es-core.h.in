@@ -17,6 +17,7 @@
 #define NOMINMAX
 #endif // NOMINMAX
 #include <cmath>
+#include <cstddef>
 
 #cmakedefine TES_ZLIB
 #cmakedefine TES_ASIO
