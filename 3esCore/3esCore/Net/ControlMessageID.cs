@@ -48,13 +48,13 @@ namespace Tes.Net
     /// </remarks>
     Reset,
     /// <summary>
-    /// Request a snapshot. <c>Value32</c> is the frame number.
+    /// Request a keframe. <c>Value32</c> is the frame number.
     /// </summary>
     /// <remarks>
     /// This is not for remote transmission, but supports snapping the scene in order
     /// to improve step-back updates.
     /// </remarks>
-    Snapshop,
+    Keyframe,
   }
 
 

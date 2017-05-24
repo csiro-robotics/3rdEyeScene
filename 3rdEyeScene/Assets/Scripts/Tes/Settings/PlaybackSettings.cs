@@ -11,51 +11,51 @@ public class PlaybackSettings : Settings
     Name = "Playback";
   }
 
-  [Browsable(true), Tooltip("Enable scene snapshots to cache frames during playback and stepping?")]
-  public bool AllowSnapshots
+  [Browsable(true), Tooltip("Enable scene keyframes to cache frames during playback and stepping?")]
+  public bool AllowKeyframes
   {
-    get { return PlayerPrefsX.GetBool("playback.snapshots", true); }
-    set { PlayerPrefsX.SetBool("playback.snapshots", value); Notify("AllowSnapshots"); }
+    get { return PlayerPrefsX.GetBool("playback.keyframes", true); }
+    set { PlayerPrefsX.SetBool("playback.keyframes", value); Notify("AllowKeyframes"); }
   }
 
   [Browsable(true), SetRange(64, 1024 * 1024),
-    Tooltip("Create a snapshot after reading this many kilobytes from the playback stream.")]
-  public int SnapshotEveryKb
+    Tooltip("Create a keyframe after reading this many kilobytes from the playback stream.")]
+  public int KeyframeEveryKb
   {
-    get { return PlayerPrefs.GetInt("playback.snapshotKb", 1024); }
-    set { PlayerPrefs.SetInt("playback.snapshotKb", value); Notify("SnapshotEveryKb"); }
+    get { return PlayerPrefs.GetInt("playback.keyframeKb", 1024); }
+    set { PlayerPrefs.SetInt("playback.keyframeKb", value); Notify("KeyframeEveryKb"); }
   }
 
   [Browsable(true), SetRange(1, 10000),
-    Tooltip("Create a snapshot after this number of frames elapses.")]
-  public int SnapshotEveryFrames
+    Tooltip("Create a keyframe after this number of frames elapses.")]
+  public int KeyframeEveryFrames
   {
-    get { return PlayerPrefs.GetInt("playback.snapshotFrames", 100); }
-    set { PlayerPrefs.SetInt("playback.snapshotFrames", value); Notify("SnapshotEveryFrames"); }
+    get { return PlayerPrefs.GetInt("playback.keyframeFrames", 100); }
+    set { PlayerPrefs.SetInt("playback.keyframeFrames", value); Notify("KeyframeEveryFrames"); }
   }
 
   [Browsable(true), SetRange(1, 1000),
-    Tooltip("Try restore snapshot when skipping forwards at least this number of frames.")]
-  public int SnapshotSkipForwardFrames
+    Tooltip("Try restore keyframe when skipping forwards at least this number of frames.")]
+  public int KeyframeSkipForwardFrames
   {
-    get { return PlayerPrefs.GetInt("playback.snapshotSkipForwardFrames", 20); }
-    set { PlayerPrefs.SetInt("playback.snapshotSkipForwardFrames", value); Notify("SnapshotSkipForwardFrames"); }
+    get { return PlayerPrefs.GetInt("playback.keyframeSkipForwardFrames", 20); }
+    set { PlayerPrefs.SetInt("playback.keyframeSkipForwardFrames", value); Notify("KeyframeSkipForwardFrames"); }
   }
 
   [Browsable(true), SetRange(1, 1000),
-    Tooltip("Minimum number of frames to have elapsed between snapshots.")]
-  public int SnapshotFrameSeparation
+    Tooltip("Minimum number of frames to have elapsed between keyframes.")]
+  public int KeyframeFrameSeparation
   {
-    get { return PlayerPrefs.GetInt("playback.snapshotFrameSeparation", 5); }
-    set { PlayerPrefs.SetInt("playback.snapshotFrameSeparation", value); Notify("SnapshotFrameSeparation"); }
+    get { return PlayerPrefs.GetInt("playback.keyframeFrameSeparation", 5); }
+    set { PlayerPrefs.SetInt("playback.keyframeFrameSeparation", value); Notify("KeyframeFrameSeparation"); }
   }
 
   [Browsable(true),
     Tooltip("Compress snap shots?")]
-  public bool SnapshotCompression
+  public bool KeyframeCompression
   {
-    get { return PlayerPrefsX.GetBool("playback.snapshotCompression", true); }
-    set { PlayerPrefsX.SetBool("playback.snapshotCompression", value); Notify("SnapshotCompression"); }
+    get { return PlayerPrefsX.GetBool("playback.keyframeCompression", true); }
+    set { PlayerPrefsX.SetBool("playback.keyframeCompression", value); Notify("KeyframeCompression"); }
   }
 
   [Browsable(true),

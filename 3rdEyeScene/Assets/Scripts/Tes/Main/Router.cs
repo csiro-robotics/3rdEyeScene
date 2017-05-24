@@ -340,11 +340,11 @@ namespace Tes.Main
       PlaybackSettings playbackSettings = PlaybackSettings.Instance;
       if (playbackSettings != null)
       {
-        thread.AllowSnapshots = playbackSettings.AllowSnapshots;
-        thread.SnapshotKiloBytes = playbackSettings.SnapshotEveryKb;
-        thread.SnapshotMinFrames = (uint)Math.Max(0, playbackSettings.SnapshotEveryFrames);
-        thread.ShapshotSkipForwardFrames = (uint)Math.Max(0, playbackSettings.SnapshotSkipForwardFrames);
-        thread.SnapshotFrames = (uint)Math.Max(0, playbackSettings.SnapshotFrameSeparation);
+        thread.AllowKeyframes = playbackSettings.AllowKeyframes;
+        thread.KeyframeKiloBytes = playbackSettings.KeyframeEveryKb;
+        thread.KeyframeMinFrames = (uint)Math.Max(0, playbackSettings.KeyframeEveryFrames);
+        thread.KeyframeSkipForwardFrames = (uint)Math.Max(0, playbackSettings.KeyframeSkipForwardFrames);
+        thread.KeyframeFrames = (uint)Math.Max(0, playbackSettings.KeyframeFrameSeparation);
         thread.Loop = playbackSettings.Looping;
       }
       thread.PlaybackSpeed = PlaybackSpeed;
@@ -708,7 +708,7 @@ namespace Tes.Main
                           EndFrame(message.Value32, catchUp);
                           _previousFrame = previousFrame;
                           break;
-                        case ControlMessageID.Snapshop:
+                        case ControlMessageID.Keyframe:
                           catchUp = UpdateCatchup(catchUp, true);
                           break;
                         case ControlMessageID.EndFrame:
@@ -803,8 +803,8 @@ namespace Tes.Main
             Scene.Frame = (CoordinateFrame)message.Value32;
           }
           break;
-        case ControlMessageID.Snapshop:
-          GenerateSnapshot(message.Value32, !catchingUp);
+        case ControlMessageID.Keyframe:
+          GenerateKeyframe(message.Value32, !catchingUp);
           break;
         default:
           break;
@@ -831,25 +831,25 @@ namespace Tes.Main
         StreamThread streamThread = _dataThread as StreamThread;
         if (streamThread != null)
         {
-          if (string.Compare(args.PropertyName, "AllowSnapshots") == 0)
+          if (string.Compare(args.PropertyName, "AllowKeyframes") == 0)
           {
-            streamThread.AllowSnapshots = playback.AllowSnapshots;
+            streamThread.AllowKeyframes = playback.AllowKeyframes;
           }
-          else if (string.Compare(args.PropertyName, "SnapshotEveryKb") == 0)
+          else if (string.Compare(args.PropertyName, "KeyframeEveryKb") == 0)
           {
-            streamThread.SnapshotKiloBytes = playback.SnapshotEveryKb;
+            streamThread.KeyframeKiloBytes = playback.KeyframeEveryKb;
           }
-          else if (string.Compare(args.PropertyName, "SnapshotEveryFrames") == 0)
+          else if (string.Compare(args.PropertyName, "KeyframeEveryFrames") == 0)
           {
-            streamThread.SnapshotFrames = (uint)Math.Min(0, playback.SnapshotEveryFrames);
+            streamThread.KeyframeFrames = (uint)Math.Min(0, playback.KeyframeEveryFrames);
           }
-          else if (string.Compare(args.PropertyName, "ShapshotSkipForwardFrames") == 0)
+          else if (string.Compare(args.PropertyName, "KeyframeSkipForwardFrames") == 0)
           {
-            streamThread.ShapshotSkipForwardFrames = (uint)Math.Max(0, playback.SnapshotSkipForwardFrames);
+            streamThread.KeyframeSkipForwardFrames = (uint)Math.Max(0, playback.KeyframeSkipForwardFrames);
           }
-          else if (string.Compare(args.PropertyName, "SnapshotFrameSeparation") == 0)
+          else if (string.Compare(args.PropertyName, "KeyframeFrameSeparation") == 0)
           {
-            streamThread.SnapshotMinFrames = (uint)Math.Max(0, playback.SnapshotFrameSeparation);
+            streamThread.KeyframeMinFrames = (uint)Math.Max(0, playback.KeyframeFrameSeparation);
           }
           else if (string.Compare(args.PropertyName, "Looping") == 0)
           {
@@ -878,7 +878,7 @@ namespace Tes.Main
         if (_dataThread != null && !forceExitCatchup)
         {
           // Don't catch up on frame zero.
-          // This can ensure some initial state conditions, including restoring snapshots.
+          // This can ensure some initial state conditions, including restoring Keyframes.
           needCatchUp = _dataThread.CatchingUp || _currentFrame != 0 && _currentFrame + 1 < _dataThread.CurrentFrame;
         }
 
@@ -1071,42 +1071,42 @@ namespace Tes.Main
     }
 
     /// <summary>
-    /// Generate a snapshot for a frame.
+    /// Generate a keyframe for a frame.
     /// </summary>
-    /// <param name="frameNumber">The frame to generate the snapshot for.</param>
+    /// <param name="frameNumber">The frame to generate the keyframe for.</param>
     /// <remarks>
     /// Works with the <see cref="StreamThread"/> to create, register and populate the output stream.
     /// </remarks>
-    private void GenerateSnapshot(uint frameNumber, bool includesTransients)
+    private void GenerateKeyframe(uint frameNumber, bool includesTransients)
     {
       StreamThread streamThread = _dataThread as StreamThread;
       if (streamThread == null)
       {
-        Log.Error("Received snapshot request while not using a StreamThread. Ignored.");
+        Log.Error("Received keyframe request while not using a StreamThread. Ignored.");
         return;
       }
 
-      Stream snapshotStream = streamThread.RequestSnapshotStream(frameNumber);
+      Stream keyframeStream = streamThread.RequestKeyframeStream(frameNumber);
       bool success = false;
 
       try
       {
-        if (PlaybackSettings.Instance.AllowSnapshots && snapshotStream != null)
+        if (PlaybackSettings.Instance.AllowKeyframes && keyframeStream != null)
         {
-          BinaryWriter writer = SerialiseScene(snapshotStream, PlaybackSettings.Instance.SnapshotCompression, out success);
+          BinaryWriter writer = SerialiseScene(keyframeStream, PlaybackSettings.Instance.KeyframeCompression, out success);
           WriteFrameFlush(writer);
           writer.Flush();
           // Must be closed to ensure the compression stream finalises correctly.
           writer.Close();
-          Debug.Log(string.Format("Snapshot on frame: {0}", frameNumber));
+          Debug.Log(string.Format("Keyframe @ {0}", frameNumber));
         }
       }
       finally
       {
         // Ensure we release the stream.
-        if (streamThread != null && snapshotStream != null)
+        if (streamThread != null && keyframeStream != null)
         {
-          streamThread.ReleaseSnapshotStream(frameNumber, snapshotStream, includesTransients, success);
+          streamThread.ReleaseKeyframeStream(frameNumber, keyframeStream, includesTransients, success);
         }
       }
     }

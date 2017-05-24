@@ -226,7 +226,7 @@ public class SerialisationTest : MonoBehaviour
 
     //--------------------------------------------------------
     // Serialise again.
-    // TODO: push a snapshot message instead and validate against that.
+    // TODO: push a keyframe message instead and validate against that.
     tes.SerialiseScene(sceneFile2, false);
     Debug.Log("Serialised scene again");
     yield return null;
