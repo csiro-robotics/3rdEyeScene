@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
-using Tes.Handlers;
-using Tes.Net;
+using UnityEngine.UI;
 
 namespace UI.Status
 {
@@ -13,13 +12,10 @@ namespace UI.Status
     private TesComponent _tes = null;
     public TesComponent TesComponent { get { return _tes; } }
 
-    [SerializeField]
-    private UnityEngine.UI.Image _slaveCamera = null;
-    public UnityEngine.UI.Image SlaveCamera { get { return _slaveCamera; } }
 
     [SerializeField]
-    private UnityEngine.UI.Image _connected = null;
-    public UnityEngine.UI.Image Connected { get { return _connected; } }
+    private Image _connected = null;
+    public Image Connected { get { return _connected; } }
 
     [SerializeField]
     private Sprite _connectedImage = null;
@@ -30,11 +26,10 @@ namespace UI.Status
 
     void Start()
     {
-      SetVisible(_slaveCamera, false);
       UpdateIcon(_connected, false, _connectedImage, _disconnectedImage);
     }
 
-    void SetVisible(UnityEngine.UI.Image icon, bool on)
+    void SetVisible(Image icon, bool on)
     {
       if (icon != null)
       {
@@ -42,7 +37,7 @@ namespace UI.Status
       }
     }
 
-    void UpdateIcon(UnityEngine.UI.Image icon, bool isActive, Sprite active, Sprite inactive)
+    void UpdateIcon(Image icon, bool isActive, Sprite active, Sprite inactive)
     {
       if (icon != null)
       {
@@ -54,8 +49,6 @@ namespace UI.Status
     {
       if (_tes != null)
       {
-        CameraHandler camHandle = _tes.GetHandler((ushort)RoutingID.Camera) as CameraHandler;
-        SetVisible(_slaveCamera, camHandle != null && camHandle.ActiveCamera != null);
         UpdateIcon(_connected, _tes.Connected, _connectedImage, _disconnectedImage);
       }
     }

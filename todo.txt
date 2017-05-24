@@ -1,8 +1,8 @@
 Bugs:
 - Suspect: object recycling in ShapeHandler appears to sometimes activate invalid objects.
+- Shutdown times can be very long after processing scenes with many transient mesh objects.
 
 TODO for v1.0:
-- Client log UI and output window.
 - Consolidate C# shape constructors and improve consistency.
 - PROTOCOL CHANGE: Reduce object overhead. Creating many objects is expensive in data throughput and packet processing.
   - Modify ObjectAttributes structure (for update messages only?) to have a 1-byte flag member which identifies which of colour, position, rotation and scale data are present.
@@ -14,7 +14,6 @@ TODO:
 - Change shape shaders to support GPU instancing.
 - Consider adding batched object creation messages.
 - UI:
-  - Camera Selection UI
   - Handler options and UI
   - Scene Graph UI
 - Export to PLY file (because PLY is easy).

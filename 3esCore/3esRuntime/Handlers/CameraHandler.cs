@@ -82,6 +82,7 @@ namespace Tes.Handlers
     /// </summary>
     public bool AllowRemoteCameraSettings { get; set; }
 
+
     /// <summary>
     /// Query details of the active camera.
     /// </summary>
@@ -98,6 +99,41 @@ namespace Tes.Handlers
         return null;
       }
     }
+
+    /// <summary>
+    /// Lists the available camera IDs.
+    /// </summary>
+    public IEnumerable<int> AvailableCameraIDs
+    {
+      get
+      {
+        foreach (byte key in _cameras.Keys)
+        {
+          yield return (int)key;
+        }
+      }
+    }
+
+		/// <summary>
+		/// Index into the camera handler to information about the camera matching <paramref name="id" />.
+		/// </summary>
+    /// <param name="id">ID for the camera of interest.</param>
+    /// <value>Information about the requested camera or null if the ID is invalid.</value>
+		public CameraInfo this[int id]
+    {
+      get
+      {
+        CameraInfo info;
+        //// Special camera ID.
+        //if (id == 0) id = 255;
+        if (_cameras.TryGetValue((byte)id, out info))
+        {
+          return info;
+        }
+        return null;
+      }
+    }
+
     /// <summary>
     /// Handler name.
     /// </summary>
