@@ -152,7 +152,7 @@ public static class ScrollRectExt
     {
       child = scroll.content.GetChild(i);
       rectXForm = (child != null) ? child.GetComponent<RectTransform>() : null;
-      if (rectXForm == null)
+      if (rectXForm == null || !rectXForm.gameObject.activeSelf)
       {
         continue;
       }
@@ -171,7 +171,10 @@ public static class ScrollRectExt
 
     contentChild.offsetMin = new Vector2(0, -totalHeight - height);
     contentChild.offsetMax = new Vector2(scrollWidth, -totalHeight);
-    totalHeight += height;
+    if (contentChild.gameObject.activeSelf)
+    {
+      totalHeight += height;
+    }
 
     RectTransform scrollContentRect = (scroll.content.transform as RectTransform);
     scrollContentRect.sizeDelta = new Vector2(scrollContentRect.sizeDelta.x, totalHeight);

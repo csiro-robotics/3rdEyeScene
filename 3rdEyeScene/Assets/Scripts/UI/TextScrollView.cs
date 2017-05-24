@@ -69,10 +69,14 @@ namespace UI
       _suppressEvents = true;
       try
       {
-        RectTransform scrollContenctRect = ScrollView.content.transform as RectTransform;
-        Vector3 pos = scrollContenctRect.position;
-        pos.y = scrollContenctRect.sizeDelta.y + 100;
-        scrollContenctRect.position = pos;
+        RectTransform scrollContentRect = ScrollView.content.transform as RectTransform;
+        RectTransform scrollRect = ScrollView.transform as RectTransform;
+        Vector2 pos = scrollContentRect.anchoredPosition;
+        if (scrollContentRect.sizeDelta.y > scrollRect.sizeDelta.y)
+        {
+          pos.y = scrollContentRect.sizeDelta.y - scrollRect.sizeDelta.y;
+          scrollContentRect.anchoredPosition = pos;
+        }
         _atEnd = true;
       }
       finally
