@@ -47,7 +47,7 @@ namespace Tes.Shapes
     /// <param name="basePoint">The position of the centre of the cone base.</param>
     /// <param name="radius">The cone radius at the base.</param>
     public Cone(uint id, Vector3 origin, Vector3 basePoint, float radius)
-      : base((ushort)Tes.Net.ShapeID.Cone, id, 0)
+      : this(id, 0, origin, basePoint, radius)
     {
     }
 
