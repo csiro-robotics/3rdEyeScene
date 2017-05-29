@@ -126,6 +126,8 @@ namespace Tes.Handlers.Shape3D
         mat = SelectMaterial(shape, meshData);
         FinaliseMesh(meshData.gameObject, shape, meshData, mat, shape.Colour);
       }
+
+      _awaitingFinalisation.Clear();
     }
 
     /// <summary>
