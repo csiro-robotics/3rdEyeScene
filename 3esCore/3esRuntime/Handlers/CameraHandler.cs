@@ -14,7 +14,7 @@ namespace Tes.Handlers
   /// <remarks>
   /// Camera objects represent predetermined views into the scene. A camera object is
   /// really just a reference transform which the scene camera may optionally follow.
-  /// 
+  ///
   /// Camera objects are implicitly created when a message with a new camera ID arrives.
   /// A camera object is never destroyed and may only be updated with a new message.
   /// </remarks>
@@ -114,12 +114,12 @@ namespace Tes.Handlers
       }
     }
 
-		/// <summary>
-		/// Index into the camera handler to information about the camera matching <paramref name="id" />.
-		/// </summary>
+    /// <summary>
+    /// Index into the camera handler to information about the camera matching <paramref name="id" />.
+    /// </summary>
     /// <param name="id">ID for the camera of interest.</param>
     /// <value>Information about the requested camera or null if the ID is invalid.</value>
-		public CameraInfo this[int id]
+    public CameraInfo this[int id]
     {
       get
       {

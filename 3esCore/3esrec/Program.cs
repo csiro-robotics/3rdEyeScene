@@ -182,13 +182,13 @@ This program attempts to connect to and record a Third Eye Scene server.
             {
               Connected = true;
             }
-						Log.Flush();
-					}
+            Log.Flush();
+          }
           else
           {
-						Log.Flush();
-						// Wait the timeout period before attempting to reconnect.
-						System.Threading.Thread.Sleep(connectionPollTimeSecMs);
+            Log.Flush();
+            // Wait the timeout period before attempting to reconnect.
+            System.Threading.Thread.Sleep(connectionPollTimeSecMs);
           }
         }
 
@@ -260,8 +260,8 @@ This program attempts to connect to and record a Third Eye Scene server.
           }
           else
           {
-						Log.Flush();
-						System.Threading.Thread.Sleep(0);
+            Log.Flush();
+            System.Threading.Thread.Sleep(0);
           }
         }
 

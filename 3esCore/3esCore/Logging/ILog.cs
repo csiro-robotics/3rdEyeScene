@@ -40,17 +40,17 @@
     /// <param name="args">Additional format arguments.</param>
     void Log(string message, params object[] args);
 
-		/// <summary>
-		/// Log details of an exception associating the output with a category.
-		/// </summary>
-		/// <param name="category">Category for the log message.</param>
-		/// <param name="e">The exception to log details of.</param>
-		void Log(int category, System.Exception e);
+    /// <summary>
+    /// Log details of an exception associating the output with a category.
+    /// </summary>
+    /// <param name="category">Category for the log message.</param>
+    /// <param name="e">The exception to log details of.</param>
+    void Log(int category, System.Exception e);
 
-		/// <summary>
-		/// Log details of an exception.
-		/// </summary>
-		/// <param name="e">The exception to log details of.</param>
-		void Log(System.Exception e);
+    /// <summary>
+    /// Log details of an exception.
+    /// </summary>
+    /// <param name="e">The exception to log details of.</param>
+    void Log(System.Exception e);
   }
 }

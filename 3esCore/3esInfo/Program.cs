@@ -78,8 +78,8 @@ This program provides information about a 3rd Eye Scene file.
       bool foundServerInfo = false;
       while (!Quit && !packetStream.EndOfStream)
       {
-				Log.Flush();
-				packet = packetStream.NextPacket(ref bytesRead);
+        Log.Flush();
+        packet = packetStream.NextPacket(ref bytesRead);
 
         if (packet == null)
         {
