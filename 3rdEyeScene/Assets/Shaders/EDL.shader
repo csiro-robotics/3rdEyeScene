@@ -9,10 +9,10 @@ Shader "Hidden/EDL"
 {
   Properties
   {
-    // modify/comment out the MainTex to turn this into a grayscale effect, showing the EDL contribution 
+    // modify/comment out the MainTex to turn this into a grayscale effect, showing the EDL contribution
     _MainTex("Base (RGB)", 2D) = "white" {}
     _DepthTexture("Depth Texture", 2D) = "black" {}
-    _Radius("Radius", float) = 3.0
+    _Radius("Radius", float) = 1.0
     _ExpScale("Exp Scale", float) = 100.0
     _EdlScale("Edl Scale", float) = 1.0
   }
@@ -53,14 +53,14 @@ Shader "Hidden/EDL"
         return (pow((1.0 + LOG_BIAS * _ProjectionParams.z), z) - 1.0) / LOG_BIAS;
       }
 
-      // transform linear depth to [0,1] interval with 1 beeing closest to the camera.
+      // transform linear depth to [0,1] interval with 1 being closest to the camera.
       float ztransform(float linearDepth)
       {
         // _ProjectionParams.y is camera near, .z is far
         return 1.0 - (linearDepth - _ProjectionParams.y) / (_ProjectionParams.z - _ProjectionParams.y);
       }
 
-      // Look at neighbour's depth and return lower factor if neighbours are significantly different 
+      // Look at neighbour's depth and return lower factor if neighbours are significantly different
       float computeObscurance(float linearDepth, sampler2D depthTex, float2 uv)
       {
         float2 uvRadius = _Radius / float2(_ScreenParams.x, _ScreenParams.y);
@@ -115,7 +115,7 @@ Shader "Hidden/EDL"
 //        {
 //          uv.y = 1 - uv.y;
 //        }
-//#endif // UNITY_UV_STARTS_AT_TOP        
+//#endif // UNITY_UV_STARTS_AT_TOP
 
         float f = computeObscurance(depthValue, depthTex, uv);
         f = exp(-_ExpScale * _EdlScale * f);

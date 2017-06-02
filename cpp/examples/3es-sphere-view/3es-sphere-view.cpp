@@ -1,9 +1,6 @@
 //
 // author: Kazys Stepanas
 //
-#define _USE_MATH_DEFINES
-#include "3es-sphere-view.h"
-
 #define TES_ENABLE
 #include <3esservermacros.h>
 #include <3esvectorhash.h>

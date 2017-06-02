@@ -76,7 +76,7 @@ Shader "Points/PointsLit"
     // w is 1.0 + 1.0/height.
     const float4 ppos = mul(UNITY_MATRIX_VP, float4(p[0].pos.xyz, 1));
     const float depth = ppos.w;
-    const float size = 0.5f * max(0.5f + _PointSize * (1 + depth), MinScale * ppos.w) * (_ScreenParams.w - 1.0f);
+    const float size = 0.5f * max(0.5f + _PointSize * (1 + depth), MinScale * depth) * (_ScreenParams.w - 1.0f);
     const float3 right = mul(UNITY_MATRIX_VP, UNITY_MATRIX_V[0].xyz * size) * (_LeftHanded ? -1.0f : 1.0f);
     const float3 up = mul(UNITY_MATRIX_VP, UNITY_MATRIX_V[1].xyz * size);
 

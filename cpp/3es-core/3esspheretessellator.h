@@ -15,8 +15,7 @@
 /// Tessellates the plane primitive.
 namespace tes
 {
-
-  struct SphereVertexHash
+  struct _3es_coreAPI SphereVertexHash
   {
     size_t operator()(const Vector3f &v) const;
     size_t operator()(const Vector3d &v) const;
@@ -24,13 +23,13 @@ namespace tes
 
   typedef std::unordered_map<Vector3f, unsigned, SphereVertexHash> SphereVertexMap;
 
-  size_t SphereVertexHash::operator()(const Vector3f &v) const
+  inline size_t SphereVertexHash::operator()(const Vector3f &v) const
   {
     return vhash::hash(v.x, v.y, v.z);
   }
 
 
-  size_t SphereVertexHash::operator()(const Vector3d &v) const
+  inline size_t SphereVertexHash::operator()(const Vector3d &v) const
   {
     return vhash::hash(float(v.x), float(v.y), float(v.z));
   }
