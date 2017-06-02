@@ -1,6 +1,6 @@
 Bugs:
 - Suspect: object recycling in ShapeHandler appears to sometimes activate invalid objects.
-- Shutdown times can be very long after processing scenes with many transient mesh objects.
+- Documentation: C# and C++ docuemntation namepaces clash in doxygen.
 
 TODO for v1.0:
 - Consolidate C# shape constructors and improve consistency.
@@ -8,11 +8,10 @@ TODO for v1.0:
   - Modify ObjectAttributes structure (for update messages only?) to have a 1-byte flag member which identifies which of colour, position, rotation and scale data are present.
   - Consider moving major/minor version members of PacketHeader into ServerSettings message.
   - Support batch object creation?
+- "Server" implementation which writes directly to a local file.
 
 TODO:
-- "Server" implementation which writes directly to a local file.
 - Change shape shaders to support GPU instancing.
-- Consider adding batched object creation messages.
 - UI:
   - Handler options and UI
   - Scene Graph UI
@@ -27,17 +26,13 @@ TODO:
 - Tidy up client StreamThread and Router update loops.
 
 Maybe:
-- GL-TF scene serialiser for the client.
-  - For loading reference model and exporting the current scene.
-- GL-TF handler extension
-  - Too expensive for primitives, but may be good for complex data.
+- Convert geometry shaders to use vertex shader with vertex padding in the stream.
 - Support splitting recording files at around 2GB.
-- TCP socket support built on POCO and/or asio.
 - Consider supporting variable Endian encoding in messages, identified by the byte order of the header marker.
+- Consider adding batched object creation messages.
 
 Performance improvements:
 - Need to investigate how to do more object management off the main thread. Not well supported by Unity as it doesn't allow objects to be created on other threads.
-- Improve shutdown time after using large numbers of objects.
 
 Pie in the sky:
 - Load in a mesh/scene for reference and/or context.
@@ -45,4 +40,3 @@ Pie in the sky:
 - Client "breakpoints". Server blocks until the client allows continuation.
   - Difficulty is in nicely specifying the breakpoint and enabling/disabling.
     - Maybe server macros can leverage __FILE__ and __LINE__ to help.
-- An actual UX design.
