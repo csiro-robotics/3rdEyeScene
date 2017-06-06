@@ -88,8 +88,6 @@ namespace Tes.Handlers
     public CategoriesHandler()
       : base(null)
     {
-      //UpdateServerInfo(ServerInfoMessage.Default);
-
       //AddTest();
     }
 
@@ -260,14 +258,6 @@ namespace Tes.Handlers
     {
       // FIXME: localisation.
       AddCategory(0, 0, "Default", true);
-    }
-
-    /// <summary>
-    /// Empty
-    /// </summary>
-    /// <param name="info"></param>
-    public override void UpdateServerInfo(ServerInfoMessage info)
-    {
     }
 
     /// <summary>

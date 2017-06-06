@@ -1,9 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.InteropServices;
-using Tes;
-using Tes.IO;
-using Tes.Net;
+using Tes.Buffers;
 
 namespace Tes.IO
 {
@@ -91,7 +88,7 @@ namespace Tes.IO
   /// </summary>
   /// <remarks>
   /// A <code>PacketBuffer</code> can be used in two ways: input and output
-  /// 
+  ///
   /// An input packet is used to collate data coming from a network or file stream.
   /// Bytes are read from the stream and added to the <code>PacketBuffer</code> by
   /// calling <see cref="Append(byte[], int)"/>. Individual messages are extracted using
@@ -99,28 +96,28 @@ namespace Tes.IO
   /// containing data for a single message. Data are read from this message by
   /// obtaining a <code>Stream</code> from <see cref="CreateReadStream(bool)"/>.
   /// This is summarised below:
-  /// 
+  ///
   /// <list type="bullet">
   /// <item>Add data by calling <see cref="Append(byte[], int)"/> until it returns <code>true</code>.</item>
   /// <item>Extract messages by calling <see cref="PopPacket(out bool)"/></item>
   /// <item>Read from extracted messages by creating a stream using <see cref="CreateReadStream(bool)"/></item>
   /// </list>
-  /// 
+  ///
   /// Output packets are used to generate content for writing to a network or file
   /// stream. An output packet first requires a <see cref="PacketHeader"/>, which is
   /// added to the buffer via <see cref="WriteHeader(PacketHeader)"/>. Message data are then written
   /// to the buffer by calling <see cref="WriteBytes(byte[], bool, int, int)"/>. Note that data should only be added to the
   /// buffer in network byte order (Big Endian). This conversion must occur before calling
   /// <see cref="WriteBytes(byte[], bool, int, int)"/>.
-  /// 
+  ///
   /// Once all data are written, the packet is finalised calling <see cref="FinalisePacket(bool)"/> and
   /// may be exported by calling one of the export methods: <see cref="ExportTo(BinaryWriter)"/>. Once exported
   /// a <code>PacketBuffer</code> may be reused by calling <see cref="Reset()"/> and starting the
   /// process from the beginning. Alternatively, the existing header may be preserved by calling
   /// <see cref="Reset(ushort, ushort)"/> and updating only the <see cref="PacketHeader.RoutingID"/>.
-  /// 
+  ///
   /// The output process is summarised below:
-  /// 
+  ///
   /// <list type="bullet">
   /// <item>Create and write a new header to the packet using <see cref="WriteHeader(PacketHeader)"/></item>
   /// <item>Write message data in network byte order using <see cref="WriteBytes(byte[], bool, int, int)"/></item>
@@ -129,7 +126,7 @@ namespace Tes.IO
   /// <item>Optionally reset and reuse the packet with <see cref="Reset(ushort, ushort)"/></item>
   /// </list>
   /// </remarks>
-  public class PacketBuffer
+  public class PacketBuffer : IDisposable
   {
     /// <summary>
     /// Packet status.
@@ -149,15 +146,42 @@ namespace Tes.IO
     /// Create a packet with the given initial buffer size.
     /// </summary>
     /// <param name="initialBufferSize">The initial buffer size (bytes)</param>
-    public PacketBuffer(int initialBufferSize)
+    /// <param name="useBufferPool">Allow the use of the <see cref="T:ArrayPool"/>?</param>
+    public PacketBuffer(int initialBufferSize, bool useBufferPool = true)
     {
       if (initialBufferSize <= 0)
       {
         initialBufferSize = 1024;
       }
-      _internalBuffer = new byte[initialBufferSize];
+      if (useBufferPool)
+      {
+        _internalBuffer = ArrayPool<byte>.Shared.Rent(initialBufferSize);
+        _rentedBuffer = true;
+      }
+      else
+      {
+        _internalBuffer = new byte[initialBufferSize];
+        _rentedBuffer = false;
+      }
       _cursor = _currentByteCount = 0;
       ValidHeader = false;
+    }
+
+    /// <summary>
+    /// Returns the internal buffer pack to the <see cref="T:ArrayPool"/> when using a rented buffer.
+    /// </summary>
+    /// <remarks>Call <see cref="Dispose"/> when you are finished using the <see cref="T:Tes.IO.PacketBuffer"/>. The
+    /// <see cref="Dispose"/> method leaves the <see cref="T:Tes.IO.PacketBuffer"/> in an unusable state. After calling
+    /// <see cref="Dispose"/>, you must release all references to the <see cref="T:Tes.IO.PacketBuffer"/> so the garbage
+    /// collector can reclaim the memory that the <see cref="T:Tes.IO.PacketBuffer"/> was occupying.</remarks>
+    public void Dispose()
+    {
+      if (_rentedBuffer && _internalBuffer != null)
+      {
+        ArrayPool<byte>.Shared.Return(_internalBuffer);
+        _internalBuffer = null;
+        _rentedBuffer = false;
+      }
     }
 
     /// <summary>
@@ -177,7 +201,7 @@ namespace Tes.IO
     /// <code>
     ///   writer.Send(packet.Data, packet.Cursor, packet.Count)
     /// </code>
-    /// 
+    ///
     /// Use with care.
     /// </remarks>
     public byte[] Data { get { return _internalBuffer; } }
@@ -223,7 +247,7 @@ namespace Tes.IO
         WriteHeader(header);
       }
       else
-      { 
+      {
         _cursor = _currentByteCount = 0;
         _header.RoutingID = routingId;
         _header.MessageID = messageId;
@@ -240,12 +264,12 @@ namespace Tes.IO
     /// <param name="header"></param>
     /// <remarks>
     /// Intended for use in packet export only.
-    /// 
+    ///
     /// The <see cref="Header"/> is set to match <paramref name="header"/>,
     /// <see cref="ValidHeader"/> becomes <code>true</code> and the status
     /// changes to <see cref="PacketBufferStatus.Collating"/>. The given
     /// <paramref name="header"/> is immediately written to the packet buffer.
-    /// 
+    ///
     /// Message data may then be written to the buffer and the packet completed by
     /// calling <see cref="FinalisePacket(bool)"/>, which fixes the packet size.
     /// </remarks>
@@ -321,7 +345,7 @@ namespace Tes.IO
 
       // Calculate the CRC.
       if (addCrc)
-      { 
+      {
         ushort crc = Crc16.Crc.Calculate(_internalBuffer, (uint)_currentByteCount);
         // Don't do Endian swap here. WriteBytes does it.
         WriteBytes(BitConverter.GetBytes(crc), true);
@@ -352,7 +376,29 @@ namespace Tes.IO
       }
       if (_currentByteCount > 0)
       {
-        writer.Write(_internalBuffer, _cursor, _currentByteCount);
+        writer.Write(_internalBuffer, _cursor, _currentByteCount - _cursor);
+      }
+      return _currentByteCount;
+    }
+
+    /// <summary>
+    /// Exports the packet contents to the given <code>Stream</code>.
+    /// </summary>
+    /// <param name="stream">The <code>Stream</code> to export available bytes to.</param>
+    /// <returns>The number of bytes written</returns>
+    /// <remarks>
+    /// Export does not validate the packet status, exporting available bytes as is.
+    /// </remarks>
+    /// <exception cref="InvalidPacketStatusException">Thrown when the status is not <see cref="PacketBufferStatus.Complete"/>.</exception>
+    public int ExportTo(Stream stream)
+    {
+      if (Status != PacketBufferStatus.Complete)
+      {
+        throw new InvalidPacketStatusException(PacketBufferStatus.Complete, Status);
+      }
+      if (_currentByteCount > 0)
+      {
+        stream.Write(_internalBuffer, _cursor, _currentByteCount - _cursor);
       }
       return _currentByteCount;
     }
@@ -372,7 +418,7 @@ namespace Tes.IO
     public ushort PeekUInt16(int offset)
     {
       if (0 <= offset && offset < _currentByteCount)
-      { 
+      {
         return Endian.FromNetwork(BitConverter.ToUInt16(_internalBuffer, offset));
       }
       return 0;
@@ -446,7 +492,7 @@ namespace Tes.IO
         skipBytes += PacketHeader.Size + Header.PayloadOffset;
       }
 
-      return new MemoryStream(_internalBuffer, skipBytes, _internalBuffer.Length - skipBytes, false);
+      return new MemoryStream(_internalBuffer, skipBytes, _currentByteCount - skipBytes, false);
     }
 
     /// <summary>
@@ -462,13 +508,13 @@ namespace Tes.IO
     /// As data bytes are appended, the buffer code searches for a valid header,
     /// consuming all bytes until a valid header is found - i.e., bytes before the
     /// valid header are lost.
-    /// 
+    ///
     /// Once a valid header is found, <code>Append()</code> waits for sufficient bytes
     /// to complete the packet as specified in the validated header. At this point
     /// <code>Append()</code> returns <code>true</code>. Available packets
     /// may be extracted by calling <see cref="PopPacket(out bool)"/> until that method
     /// returns null.
-    /// 
+    ///
     /// Calling <code>Append()</code> will change the <see cref="PacketBuffer.Status"/>
     /// as follows:
     /// <list type="table">
@@ -513,7 +559,7 @@ namespace Tes.IO
       {
         int crcSize = ((_header.Flags & (byte)PacketFlag.NoCrc) == 0) ? Crc16.CrcSize : 0;
         if (_currentByteCount >= _header.PacketSize + crcSize)
-        { 
+        {
           Status = PacketBufferStatus.Available;
           return true;
         }
@@ -546,7 +592,7 @@ namespace Tes.IO
       {
         int crcSize = ((_header.Flags & (byte)PacketFlag.NoCrc) == 0) ? Crc16.CrcSize : 0;
         if (_currentByteCount >= _header.PacketSize + crcSize)
-        { 
+        {
           Status = PacketBufferStatus.Available;
           return true;
         }
@@ -568,10 +614,10 @@ namespace Tes.IO
     /// packet as a self contained <code>PacketBuffer</code>. When completed packets
     /// are available, this method returns each available completed packet as a single,
     /// self contained item.
-    /// 
+    ///
     /// The bytes making up the completed packet are removed from this packet buffer
     /// while excess bytes are preserved.
-    /// 
+    ///
     /// A null packet buffer may also be returned when there is enough data for a packet,
     /// but the CRC check fails. This case is detected when null is returned as <paramref name="crcOk"/>
     /// is <code>false</code> (failed CRC) as opposed to null returned and <paramref name="crcOk"/>
@@ -701,7 +747,7 @@ namespace Tes.IO
       {
         int crcSize = ((_header.Flags & (byte)PacketFlag.NoCrc) == 0) ? Crc16.CrcSize : 0;
         if (_currentByteCount >= _header.PacketSize + crcSize)
-        { 
+        {
           return true;
         }
       }
@@ -749,7 +795,7 @@ namespace Tes.IO
     /// <see cref="PacketHeader.Marker"/> followed by sufficient bytes to complete the <see cref="PacketHeader"/>
     /// and <see cref="ValidHeader"/> is set to <code>true</code>. Note how this consumes bytes
     /// before the marker.
-    /// 
+    ///
     /// Bytes are also consumed when the marker cannot be found, appropriately adjusting
     /// <see cref="DroppedByteCount"/>.
     /// </remarks>
@@ -879,7 +925,7 @@ namespace Tes.IO
       // Check the CRC flag.
       byte packetFlags = _internalBuffer[_cursor + PacketHeader.FlagsOffset];
       if ((packetFlags & (byte)PacketFlag.NoCrc) == 0)
-      { 
+      {
         ushort crc = Crc16.Crc.Calculate(_internalBuffer, (uint)_cursor, (uint)(packetSize - Crc16.CrcSize));
         byte[] crcBytes = new byte[2];
         crcBytes[0] = _internalBuffer[_cursor + packetSize - 2];
@@ -918,9 +964,20 @@ namespace Tes.IO
     {
       if (required > _internalBuffer.Length)
       {
-        // Need to resize the internal buffer.
         int newSize = Maths.IntUtil.NextPowerOf2(required);
-        Array.Resize(ref _internalBuffer, newSize);
+        if (_rentedBuffer)
+        {
+          // Rented buffer. Return the buffer and ask for a buffer one.
+          byte[] newBuffer = ArrayPool<byte>.Shared.Rent(newSize);
+          Array.Copy(_internalBuffer, newBuffer, _internalBuffer.Length);
+          ArrayPool<byte>.Shared.Return(_internalBuffer);
+          _internalBuffer = newBuffer;
+        }
+        else
+        {
+          // Need to resize the internal buffer.
+          Array.Resize(ref _internalBuffer, newSize);
+        }
       }
     }
 
@@ -934,6 +991,11 @@ namespace Tes.IO
     /// Internal byte buffer.
     /// </summary>
     private byte[] _internalBuffer;
+    /// <summary>
+    /// True if the <see cref="_internalBuffer"/> has been rented from <see cref="T:ArrayPool" /> and needs
+    /// to be returned.
+    /// </summary>
+    private bool _rentedBuffer;
     /// <summary>
     /// Read cursor, tracking the start of valid bytes. Reset on <see cref="Append(byte[], int)"/>
     /// or <see cref="Emplace(byte[], int)"/>.

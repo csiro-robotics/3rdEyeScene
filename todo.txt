@@ -1,26 +1,19 @@
 Bugs:
-- TES_MESHSET_XXX() macros do not cater for defining the associated resources. Parameterisation needs to change.
-- Large data frames have been known to end up an odd state whereby some data from the previous are still visible and not all data from the next frame are visible.
-  - Possibly a thread safety issue on the concurrent queue.
-- Custom socket bugs (workaround using Qt sockets):
-  - On OSX there is sporadic lag.
-  - Large packets go missing.
+- Suspect: object recycling in ShapeHandler appears to sometimes activate invalid objects.
+- Documentation: C# and C++ docuemntation namepaces clash in doxygen.
 
+TODO for v1.0:
+- Consolidate C# shape constructors and improve consistency.
+- PROTOCOL CHANGE: Reduce object overhead. Creating many objects is expensive in data throughput and packet processing.
+  - Modify ObjectAttributes structure (for update messages only?) to have a 1-byte flag member which identifies which of colour, position, rotation and scale data are present.
+  - Consider moving major/minor version members of PacketHeader into ServerSettings message.
+  - Support batch object creation?
+- "Server" implementation which writes directly to a local file.
 
 TODO:
-- Modify StreamThread to support collated packets
-  - Change recording compression from file level to use collated packets and work on chunked compression.
-    . Better for snapshots as seeking is allowed.
-- Profile StreamThread packet decoding and improve performance.
-  - Current playback speed bottleneck when stepping.
-- "Server" implementation which writes directly to a local file.
 - Change shape shaders to support GPU instancing.
-- Consider adding batched object creation messages.
-- Consolidate C# shape constructors and improve consistency.
-- Client log for error messages.
 - UI:
   - Handler options and UI
-  - Camera Selection UI
   - Scene Graph UI
 - Export to PLY file (because PLY is easy).
 - Annotation frames.
@@ -30,25 +23,16 @@ TODO:
 - Client rendering override modes:
   - Solid/wireframe overlay
   - Wireframe override
-- Complete C++ TCP socket support built on POCO
-- PROTOCOL CHANGE: Reduce object overhead. Creating many objects is expensive in data throughput and packet processing.
-  - Modify ObjectAttributes structure (for update messages only?) to have a 1-byte flag member which identifies which of colour, position, rotation and scale data are present.
-  - Consider moving major/minor version members of PacketHeader into ServerSettings message.
-  - Support batch object creation?
-- Tidy up and fix up Router catcup logic and _currentFrame management.
+- Tidy up client StreamThread and Router update loops.
 
 Maybe:
-- GL-TF scene serialiser for the client.
-  - For loading reference model and exporting the current scene.
-- GL-TF handler extension
-  - Too expensive for primitives, but may be good for complex data.
+- Convert geometry shaders to use vertex shader with vertex padding in the stream.
 - Support splitting recording files at around 2GB.
-- TCP socket support built on asio.
 - Consider supporting variable Endian encoding in messages, identified by the byte order of the header marker.
+- Consider adding batched object creation messages.
 
 Performance improvements:
 - Need to investigate how to do more object management off the main thread. Not well supported by Unity as it doesn't allow objects to be created on other threads.
-- Improve shutdown time after using large numbers of objects.
 
 Pie in the sky:
 - Load in a mesh/scene for reference and/or context.
@@ -56,4 +40,3 @@ Pie in the sky:
 - Client "breakpoints". Server blocks until the client allows continuation.
   - Difficulty is in nicely specifying the breakpoint and enabling/disabling.
     - Maybe server macros can leverage __FILE__ and __LINE__ to help.
-- An actual UX design.

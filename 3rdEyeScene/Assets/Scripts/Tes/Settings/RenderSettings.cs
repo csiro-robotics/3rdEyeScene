@@ -21,7 +21,7 @@ public class RenderSettings : Settings
   [Browsable(true), SetRange(1, 10), Tooltip("The pixel search radius used in EDL calculations.")]
   public int EdlRadius
   {
-    get { return PlayerPrefs.GetInt("render.edlRadius", 1); }
+    get { return PlayerPrefs.GetInt("render.edlRadius", 2); }
     set { PlayerPrefs.SetInt("render.edlRadius", value); Notify("EdlRadius"); }
   }
 

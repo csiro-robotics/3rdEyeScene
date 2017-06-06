@@ -187,8 +187,9 @@ public class Avatar : MonoBehaviour
       if (_inputLayer.GetKeyDown(KeyCode.BackQuote))
       {
         // Restore user mode.
-        PrepareUserMode();
-        _mode = Mode.User;
+        //PrepareUserMode();
+        //_mode = Mode.User;
+        _cameras.ActiveCameraID = -1;
       }
       else
       {
@@ -216,6 +217,20 @@ public class Avatar : MonoBehaviour
             }
           }
         }
+      }
+
+      // Handle external changes (like from the UI).
+      if (_cameras.ActiveCameraID == -1)
+      {
+        if (_mode != Mode.User)
+        {
+          PrepareUserMode();
+          _mode = Mode.User;
+        }
+      }
+      else if (_mode != Mode.BoundCamera)
+      {
+        _mode = Mode.BoundCamera;
       }
     }
   }

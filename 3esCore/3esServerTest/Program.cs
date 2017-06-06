@@ -5,7 +5,6 @@ using Tes.IO;
 using Tes.Net;
 using Tes.Maths;
 using Tes.Server;
-using Tes.Util;
 
 namespace Tes
 {

@@ -2,11 +2,12 @@
 using System.Collections;
 using System.IO;
 using System.Runtime.InteropServices;
+using Ionic.Zlib;
+using UnityEngine;
 using Tes.Collections;
 using Tes.IO;
-using Tes.IO.Compression;
+using Tes.Logging;
 using Tes.Net;
-using UnityEngine;
 
 namespace Tes.Main
 {
@@ -19,10 +20,10 @@ namespace Tes.Main
   public class StreamThread : DataThread
   {
     /// <summary>
-    /// Details of a snapshot.
+    /// Details of a keyframe.
     /// </summary>
     /// <remarks>
-    /// Snapshots must be taken at the end of a frame. However, we can't guarantee that the
+    /// Keyframes must be taken at the end of a frame. However, we can't guarantee that the
     /// visualiser included transient objects in the serialisation as the message handlers
     /// may have been ignoring transient objects. This is marked by the state of
     /// <see cref="IncludesTransient"/>. When this is true, we can restore the exact
@@ -30,66 +31,83 @@ namespace Tes.Main
     /// as a starting point for subsequent frames, but <see cref="FrameNumber"/> may not
     /// be an accurate representation of that frame.
     /// </remarks>
-    class Snapshot
+    class Keyframe
     {
       /// <summary>
-      /// Offset into the serialisation stream (bytes) at which the snapshot is made.
+      /// Offset into the serialisation stream (bytes) at which the keyframe is made.
       /// </summary>
       public long StreamOffset = 0;
       /// <summary>
-      /// The (end of) frame number for the snapshot.
+      /// The (end of) frame number for the keyframe.
       /// </summary>
       public uint FrameNumber = 0;
       /// <summary>
-      /// Does this snapshot include transient objects? See class remarks.
+      /// The (end of) frame number at the StreamOffset.
+      /// </summary>
+      /// <remarks>
+      /// This may be less than FrameNumber, in which case we have to ignore intervening frames.
+      /// </remarks>
+      public uint OffsetFrameNumber = 0;
+      /// <summary>
+      /// Does this keyframe include transient objects? See class remarks.
       /// </summary>
       public bool IncludesTransient = false;
       /// <summary>
-      /// File name capturing the snapshot.
+      /// File name capturing the keyframe.
       /// </summary>
       public string TemporaryFilePath;
       /// <summary>
-      /// File stream to the snapshot stream. Matches <see cref="TemporaryFilePath"/>.
+      /// File stream to the keyframe stream. Matches <see cref="TemporaryFilePath"/>.
       /// Closed once saved.
       /// </summary>
       public Stream OpenStream;
       /// <summary>
-      /// Is the snapshot valid for restoration.
+      /// Is the keyframe valid for restoration.
       /// </summary>
       public bool Valid = false;
     }
 
     /// <summary>
-    /// Allow use of snapshots?
+    /// Allow use of keyframes?
     /// </summary>
-    public bool AllowSnapshots { get; set; }
+    public bool AllowKeyframes { get; set; }
 
     /// <summary>
-    /// Take a snapshot after this many kilo (technically kibi, but I can't bring myself to call it that) bytes.
+    /// Take a keyframe after this many kilo (technically kibi, but I can't bring myself to call it that) bytes.
     /// </summary>
-    public long SnapshotKiloBytes
+    public long KeyframeKiloBytes
     {
-      get { lock (this) { return _snapshotKiloBytes; } }
-      set { lock (this) { _snapshotKiloBytes = value; } }
+      get { lock (this) { return _keyframeKiloBytes; } }
+      set { lock (this) { _keyframeKiloBytes = value; } }
     }
-    private long _snapshotKiloBytes = 512;
+    private long _keyframeKiloBytes = 512;
 
     /// <summary>
-    /// Do not take a snapshot unless at least this many frames have elapsed.
+    /// Do not take a keyframe unless at least this many frames have elapsed.
     /// </summary>
-    public uint SnapshotMinFrames
+    public uint KeyframeMinFrames
     {
-      get { lock (this) { return _snapshotMinFrames; } }
-      set { lock (this) { _snapshotMinFrames = value; } }
+      get { lock (this) { return _keyframeMinFrames; } }
+      set { lock (this) { _keyframeMinFrames = value; } }
     }
-    private uint _snapshotMinFrames = 5;
+    private uint _keyframeMinFrames = 5;
 
-    public uint ShapshotSkipForwardFrames
+    /// <summary>
+    /// Do not take a keyframe unless at least this many frames have elapsed.
+    /// </summary>
+    public uint KeyframeFrames
     {
-      get { lock (this) { return _shapshotSkipForwardFrames; } }
-      set { lock (this) { _shapshotSkipForwardFrames = value; } }
+      get { lock (this) { return _keyframeFrames; } }
+      set { lock (this) { _keyframeFrames = value; } }
     }
-    private uint _shapshotSkipForwardFrames = 50;
+    private uint _keyframeFrames = 100;
+
+    public uint KeyframeSkipForwardFrames
+    {
+      get { lock (this) { return _keyframeSkipForwardFrames; } }
+      set { lock (this) { _keyframeSkipForwardFrames = value; } }
+    }
+    private uint _keyframeSkipForwardFrames = 50;
 
     public override Queue<PacketBuffer> PacketQueue { get { return _packetQueue; } }
     public override uint CurrentFrame
@@ -140,7 +158,7 @@ namespace Tes.Main
     {
       get
       {
-        return _catcingUp;
+        return _catchingUp;
       }
     }
 
@@ -178,7 +196,7 @@ namespace Tes.Main
     /// </summary>
     ~StreamThread()
     {
-      CleanupSnapshots();
+      CleanupKeyframes();
     }
 
     public bool SetStream(Stream dataStream)
@@ -188,11 +206,9 @@ namespace Tes.Main
         return false;
       }
 
-      // We have up until the first end frame to switch to compressed data.
-      _allowCompressStream = true;
       _currentFrame = 0;
-      _stream = dataStream;
-      CleanupSnapshots();
+      _packetStream = new PacketStreamReader(dataStream);
+      CleanupKeyframes();
       return true;
     }
 
@@ -203,13 +219,13 @@ namespace Tes.Main
         // Already started.
         return false;
       }
-      _stream = dataStream;
+      _packetStream = new PacketStreamReader(dataStream);
       return Start();
     }
 
     public override bool Start()
     {
-      if (Started || _stream == null)
+      if (Started || _packetStream == null)
       {
         return false;
       }
@@ -232,13 +248,13 @@ namespace Tes.Main
         Paused = false;
         _thread.Stop();
         _thread = null;
-        if (_stream != null)
+        if (_packetStream != null)
         {
-          if (_stream.CanRead)
+          if (_packetStream.CanRead)
           {
-            _stream.Close();
+            _packetStream.Close();
           }
-          _stream = null;
+          _packetStream = null;
         }
       }
       return true;
@@ -257,23 +273,27 @@ namespace Tes.Main
 
     private IEnumerator Run()
     {
-      PacketHeader header = new PacketHeader();
-      byte[] headerBuffer = new byte[PacketHeader.Size];
       System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
       long elapsedUs = 0;
-      int bytesRead = 0;
+      // Last position in the stream we can seek to.
+      long lastSeekablePosition = 0;
+      long lastKeyframePosition = 0;
+      long bytesRead = 0;
       bool allowYield = false;
-      // Every N bytes we will request a Snapshot to save the current scene state and improve step playback.
-      long processedBytes = 0;
-      long bytesSinceLastSnapshot = 0;
-      uint lastSnapshotFrame = 0;
-      bool endOfStream = false;
+      bool failedKeyframe = false;
+      bool atSeekablePosition = false;
+      bool wasPaused = _paused;
+      // HACK: when restoring keyframes to precise frames we don't do the main update. Needs to be cleaned up.
+      bool skipUpdate = false;
+      uint lastKeyframeFrame = 0;
+      uint lastSeekableFrame = 0;
 
       stopwatch.Start();
-      while (!_quitFlag && _stream != null) // && _stream.Position + PacketHeader.Size <= _stream.Length)
+      while (!_quitFlag && _packetStream != null) // && _packetStream.Position + PacketHeader.Size <= _packetStream.Length)
       {
         if (_paused && _targetFrame == 0)
         {
+          wasPaused = true;
           // Wait for pause change a notification object.
           if (!_thread.Wait())
           {
@@ -285,12 +305,23 @@ namespace Tes.Main
         if (_targetFrame == 0)
         {
           // Not stepping. Check time elapsed.
-          _catcingUp = false;
+          _catchingUp = false;
+
+          // Measure elapsed time. Stop and restart the timer to get the elapsed time.
           stopwatch.Stop();
           stopwatch.Start();
+          // Should this have _frameOverrunUs added?
           elapsedUs = stopwatch.ElapsedTicks / (System.Diagnostics.Stopwatch.Frequency / (1000L * 1000L));
-          // Scale by playback speed.
           elapsedUs = (long)(elapsedUs * (double)_playbackSpeed);
+
+          if (wasPaused && !_paused)
+          {
+            // Just unpaused. Force an immediate frame update.
+            elapsedUs = _frameDelayUs;
+          }
+          wasPaused = false;
+
+          // Scale by playback speed.
           if (elapsedUs < _frameDelayUs)
           {
             // Too soon. Yield and wait some more.
@@ -306,36 +337,64 @@ namespace Tes.Main
             if (_targetFrame < _currentFrame)
             {
               // Stepping back.
-              processedBytes = 0;
-              bytesSinceLastSnapshot = 0;
-              lastSnapshotFrame = 0;
-              ResetStream();
-              endOfStream = false;
-              Snapshot snapshot = TrySnapshot(_targetFrame);
-              if (snapshot != null)
+              lastKeyframeFrame = 0;
+              lastSeekablePosition = 0;
+              lastSeekableFrame = 0;
+              bool restoredKeyframe = false;
+              if (AllowKeyframes && !failedKeyframe)
               {
-                lastSnapshotFrame = _currentFrame = snapshot.FrameNumber;
-                processedBytes = snapshot.StreamOffset;
-                _allowCompressStream = false;
+                Keyframe keyframe;
+                if (TryKeyframe(out keyframe, _targetFrame))
+                {
+                  // No failures. Does not meek we have a valid keyframe.
+                  if (keyframe != null)
+                  {
+                    lastKeyframeFrame = _currentFrame = keyframe.FrameNumber;
+                    restoredKeyframe = true;
+                    skipUpdate = _currentFrame == keyframe.FrameNumber;
+                  }
+                }
+                else
+                {
+                  // Failed a keyframe. Disallow further keyframes.
+                  // TODO: consider just invalidating the failed keyframe.
+                  failedKeyframe = true;
+                }
               }
-              _catcingUp = _currentFrame + 1 < _targetFrame;
+
+              // Not available, not allowed or failed keyframe.
+              if (!restoredKeyframe)
+              {
+                _packetStream.Reset();
+                ResetQueue(0);
+              }
+              _catchingUp = _currentFrame + 1 < _targetFrame;
               stopwatch.Reset();
               stopwatch.Start();
             }
-            else if (_targetFrame > _currentFrame + ShapshotSkipForwardFrames)
+            else if (_targetFrame > _currentFrame + KeyframeSkipForwardFrames)
             {
-              // Also try snapshots when stepping forwards large frame counts.
-              // No need to reset the stream as we do when stepping back.
-              Snapshot snapshot = TrySnapshot(_targetFrame, _currentFrame);
-              if (snapshot != null)
+              // Skipping forward a fair number of frames. Try for a keyframe.
+              if (AllowKeyframes && !failedKeyframe)
               {
-                lastSnapshotFrame = _currentFrame = snapshot.FrameNumber;
-                processedBytes = snapshot.StreamOffset;
-                _allowCompressStream = false;
+                // Ok to try for a keyframe.
+                Keyframe keyframe;
+                if (TryKeyframe(out keyframe, _targetFrame, _currentFrame))
+                {
+                  // No failure. Check if we have a keyframe.
+                  if (keyframe != null)
+                  {
+                    lastKeyframeFrame = _currentFrame = keyframe.FrameNumber;
+                    _catchingUp = _currentFrame + 1 < _targetFrame;
+                    skipUpdate = _currentFrame == keyframe.FrameNumber;
+                  }
+                }
+                else
+                {
+                  // Failed. Stream has been reset.
+                  failedKeyframe = true;
+                }
               }
-              _catcingUp = _currentFrame + 1 < _targetFrame;
-              stopwatch.Reset();
-              stopwatch.Start();
             }
           }
         }
@@ -350,85 +409,111 @@ namespace Tes.Main
 
         try
         {
-          allowYield = false;
-          endOfStream = false;
-          while (!allowYield && !endOfStream)
+          allowYield = skipUpdate;
+
+          if (skipUpdate)
           {
-            if (_allowCompressStream && Util.GZipUtil.IsGZipStream(_stream))
+            // HACK: more unclean code. When skipping a frame update we need to ensure the frame number is in sync.
+            // For that reason we force a frame flush with the current frame number.
+            _packetQueue.Enqueue(CreateFrameFlushPacket(_currentFrame));
+            skipUpdate = false;
+          }
+
+          while (!allowYield && !_packetStream.EndOfStream)
+          {
+            PacketBuffer packet = _packetStream.NextPacket(ref bytesRead);
+            _paused = _paused || bytesRead == 0 && !_loop;
+            allowYield = true;
+
+            // Can we update the stream seek position?
+            atSeekablePosition = false;
+            if (!_packetStream.DecodingCollated && _packetStream.CanSeek && _currentFrame > 0)
             {
-              _allowCompressStream = false;
-              _gzipStreamStart = _stream.Position;
-              _stream = new GZipStream(_stream, CompressionMode.Decompress);
+              lastSeekablePosition = _packetStream.Position;
+              // May be one off when the end of frame is now.
+              lastSeekableFrame = _currentFrame;
+              atSeekablePosition = true;
             }
 
-            bytesRead = _stream.Read(headerBuffer, 0, headerBuffer.Length);
-            endOfStream = bytesRead == 0;
-            processedBytes += bytesRead;
-            bytesSinceLastSnapshot += bytesRead;
-            _paused = _paused || bytesRead == 0 && !_loop;
-
-            allowYield = true;
-            if (bytesRead == headerBuffer.Length)
+            if (packet != null)
             {
-              allowYield = false;
-              if (header.Read(new NetworkReader(new MemoryStream(headerBuffer, false))))
+              // Read the header. Determine the expected size and read that much more data.
+              if (packet.Status == PacketBufferStatus.Complete)
               {
-                // Read the header. Determine the expected size and read that much more data.
-                int crcSize = ((header.Flags & (byte)PacketFlag.NoCrc) == 0) ? Crc16.CrcSize : 0;
-                PacketBuffer packet = new PacketBuffer(header.PacketSize + crcSize);
-                packet.Emplace(headerBuffer, bytesRead);
-                processedBytes += packet.Emplace(_stream, header.PacketSize + crcSize - bytesRead);
-                if (packet.Status == PacketBufferStatus.Complete)
+                allowYield = false;
+                // Check for end of frame messages to yield on.
+                // TODO: check frame elapsed time as well.
+                if (packet.Header.RoutingID == (ushort)RoutingID.Control)
                 {
-                  // Check for end of frame messages to yield on.
-                  // TODO: check frame elapsed time as well.
-                  if (header.RoutingID == (ushort)RoutingID.Control)
+                  // Store frame number for setting of lastSeekableFrame. See below.
+                  uint preControlMsgFrame = _currentFrame;
+                  // HandleControlMessage() returns true on an end of frame event.
+                  if (HandleControlMessage(packet, (ControlMessageID)packet.Header.MessageID))
                   {
-                    // HandleControlMessage() returns true on an end of frame event.
-                    if (HandleControlMessage(packet, (ControlMessageID)header.MessageID))
+                    // Clear keyframe failure if at target frame.
+                    failedKeyframe = failedKeyframe && !(_targetFrame == 0 || _currentFrame == _targetFrame);
+
+                    if (atSeekablePosition)
                     {
-                      // Ended a frame. Check for snapshot. We'll queue the request after the end of
-                      // frame message below.
-                      if (bytesSinceLastSnapshot >= _snapshotKiloBytes * 1024 &&
-                          lastSnapshotFrame < _currentFrame &&
-                          _currentFrame - lastSnapshotFrame >= _snapshotMinFrames)
-                      {
-                        // We may request a snapshot now.
-                        lastSnapshotFrame = _currentFrame;
-                        bytesSinceLastSnapshot = 0;
-                        RequestSnapshot(lastSnapshotFrame, processedBytes);
-                      }
-                      // Make sure we yield so as to support the later check to avoid flooding the packet queue.
-                      allowYield = true;
+                      // We don't use _currentFrame here as we will have just incremented it, so we actually
+                      // want the frame before. We use a cached copy just in case in future we can be here
+                      // for other reasons.
+                      lastSeekableFrame = preControlMsgFrame;
+                      Log.Diag("Last seekable: {0}", lastSeekableFrame);
                     }
+                    // Ended a frame. Check for keyframe. We'll queue the request after the end of
+                    // frame message below.
+                    if ((lastSeekablePosition - lastKeyframePosition >= _keyframeKiloBytes * 1024 ||
+                        _currentFrame - lastKeyframeFrame >= _keyframeFrames) &&
+                        lastKeyframeFrame < _currentFrame &&
+                        _currentFrame - lastKeyframeFrame >= _keyframeMinFrames)
+                    {
+                      // A keyframe is due. However, the stream may not be seekable to the current location.
+                      // We may request a keyframe now.
+                      Log.Diag("Request keyframe for frame {0} from frame {1} after {2} KiB",
+                        _currentFrame, lastSeekableFrame, lastSeekablePosition - lastKeyframePosition);
+                      lastKeyframeFrame = _currentFrame;
+                      lastKeyframePosition = lastSeekablePosition;
+                      RequestKeyframe(lastKeyframeFrame, lastSeekableFrame, lastSeekablePosition);
+                    }
+                    // Make sure we yield so as to support the later check to avoid flooding the packet queue.
+                    allowYield = true;
                   }
-                  else if (header.RoutingID == (ushort)RoutingID.ServerInfo)
-                  {
-                    HandleServerInfo(packet);
-                  }
-                  _packetQueue.Enqueue(packet);
                 }
-                // else notify error.
-                else
+                else if (packet.Header.RoutingID == (ushort)RoutingID.ServerInfo)
                 {
-                  Debug.LogError(string.Format("Failed to decode packet: {0}", packet.Status.ToString()));
+                  HandleServerInfo(packet);
                 }
-                allowYield = allowYield || _targetFrame == 0 && _frameDelayUs > 0 && !_catcingUp;
+                _packetQueue.Enqueue(packet);
+                allowYield = allowYield || _targetFrame == 0 && _frameDelayUs > 0 && !_catchingUp;
+              }
+              else
+              {
+                Log.Error("Incomplete packet, ID: {0}", LookupRoutingIDName(packet.Header.RoutingID));
               }
             }
-            else if (bytesRead == 0 && allowYield && _loop)
+          }
+
+          if (_packetStream.EndOfStream)
+          {
+            allowYield = true;
+            if (_loop)
             {
               // Restart
               TargetFrame = 1;
+            }
+            else
+            {
+              // Playback complete. Autopause.
+              Paused = true;
             }
           }
         }
         catch (Exception e)
         {
           _quitFlag = true;
-          _allowCompressStream = false;
           bytesRead = 0;
-          Debug.LogException(e);
+          Log.Exception(e);
           allowYield = true;
         }
 
@@ -444,6 +529,7 @@ namespace Tes.Main
         }
       }
 
+      _catchingUp = false;
       Eos = true;
     }
 
@@ -454,9 +540,9 @@ namespace Tes.Main
 
     private void OnStop()
     {
-      if (_stream != null)
+      if (_packetStream != null)
       {
-        _stream.Close();
+        _packetStream.Close();
       }
     }
 
@@ -531,7 +617,6 @@ namespace Tes.Main
       // Forward playback. Update current frame.
       lock(this)
       {
-        _allowCompressStream = false;
         ++_currentFrame;
 
         if (_currentFrame < _targetFrame)
@@ -576,38 +661,37 @@ namespace Tes.Main
           _totalFrames = _currentFrame;
         }
       }
-      _catcingUp = _currentFrame + 1 < _targetFrame;
+      _catchingUp = _currentFrame + 1 < _targetFrame;
     }
 
-    #region Snapshots
+    #region Keyframes
 
     /// <summary>
-    /// Try find a snapshot near the given frame number.
+    /// Try find a keyframe near the given frame number.
     /// </summary>
     /// <param name="targetFrame">The frame number we are trying to achieve.</param>
-    /// <param name="currentFrame">The current frame number. A valid snapshot must occur after this number.</param>
-    /// <returns>The frame number reached by the snapshot.</returns>
-    private Snapshot TrySnapshot(uint targetFrame, uint currentFrame = 0)
+    /// <param name="currentFrame">The current frame number. A valid keyframe must occur after this number.</param>
+    /// <returns>The frame number reached by the keyframe.</returns>
+    /// <remarks>
+    /// Calling this change the <see cref="_packetStream"/> position. It is recommended the stream be reset
+    /// on failure along with calling <see cref="ResetQueue(uint)"/>.
+    /// </remarks>
+    private bool TryKeyframe(out Keyframe keyframe, uint targetFrame, uint currentFrame = 0)
     {
-      if (!AllowSnapshots)
+      keyframe = null;
+      lock (_keyframes)
       {
-        return null;
-      }
-      lock (_snapshots)
-      {
-        Snapshot bestShot = null;
-        foreach (Snapshot snapshot in _snapshots)
+        foreach (Keyframe snap in _keyframes)
         {
-          // Suitable snapshot if it's before the target frame, or
+          // Suitable keyframe if it's before the target frame, or
           // at the target frame and includes transient objects.
-          // See Snapshot class remarks.
-          if (snapshot.FrameNumber > currentFrame &&
-              (snapshot.FrameNumber < targetFrame ||
-                snapshot.IncludesTransient && snapshot.FrameNumber == targetFrame))
+          // See Keyframe class remarks.
+          if (snap.Valid &&
+             (snap.FrameNumber < targetFrame || snap.IncludesTransient && snap.FrameNumber == targetFrame))
           {
-            if (snapshot.Valid)
+            if (snap.FrameNumber > currentFrame)
             {
-              bestShot = snapshot;
+              keyframe = snap;
             }
           }
           else
@@ -616,35 +700,35 @@ namespace Tes.Main
           }
         }
 
-        if (bestShot != null)
+        if (keyframe != null)
         {
-          if (RestoreSnapshot(bestShot))
+          if (RestoreKeyframe(keyframe))
           {
-            return bestShot;
+            return true;
           }
         }
       }
 
-      return null;
+      return false;
     }
 
-    private Snapshot FindSnapshot(uint targetFrame)
+    private Keyframe FindKeyframe(uint targetFrame)
     {
-      if (!AllowSnapshots)
+      if (!AllowKeyframes)
       {
         return null;
       }
 
-      Snapshot bestShot = null;
-      lock (_snapshots)
+      Keyframe bestShot = null;
+      lock (_keyframes)
       {
-        foreach (Snapshot snapshot in _snapshots)
+        foreach (Keyframe keyframe in _keyframes)
         {
-          if (snapshot.FrameNumber <= targetFrame)
+          if (keyframe.FrameNumber <= targetFrame)
           {
-            if (snapshot.Valid)
+            if (keyframe.Valid)
             {
-              bestShot = snapshot;
+              bestShot = keyframe;
             }
           }
           else
@@ -658,13 +742,18 @@ namespace Tes.Main
     }
 
     /// <summary>
-    /// Restore the given shapshot.
+    /// Restore the given keyframe.
     /// </summary>
-    /// <param name="snapshot">To restore</param>
+    /// <param name="keyframe">To restore</param>
     /// <returns>True on success.</returns>
-    private bool RestoreSnapshot(Snapshot snapshot)
+    /// <remarks>
+    /// On success, the <see cref="PacketQueue"/> is cleared, a reset packet pushed followed by the
+    /// decoded keyframe packets. On failure <see cref="ResetStream()"/> is called which includes
+    /// queueing a reset packet.
+    /// </remarks>
+    private bool RestoreKeyframe(Keyframe keyframe)
     {
-      if (!snapshot.Valid || string.IsNullOrEmpty(snapshot.TemporaryFilePath) || !File.Exists(snapshot.TemporaryFilePath))
+      if (!keyframe.Valid || string.IsNullOrEmpty(keyframe.TemporaryFilePath) || !File.Exists(keyframe.TemporaryFilePath))
       {
         return false;
       }
@@ -672,65 +761,82 @@ namespace Tes.Main
       try
       {
         // Ensure stream has been reset.
-        Stream snapStream = new FileStream(snapshot.TemporaryFilePath, FileMode.Open, FileAccess.Read);
-        if (_stream as GZipStream != null)
-        {
-          ResetStream();
-        }
-        long streamPos = 0;
+        Stream snapStream = new FileStream(keyframe.TemporaryFilePath, FileMode.Open, FileAccess.Read);
+        System.Collections.Generic.List<PacketBuffer> decodedPackets = new System.Collections.Generic.List<PacketBuffer>();
+        _packetStream.Seek(keyframe.StreamOffset, SeekOrigin.Begin);
+        long streamPos = _packetStream.Position;
 
-        if (_gzipStreamStart == 0)
+        // Decode the keyframe data.
+        if (streamPos == keyframe.StreamOffset)
         {
-          // No compression. Just seek in _stream.
-          _stream.Seek(snapshot.StreamOffset, SeekOrigin.Begin);
-          streamPos = _stream.Position;
-        }
-        else
-        {
-          // Restart the stream, at the GZip stream and seek to the target position.
-          _stream.Seek(_gzipStreamStart, SeekOrigin.Begin);
-          _stream = new GZipStream(_stream, CompressionMode.Decompress);
-
-          // Read bytes up to the snapshot.
-          byte[] buffer = new byte[1024];
-          long read = 0;
-          streamPos = _gzipStreamStart;
-          do
+          if (DecodeKeyframeStream(snapStream, decodedPackets))
           {
-            read = _stream.Read(buffer, 0, (int)Math.Min(snapshot.StreamOffset - streamPos, buffer.LongLength));
-            streamPos += read;
-          } while (read > 0 && streamPos < snapshot.StreamOffset);
-        }
+            uint currentFrame = keyframe.OffsetFrameNumber;
+            uint droppedPacketCount = 0;
 
-        // Decode the snapshot data.
-        if (streamPos == snapshot.StreamOffset)
-        {
-          if (DecodeSnapshotStream(snapStream))
-          {
-            _currentFrame = snapshot.FrameNumber;
-            Debug.Log(string.Format("Restored frame: {0}", _currentFrame));
+            // Now consume messages from the stream until we are at the requested frame.
+            while (currentFrame < keyframe.FrameNumber)
+            {
+              long bytesRead = 0;
+              PacketBuffer packet = _packetStream.NextPacket(ref bytesRead);
+              if (packet != null)
+              {
+                if (packet.Status == PacketBufferStatus.Complete)
+                {
+                  ++droppedPacketCount;
+                  if (packet.Header.RoutingID == (ushort)RoutingID.Control &&
+                      packet.Header.MessageID == (ushort)ControlMessageID.EndFrame)
+                  {
+                    ++currentFrame;
+                  }
+                }
+                else
+                {
+                  // Failed.
+                  Log.Error("Incomplete packet during processing of extra keyframe packets");
+                  return false;
+                }
+              }
+              else
+              {
+                // Failed.
+                Log.Error("Failed to process extra keyframe packets");
+                return false;
+              }
+            }
+
+            // Migrate to the packet queue.
+            ResetQueue(currentFrame);
+            _packetQueue.Enqueue(decodedPackets);
+            _currentFrame = currentFrame;
+
+            Log.Diag("Dropped {0} additional packets to catch up to frame {1}.", droppedPacketCount, _currentFrame);
+            Log.Info("Restored frame: {0} -> {1}", _currentFrame, _targetFrame);
+            if (_targetFrame == _currentFrame)
+            {
+              _targetFrame = 0;
+            }
             return true;
           }
-          Debug.LogError(string.Format("Failed to decode snapshot for frame {0}", snapshot.FrameNumber));
+          Log.Error("Failed to decode keyframe for frame {0}", keyframe.FrameNumber);
         }
       }
       catch (Exception e)
       {
-        Debug.LogException(e);
+        Log.Exception(e);
       }
 
-      // Failed. Reset the stream.
-      ResetStream();
       return false;
     }
 
     /// <summary>
-    /// Decode the contents of the stream in <paramref name="snapshot"/> and add packets to
-    /// the outgoing queue.
+    /// Decode the contents of the <paramref name="keyframeStream"/> and add packets to
+    /// <paramref name="packets"/>.
     /// </summary>
-    /// <param name="snapshot"></param>
+    /// <param name="snapStream">The keyframe stream to decode</param>
+    /// <param name="packets">The packet list to add to.</param>
     /// <returns></returns>
-    private bool DecodeSnapshotStream(Stream snapStream)
+    private bool DecodeKeyframeStream(Stream snapStream, System.Collections.Generic.List<PacketBuffer> packets)
     {
       if (snapStream == null)
       {
@@ -742,12 +848,13 @@ namespace Tes.Main
       int bytesRead = 0;
       PacketHeader header = new PacketHeader();
       byte[] headerBuffer = new byte[PacketHeader.Size];
+      uint queuedPacketCount = 0;
 
       try
       {
         do
         {
-          if (allowCompression && Util.GZipUtil.IsGZipStream(snapStream))
+          if (allowCompression && GZipUtil.IsGZipStream(snapStream))
           {
             allowCompression = false;
             snapStream = new GZipStream(snapStream, CompressionMode.Decompress);
@@ -768,18 +875,19 @@ namespace Tes.Main
               if (packet.Status == PacketBufferStatus.Complete)
               {
                 // Check for end of frame messages to yield on.
-                _packetQueue.Enqueue(packet);
+                packets.Add(packet);
                 ok = true;
+                ++queuedPacketCount;
               }
               else
               {
                 switch (packet.Status)
                 {
                 case PacketBufferStatus.CrcError:
-                  Debug.LogError("Failed to decode packet CRC.");
+                  Log.Error("Failed to decode packet CRC.");
                   break;
                 case PacketBufferStatus.Collating:
-                  Debug.LogError("Insufficient data for packet.");
+                  Log.Error("Insufficient data for packet.");
                   break;
                 default:
                   break;
@@ -788,66 +896,77 @@ namespace Tes.Main
             }
           }
         } while (ok && bytesRead != 0);
+
+        Log.Diag("Decoded {0} packets from keyframe", queuedPacketCount);
       }
       catch (Exception e)
       {
         ok = false;
-        Debug.LogException(e);
+        Log.Exception(e);
       }
 
       return ok;
     }
 
     /// <summary>
-    /// Release all snapshots and cleanup the temporary files.
+    /// Release all keyframes and cleanup the temporary files.
     /// </summary>
-    private void CleanupSnapshots()
+    private void CleanupKeyframes()
     {
-      lock (_snapshots)
+      lock (_keyframes)
       {
-        // Look for the snapshot.
-        Snapshot snapshot = null;
-        for (int i = 0; i < _snapshots.Count; ++i)
+        // Look for the keyframe.
+        Keyframe keyframe = null;
+        for (int i = 0; i < _keyframes.Count; ++i)
         {
-          snapshot = _snapshots[i];
-          if (snapshot.OpenStream != null)
+          keyframe = _keyframes[i];
+          if (keyframe.OpenStream != null)
           {
-            snapshot.OpenStream.Close();
-            snapshot.OpenStream = null;
+            keyframe.OpenStream.Close();
+            keyframe.OpenStream = null;
           }
-          if (!string.IsNullOrEmpty(snapshot.TemporaryFilePath) && File.Exists(snapshot.TemporaryFilePath))
+          if (!string.IsNullOrEmpty(keyframe.TemporaryFilePath) && File.Exists(keyframe.TemporaryFilePath))
           {
-            File.Delete(snapshot.TemporaryFilePath);
-            snapshot.TemporaryFilePath = null;
+            File.Delete(keyframe.TemporaryFilePath);
+            keyframe.TemporaryFilePath = null;
           }
         }
-        _snapshots.Clear();
+        _keyframes.Clear();
       }
     }
 
     /// <summary>
-    /// Request a stream for the snapshot of the given frame number.
+    /// Request a stream for the keyframe of the given frame number.
     /// </summary>
     /// <param name="frameNumber"></param>
     /// <returns></returns>
     /// <remarks>
-    /// The caller must save the snapshot to the stream then call <see cref="ReleaseSnapshotStream(Stream, bool)"/>
+    /// The caller must save the keyframe to the stream then call <see cref="ReleaseKeyframeStream(Stream, bool)"/>
     /// regardless of success.
     /// </remarks>
-    public Stream RequestSnapshotStream(uint frameNumber)
+    public Stream RequestKeyframeStream(uint frameNumber)
     {
-      lock (_snapshots)
+      lock (_keyframes)
       {
-        // Look for the snapshot.
-        Snapshot snapshot = null;
-        for (int i = 0; i < _snapshots.Count; ++i)
+        // Look for the keyframe.
+        Keyframe keyframe = null;
+        for (int i = 0; i < _keyframes.Count; ++i)
         {
-          if (_snapshots[i].FrameNumber == frameNumber)
+          if (_keyframes[i].FrameNumber == frameNumber)
           {
-            snapshot = _snapshots[i];
-            snapshot.TemporaryFilePath = Path.GetFullPath(Path.Combine("temp", Path.GetRandomFileName()));
-            snapshot.OpenStream = new FileStream(snapshot.TemporaryFilePath, FileMode.Create);
-            return snapshot.OpenStream;
+            keyframe = _keyframes[i];
+            //keyframe.TemporaryFilePath = Path.GetFullPath(Path.Combine("temp", Path.GetRandomFileName()));
+            keyframe.TemporaryFilePath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
+            Log.Diag("Keyframe path {0}", keyframe.TemporaryFilePath);
+            try
+            {
+              keyframe.OpenStream = new FileStream(keyframe.TemporaryFilePath, FileMode.Create);
+              return keyframe.OpenStream;
+            }
+            catch (Exception e)
+            {
+              Log.Exception(e);
+            }
           }
         }
       }
@@ -855,38 +974,46 @@ namespace Tes.Main
     }
 
     /// <summary>
-    /// Release a snapshot stream.
+    /// Release a keyframe stream.
     /// </summary>
     /// <param name="frameNumber">The frame number the snap shop serialised.</param>
-    /// <param name="snapshotStream">The stream to release</param>
-    /// <param name="includesTransient">Does the stream include transient objects? See <see cref="Snapshot"/> remarks.</param>
-    /// <param name="valid">True if the snapshot was successful.</param>
-    public void ReleaseSnapshotStream(uint frameNumber, Stream snapshotStream, bool includesTransient, bool valid)
+    /// <param name="keyframeStream">The stream to release</param>
+    /// <param name="includesTransient">Does the stream include transient objects? See <see cref="Keyframe"/> remarks.</param>
+    /// <param name="valid">True if the keyframe was successful.</param>
+    public void ReleaseKeyframeStream(uint frameNumber, Stream keyframeStream, bool includesTransient, bool valid)
     {
-      lock (_snapshots)
+      lock (_keyframes)
       {
-        // Look for the snapshot.
-        Snapshot snapshot = null;
-        for (int i = 0; i < _snapshots.Count; ++i)
+        // Look for the keyframe.
+        Keyframe keyframe = null;
+        for (int i = 0; i < _keyframes.Count; ++i)
         {
-          if (_snapshots[i].FrameNumber == frameNumber)
+          if (_keyframes[i].FrameNumber == frameNumber)
           {
-            snapshot = _snapshots[i];
-            snapshot.IncludesTransient = includesTransient;
+            keyframe = _keyframes[i];
+            keyframe.IncludesTransient = includesTransient;
             // Validate.
-            snapshot.Valid = valid && snapshotStream != null && snapshotStream == snapshot.OpenStream;
+            keyframe.Valid = valid && keyframeStream != null && keyframeStream == keyframe.OpenStream;
             // Ensure the stream is properly closed.
-            if (snapshot.OpenStream != null && snapshot.OpenStream.CanWrite)
+            if (keyframe.OpenStream != null && keyframe.OpenStream.CanWrite)
             {
-              snapshot.OpenStream.Flush();
-              snapshot.OpenStream.Close();
+              keyframe.OpenStream.Flush();
+              keyframe.OpenStream.Close();
             }
-            snapshot.OpenStream = null;
+            keyframe.OpenStream = null;
             // Delete temporary file.
-            if (!string.IsNullOrEmpty(snapshot.TemporaryFilePath) && !valid && File.Exists(snapshot.TemporaryFilePath))
+            if (!string.IsNullOrEmpty(keyframe.TemporaryFilePath) && !valid && File.Exists(keyframe.TemporaryFilePath))
             {
-              File.Delete(snapshot.TemporaryFilePath);
-              snapshot.TemporaryFilePath = null;
+              File.Delete(keyframe.TemporaryFilePath);
+              keyframe.TemporaryFilePath = null;
+            }
+            if (valid)
+            {
+              Log.Info("Keyframe {0} complete", frameNumber);
+            }
+            else
+            {
+              Log.Warning("Keyframe {0} failed", frameNumber);
             }
             return;
           }
@@ -895,18 +1022,18 @@ namespace Tes.Main
     }
 
     /// <summary>
-    /// Is there a snapshot available for the given frame number?
+    /// Is there a keyframe available for the given frame number?
     /// </summary>
     /// <param name="frameNumber">The desired frame number.</param>
-    /// <returns>True when there is a valid snapshot available for <paramref name="frameNumber"/>.</returns>
-    public bool HaveSnapshot(uint frameNumber)
+    /// <returns>True when there is a valid keyframe available for <paramref name="frameNumber"/>.</returns>
+    public bool HaveKeyframe(uint frameNumber)
     {
-      lock (_snapshots)
+      lock (_keyframes)
       {
-        // Look for the snapshot.
-        for (int i = 0; i < _snapshots.Count; ++i)
+        // Look for the keyframe.
+        for (int i = 0; i < _keyframes.Count; ++i)
         {
-          if (_snapshots[i].FrameNumber == frameNumber)
+          if (_keyframes[i].FrameNumber == frameNumber)
           {
             return true;
           }
@@ -916,24 +1043,25 @@ namespace Tes.Main
     }
 
     /// <summary>
-    /// Request the additional of a snapshot at the given frame and post the associated control message.
+    /// Request the additional of a keyframe at the given frame and post the associated control message.
     /// </summary>
-    /// <param name="frameNumber">The snapshot frame number.</param>
+    /// <param name="frameNumber">The keyframe frame number.</param>
     /// <param name="streamOffset">The stream position/bytes read (total) on this frame.</param>
-    private void RequestSnapshot(uint frameNumber, long streamOffset)
+    private void RequestKeyframe(uint frameNumber, uint offsetFrameNumber, long streamOffset)
     {
-      if (HaveSnapshot(frameNumber) || !AllowSnapshots)
+      if (HaveKeyframe(frameNumber) || !AllowKeyframes)
       {
         return;
       }
 
       // Add a placeholder.
-      Snapshot snapshot = new Snapshot();
-      snapshot.FrameNumber = frameNumber;
-      snapshot.StreamOffset = streamOffset;
-      lock (_snapshots)
+      Keyframe keyframe = new Keyframe();
+      keyframe.FrameNumber = frameNumber;
+      keyframe.OffsetFrameNumber = offsetFrameNumber;
+      keyframe.StreamOffset = streamOffset;
+      lock (_keyframes)
       {
-        _snapshots.Add(snapshot);
+        _keyframes.Add(keyframe);
       }
 
       PacketBuffer packet = new PacketBuffer(PacketHeader.Size + 32);
@@ -943,7 +1071,7 @@ namespace Tes.Main
       message.Value32 = frameNumber;
       message.Value64 = 0;
 
-      packet.Reset((ushort)RoutingID.Control, (ushort)ControlMessageID.Snapshop);
+      packet.Reset((ushort)RoutingID.Control, (ushort)ControlMessageID.Keyframe);
       message.Write(packet);
 
       if (packet.FinalisePacket())
@@ -952,42 +1080,48 @@ namespace Tes.Main
       }
     }
 
-#endregion
+    #endregion
 
     /// <summary>
-    /// Reset playback.
+    /// Creates a frame flush packet targeting the given frame number.
     /// </summary>
+    /// <param name="frameNumber">Optional frame number to flush with (zero for none).</param>
+    /// <returns></returns>
     /// <remarks>
-    /// This pushes a reset packet into the outgoing packet queue, then resets the stream position.
+    /// The returned packet will ensure visualisation of a frame and that the current frame is set
+    /// to <paramref name="frameNumber"/>. Transient objects are preserved.
     /// </remarks>
-    void ResetStream()
+    PacketBuffer CreateFrameFlushPacket(uint frameNumber)
     {
-      _packetQueue.Clear();
-      _packetQueue.Enqueue(BuildResetPacket());
+      PacketBuffer packet = new PacketBuffer();
+      ControlMessage message = new ControlMessage();
 
-      GZipStream zipStream = _stream as GZipStream;
-      if (zipStream != null)
-      {
-        // Switch to uncompressed mode.
-        _stream = zipStream.BaseStream;
-      }
+      message.ControlFlags = (uint)EndFrameFlag.Persist;
+      message.Value32 = 0;
+      message.Value64 = frameNumber;
 
-      _stream.Flush();
-      _stream.Seek(0, SeekOrigin.Begin);
-      _currentFrame = 0;
-      _frameDelayUs = _frameOverrunUs = 0;
-      _catcingUp = false;
-      _allowCompressStream = true;
+      packet.Reset((ushort)RoutingID.Control, (ushort)ControlMessageID.ForceFrameFlush);
+      message.Write(packet);
+      packet.FinalisePacket();
+      return packet;
     }
 
+    /// <summary>
+    /// Resets the packet queue, clearing the contents and enqueing a reset packet.
+    /// </summary>
+    void ResetQueue(uint currentFrame)
+    {
+      _packetQueue.Clear();
+      _packetQueue.Enqueue(BuildResetPacket(currentFrame));
+      _currentFrame = currentFrame;
+      _frameDelayUs = _frameOverrunUs = 0;
+      _catchingUp = false;
+    }
 
     //private Queue<PacketBuffer> _packetQueue = new Queue<PacketBuffer>();
     private Tes.Collections.Queue<PacketBuffer> _packetQueue = new Tes.Collections.Queue<PacketBuffer>();
-    private Stream _stream = null;
-    /// <summary>
-    /// Start of the GZip stream in the core stream if known. Byte position.
-    /// </summary>
-    private long _gzipStreamStart = 0;
+    private PacketStreamReader _packetStream = null;
+
     private Workthread _thread = null;
     /// <summary>
     /// Tracks the current frame number. Updated every  Initialised via the <see cref="ControlMessageID.EndFrame"/> message.
@@ -1028,10 +1162,6 @@ namespace Tes.Main
     private ulong _timeUnit = ServerInfoMessage.Default.TimeUnit;
     private float _playbackSpeed;
     private bool _quitFlag = false;
-    /// <summary>
-    /// Change to compressed stream still allowed? (Until first frame or made switch).
-    /// </summary>
-    private bool _allowCompressStream = true;
     private volatile bool _paused = false;
     /// <summary>
     /// Set when the current frame is behind the target frame.
@@ -1040,11 +1170,11 @@ namespace Tes.Main
     /// Should be cleared before processing the last frame so that the last frame is
     /// processed with this flag false.
     /// </remarks>
-    private volatile bool _catcingUp = false;
+    private volatile bool _catchingUp = false;
     private volatile bool _loop = false;
     /// <summary>
-    /// A list of frame snapshots to improve step back behaviour.
+    /// A list of frame keyframes to improve step back behaviour.
     /// </summary>
-    private System.Collections.Generic.List<Snapshot> _snapshots = new System.Collections.Generic.List<Snapshot>();
+    private System.Collections.Generic.List<Keyframe> _keyframes = new System.Collections.Generic.List<Keyframe>();
   }
 }

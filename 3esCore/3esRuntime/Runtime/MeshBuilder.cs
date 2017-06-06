@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Tes.Logging;
 using UnityEngine;
 
 namespace Tes.Runtime
@@ -255,18 +256,18 @@ namespace Tes.Runtime
         // Log count mismatches.
         if (!(ValidateCounts(_vertices, _normals, true) || _normals != null && _normals.Count == 1))
         {
-          Debug.LogWarning(string.Format("Mesh vertex/normal count mismatch: {0} != {1}",
-            _vertices != null ? _vertices.Count : 0, _normals != null ? _normals.Count : 0));
+          Log.Warning("Mesh vertex/normal count mismatch: {0} != {1}",
+            _vertices != null ? _vertices.Count : 0, _normals != null ? _normals.Count : 0);
         }
         if (!ValidateCounts(_vertices, _uvs, true))
         {
-          Debug.LogWarning(string.Format("Mesh vertex/UV count mismatch: {0} != {1}",
-            _vertices != null ? _vertices.Count : 0, _uvs != null ? _uvs.Count : 0));
+          Log.Warning("Mesh vertex/UV count mismatch: {0} != {1}",
+            _vertices != null ? _vertices.Count : 0, _uvs != null ? _uvs.Count : 0);
         }
         if (!ValidateCounts(_vertices, _uvs, true))
         {
-          Debug.LogWarning(string.Format("Mesh vertex/colour count mismatch: {0} != {1}",
-            _vertices != null ? _vertices.Count : 0, _colours != null ? _colours.Count : 0));
+          Log.Warning("Mesh vertex/colour count mismatch: {0} != {1}",
+            _vertices != null ? _vertices.Count : 0, _colours != null ? _colours.Count : 0);
         }
 
         if (IndexCount <= UnityIndexLimit)
@@ -1448,10 +1449,7 @@ namespace Tes.Runtime
       if ((_warningFlags & context) == 0)
       {
         _warningFlags |= context;
-        Debug.LogWarning(
-            string.Format("Mesh {0} index out of range: {1} : [0, {2})",
-              context.ToString(), index, rangeCount)
-          );
+        Log.Warning("Mesh {0} index out of range: {1} : [0, {2})", context.ToString(), index, rangeCount);
       }
     }
 

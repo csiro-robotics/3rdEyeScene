@@ -1,12 +1,11 @@
 ﻿using UnityEngine;
-using System.Collections;
 
 namespace UI
 {
   public class ToolsManager : MonoBehaviour
   {
     public GameObject ActivePanel { get; protected set; }
-    
+
     public void SetActivePanel(GameObject panel)
     {
       if (ActivePanel != null)
@@ -20,7 +19,7 @@ namespace UI
         ActivePanel.SetActive(true);
       }
     }
-    
+
     public void ToggleActivePanel(GameObject panel)
     {
       bool currentlyActive = panel == ActivePanel;

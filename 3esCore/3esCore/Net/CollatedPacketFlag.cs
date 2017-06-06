@@ -10,7 +10,6 @@ namespace Tes.Net
   {
     /// <summary>
     /// Data are compressed using GZIP compression.
-    /// See <code><see cref="System.IO.Compression.GZipStream">GZipStream</see></code>.
     /// </summary>
     GZipCompressed = 1,
   }

@@ -20,6 +20,7 @@ public class CameraSettingsMigrator : MonoBehaviour
     if (edl != null)
     {
       edl.EdlOn = renderSettings.EdlShader;
+      edl.EdlRadius = renderSettings.EdlRadius;
       edl.EdlScale = renderSettings.EdlLinearScale;
       edl.EdlExpScale = renderSettings.EdlExponentialScale;
 

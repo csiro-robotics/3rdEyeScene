@@ -1,4 +1,6 @@
-﻿Shader "VertexColour/VertexLit"
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+Shader "VertexColour/VertexLit"
 {
   Properties
   {
@@ -43,7 +45,7 @@
       FragmentInput vert(VertexInput v)
       {
         FragmentInput o;
-        o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+        o.vertex = UnityObjectToClipPos(v.vertex);
         o.colour = _Color * _Tint * v.colour * float4(ShadeVertexLights(v.vertex, v.normal), 1.0f);
         return o;
       }

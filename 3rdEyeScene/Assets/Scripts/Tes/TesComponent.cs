@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Tes.Logging;
 using Tes.Main;
 using Tes.Runtime;
 using Tes.Handlers;
@@ -132,7 +133,7 @@ public class TesComponent : Router
       // Load the first anonymous argument.
       if (!OpenFile(opt.Anonymous[0]))
       {
-        Debug.LogWarning(string.Format("Failed to load command line specified file: {0}", opt.Anonymous[0]));
+        Log.Warning("Failed to load command line specified file: {0}", opt.Anonymous[0]);
       }
     }
   }

@@ -6,6 +6,7 @@ using System.Net;
 using System.Reflection;
 using Tes.Handlers.Shape2D;
 using Tes.Handlers.Shape3D;
+using Tes.Logging;
 using Tes.Net;
 using Tes.Runtime;
 using Tes.Server;
@@ -225,7 +226,7 @@ public class SerialisationTest : MonoBehaviour
 
     //--------------------------------------------------------
     // Serialise again.
-    // TODO: push a snapshot message instead and validate against that.
+    // TODO: push a keyframe message instead and validate against that.
     tes.SerialiseScene(sceneFile2, false);
     Debug.Log("Serialised scene again");
     yield return null;
@@ -609,7 +610,7 @@ public class SerialisationTest : MonoBehaviour
       return specialValidation(shape, handler);
     }
 
-    Debug.LogWarning(string.Format("No special validation for {0}", shape.GetType().Name));
+    Log.Warning("No special validation for {0}", shape.GetType().Name);
     return false;
   }
 

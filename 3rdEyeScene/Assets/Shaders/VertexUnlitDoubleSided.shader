@@ -1,4 +1,6 @@
-﻿Shader "VertexColour/VertexUnlitDoubleSided"
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+Shader "VertexColour/VertexUnlitDoubleSided"
 {
   Properties
   {
@@ -42,7 +44,7 @@
       FragmentInput vert(VertexInput v)
       {
         FragmentInput o;
-        o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+        o.vertex = UnityObjectToClipPos(v.vertex);
         o.colour = _Color * _Tint * v.colour;
         return o;
       }
@@ -68,7 +70,7 @@
       FragmentInput vert(VertexInput v)
       {
         FragmentInput o;
-        o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+        o.vertex = UnityObjectToClipPos(v.vertex);
         o.colour = _BackColour * _Tint * v.colour;
         return o;
       }

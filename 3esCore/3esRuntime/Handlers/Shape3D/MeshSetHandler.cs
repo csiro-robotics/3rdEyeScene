@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using Tes.IO;
+using Tes.Logging;
 using Tes.Net;
 using Tes.Runtime;
 using UnityEngine;
@@ -164,7 +165,7 @@ namespace Tes.Handlers.Shape3D
         }
         else
         {
-          Debug.LogError(string.Format("Failed to extract child {0} for mesh set {1}.", i, shapeComponent.name));
+          Log.Error("Failed to extract child {0} for mesh set {1}.", i, shapeComponent.name);
           return null;
         }
       }

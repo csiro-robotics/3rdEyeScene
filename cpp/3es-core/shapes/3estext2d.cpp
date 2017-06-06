@@ -55,7 +55,11 @@ Text2D &Text2D::setText(const char *text, uint16_t textLength)
   {
     _text = new char[textLength + 1];
     _textLength = textLength;
+#ifdef _MSC_VER
+    strncpy_s(_text, _textLength + 1, text, textLength);
+#else  // _MSC_VER
     strncpy(_text, text, textLength);
+#endif // _MSC_VER
   }
   return *this;
 }

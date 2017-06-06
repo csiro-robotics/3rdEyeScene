@@ -29,11 +29,11 @@ public static class ScrollRectExt
         scrollWidth = rectXForm.rect.width;
       }
     }
-    
+
     return scrollWidth;
   }
-  
-  
+
+
   /// <summary>
   /// Get the height of the horizontal scroll bar component, even if not visible or active.
   /// horizontal scrolling must be enabled.
@@ -54,10 +54,10 @@ public static class ScrollRectExt
         scrollHeight = rectXForm.rect.height;
       }
     }
-    
+
     return scrollHeight;
   }
-  
+
   /// <summary>
   /// Layout the content of the scroll view in a vertical fashion.
   /// </summary>
@@ -67,43 +67,46 @@ public static class ScrollRectExt
   /// <remarks>
   /// This lays out children of scroll.content in a vertical fashion, stretching the
   /// children to match the width of the scroll view. Each item is arranged immediately
-  /// below the previous item. 
+  /// below the previous item.
   /// </remarks>
   public static void LayoutContentV(this ScrollRect scroll, bool subtractVerticalScrollBar = false)
   {
-    float yOffset = 0;
+    float totalHeight = 0;
     float height = 0;
     float scrollWidth = (subtractVerticalScrollBar) ? scroll.GetVerticalScrollbarWidth() : 0;
     RectTransform rectXForm;
     Transform child;
-    
+
     if (scroll.content == null)
     {
       return;
     }
-    
+
     for (int i = 0; i < scroll.content.childCount; ++i)
     {
       child = scroll.content.GetChild(i);
       rectXForm = (child != null) ? child.GetComponent<RectTransform>() : null;
-      if (rectXForm == null)
+      if (rectXForm == null || !rectXForm.gameObject.activeSelf)
       {
         continue;
       }
-      
+
       // Preserve content height.
       height = rectXForm.rect.height;
-      
+
       rectXForm.anchorMin = new Vector2(0, 1);
       rectXForm.anchorMax = new Vector2(1, 1);
       rectXForm.pivot = new Vector2(0, 1);
-      
-      rectXForm.offsetMin = new Vector2(0, -yOffset - height);
-      rectXForm.offsetMax = new Vector2(scrollWidth, -yOffset);
-      yOffset += height;
+
+      rectXForm.offsetMin = new Vector2(0, -totalHeight - height);
+      rectXForm.offsetMax = new Vector2(scrollWidth, -totalHeight);
+      totalHeight += height;
     }
+
+    RectTransform scrollContentRect = (scroll.content.transform as RectTransform);
+    scrollContentRect.sizeDelta = new Vector2(scrollContentRect.sizeDelta.x, totalHeight);
   }
-  
+
   /// <summary>
   /// Append an item to the scroll view, assuming a vertical item layout.
   /// </summary>
@@ -121,7 +124,7 @@ public static class ScrollRectExt
       scroll.AppendContentV(contentChild.GetComponent<RectTransform>(), subtractVerticalScrollBar);
     }
   }
-  
+
   /// <summary>
   /// Append an item to the scroll view, assuming a vertical item layout.
   /// </summary>
@@ -138,36 +141,42 @@ public static class ScrollRectExt
     {
       return;
     }
-    
-    float yOffset = 0;
+
+    float totalHeight = 0;
     float height = 0;
     float scrollWidth = (subtractVerticalScrollBar) ? scroll.GetVerticalScrollbarWidth() : 0;
     RectTransform rectXForm;
     Transform child;
-    
+
     for (int i = 0; i < scroll.content.childCount; ++i)
     {
       child = scroll.content.GetChild(i);
       rectXForm = (child != null) ? child.GetComponent<RectTransform>() : null;
-      if (rectXForm == null)
+      if (rectXForm == null || !rectXForm.gameObject.activeSelf)
       {
         continue;
       }
-      
+
       // Preserve height.
-      yOffset += rectXForm.rect.height;
+      totalHeight += rectXForm.rect.height;
     }
-  
+
     // Preserve content height.
     height = contentChild.rect.height;
-    
+
     contentChild.SetParent(scroll.content.transform, false);
     contentChild.anchorMin = new Vector2(0, 1);
     contentChild.anchorMax = new Vector2(1, 1);
     contentChild.pivot = new Vector2(0, 1);
-    
-    contentChild.offsetMin = new Vector2(0, -yOffset - height);
-    contentChild.offsetMax = new Vector2(scrollWidth, -yOffset);
-    yOffset += height;
+
+    contentChild.offsetMin = new Vector2(0, -totalHeight - height);
+    contentChild.offsetMax = new Vector2(scrollWidth, -totalHeight);
+    if (contentChild.gameObject.activeSelf)
+    {
+      totalHeight += height;
+    }
+
+    RectTransform scrollContentRect = (scroll.content.transform as RectTransform);
+    scrollContentRect.sizeDelta = new Vector2(scrollContentRect.sizeDelta.x, totalHeight);
   }
 }

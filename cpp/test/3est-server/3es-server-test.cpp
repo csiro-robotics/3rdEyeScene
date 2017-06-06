@@ -1,8 +1,6 @@
 //
 // author: Kazys Stepanas
 //
-#define _USE_MATH_DEFINES
-#include "3es-server-test.h"
 
 #include <3esconnection.h>
 #include <3esconnectionmonitor.h>

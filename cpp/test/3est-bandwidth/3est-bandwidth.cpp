@@ -1,9 +1,6 @@
 //
 // author: Kazys Stepanas
 //
-#define _USE_MATH_DEFINES
-#include "3est-bandwidth.h"
-
 #include <3esconnection.h>
 #include <3esconnectionmonitor.h>
 #include <3escoordinateframe.h>
@@ -121,7 +118,7 @@ int main(int argc, char **argvNonConst)
   {
     serverFlags |= SF_Compress;
   }
-  
+
   Server *server = Server::create(ServerSettings(serverFlags), &info);
 
   const unsigned targetFrameTimeMs = 1000 / 30;

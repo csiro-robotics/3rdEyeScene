@@ -1,17 +1,26 @@
-﻿using System;
+﻿﻿﻿using System;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using Ionic.Zlib;
 using Tes.IO;
-// System.IO.Compression unavailable under Unity. Use the replacement.
-using Tes.IO.Compression;
+using Tes.Logging;
 using Tes.Net;
-using Tes.Util;
 
 namespace Tes
 {
   class Program
   {
+    public enum Mode
+    {
+      CollateAndCompress,
+      CollateOnly,
+      FileCompression,
+      Uncompressed,
+
+      Default = CollateAndCompress
+    }
+
     public bool Quit { get; set; }
     public bool ArgsOk { get; private set; }
     public bool ShowUsage { get; private set; }
@@ -20,6 +29,7 @@ namespace Tes
     public bool Overwrite { get; private set; }
     public bool Quiet { get; private set; }
 
+    public Mode DecodeMode { get; private set; }
     public uint TotalFrames { get; private set; }
     public IPEndPoint ServerEndPoint { get; private set; }
     public string OutputPrefix { get; private set; }
@@ -37,6 +47,37 @@ namespace Tes
           "--port", DefaultPort.ToString()
         };
       }
+    }
+
+    public static readonly string[] ModeArgStrings = new string[]
+    {
+      "mc",
+      "mC",
+      "mz",
+      "mu"
+    };
+
+    public static string ModeToArg(Mode m)
+    {
+      return ModeArgStrings[(int)m];
+    }
+
+    public static Mode ArgToMode(string arg)
+    {
+      while (arg.Length > 0 && arg[0] == '-')
+      {
+        arg = arg.Substring(1);
+      }
+
+      for (int i = 0; i < ModeArgStrings.Length; ++i)
+      {
+        if (ModeArgStrings[i].CompareTo(arg) == 0)
+        {
+          return (Mode)i;
+        }
+      }
+
+      return Mode.Default;
     }
 
     static void Main(string[] args)
@@ -62,7 +103,7 @@ namespace Tes
     Program(string[] args)
     {
       if (args.Length > 0)
-      { 
+      {
         ParseArgs(args);
       }
       else
@@ -82,17 +123,31 @@ This program attempts to connect to and record a Third Eye Scene server.
   Show usage.
 --ip <server-ip>:
   Specifies the server IP address to connect to.
+-m[c,C,v,z]:
+  Specifies how incoming packets are handled. In all modes incoming collated
+  packets are first decoded.
+  - mc : Packet collation and compression. Recollate and compress.
+  - mC : Packet collation no compression. Recollate only.
+  - mu : Uncompressed. Save packets as is. No compression.
+  - mz : File level compression. Decode incoming packets and compress at the
+    file level.
+  The default is: {0}
 --port <server-port>:
-  Specifies the port to connect on.  The default port is {0}
+  Specifies the port to connect on.  The default port is {1}
 --persist, -p:
-  Persist beyond the first connection. The program keeps running awaiting further connections. Use Control-C to terminate.
+  Persist beyond the first connection. The program keeps running awaiting
+  further connections. Use Control-C to terminate.
 --quiet, -q:
   Run in quiet mode (disable non-critical logging).
 --overwrite, -w:
-  Overwrite existing files using the current prefix. The current session numbering will not overwrite until they loop to 0.
+  Overwrite existing files using the current prefix. The current session
+  numbering will not overwrite until they loop to 0.
 [prefix]:
-  Specifies the file prefix used for recording. The recording file is formulated as {{prefix###.3es}}, where the number used is the first missing file up to 999. At that point the program will complain that there are no more available file names.
-", DefaultPort)
+  Specifies the file prefix used for recording. The recording file is
+  formulated as {{prefix###.3es}}, where the number used is the first missing
+  file up to 999. At that point the program will complain that there are no
+  more available file names.
+", ModeToArg(Mode.Default), DefaultPort)
       );
     }
 
@@ -127,9 +182,11 @@ This program attempts to connect to and record a Third Eye Scene server.
             {
               Connected = true;
             }
+            Log.Flush();
           }
           else
           {
+            Log.Flush();
             // Wait the timeout period before attempting to reconnect.
             System.Threading.Thread.Sleep(connectionPollTimeSecMs);
           }
@@ -146,6 +203,7 @@ This program attempts to connect to and record a Third Eye Scene server.
             packetBuffer.Append(socket.GetStream(), socket.Available);
             PacketBuffer completedPacket;
             bool crcOk = true;
+            bool exportPacket = true;
             while ((completedPacket = packetBuffer.PopPacket(out crcOk)) != null || !crcOk)
             {
               if (crcOk)
@@ -162,25 +220,34 @@ This program attempts to connect to and record a Third Eye Scene server.
                 while ((completedPacket = collatedDecoder.Next()) != null)
                 {
                   //Console.WriteLine("Msg: {0} {1}", completedPacket.Header.RoutingID, completedPacket.Header.MessageID);
-                  if (completedPacket.Header.RoutingID == (ushort)RoutingID.Control)
+                  switch (completedPacket.Header.RoutingID)
                   {
+                  case (ushort)RoutingID.Control:
                     ushort controlMessageId = completedPacket.Header.MessageID;
                     if (controlMessageId == (ushort)ControlMessageID.EndFrame)
                     {
                       ++TotalFrames;
                       if (!Quiet)
-                      { 
+                      {
                         Console.Write(string.Format("\r{0}", TotalFrames));
                       }
                     }
-                  }
-                  else if (completedPacket.Header.RoutingID == (ushort)RoutingID.ServerInfo)
-                  {
+                    break;
+
+                  case (ushort)RoutingID.ServerInfo:
                     NetworkReader packetReader = new NetworkReader(completedPacket.CreateReadStream(true));
                     _serverInfo.Read(packetReader);
+                      exportPacket = false;
+                    break;
+
+                  default:
+                    break;
                   }
 
-                  completedPacket.ExportTo(recordingWriter);
+                  if (exportPacket)
+                  {
+                    completedPacket.ExportTo(recordingWriter);
+                  }
                 }
               }
               else
@@ -189,9 +256,11 @@ This program attempts to connect to and record a Third Eye Scene server.
                 // TODO: Log CRC failure.
               }
             }
+            Log.Flush();
           }
           else
           {
+            Log.Flush();
             System.Threading.Thread.Sleep(0);
           }
         }
@@ -204,10 +273,12 @@ This program attempts to connect to and record a Third Eye Scene server.
 
         if (recordingWriter != null)
         {
-          FinaliseFrameCount(recordingWriter, TotalFrames);
+          FinaliseOutput(recordingWriter, TotalFrames);
           recordingWriter.Flush();
           recordingWriter.Close();
           recordingWriter = null;
+          // GC to force flushing streams.
+          GC.Collect();
         }
 
         if (!Quiet)
@@ -218,7 +289,7 @@ This program attempts to connect to and record a Third Eye Scene server.
 
         // Disconnected.
         if (socket != null)
-        { 
+        {
           socket.Close();
           socket = null;
         }
@@ -292,8 +363,21 @@ This program attempts to connect to and record a Third Eye Scene server.
         writer = null;
         headerStream = null;
 
-        // Now wrap the file in a GZip stream to start compression.
-        stream = new GZipStream(fileStream, CompressionMode.Compress);
+        switch (DecodeMode)
+        {
+          case Mode.CollateAndCompress:
+            stream = new CollationStream(fileStream, true);
+            break;
+          case Mode.CollateOnly:
+            stream = new CollationStream(fileStream, false);
+            break;
+          case Mode.FileCompression:
+            stream = new GZipStream(fileStream, CompressionMode.Compress, CompressionLevel.BestCompression);
+            break;
+          case Mode.Uncompressed:
+            stream = fileStream;
+            break;
+        }
 
         return new NetworkWriter(stream);
       }
@@ -355,12 +439,15 @@ This program attempts to connect to and record a Third Eye Scene server.
     }
 
 
-    private void FinaliseFrameCount(BinaryWriter writer, uint frameCount)
+
+    private void FinaliseOutput(BinaryWriter writer, uint frameCount)
     {
-      // Rewind the stream to the beginning and find the first RoutingID.Control message
-      // with a ControlMessageID.FrameCount ID. This should be the second message in the stream.
+      // Rewind the stream to the beginning and find the first RoutingID.ServerInfo message
+      // and RoutingID.Control message with a ControlMessageID.FrameCount ID. These should be
+      // the first and second messages in the stream.
       // We'll limit searching to the first 5 messages.
-      long frameCountMessageStart = 0;
+      long serverInfoMessageStart = -1;
+      long frameCountMessageStart = -1;
       writer.Flush();
 
       // Extract the stream from the writer. The first stream may be a GZip stream, in which case we must
@@ -369,10 +456,11 @@ This program attempts to connect to and record a Third Eye Scene server.
       writer.BaseStream.Flush();
 
       Stream outStream = null;
-      GZipStream zipStream = writer.BaseStream as GZipStream;
+      CollationStream zipStream = writer.BaseStream as CollationStream;
       if (zipStream != null)
       {
         outStream = zipStream.BaseStream;
+        zipStream.Flush();
       }
       else
       {
@@ -390,17 +478,19 @@ This program attempts to connect to and record a Third Eye Scene server.
       long restorePos = outStream.Position;
       outStream.Seek(0, SeekOrigin.Begin);
 
+      long streamPos = 0;
+
       byte[] headerBuffer = new byte[PacketHeader.Size];
       PacketHeader header = new PacketHeader();
       byte[] markerValidationBytes = BitConverter.GetBytes(Tes.IO.Endian.ToNetwork(PacketHeader.PacketMarker));
       byte[] markerBytes = new byte[markerValidationBytes.Length];
-      bool found = false;
       bool markerValid = false;
+
       int attemptsRemaining = 5;
       int byteReadLimit = 0;
 
       markerBytes[0] = 0;
-      while (!found && attemptsRemaining > 0 && outStream.CanRead)
+      while ((frameCountMessageStart < 0 || serverInfoMessageStart < 0) && attemptsRemaining > 0 && outStream.CanRead)
       {
         --attemptsRemaining;
         markerValid = false;
@@ -447,8 +537,8 @@ This program attempts to connect to and record a Third Eye Scene server.
         if (markerValid && outStream.CanRead)
         {
           // Potential packet target. Record the stream position at the start of the marker.
-          frameCountMessageStart = outStream.Position - markerBytes.Length;
-          outStream.Seek(frameCountMessageStart, SeekOrigin.Begin);
+          streamPos = outStream.Position - markerBytes.Length;
+          outStream.Seek(streamPos, SeekOrigin.Begin);
 
           // Test the packet.
           int bytesRead = outStream.Read(headerBuffer, 0, headerBuffer.Length);
@@ -458,7 +548,11 @@ This program attempts to connect to and record a Third Eye Scene server.
             if (header.Read(new NetworkReader(new MemoryStream(headerBuffer, false))))
             {
               // Header is OK. Looking for RoutingID.Control
-              if (header.RoutingID == (ushort)RoutingID.Control)
+              if (header.RoutingID == (ushort)RoutingID.ServerInfo)
+              {
+                serverInfoMessageStart = streamPos;
+              }
+              else if (header.RoutingID == (ushort)RoutingID.Control)
               {
                 // It's control message. Complete and validate the packet.
                 // Read the header. Determine the expected size and read that much more data.
@@ -473,14 +567,13 @@ This program attempts to connect to and record a Third Eye Scene server.
                   if (message.Read(packetReader) && header.MessageID == (ushort)ControlMessageID.FrameCount)
                   {
                     // Found the message location.
-                    found = true;
-                    break;
+                    frameCountMessageStart = streamPos;
                   }
                 }
               }
               else
               {
-                // At this point, we've failed to find the right kind of header. We could use the payload size to 
+                // At this point, we've failed to find the right kind of header. We could use the payload size to
                 // skip ahead in the stream which should align exactly to the next message.
                 // Not done for initial testing.
               }
@@ -489,7 +582,23 @@ This program attempts to connect to and record a Third Eye Scene server.
         }
       }
 
-      if (found)
+      if (serverInfoMessageStart >= 0)
+      {
+        // Found the correct location. Seek the stream to here and write a new FrameCount control message.
+        outStream.Seek(serverInfoMessageStart, SeekOrigin.Begin);
+        PacketBuffer packet = new PacketBuffer();
+
+        header = PacketHeader.Create((ushort)RoutingID.ServerInfo, 0);
+
+        packet.WriteHeader(header);
+        _serverInfo.Write(packet);
+        packet.FinalisePacket();
+        BinaryWriter patchWriter = new Tes.IO.NetworkWriter(outStream);
+        packet.ExportTo(patchWriter);
+        patchWriter.Flush();
+      }
+
+      if (frameCountMessageStart >= 0)
       {
         // Found the correct location. Seek the stream to here and write a new FrameCount control message.
         outStream.Seek(frameCountMessageStart, SeekOrigin.Begin);
@@ -526,13 +635,13 @@ This program attempts to connect to and record a Third Eye Scene server.
       ArgsOk = false;
       for (int i = 0; i < args.Length; ++i)
       {
-        if (args[i] == "--help" || args[i] == "-?")
+        if (args[i] == "--help" || args[i] == "-?" || args[i] == "-h")
         {
           ShowUsage = true;
         }
         else if (args[i] == "--ip")
         {
-          if (i + i < args.Length)
+          if (i + 1 < args.Length)
           {
             ipStr = args[++i];
           }
@@ -540,6 +649,10 @@ This program attempts to connect to and record a Third Eye Scene server.
           {
             ok = false;
           }
+        }
+        else if (args[i].StartsWith("-m"))
+        {
+          DecodeMode = ArgToMode(args[i]);
         }
         else if (args[i] == "--overwrite" || args[i] == "-w")
         {
@@ -623,7 +736,7 @@ This program attempts to connect to and record a Third Eye Scene server.
     /// <summary>
     /// Initialised to the latest incoming server info message received (normally on connection).
     /// </summary>
-    private ServerInfoMessage _serverInfo = ServerInfoMessage.Default;
+    private ServerInfoMessage _serverInfo =  ServerInfoMessage.Default;
     private int _nextOutputNumber = 0;
   }
 }

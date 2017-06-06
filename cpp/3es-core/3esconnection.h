@@ -74,7 +74,7 @@ namespace tes
     /// Update any pending resource transfers (e.g., mesh transfer).
     ///
     /// Transfer may be amortised by setting a @c byteLimit or enforced by a zero byte limit.
-    /// Zero guarantees all outstanding resources are transfered.
+    /// Zero guarantees all outstanding resources are transferred.
     ///
     /// This method should generally be called once for every @c updateFrame(), normally
     /// before the frame update. This holds especially true when not amortising transfer (zero byte limit).

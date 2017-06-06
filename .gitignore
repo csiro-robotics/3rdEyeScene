@@ -15,3 +15,5 @@ cpp/**/build*/
 3esCore/**/bin/
 3esCore/build/
 3esCore/doc/
+3esCore/packages/
+*.user

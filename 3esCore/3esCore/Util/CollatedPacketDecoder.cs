@@ -1,6 +1,6 @@
 ﻿using System.IO;
+using Ionic.Zlib;
 using Tes.IO;
-using Tes.IO.Compression;
 using Tes.Net;
 
 namespace Tes.Util

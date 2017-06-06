@@ -23,12 +23,14 @@ namespace tes
   /// XZYNeg| X     | Z       | -Y  | A common camera space system.
   enum CoordinateFrame
   {
+    // Right handled frames.
     XYZ,
     XZYNeg,
     YXZNeg,
     YZX,
     ZXY,
     ZYXNeg,
+    // Left handed frames
     XYZNeg,
     XZY,
     YXZ,

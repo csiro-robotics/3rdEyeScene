@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using Tes.Thread;
+using Tes.Threading;
 
 namespace Tes.Collections
 {
@@ -82,6 +82,35 @@ namespace Tes.Collections
         _lock.Lock();
         haveLock = true;
         _internalQueue.Enqueue(item);
+      }
+      finally
+      {
+        if (haveLock)
+        {
+          _lock.Unlock();
+        }
+      }
+    }
+
+    /// <summary>
+    /// Push a list of <paramref name="items"/> onto the queue tail.
+    /// </summary>
+    /// <param name="items"></param>
+    /// <remarks>
+    /// The synchronsiation lock is held until all items are added so this may cause
+    /// inefficiencies in blocking other threads.
+    /// </remarks>
+    public void Enqueue(IList<T> items)
+    {
+      bool haveLock = false;
+      try
+      {
+        _lock.Lock();
+        haveLock = true;
+        foreach (T item in items)
+        {
+          _internalQueue.Enqueue(item);
+        }
       }
       finally
       {

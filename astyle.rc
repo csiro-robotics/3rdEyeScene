@@ -1,0 +1,36 @@
+# Note: style allman and bsd are synonymous.
+--style=allman
+# Two space tabs
+--indent=spaces=2
+# Convert tabs to spaces.
+--convert-tabs
+# Allow 'extern "C" {' brace on the same line.
+--attach-extern-c
+# Indent after a namespace declaration.
+--indent-namespaces
+# Indent multi-line preprocessor defines.
+--indent-preproc-define
+# Controls indent on multi-line condition statements (e.g. if).
+--min-conditional-indent=0
+# Maximum indent when aligning statements.
+--max-instatement-indent=50
+# Spaces around operators.
+--pad-oper
+# Space after if, while, for, etc.
+--pad-header
+# Remove extraneous spaces around brackets.
+--unpad-paren
+# Pointer * goes with variable name.
+--align-pointer=name
+# Reference & goes with variable name.
+--align-reference=name
+# Enforce braces on if, while, for, etc statements.
+--add-brackets
+# Allow single line function declarations.
+--keep-one-line-blocks
+# Remove not unecessary whitespace around nested template declarations.
+--close-templates
+# Limit line length
+--max-code-length=120
+# Linebreaks after logical operators.
+--break-after-logical

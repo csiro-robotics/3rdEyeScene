@@ -1,9 +1,6 @@
 //
 // author: Kazys Stepanas
 //
-#define _USE_MATH_DEFINES
-#include "3es-sphere-view.h"
-
 #define TES_ENABLE
 #include <3esservermacros.h>
 #include <3esvectorhash.h>
@@ -380,7 +377,7 @@ int main(int argc, char **argvNonConst)
   std::cout << "Done" << std::endl;
 
   // Stop and close the server. Pointer is left non null.
-  TES_SERVER_STOP(*tesServer);
+  TES_SERVER_STOP(tesServer);
 
   return 0;
 }

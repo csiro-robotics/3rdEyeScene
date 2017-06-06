@@ -13,7 +13,7 @@ namespace Tes.Net
   /// followed by the message data. However, no individual message in the collated packet has its own CRC.
   /// Instead, only the <code>CollatedPacketMessage</code> has a CRC.
   /// 
-  /// Use <see cref="Util.CollatedPacketDecoder"/> to decode such packets into constituent messages.
+  /// Use <see cref="T:IO.CollatedPacketDecoder"/> to decode such packets into constituent messages.
   /// </remarks>
   [StructLayout(LayoutKind.Sequential, Pack = 1)]
   public struct CollatedPacketMessage

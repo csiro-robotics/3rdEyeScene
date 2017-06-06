@@ -2,13 +2,14 @@
 using System.IO;
 using System.Net;
 using System.Collections.Generic;
-using Tes.IO;
-using Tes.IO.Compression;
-using Tes.Net;
-using Tes.Runtime;
+using System.ComponentModel;
+using Ionic.Zlib;
 using UnityEngine;
 using UnityEngine.Events;
-using System.ComponentModel;
+using Tes.IO;
+using Tes.Logging;
+using Tes.Net;
+using Tes.Runtime;
 
 namespace Tes.Main
 {
@@ -132,6 +133,16 @@ namespace Tes.Main
     /// This only equals the <see cref="TotalFrames"/> when playback ends (stopped state).
     /// </remarks>
     public uint CurrentFrame { get { return _currentFrame; } }
+
+    /// <summary>
+    /// Reports the previous frame viewed.
+    /// </summary>
+    /// <remarks>
+    /// This will generally be <c>CurrentFrame - 1</c> during normal playback. When stepping back, this will
+    /// report <c>CurrentFrame + 1</c> and when stepping between non-sequential frames, this value will report
+    /// the last requested frame.
+    /// </remarks>
+    public uint PreviousFrame { get { return _previousFrame; } }
 
     /// <summary>
     /// Reports the total number of frames.
@@ -295,7 +306,14 @@ namespace Tes.Main
         }
       }
 
-      return string.Empty;
+      // Not found in the lists. Find the appropriate hander and use its name.
+      MessageHandler handler = Handlers.HandlerFor(id);
+      if (handler != null)
+      {
+        return handler.Name;
+      }
+
+      return id.ToString();
     }
 
     /// <summary>
@@ -317,21 +335,23 @@ namespace Tes.Main
         return false;
       }
       StreamThread thread = new StreamThread();
+      thread.RoutingIDName = RoutingIDName;
       _dataThread = thread;
       PlaybackSettings playbackSettings = PlaybackSettings.Instance;
       if (playbackSettings != null)
       {
-        thread.AllowSnapshots = playbackSettings.AllowSnapshots;
-        thread.SnapshotKiloBytes = playbackSettings.SnapshotEveryKb;
-        thread.ShapshotSkipForwardFrames = (uint)Math.Max(0, playbackSettings.SnapshotSkipForwardFrames);
-        thread.SnapshotMinFrames = (uint)Math.Max(0, playbackSettings.SnapshotFrameSeparation);
+        thread.AllowKeyframes = playbackSettings.AllowKeyframes;
+        thread.KeyframeKiloBytes = playbackSettings.KeyframeEveryKb;
+        thread.KeyframeMinFrames = (uint)Math.Max(0, playbackSettings.KeyframeEveryFrames);
+        thread.KeyframeSkipForwardFrames = (uint)Math.Max(0, playbackSettings.KeyframeSkipForwardFrames);
+        thread.KeyframeFrames = (uint)Math.Max(0, playbackSettings.KeyframeFrameSeparation);
         thread.Loop = playbackSettings.Looping;
       }
       thread.PlaybackSpeed = PlaybackSpeed;
       Stream inputStream = new FileStream(fileName, FileMode.Open, FileAccess.Read, FileShare.Read);
       if (!thread.Start(inputStream))
       {
-        Debug.LogError(string.Format("Failed to start stream thread with file: {0}", fileName));
+        Log.Error("Failed to start stream thread with file: {0}", fileName);
         _dataThread.Quit();
         _dataThread.Join();
         _dataThread = null;
@@ -358,6 +378,7 @@ namespace Tes.Main
     {
       Reset();
       NetworkThread thread = new NetworkThread();
+      thread.RoutingIDName = RoutingIDName;
       // Run in background with a network thread.
       Application.runInBackground = true;
       _dataThread = thread;
@@ -420,7 +441,7 @@ namespace Tes.Main
         StopRecording();
         _recordOnConnectPath = filePath;
         Dialogs.MessageBox.Show(null, string.Format("Record on connect to: {0}", _recordOnConnectPath), "Record on Connect");
-        Debug.Log("Record on connect " + filePath);
+        Log.Info("Record on connect " + filePath);
         return true;
       }
 
@@ -436,6 +457,7 @@ namespace Tes.Main
       {
         FileStream fileStream = new FileStream(filePath, FileMode.Create);
         _currentFrame = 0;
+        _previousFrame = 0;
         _totalFrames = 0;
 
         bool ok;
@@ -444,10 +466,11 @@ namespace Tes.Main
         WriteCameraPosition(writer, Camera.main, 255);
         WriteFrameFlush(writer);
         _recordingWriter = writer;
+        _recordingFileStream = fileStream;
       }
       catch (Exception e)
       {
-        Debug.LogException(e);
+        Log.Exception(e);
       }
 
       return _recordingWriter != null;
@@ -460,10 +483,11 @@ namespace Tes.Main
     {
       if (_recordingWriter != null)
       {
-        FinaliseFrameCount(_recordingWriter, CurrentFrame);
+        FinaliseFrameCount(_recordingWriter, _recordingFileStream, CurrentFrame);
         _recordingWriter.Flush();
         _recordingWriter.Close();
         _recordingWriter = null;
+        _recordingFileStream = null;
       }
     }
 
@@ -478,6 +502,7 @@ namespace Tes.Main
       {
         _dataThread.Paused = true;
         _dataThread.TargetFrame = _currentFrame + 1;
+        _previousFrame = _currentFrame;
         Application.runInBackground = true;
       }
     }
@@ -489,7 +514,8 @@ namespace Tes.Main
         _dataThread.Paused = true;
         if (_currentFrame > 0)
         {
-          _dataThread.TargetFrame = _currentFrame - 1; ;
+          _dataThread.TargetFrame = _currentFrame - 1;
+          _previousFrame = _currentFrame;
         }
         Application.runInBackground = true;
       }
@@ -501,6 +527,7 @@ namespace Tes.Main
       {
         _dataThread.Paused = true;
         _dataThread.TargetFrame = 1;
+        _previousFrame = _currentFrame;
         Application.runInBackground = true;
       }
     }
@@ -511,6 +538,21 @@ namespace Tes.Main
       {
         _dataThread.Paused = true;
         _dataThread.TargetFrame = _dataThread.TotalFrames;
+        _previousFrame = _currentFrame;
+        Application.runInBackground = true;
+      }
+    }
+
+    /// <summary>
+    /// Step to the <see cref="PreviousFrame"/>.
+    /// </summary>
+    public void StepPrevious()
+    {
+      if (_dataThread != null && !_dataThread.IsLiveStream)
+      {
+        _dataThread.Paused = true;
+        _dataThread.TargetFrame = _previousFrame;
+        _previousFrame = _currentFrame;
         Application.runInBackground = true;
       }
     }
@@ -521,6 +563,7 @@ namespace Tes.Main
       {
         _dataThread.Paused = true;
         _dataThread.TargetFrame = targetFrame;
+        _previousFrame = _currentFrame;
         Application.runInBackground = true;
       }
     }
@@ -556,11 +599,21 @@ namespace Tes.Main
       {
         handler.Reset();
       }
-      _currentFrame = _totalFrames = 0u;
+      _previousFrame = _currentFrame = _totalFrames = 0u;
     }
 
     protected virtual void Start()
     {
+      // Ensure the array buffers are allocated without thread contention.
+      // This is being a little cautious because the Shared property is meant
+      // to make the allocation using System.Thread.Volatile, which doesn't exist
+      // in the Unity .Net runtime.
+      {
+        var a = Buffers.ArrayPool<byte>.Shared;
+        var b = Buffers.ArrayPool<short>.Shared;
+        var c = Buffers.ArrayPool<int>.Shared;
+        var d = Buffers.ArrayPool<uint>.Shared;
+      }
       if (_scene == null)
       {
         _scene = new Scene();
@@ -570,6 +623,8 @@ namespace Tes.Main
       {
         PlaybackSettings.Instance.PropertyChanged += OnPropertyChanged;
       }
+
+      Log.AddTarget(new LogAdaptor());
     }
 
     protected virtual void Update()
@@ -608,7 +663,7 @@ namespace Tes.Main
               }
               _recordOnConnectPath = null;
 
-              //Debug.Log(string.Format("Routing ID: {0}:{1}", RoutingIDName(packet.Header.RoutingID), packet.Header.MessageID));
+              //Log.Diag("Routing ID: {0}:{1}", RoutingIDName(packet.Header.RoutingID), packet.Header.MessageID);
 
               // New message. First handle command/control messages.
               if (packet.Status == PacketBufferStatus.Complete)
@@ -645,12 +700,15 @@ namespace Tes.Main
                         case ControlMessageID.Reset:
                           // Drop pending packets.
                           _pendingPackets.Clear();
+                          catchUp = UpdateCatchup(catchUp, true);
+                          uint previousFrame = _currentFrame;
                           // Reset all the data handlers, but not the data thread.
                           ResetScene();
                           // Force a frame flush.
-                          EndFrame(0, catchUp);
+                          EndFrame(message.Value32, catchUp);
+                          _previousFrame = previousFrame;
                           break;
-                        case ControlMessageID.Snapshop:
+                        case ControlMessageID.Keyframe:
                           catchUp = UpdateCatchup(catchUp, true);
                           break;
                         case ControlMessageID.EndFrame:
@@ -679,7 +737,7 @@ namespace Tes.Main
               }
               else
               {
-                Debug.LogError(string.Format("Dropping bad packet with routing ID: {0}", packet.Header.RoutingID));
+                Log.Error("Dropping bad packet with routing ID: {0}", packet.Header.RoutingID);
               }
             }
           }
@@ -702,6 +760,8 @@ namespace Tes.Main
         {
           handler.PreRender();
         }
+
+        Log.Flush();
       }
       finally
       {
@@ -710,7 +770,7 @@ namespace Tes.Main
           handler.Mode = handler.Mode & ~MessageHandler.ModeFlags.IgnoreTransient;
         }
 
-        Application.runInBackground = _dataThread != null && (!_dataThread.Paused && _dataThread.CatchingUp);
+        Application.runInBackground = _dataThread != null && (!_dataThread.Paused || _dataThread.CatchingUp);
       }
     }
 
@@ -743,8 +803,8 @@ namespace Tes.Main
             Scene.Frame = (CoordinateFrame)message.Value32;
           }
           break;
-        case ControlMessageID.Snapshop:
-          GenerateSnapshot(message.Value32, !catchingUp);
+        case ControlMessageID.Keyframe:
+          GenerateKeyframe(message.Value32, !catchingUp);
           break;
         default:
           break;
@@ -752,7 +812,7 @@ namespace Tes.Main
       }
       else
       {
-        Debug.LogError("Malformed control message.");
+        Log.Error("Malformed control message.");
       }
     }
 
@@ -771,21 +831,25 @@ namespace Tes.Main
         StreamThread streamThread = _dataThread as StreamThread;
         if (streamThread != null)
         {
-          if (string.Compare(args.PropertyName, "AllowSnapshots") == 0)
+          if (string.Compare(args.PropertyName, "AllowKeyframes") == 0)
           {
-            streamThread.AllowSnapshots = playback.AllowSnapshots;
+            streamThread.AllowKeyframes = playback.AllowKeyframes;
           }
-          else if (string.Compare(args.PropertyName, "SnapshotEveryKb") == 0)
+          else if (string.Compare(args.PropertyName, "KeyframeEveryKb") == 0)
           {
-            streamThread.SnapshotKiloBytes = playback.SnapshotEveryKb;
+            streamThread.KeyframeKiloBytes = playback.KeyframeEveryKb;
           }
-          else if (string.Compare(args.PropertyName, "ShapshotSkipForwardFrames") == 0)
+          else if (string.Compare(args.PropertyName, "KeyframeEveryFrames") == 0)
           {
-            streamThread.ShapshotSkipForwardFrames = (uint)Math.Max(0, playback.SnapshotSkipForwardFrames);
+            streamThread.KeyframeFrames = (uint)Math.Min(0, playback.KeyframeEveryFrames);
           }
-          else if (string.Compare(args.PropertyName, "SnapshotFrameSeparation") == 0)
+          else if (string.Compare(args.PropertyName, "KeyframeSkipForwardFrames") == 0)
           {
-            streamThread.SnapshotMinFrames = (uint)Math.Max(0, playback.SnapshotFrameSeparation);
+            streamThread.KeyframeSkipForwardFrames = (uint)Math.Max(0, playback.KeyframeSkipForwardFrames);
+          }
+          else if (string.Compare(args.PropertyName, "KeyframeFrameSeparation") == 0)
+          {
+            streamThread.KeyframeMinFrames = (uint)Math.Max(0, playback.KeyframeFrameSeparation);
           }
           else if (string.Compare(args.PropertyName, "Looping") == 0)
           {
@@ -814,15 +878,25 @@ namespace Tes.Main
         if (_dataThread != null && !forceExitCatchup)
         {
           // Don't catch up on frame zero.
-          // This can ensure some initial state conditions, including restoring snapshots.
+          // This can ensure some initial state conditions, including restoring Keyframes.
           needCatchUp = _dataThread.CatchingUp || _currentFrame != 0 && _currentFrame + 1 < _dataThread.CurrentFrame;
         }
 
         if (inCatchUp != needCatchUp)
         {
-          foreach (MessageHandler handler in Handlers.Handlers)
+          if (needCatchUp)
           {
-            handler.Mode = handler.Mode | MessageHandler.ModeFlags.IgnoreTransient;
+            foreach (MessageHandler handler in Handlers.Handlers)
+            {
+              handler.Mode = handler.Mode | MessageHandler.ModeFlags.IgnoreTransient;
+            }
+          }
+          else
+          {
+            foreach (MessageHandler handler in Handlers.Handlers)
+            {
+              handler.Mode = handler.Mode & ~MessageHandler.ModeFlags.IgnoreTransient;
+            }
           }
         }
       }
@@ -866,9 +940,12 @@ namespace Tes.Main
             }
             else
             {
-              Debug.LogError(string.Format("Unsupported routing ID: {0} {1}", packet.Header.RoutingID, RoutingIDName(packet.Header.RoutingID)));
+              Log.Error("Unsupported routing ID: {0} {1}", packet.Header.RoutingID, RoutingIDName(packet.Header.RoutingID));
             }
           }
+          // Release the internal buffer (rented) now rather than waiting for the GC thread.
+          packet.Dispose();
+          packet = null;
         }
       }
       catch (Exception e)
@@ -893,6 +970,11 @@ namespace Tes.Main
         else
         {
           _totalFrames = _dataThread.TotalFrames;
+        }
+
+        if (Mode != RouterMode.Paused)
+        {
+          _previousFrame = _currentFrame;
         }
         _currentFrame = (_dataThread.IsLiveStream) ? _totalFrames : frameNumber;
       }
@@ -938,7 +1020,7 @@ namespace Tes.Main
     private BinaryWriter SerialiseScene(Stream fileStream, bool allowCompression, out bool success)
     {
       //string fileName = (fileStream as FileStream != null) ? (fileStream as FileStream).Name : "<unknown>";
-      //Debug.Log(string.Format("SerialiseScene({0}, [out])", fileName));
+      //Log.Diag("SerialiseScene({0}, [out])", fileName);
       // Write the recording header uncompressed to the file.
       // We'll rewind here later and update the frame count.
       // Write to a memory stream to prevent corruption of the file stream when we wrap it
@@ -959,7 +1041,7 @@ namespace Tes.Main
       // Now wrap the file in a GZip stream to start compression if we are not already doing so.
       if (allowCompression && fileStream as GZipStream == null)
       {
-        writer = new NetworkWriter(new GZipStream(fileStream, CompressionMode.Compress));
+        writer = new NetworkWriter(new GZipStream(fileStream, CompressionMode.Compress, CompressionLevel.BestCompression));
       }
       else
       {
@@ -973,58 +1055,58 @@ namespace Tes.Main
       foreach (MessageHandler handler in _handlers.Handlers)
       {
         err = handler.Serialise(writer, ref info);
-        //Debug.Log(string.Format("{0}: P: {1} T: {2}", handler.Name, info.PersistentCount, info.TransientCount));
+        //Log.Diag("{0}: P: {1} T: {2}", handler.Name, info.PersistentCount, info.TransientCount);
         totalInfo.PersistentCount += info.PersistentCount;
         totalInfo.TransientCount += info.TransientCount;
         if (err.Failed)
         {
-          Debug.LogError(string.Format("Failed to serialise handler: {0}", handler.Name));
-          Debug.LogError(err.ToString());
+          Log.Error("Failed to serialise handler: {0}", handler.Name);
+          Log.Error(err.ToString());
           success = false;
         }
       }
-      //Debug.Log(string.Format("Total: P: {0} T: {1}", totalInfo.PersistentCount, totalInfo.TransientCount));
+      //Log.Diag("Total: P: {0} T: {1}", totalInfo.PersistentCount, totalInfo.TransientCount);
 
       return writer;
     }
 
     /// <summary>
-    /// Generate a snapshot for a frame.
+    /// Generate a keyframe for a frame.
     /// </summary>
-    /// <param name="frameNumber">The frame to generate the snapshot for.</param>
+    /// <param name="frameNumber">The frame to generate the keyframe for.</param>
     /// <remarks>
     /// Works with the <see cref="StreamThread"/> to create, register and populate the output stream.
     /// </remarks>
-    private void GenerateSnapshot(uint frameNumber, bool includesTransients)
+    private void GenerateKeyframe(uint frameNumber, bool includesTransients)
     {
       StreamThread streamThread = _dataThread as StreamThread;
       if (streamThread == null)
       {
-        Debug.LogError("Received snapshot request while not using a StreamThread. Ignored.");
+        Log.Error("Received keyframe request while not using a StreamThread. Ignored.");
         return;
       }
 
-      Stream snapshotStream = streamThread.RequestSnapshotStream(frameNumber);
+      Stream keyframeStream = streamThread.RequestKeyframeStream(frameNumber);
       bool success = false;
 
       try
       {
-        if (PlaybackSettings.Instance.AllowSnapshots && snapshotStream != null)
+        if (PlaybackSettings.Instance.AllowKeyframes && keyframeStream != null)
         {
-          BinaryWriter writer = SerialiseScene(snapshotStream, PlaybackSettings.Instance.SnapshotCompression, out success);
+          BinaryWriter writer = SerialiseScene(keyframeStream, PlaybackSettings.Instance.KeyframeCompression, out success);
           WriteFrameFlush(writer);
           writer.Flush();
           // Must be closed to ensure the compression stream finalises correctly.
           writer.Close();
-          Debug.Log(string.Format("Snapshot on frame: {0}", frameNumber));
+          Debug.Log(string.Format("Keyframe @ {0}", frameNumber));
         }
       }
       finally
       {
         // Ensure we release the stream.
-        if (streamThread != null && snapshotStream != null)
+        if (streamThread != null && keyframeStream != null)
         {
-          streamThread.ReleaseSnapshotStream(frameNumber, snapshotStream, includesTransients, success);
+          streamThread.ReleaseKeyframeStream(frameNumber, keyframeStream, includesTransients, success);
         }
       }
     }
@@ -1060,10 +1142,10 @@ namespace Tes.Main
     /// <item>A <see cref="ControlMessage"/> using <see cref="ControlMessageID.FrameCount"/>
     /// to identify the frame count.</item>
     /// </list>
-    /// 
+    ///
     /// Both messages should be in uncompressed space, thus the writer should not be using a
     /// zip stream. The frame count written here is zero and is finalised by calling
-    /// <see cref="FinaliseFrameCount(BinaryWriter, uint)"/> once the final frame count is
+    /// <see cref="FinaliseFrameCount(BinaryWriter, Stream, uint)"/> once the final frame count is
     /// known.
     /// </remarks>
     private void WriteRecordingHeader(BinaryWriter writer)
@@ -1092,22 +1174,23 @@ namespace Tes.Main
     /// Finalises the frame count in the stream underpinning <paramref name="writer"/>.
     /// </summary>
     /// <param name="writer">The binary writer and stream to export to.</param>
+    /// <param name="outStream">The stream underpinning <paramref name="writer" />. May be otherwise inaccessible.
     /// <param name="frameCount">The total number of frames.</param>
     /// <remarks>
     /// By convention, a recording stream includes a <see cref="ControlMessage"/> with ID
     /// <see cref="ControlMessageID.FrameCount"/> to identify the total number of frames in
     /// the stream. This is expected towards the start of the stream before compression begins.
-    /// 
+    ///
     /// This method rewinds the stream supporting <paramref name="writer"/>, searches for the
     /// frame count <see cref="ControlMessage"/> and modifies its <see cref="ControlMessage.Value32"/>
     /// to match <paramref name="frameCount"/>.
-    /// 
+    ///
     /// The method supports the underlying <paramref name="writer"/> stream to be either <c>GZipStream</c>
     /// or an uncompressed stream. However, in order to succeed, the true stream (underpinning the
     /// zip stream) must support seeking and the message must appear in the uncompressed section.
     /// The method fails if these conditions are not met.
     /// </remarks>
-    private void FinaliseFrameCount(BinaryWriter writer, uint frameCount)
+    private void FinaliseFrameCount(BinaryWriter writer, Stream outStream, uint frameCount)
     {
       // Rewind the stream to the beginning and find the first RoutingID.Control message
       // with a ControlMessageID.FrameCount ID. This should be the second message in the stream.
@@ -1119,17 +1202,6 @@ namespace Tes.Main
       // extract the stream that is writing to instead as we can't rewind compression streams
       // and we wrote the header raw.
       writer.BaseStream.Flush();
-
-      Stream outStream = null;
-      GZipStream zipStream = writer.BaseStream as GZipStream;
-      if (zipStream != null)
-      {
-        outStream = zipStream.BaseStream;
-      }
-      else
-      {
-        outStream = writer.BaseStream;
-      }
 
       // Check we are allowed to seek the stream.
       if (!outStream.CanSeek)
@@ -1302,6 +1374,10 @@ namespace Tes.Main
     /// </summary>
     private uint _currentFrame = 0;
     /// <summary>
+    /// The last frame viewed.
+    /// </summary>
+    private uint _previousFrame = 0;
+    /// <summary>
     /// Duplicates the total frame number from the data thread to update only when relevant.
     /// </summary>
     private uint _totalFrames = 0;
@@ -1310,6 +1386,10 @@ namespace Tes.Main
     /// We are not recording if it is null and we are if it is non-null.
     /// </summary>
     private BinaryWriter _recordingWriter = null;
+    /// <summary>
+    /// The file stream underpinning the <c>_recordingWriter</c>.
+    /// </summary>
+    private Stream _recordingFileStream = null;
     /// <summary>
     /// Initialised to the latest incoming server info message received (normally on connection).
     /// </summary>

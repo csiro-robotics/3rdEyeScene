@@ -310,8 +310,8 @@ int TcpSocket::write(const char *buffer, int bufferLength) const
 #endif // __linux__
     int sent;
     bool retry = true;
-    
-    
+
+
     while (retry)
     {
       retry = false;

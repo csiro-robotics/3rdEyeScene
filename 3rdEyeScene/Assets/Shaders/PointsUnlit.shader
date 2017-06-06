@@ -8,6 +8,8 @@ Shader "Points/PointsUnlit"
     _Tint("Tint", Color) = (1, 1, 1, 1)
     _PointSize("Point Size", Range(1, 64)) = 2
     _PointHighlighting("Point Highlighting", Range(0, 1)) = 1
+    // Are we building for a left handed coordinate system?
+    _LeftHanded("Left Handed", Range(0, 1)) = 1
   }
 
   CGINCLUDE
@@ -40,6 +42,7 @@ Shader "Points/PointsUnlit"
   uniform float4 _Color;
   uniform float4 _Tint;
   uniform int _PointHighlighting;
+  uniform int _LeftHanded;
 
   // **************************************************************
   // Shader Programs                        *
@@ -71,7 +74,7 @@ Shader "Points/PointsUnlit"
     const float4 ppos = mul(UNITY_MATRIX_VP, float4(p[0].pos.xyz, 1));
     const float depth = ppos.w;
     const float size = 0.5f * max(0.5f + _PointSize * (1 + depth), MinScale * ppos.w) * (_ScreenParams.w - 1.0f);
-    const float3 right = mul(UNITY_MATRIX_VP, UNITY_MATRIX_V[0].xyz * size);
+    const float3 right = mul(UNITY_MATRIX_VP, UNITY_MATRIX_V[0].xyz * size) * (_LeftHanded ? -1.0f : 1.0f);
     const float3 up = mul(UNITY_MATRIX_VP, UNITY_MATRIX_V[1].xyz * size);
 
     fin.pos = ppos - float4((right + up), 0);
@@ -145,8 +148,8 @@ Shader "Points/PointsUnlit"
 
     Pass
     {
-      //Tags {"RenderType" = "Opaque" "LightMode" = "ShadowCaster" }
-      Tags{ "RenderType" = "Opaque" "LightMode" = "ForwardBase" "Queue" = "Geometry" }
+      //Tags{ "RenderType" = "Opaque" "LightMode" = "ForwardBase" "Queue" = "Geometry" }
+      Tags{ "Queue" = "Opaque" "RenderType" = "Opaque" }
       LOD 200
 
       CGPROGRAM

@@ -126,6 +126,8 @@ namespace Tes.Handlers.Shape3D
         mat = SelectMaterial(shape, meshData);
         FinaliseMesh(meshData.gameObject, shape, meshData, mat, shape.Colour);
       }
+
+      _awaitingFinalisation.Clear();
     }
 
     /// <summary>
@@ -377,7 +379,7 @@ namespace Tes.Handlers.Shape3D
         break;
       default:
       case MeshDrawType.Lines:
-        mat = Materials[MaterialLibrary.VertexColourLit];
+        mat = Materials[MaterialLibrary.VertexColourUnlit];
         break;
       case MeshDrawType.Triangles:
         // Check wire frame.
@@ -490,6 +492,10 @@ namespace Tes.Handlers.Shape3D
         {
           render.material.SetColor("_BackColour", colour);
         }
+        if (meshData.DrawType == MeshDrawType.Points)
+        {
+          render.material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
+        }
 
         mesh.RecalculateBounds();
         if (meshData.CalculateNormals && !haveNormals)
@@ -537,6 +543,10 @@ namespace Tes.Handlers.Shape3D
           if (shape.TwoSided)
           {
             render.material.SetColor("_BackColour", colour);
+          }
+          if (meshData.DrawType == MeshDrawType.Points)
+          {
+            render.material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
           }
           partMesh.subMeshCount = 1;
           elementCount = Math.Min(itemsPerMesh, indices.Length - indexOffset);

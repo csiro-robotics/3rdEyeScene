@@ -167,7 +167,8 @@ int TcpConnectionMonitor::waitForConnection(unsigned timeoutMs)
 
 void TcpConnectionMonitor::monitorConnections()
 {
-  std::lock_guard<Lock> lock(_connectionLock);
+  // Lock for connection expiry.
+  std::unique_lock<Lock> lock(_connectionLock);
 
   // Expire lost connections.
   for (auto iter = _connections.begin(); iter != _connections.end();)
@@ -184,6 +185,9 @@ void TcpConnectionMonitor::monitorConnections()
     }
   }
 
+  // Unlock while we check for new connections.
+  lock.unlock();
+
   // Look for new connections.
   if (_listen)
   {
@@ -199,8 +203,12 @@ void TcpConnectionMonitor::monitorConnections()
       // Remove this code if it is.
       newSocket->setSendBufferSize(0xffff);
 #endif // __apple__
+
       TcpConnection* newConnection = new TcpConnection(newSocket, _server.settings().flags, _server.settings().clientBufferSize);
+      // Lock for new connection.
+      lock.lock();
       _connections.push_back(newConnection);
+      lock.unlock();
     }
   }
 }

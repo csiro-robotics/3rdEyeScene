@@ -1,4 +1,6 @@
-﻿Shader "VertexColour/VertexLitDoubleSided"
+﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
+
+Shader "VertexColour/VertexLitDoubleSided"
 {
   Properties
   {
@@ -37,7 +39,7 @@
     FragmentInput calcVert(VertexInput v, float4 faceColour, float normalScale)
     {
       FragmentInput o;
-      o.vertex = mul(UNITY_MATRIX_MVP, v.vertex);
+      o.vertex = UnityObjectToClipPos(v.vertex);
       o.colour = _Tint * v.colour * faceColour * float4(ShadeVertexLights(v.vertex, normalScale * v.normal), 1.0f);
       return o;
     }
