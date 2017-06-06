@@ -79,7 +79,8 @@ Shader "Points/Voxel"
         // Will generally equate to not overflowing into adjacent pixels anyway.
         const float MinScale = 1.5f;
         const float ScreenHeight = (_ScreenParams.w - 1.0f);
-        const half3 halfExt = half3(0.05f, 0.05f, 0.05f);// p[0].halfExtents;
+        // const half3 halfExt = half3(0.05f, 0.05f, 0.05f);
+        const half3 halfExt = p[0].halfExtents;
         float4 verts[8];
         float edgeThreshold[8];
 
