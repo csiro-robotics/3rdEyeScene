@@ -1,6 +1,0 @@
-var searchData=
-[
-  ['x',['x',['../classtes_1_1Quaternion.html#a9e4a52cf8a1692eea7a25107dfba4262',1,'tes::Quaternion::x()'],['../classtes_1_1Vector3.html#aa3fec78c766c86c64ada7f602c2c52ec',1,'tes::Vector3::x()'],['../classtes_1_1Vector4.html#a857dab605225705c363cd79de13ab42c',1,'tes::Vector4::x()'],['../structTes_1_1Maths_1_1Quaternion.html#a7758943b14f5df787f6901e622efcd00',1,'Tes.Maths.Quaternion.X()'],['../structTes_1_1Maths_1_1Vector2.html#a21c76097cbd0e18d6dc09db23b66bfde',1,'Tes.Maths.Vector2.X()'],['../structTes_1_1Maths_1_1Vector3.html#ac455a295493d2814e573a224452fee61',1,'Tes.Maths.Vector3.X()'],['../structTes_1_1Net_1_1CameraMessage.html#aa56a94d2ef7e19f61675a18e318d84e1',1,'Tes.Net.CameraMessage.X()'],['../structTes_1_1Net_1_1ObjectAttributes.html#a862db3b77adbc7d1bfef9ca3d22f65ad',1,'Tes.Net.ObjectAttributes.X()'],['../classTes_1_1Shapes_1_1Shape.html#a239bfa726e60258d7f5e84a475de1bea',1,'Tes.Shapes.Shape.X()']]],
-  ['xyz',['xyz',['../classtes_1_1Vector3.html#a1712ba931a449a15f4230e530cf4345f',1,'tes::Vector3::xyz()'],['../classtes_1_1Vector4.html#a2e50cd65254959c18067c9c75d2040dd',1,'tes::Vector4::xyz()']]],
-  ['xzy',['xzy',['../classtes_1_1Vector3.html#a2530c63732dfb894563ca498160055cd',1,'tes::Vector3']]]
-];
