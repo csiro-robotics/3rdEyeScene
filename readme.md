@@ -1,10 +1,10 @@
 
 3rd Eye Scene
 =============
-3rd Eye Scene is a visual debugger and debugging aid in the vein of [rviz](http://wiki.ros.org/rviz) or physics engine viewers such as [Havok Visual Debugger](https://www.havok.com/physics/) or [PhysX Visual Debugger](https://developer.nvidia.com/physx-visual-debugger). Whereas those tools are tightly bound to their respective SDKs, 3rd Eye Scene can be used to remotely visualise and debug any real time or non real time 3D algorithm. Conceptually, it can be thought of as a remote rendering application. A 3es server may be embedded into any program, then 3es render commands may be interspersed throughout that program. The 3es viewer client application is then used to view, record and playback these render commands.
+3rd Eye Scene is a visual debugger and debugging aid in the vein of [rviz](http://wiki.ros.org/rviz) or physics engine viewers such as [Havok Visual Debugger](https://www.havok.com/physics/) or [PhysX Visual Debugger](https://developer.nvidia.com/physx-visual-debugger). Whereas those tools are tightly bound to their respective SDKs, 3rd Eye Scene is a generalised tool, which can be used to remotely visualise and debug any real time or non real time 3D algorithm. Conceptually, it can be thought of as a remote rendering application. A 3es server may be embedded into any program, then 3es render commands are used to instrument the target program. The 3es viewer client application is then used to view, record and playback these commands.
 
-Features
---------
+Key Features
+------------
 - Remote 3D rendering from any application
 - Record rendered data
 - Playback and step through recorded data
@@ -18,7 +18,7 @@ Use Cases
   - Geometric intersection tests
   - Point cloud processing
 - Remote visualisation
-  - Visualise 3D data from headless processes 
+  - Visualise 3D data from headless processes
 - Real time visualisation
   - Remote visualisation
   - Visualise "hidden" data
@@ -29,7 +29,7 @@ Use Cases
 
 Integrating 3rd Eye Scene Server Code
 -------------------------------------
-The 3rd Eye Scene core includes code for both a C++ and a C# based server. This section focuses on integrating the C++ code to debug an application. The example presented here is the 3rd-occupancy example included in the TES source code release.
+The 3rd Eye Scene core includes code for both a C++ and a C# based server. This section focuses on integrating the C++ code to debug an application. The example presented here is the 3rd-occupancy example included in the TES source code release. The 3es macro interface is presented later.
 
 Before sending TES messages, a `tes::Server` object must be declared and initialised as shown below.
 
@@ -46,10 +46,10 @@ void initialiseTes()
   // Coordinate axes listed as left/right, forward, up
   info.coordinateFrame = tes::XYZ;
 
-  // Create teh server.
-  g_tesServer = tes::Server::create(settings, serverinfo);
+  // Create the server.
+  g_tesServer = tes::Server::create(settings, serverInfo);
   // Setup asynchronous connection monitoring.
-  // Connections must be commited synchronously.
+  // Connections must be committed synchronously.
   g_tesServer->start(tes::ConnectionMonitor::Asynchronous);
 
   // Optional: wait 1000ms for the first connection before continuing.
@@ -67,7 +67,7 @@ void endFrame(float dt = 0.0f)
 {
   // Mark the end of frame. Flushed collated packets.
   g_tesServer->updateFrame(dt);
-  // In synchronous mode, listen for incomming connections.
+  // In synchronous mode, listen for incoming connections.
   if (g_tesServer->connectionMonitor()->mode() == tes::ConnectionMonitor::Synchronous)
   {
     g_tesServer->connectionMonitor()->monitorConnections();
@@ -114,7 +114,7 @@ void animateBox(tes::Server &server)
 
 Using Categories
 ----------------
-Categories may be used to logically group objects in the viewer client. Objects from specific categories can be hidden and shown as a group. Categrories are form a hierarchy, with each category having an optional parent. The code below shows an example category initialisation.
+Categories may be used to logically group objects in the viewer client. Objects from specific categories can be hidden and shown as a group. Categories are form a hierarchy, with each category having an optional parent. The code below shows an example category initialisation.
 
 ```
 void defineCategory(tes::Server &server, const char *name, uint16_t category, uint16_t parent, bool defaultActive)
