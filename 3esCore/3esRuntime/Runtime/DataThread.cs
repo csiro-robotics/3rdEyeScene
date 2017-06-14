@@ -1,9 +1,8 @@
 ﻿using Tes.Collections;
-using Tes;
 using Tes.IO;
 using Tes.Net;
 
-namespace Tes.Main
+namespace Tes.Runtime
 {
   /// <summary>
   /// Base class for thread objects used as message sources.

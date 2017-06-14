@@ -154,6 +154,8 @@ Shader "Points/PointsLit"
       //Tags {"RenderType" = "Opaque" "LightMode" = "ShadowCaster" }
       Tags{ "Queue" = "Opaque" "RenderType" = "Opaque" }
       LOD 200
+      // The coordinate system may vary, so we must rendering without culling.
+      Cull Off
 
       CGPROGRAM
 #pragma vertex vert

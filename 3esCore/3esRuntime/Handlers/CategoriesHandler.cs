@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using Tes.IO;
-using Tes.Main;
 using Tes.Net;
 using Tes.Runtime;
 using UnityEngine;

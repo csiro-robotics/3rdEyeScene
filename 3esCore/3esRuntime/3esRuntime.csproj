@@ -33,15 +33,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="UnityEngine" Condition="!Exists('$(UNITY_DLL_PATH)') And Exists('\\Applications\\Unity\\Unity.app\\Contents\\Managed\\UnityEngine.dll') ">
-      <HintPath>\Applications\Unity\Unity.app\Contents\Managed\UnityEngine.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine" Condition="!Exists('$(UNITY_DLL_PATH)') And Exists('C:\\Program Files\\Unity\\Editor\\Data\\Managed\\UnityEngine.dll') ">
-      <HintPath>C:\Program Files\Unity\Editor\Data\Managed\UnityEngine.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine" Condition=" Exists('$(UNITY_DLL_PATH)') ">
-      <HintPath>$(UNITY_DLL_PATH)\UnityEngine.dll</HintPath>
+      <HintPath Condition="'$(UNITY_DLL_PATH)' == '' And Exists('\\Applications\\Unity\\Unity.app\\Contents\\Managed\\UnityEngine.dll')">\Applications\Unity\Unity.app\Contents\Managed\UnityEngine.dll</HintPath>
+      <HintPath Condition="'$(UNITY_DLL_PATH)' == '' And Exists('C:\Program Files\Unity\Editor\Data\Managed\UnityEngine.dll')">C:\Program Files\Unity\Editor\Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath Condition="'$(UNITY_DLL_PATH)' != ''">$(UNITY_DLL_PATH)\\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System" />
@@ -105,7 +99,7 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>

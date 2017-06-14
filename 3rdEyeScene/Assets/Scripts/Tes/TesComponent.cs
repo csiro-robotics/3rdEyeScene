@@ -16,6 +16,7 @@ using UnityEngine;
 /// </summary>
 public class TesComponent : Router
 {
+  public Tes.Net.CoordinateFrame Frame = Tes.Net.CoordinateFrame.ZXY;
   public Material VertexColourLitMaterial;
   public Material VertexColourUnlitMaterial;
   public Material VertexColourLitTwoSidedMaterial;
@@ -229,6 +230,22 @@ public class TesComponent : Router
     settingsList.Add(CameraSettings.Instance);
     settingsList.Add(RenderSettings.Instance);
     settingsList.Add(PlaybackSettings.Instance);
+  }
+
+  protected override void OnServerInfoUpdate()
+  {
+    Frame = ServerInfo.CoordinateFrame;
+  }
+
+  protected override void Update()
+  {
+    // Debug: Support switching frames in the editor.
+    if (Scene.Frame != Frame)
+    {
+      Scene.Frame = Frame;
+    }
+
+    base.Update();
   }
 
   private void OnCategoryActiveChange(ushort categoryId, bool active)

@@ -168,6 +168,11 @@ namespace Tes.Main
     /// </summary>
     public Scene Scene { get { return _scene; } }
 
+    /// <summary>
+    /// Access the most up to date server info.
+    /// </summary>
+    public ServerInfoMessage ServerInfo { get { return _serverInfo; } }
+
     public bool Looping
     {
       get { return PlaybackSettings.Instance.Looping; }
@@ -679,6 +684,7 @@ namespace Tes.Main
                   case (ushort)RoutingID.ServerInfo:
                     packetReader = new NetworkReader(packet.CreateReadStream(true));
                     _serverInfo.Read(packetReader);
+                    OnServerInfoUpdate();
                     //_timeUnitInv = (_serverInfo.TimeUnit != 0) ? 1.0 / _serverInfo.TimeUnit : 0.0;
                     Scene.Frame = _serverInfo.CoordinateFrame;
                     foreach (MessageHandler handler in _handlers.Handlers)
@@ -814,6 +820,13 @@ namespace Tes.Main
       {
         Log.Error("Malformed control message.");
       }
+    }
+
+    /// <summary>
+    /// Called when the server info message comes through and _serverInfo is valid.
+    /// </summary>
+    protected virtual void OnServerInfoUpdate()
+    {
     }
 
     /// <summary>
