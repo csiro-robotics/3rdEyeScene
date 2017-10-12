@@ -82,7 +82,7 @@ namespace Dialogs
     private KeyCode[] _extendSelectionKeys = new KeyCode[] { KeyCode.LeftShift, KeyCode.RightShift };
     public KeyCode[] ExtendSelectionKeys { get { return _extendSelectionKeys; } }
 
-    public FileDialogViewObserver Observer { get; set; }
+    public FileDialogViewController Controller { get; set; }
 
     public RectTransform UI { get { return _ui; } }
 
@@ -331,9 +331,9 @@ namespace Dialogs
 
     public void OnLocationInputChanged()
     {
-      if (Observer != null && !SuppressEvents)
+      if (Controller != null && !SuppressEvents)
       {
-        Observer.SetFileDialogLocation(Location);
+        Controller.SetFileDialogLocation(Location);
       }
     }
 
@@ -351,10 +351,10 @@ namespace Dialogs
     public bool OnFilenameInputChanged()
     {
       _selectedFiles.Clear();
-      if (Observer != null && !SuppressEvents)
+      if (Controller != null && !SuppressEvents)
       {
         _pendingSelection = FilenameDisplay;
-        return Observer.SetFileDialogLocation(FilenameDisplay);
+        return Controller.SetFileDialogLocation(FilenameDisplay);
       }
       return false;
     }
@@ -710,9 +710,9 @@ namespace Dialogs
     /// </summary>
     public void GoUp()
     {
-      if (Observer != null)
+      if (Controller != null)
       {
-        Observer.FileDialogNavigate(CurrentLocation, true);
+        Controller.FileDialogNavigate(CurrentLocation, true);
       }
     }
 
@@ -729,8 +729,17 @@ namespace Dialogs
         return;
       }
 
-      // Confirmed selection.
-      NotifyDone(new CancelEventArgs(false));
+      List<string> filenames = new List<string>();
+      foreach (string filename in Filenames)
+      {
+        filenames.Add(filename);
+      }
+
+      if (ValidateFiles(filenames))
+      {
+        // Confirmed selection.
+        NotifyDone(new CancelEventArgs(false));
+      }
     }
 
     /// <summary>
@@ -885,7 +894,16 @@ namespace Dialogs
         if (item.Entry.Type == FileItemType.File)
         {
           // Confirm.
-          NotifyDone(new CancelEventArgs(false));
+          List<string> filenames = new List<string>();
+          foreach (string filename in Filenames)
+          {
+            filenames.Add(filename);
+          }
+
+          if (ValidateFiles(filenames))
+          {
+            NotifyDone(new CancelEventArgs(false));
+          }
         }
         else
         {
@@ -944,17 +962,27 @@ namespace Dialogs
 
     protected void NotifyChange(string target, object value)
     {
-      if (Observer != null && !SuppressEvents)
+      if (Controller != null && !SuppressEvents)
       {
-        Observer.OnFileDialogChange(new FileDialogViewEventArgs(target, value));
+        Controller.OnFileDialogChange(new FileDialogViewEventArgs(target, value));
       }
+    }
+
+    protected bool ValidateFiles(List<string> filenames)
+    {
+      if (Controller != null && !SuppressEvents)
+      {
+        return Controller.OnValidateFiles(filenames);
+      }
+
+      return true;
     }
 
     protected void NotifyDone(CancelEventArgs args)
     {
-      if (Observer != null && !SuppressEvents)
+      if (Controller != null && !SuppressEvents)
       {
-        Observer.OnFileDialogDone(args);
+        Controller.OnFileDialogDone(args);
       }
     }
 

@@ -15,7 +15,7 @@ namespace Dialogs
     /// <summary>
     /// Dialog observer.
     /// </summary>
-    FileDialogViewObserver Observer { get; set; }
+    FileDialogViewController Controller { get; set; }
 
     RectTransform UI { get; }
 

@@ -1,5 +1,4 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.IO;
 using System.Collections.Generic;
 
@@ -64,9 +63,60 @@ namespace Dialogs
       get { return FileNames ?? new string[0]; }
     }
 
+    public override bool CanShowNative
+    {
+      get
+      {
+#if UNITY_EDITOR_WIN || UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN
+        // Native dialogs only allowed for a TrueFileSystem and only supported for
+        // for MacOS and Windows.
+        return AllowNative && FileSystem is TrueFileSystem;
+#else  // UNITY_EDITOR_WIN || UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN
+        return false;
+#endif // UNITY_EDITOR_WIN || UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX || UNITY_STANDALONE_WIN
+      }
+    }
+
     //
     // Methods
     //
+
+    /// <summary>
+    /// Called to show the native dialog.
+    /// </summary>
+    protected override void OnShowNative()
+    {
+      ShowingNative = true;
+      SFB.ExtensionFilter[] extensionFilter = BuildNativeFilter();
+      // TODO: set DefaultName.
+      string path = SFB.StandaloneFileBrowser.SaveFilePanel(new SFB.BrowserParameters()
+      {
+        Title = Title,
+        Directory = InitialDirectory,
+        Extensions = extensionFilter,
+        FilterIndex = FilterIndex,
+        DefaultExt = DefaultExt,
+        AddExtension = AddExtension
+      });
+      List<string> localFileNames = new List<string>();
+      if (!string.IsNullOrEmpty(path))
+      {
+        // SFB generates URI paths. Convert from this.
+        localFileNames.Add(new System.Uri(path).LocalPath);
+
+        if (OnValidateFiles(localFileNames))
+        {
+          // We have a result.
+          OnFileDialogDone(new CancelEventArgs(false));
+          ShowingNative = false;
+          return;
+        }
+      }
+      // No result.
+      OnFileDialogDone(new CancelEventArgs(true));
+      ShowingNative = false;
+    }
+
     public Stream OpenFile()
     {
       if (!string.IsNullOrEmpty(SafeFileName))
@@ -83,33 +133,62 @@ namespace Dialogs
       base.Reset();
     }
 
-    protected override bool ValidateFiles(List<string> filenames)
+    public override bool OnValidateFiles(IEnumerable<string> filenames)
     {
-      // Ensure extensions are added as required.
-      base.ValidateFiles(filenames);
-      if (filenames == null || filenames.Count == 0)
-      { 
-        return true;
+      bool validationOk = true;
+      bool firstFile = true;
+      bool fileExists = false;
+
+      _fileNames.Clear();
+
+      foreach (string filename in filenames)
+      {
+        // Add extension if required.
+        string filenameWithDefaultExt = string.Format("{0}.{1}", filename, DefaultExt);
+        bool existsAsIs = File.Exists(filename);
+        bool existsAsWithDefaultExt = !string.IsNullOrEmpty(DefaultExt) && File.Exists(filenameWithDefaultExt);
+        if (!existsAsIs && existsAsWithDefaultExt)
+        {
+          // Add the extension as required.
+          _fileNames.Add(filenameWithDefaultExt);
+          fileExists = firstFile;
+        }
+        else
+        {
+          _fileNames.Add(filename);
+          fileExists = firstFile && existsAsIs;
+        }
+
+        if (!firstFile)
+        {
+          // Requires only one file name.
+          validationOk = false;
+        }
+
+        firstFile = false;
       }
 
-      if (File.Exists(filenames[0]))
+      if (validationOk && fileExists)
       {
-        if (OverwritePrompt)
+        // In native mode, an overwrite prompt will already have been given.
+        if (OverwritePrompt && !ShowingNative)
         {
           // Show overwrite confirmation dialog.
-          _validatingPath = filenames[0];
+          _validatingPath = _fileNames[0];
           MessageBox.Show(OnValidateClose, "Overwrite existing file?", "Overwrite", MessageBoxButtons.YesNo, ConfirmUI);
           return false;
         }
       }
-      else if (CreatePrompt)
+      // In native mode, a create prompt will have already been given.
+      else if (CreatePrompt && !ShowingNative)
       {
         // Show creation confirmation dialog.
-        _validatingPath = filenames[0];
+        _validatingPath = _fileNames[0];
         MessageBox.Show(OnValidateClose, "Create new file?", "Create", MessageBoxButtons.YesNo, ConfirmUI);
         return false;
       }
-      return true;
+
+      return validationOk;
     }
 
     protected void OnValidateClose(CommonDialog dialog, DialogResult result)

@@ -1,5 +1,4 @@
-﻿using System;
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -31,7 +30,7 @@ namespace Dialogs
   /// The <see cref="OpenFileDialog"/> and <see cref="SaveFileDialog"/> classes accept a view and file system
   /// model on construction and pass it to this class.
   /// </remarks>
-  public class FileDialog : CommonDialog, FileDialogViewObserver
+  public class FileDialog : CommonDialog, FileDialogViewController
   {
     /// <summary>
     /// Defines the file dialog type.
@@ -71,6 +70,26 @@ namespace Dialogs
       set { if (UI != null) UI.Multiselect = value; }
     }
 
+    /// <summary>
+    /// Can a native dialog be shown?
+    /// </summary>
+    /// <remarks>
+    /// The <see cref="FileDialog"/> does not support native dialogs without further
+    /// specialisation.
+    /// </remarks>
+    public override bool CanShowNative
+    {
+      get { return false; }
+    }
+
+    /// <summary>
+    /// True if currently using a native dialog UI, rather than a Unity UI.
+    /// </summary>
+    /// <remarks>
+    /// It is up to derived classes to manage this flag from <see cref="OnShowNative()"/>.
+    /// </remarks>
+    public bool ShowingNative { get; protected set; }
+
     //[DefaultValue(false)]
     //public virtual bool CheckFileExists { get; set; }
 
@@ -90,7 +109,7 @@ namespace Dialogs
       set
       {
         _customFilterString = value;
-        _activeFilter = new Regex(value.Replace(".", @"\.").Replace("*", ".*"));
+        _activeFilter = GlobToRegex(value);
       }
     }
 
@@ -171,7 +190,15 @@ namespace Dialogs
           first = false;
           str.Append(filter.Display);
           str.Append("|");
-          str.Append(filter.Extension);
+          for (int i = 0; i < filter.Extensions.Length; ++i)
+          {
+            if (i > 0)
+            {
+              str.Append(",");
+            }
+            str.Append("*.");
+            str.Append(filter.Extensions[i]);
+          }
         }
 
         return str.ToString();
@@ -181,12 +208,30 @@ namespace Dialogs
       {
         _filters.Clear();
         string[] parts = value.Split(new char[] { '|' });
-        string rexstr;
+        string[] extsPart;
+        string[] exts;
         for (int i = 1; i < parts.Length; i += 2)
         {
-          FilterEntry filter = new FilterEntry { Display = parts[i-1], Extension = parts[i] };
-          rexstr = parts[i].Replace(".", @"\.").Replace('?', '.').Replace("*", ".*").Replace(";", "|");
-          filter.Expression = new Regex(rexstr);
+          extsPart = parts[i].Split(new char[] { ',' });
+          exts = new string[extsPart.Length];
+          for (int e = 0; e < extsPart.Length; ++e)
+          {
+            // Strip any leading "*." or ".".
+            if (extsPart[e].StartsWith("*."))
+            {
+              exts[e] = extsPart[e].Substring(2);
+            }
+            else if (extsPart[e].StartsWith("."))
+            {
+              exts[e] = extsPart[e].Substring(1);
+            }
+            else
+            {
+              exts[e] = extsPart[e];
+            }
+          }
+          FilterEntry filter = new FilterEntry { Display = parts[i-1], Extensions = exts };
+          filter.Expression = GlobToRegex(parts[i]);
           _filters.Add(filter);
         }
 
@@ -200,6 +245,9 @@ namespace Dialogs
     /// <summary>
     /// Index of the active file filter.
     /// </summary>
+    /// <remarks>
+    /// This is a 1 based index, making the index of the first filter 1, not 0.
+    /// </remarks>
     public int FilterIndex
     {
       get { return UI != null ? UI.FileFilterIndex : 0; }
@@ -243,7 +291,7 @@ namespace Dialogs
       FileSystem = fileSystem;
       UI = dialogView;
       DialogPanel = dialogView.UI;
-      UI.Observer = this;
+      UI.Controller = this;
       if (DialogType == FileDialogType.OpenFileDialog)
       {
         UI.ConfirmButtonText = "Open";
@@ -252,6 +300,11 @@ namespace Dialogs
       {
         UI.ConfirmButtonText = "Save";
       }
+    }
+
+    protected override void OnShowNative()
+    {
+      throw new System.NotSupportedException("FileDialog class does not support native dialogs without further specialisation.");
     }
 
     /// <summary>
@@ -268,12 +321,16 @@ namespace Dialogs
       {
         entry = FileSystem.Home;
       }
-      if (Filter.Length == 0)
-      {
-        Filter = "Text Files (*.txt)|*.txt|All Files (*.*)|*.*";
-      }
       UI.ShowLinks(FileSystem.GetRoots());
-      UI.ShowItems(entry, FileSystem.ListChildren(entry, _filters[FilterIndex].Expression));
+      if (_filters.Count > 0)
+      {
+        int filterIndexZeroBase = (FilterIndex > 0) ? FilterIndex - 1 : 0;
+        UI.ShowItems(entry, FileSystem.ListChildren(entry, _filters[filterIndexZeroBase].Expression));
+      }
+      else
+      {
+        UI.ShowItems(entry, FileSystem.ListChildren(entry, new Regex(".*")));
+      }
       UI.OnShow();
     }
 
@@ -291,32 +348,68 @@ namespace Dialogs
     /// </summary>
     /// <param name="e">Callback event. Cancel is true when cancelling, false otherwise.</param>
     /// <remarks>
-    /// Calls through to <see cref="Close"/>
+    /// Calls through to <see cref="Close"/> which must consider the state of <see cref="CanShowNative"/>
+    /// to determine whether a native dialog was displayed. The default implementation does so.
+    ///
+    /// The <see cref="_fileNames" member will have been populated with the list of selected file names.
     /// </remarks>
     public virtual void OnFileDialogDone(CancelEventArgs e)
     {
-      if (e.Cancel)
+      // Look for confirmed close conditions.
+      if (!e.Cancel)
       {
-        Close(DialogResult.Cancel);
+        Close(DialogResult.OK);
       }
       else
       {
-        // Update file names from the UI.
-        _fileNames.Clear();
-        foreach (string filename in UI.Filenames)
+        Close(DialogResult.Cancel);
+      }
+      ShowingNative = false;
+    }
+
+    /// <summary>
+    /// Validate the given list of files before confirmation.
+    /// </summary>
+    /// <param name="filenames">List of file paths to validate.</param>
+    /// <returns>True when all files are valid and confirmation may be continue with a call to
+    /// <see cref="OnFileDialogDone(CanceEventArgs)"/>.</returns>
+    /// <remarks>
+    /// Called prior to <see cref="OnFileDialogDone(CancelEventArgs)"/> which will only be called when this method
+    /// returns <c>true</c>. Otherwise the UI will remain active.
+    ///
+    /// The default implementation returns <c>false</c> if <paramref name="filenames" is empty,
+    /// or one of the files does not exist. The logic considers adding the <see cref="DefaultExt"/>
+    /// as part of the file exists check. Valid files are cache in the <see cref="_fileNames"/> member.
+    /// </remarks>
+    public virtual bool OnValidateFiles(IEnumerable<string> filenames)
+    {
+      bool validationOk = true;
+      _fileNames.Clear();
+      foreach (string filename in filenames)
+      {
+        if (File.Exists(filename))
         {
           _fileNames.Add(filename);
         }
-
-        if (_fileNames.Count > 0 && ValidateFiles(_fileNames))
+        else
         {
-          Close(DialogResult.OK);
+          if (AddExtension && !string.IsNullOrEmpty(DefaultExt) && string.IsNullOrEmpty(Path.GetExtension(filename)))
+          {
+            // Missing extension.
+            string testFile = string.Format("{0}.{1}", filename, DefaultExt);
+            if (File.Exists(testFile))
+            {
+              _fileNames.Add(testFile);
+            }
+            else
+            {
+              validationOk = false;
+            }
+          }
         }
       }
-      // if (FileOk != null)
-      // {
-      //   FileOk(this, e);
-      // }
+
+      return validationOk && _fileNames.Count > 0;
     }
 
     /// <summary>
@@ -333,9 +426,7 @@ namespace Dialogs
       }
       else if (args.Target == "FileFilter")
       {
-        string restr = UI.ActiveFileFilter;
-        restr = restr.Replace(".", @"\.").Replace('?', '.').Replace("*", ".*");
-        _activeFilter = new Regex(restr);
+        _activeFilter = GlobToRegex(UI.ActiveFileFilter);
         // Refresh display.
         FileSystemEntry location = UI.CurrentLocation;
         NavigateTo(location, false);
@@ -456,30 +547,6 @@ namespace Dialogs
     }
 
     /// <summary>
-    /// Validate the final list of files, adding extensions as required (<see cref="AddExtension"/>).
-    /// </summary>
-    /// <param name="filenames">The list of selected files to validate.</param>
-    /// <returns>true if validation is OK and the dialog can complete.</returns>
-    protected virtual bool ValidateFiles(List<string> filenames)
-    {
-      if (AddExtension && !string.IsNullOrEmpty(DefaultExt))
-      {
-        for (int i = 0; i < filenames.Count; ++i)
-        {
-          if (!File.Exists(filenames[i]))
-          {
-            if (string.IsNullOrEmpty(Path.GetExtension(filenames[i])))
-            {
-              // Missing extension.
-              filenames[i] = string.Format("{0}.{1}", filenames[i], DefaultExt);
-            }
-          }
-        }
-      }
-      return true;
-    }
-
-    /// <summary>
     /// Validate a single path for completion.
     /// </summary>
     /// <param name="fullFilePath">The path to validate.</param>
@@ -524,6 +591,79 @@ namespace Dialogs
     }
 
     /// <summary>
+    /// Build the native dialog filter pattern based on the <see cref="Filter"/>
+    /// and <see cref="FilterIndex"/>.
+    /// </summary>
+    /// <returns>The native dialog filter filter pattern.</returns>
+    /// <remarks>
+    /// Only the native Windows API of <c>StandAloneFilterBrowser</c> supports a filter index.
+    /// To get around this, we ensure that on other platforms the selected filter it appears first in the list.
+    /// This changes the sorting order, but ensures it is selected by default.
+    /// </remarks>
+    protected SFB.ExtensionFilter[] BuildNativeFilter()
+    {
+      if (_filters.Count == 0)
+      {
+        return null;
+      }
+
+      SFB.ExtensionFilter[] extFilter = new SFB.ExtensionFilter[_filters.Count];
+
+#if UNITY_STANDALONE_WINDOWS
+      for (int i = 0; i < _filters.Count; ++i)
+      {
+        extFilter[i] = new SFB.ExtensionFilter(_filters[i].Display, _filters[i].Extension);
+      }
+#else  // UNITY_STANDALONE_WINDOWS
+      int insertIndex = 0;
+
+      if (FilterIndex > 0)
+      {
+        extFilter[insertIndex++] = new SFB.ExtensionFilter(_filters[FilterIndex - 1].Display, _filters[FilterIndex - 1].Extensions);
+      }
+
+      for (int i = 0; i < _filters.Count; ++i)
+      {
+        if (i + 1 != FilterIndex)
+        {
+          extFilter[insertIndex++] = new SFB.ExtensionFilter(_filters[i].Display, _filters[i].Extensions);
+        }
+      }
+#endif // UNITY_STANDALONE_WINDOWS
+
+      return extFilter;
+    }
+
+    /// <summary>
+    /// Convert a globbing expression to a regular expression.
+    /// </summary>
+    /// <param name="glob">The globbing string.</param>
+    /// <returns>An equivalent regular expression.</returns>
+    public static Regex GlobToRegex(string glob)
+    {
+      System.Text.StringBuilder rexstr = new System.Text.StringBuilder();
+      // To build the filtering regular expression, we convert strings of the form:
+      //    *.txt,*.log,*.blah
+      // into the regular expression form:
+      //    (.*\.txt)|(.*\.log)|(.*\.blah)
+      // For this we draw on the filter.Extensions member we just build.
+      string[] globs = glob.Split(new char[] { ',' });
+
+      for (int i = 0; i < globs.Length; ++ i)
+      {
+        if (i > 0)
+        {
+          rexstr.Append("|");
+        }
+        rexstr.Append("(");
+        rexstr.Append(globs[i].Replace(".", @"\.").Replace("*", ".*").Replace("?", "."));
+        rexstr.Append(")");
+      }
+
+      return new Regex(rexstr.ToString());
+    }
+
+    /// <summary>
     /// The dialog type.
     /// </summary>
     protected FileDialogType DialogType { get; private set; }
@@ -538,17 +678,19 @@ namespace Dialogs
       /// </summary>
       public string Display;
       /// <summary>
-      /// The extension string.
+      /// The extension strings. Only the extenions themselves are stored (i.e., no "*.").
       /// </summary>
-      public string Extension;
+      public string[] Extensions;
       /// <summary>
       /// The regular expression to filter with.
       /// </summary>
       public Regex Expression;
     }
 
-    private List<string> _fileNames = new List<string>();
-    private List<FilterEntry> _filters = new List<FilterEntry>();
+    protected List<FilterEntry> Filters { get { return _filters; } }
+
+    protected List<string> _fileNames = new List<string>();
+    protected List<FilterEntry> _filters = new List<FilterEntry>();
     private string _customFilterString = "";
     private Regex _activeFilter = null;
   }

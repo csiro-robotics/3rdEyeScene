@@ -1,4 +1,4 @@
-﻿using System.Collections;
+﻿using System.ComponentModel;
 using UnityEngine;
 
 namespace Dialogs
@@ -21,6 +21,17 @@ namespace Dialogs
   {
     public RectTransform DialogPanel { get; set; }
 
+    /// <summary>
+    /// Use flag to allow the use of a native dialog if supported and viable.
+    /// </summary>
+    [DefaultValue(true)]
+    public bool AllowNative { get; set; }
+
+    /// <summary>
+    /// True if a native dialog is available and is allowed (<see cref="AllowNative"/>).
+    /// </summary>
+    public abstract bool CanShowNative { get; }
+
     public CommonDialog()
     {
     }
@@ -36,19 +47,37 @@ namespace Dialogs
       }
     }
 
+    /// <summary>
+    /// Call to show the dialog.
+    /// </summary>
+    /// <param name="closeEvent">Delegate to invoke on closing the dialog.</param>
+    /// <remarks>
+    /// When <see cref="CanShowNative"/> is <c>true</c>, a call is made to <see cref="ShowNative()"/>.
+    /// Otherwise the <see cref="DialogPanel"/> is made active then <see cref="OnShow()"/> is called.
+    /// </remarks>
     public void ShowDialog(DialogCloseDelegate closeEvent)
     {
       Reset();
       _closeDelegate += closeEvent;
-      DialogPanel.gameObject.SetActive(true);
-      OnShow();
+      if (CanShowNative)
+      {
+        OnShowNative();
+      }
+      else
+      {
+        DialogPanel.gameObject.SetActive(true);
+        OnShow();
+      }
     }
+
+    protected abstract void OnShowNative();
+
 
     protected abstract void OnShow();
 
     internal virtual void Close(DialogResult result)
     {
-      if (DialogPanel != null)
+      if (DialogPanel != null && !CanShowNative)
       {
         DialogPanel.gameObject.SetActive(false);
       }
