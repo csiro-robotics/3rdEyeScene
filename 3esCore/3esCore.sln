@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3esCore", "3esCore\3esCore.csproj", "{91D3C546-37EF-4EF1-A48A-487A1F367A33}"
 EndProject
@@ -100,6 +100,9 @@ Global
 		{4C32B89E-175D-4EE1-8C06-66F29E34F954} = {029E309B-6E94-4879-BD20-83A46EEF782E}
 		{B29F5CC6-EC81-424B-A051-1DFB218FFF3A} = {029E309B-6E94-4879-BD20-83A46EEF782E}
 		{0EA45952-7B66-4FA3-ABE5-8F0B46C2778E} = {822DDDA6-3490-412F-A757-5FD26BD6E015}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A865C82E-1D5D-43B8-8195-7B3EEC96D1B0}
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0

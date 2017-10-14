@@ -32,7 +32,7 @@
     <DocumentationFile>..\..\3rdEyeScene\Assets\plugins\3esRuntime.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="UnityEngine" >
+    <Reference Include="UnityEngine">
       <HintPath Condition="'$(UNITY_DLL_PATH)' == '' And Exists('\\Applications\\Unity\\Unity.app\\Contents\\Managed\\UnityEngine.dll')">\Applications\Unity\Unity.app\Contents\Managed\UnityEngine.dll</HintPath>
       <HintPath Condition="'$(UNITY_DLL_PATH)' == '' And Exists('C:\\Program Files\\Unity\\Editor\\Data\\Managed\\UnityEngine.dll')">C:\Program Files\Unity\Editor\Data\Managed\UnityEngine.dll</HintPath>
       <HintPath Condition="'$(UNITY_DLL_PATH)' != ''">$(UNITY_DLL_PATH)\\UnityEngine.dll</HintPath>
