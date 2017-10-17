@@ -29,7 +29,7 @@ namespace Dialogs
   public class ToolTipOverlay : MonoBehaviour
   {
     [SerializeField]
-    private RectTransform _toolTipUI;
+    private RectTransform _toolTipUI = null;
     /// <summary>
     /// The UI component used to display the tool tip.
     /// </summary>
