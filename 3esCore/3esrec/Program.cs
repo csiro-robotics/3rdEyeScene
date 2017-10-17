@@ -277,8 +277,6 @@ This program attempts to connect to and record a Third Eye Scene server.
           recordingWriter.Flush();
           recordingWriter.Close();
           recordingWriter = null;
-          // GC to force flushing streams.
-          GC.Collect();
         }
 
         if (!Quiet)
@@ -293,22 +291,25 @@ This program attempts to connect to and record a Third Eye Scene server.
           socket.Close();
           socket = null;
         }
+
         Connected = false;
+
+        // GC to force flushing streams and collect other resource.
+        GC.Collect();
       }
     }
 
 
     private TcpClient AttemptConnection()
     {
+      TcpClient socket = new TcpClient();
       try
       {
-        TcpClient socket = new TcpClient();
         socket.Connect(ServerEndPoint);
         if (socket.Connected)
         {
           return socket;
         }
-        socket.Close();
       }
       catch (SocketException e)
       {
@@ -324,6 +325,11 @@ This program attempts to connect to and record a Third Eye Scene server.
       catch (System.Exception e)
       {
         Console.Error.WriteLine(e);
+      }
+
+      if (socket != null)
+      {
+        socket.Close();
       }
 
       return null;
