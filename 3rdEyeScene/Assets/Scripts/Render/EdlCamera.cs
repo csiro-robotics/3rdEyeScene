@@ -49,8 +49,8 @@ public class EdlCamera : MonoBehaviour
   /// <summary>
   /// Controls the exponential scaling used in EDL. Increase to darken EDL shadowing.
   /// </summary>
-  [SerializeField, Range(1, 1000)]
-  private float _edlExpScale = 100;
+  [SerializeField, Range(0.1f, 30)]
+  private float _edlExpScale = 3;
   /// <summary>
   /// Controls the exponential scaling used in EDL. Increase to darken EDL shadowing.
   /// </summary>
@@ -58,7 +58,7 @@ public class EdlCamera : MonoBehaviour
   /// <summary>
   /// Controls the linear scaling used in EDL. Increase to darken EDL shadowing.
   /// </summary>
-  [SerializeField, Range(1, 100)]
+  [SerializeField, Range(1, 10)]
   private float _edlScale = 1;
   /// <summary>
   /// Controls the linear scaling used in EDL. Increase to darken EDL shadowing.

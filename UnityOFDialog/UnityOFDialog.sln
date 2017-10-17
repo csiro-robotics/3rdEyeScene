@@ -1,7 +1,7 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2017
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnityOFDialog", "UnityOFDialog.csproj", "{859E74FE-AEE0-D199-9D72-04FBDA810AA7}"
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnityOFDialog", "Assembly-CSharp.csproj", "{588C65EC-73DE-E743-739D-9D5F96F689EC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -9,12 +9,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{859E74FE-AEE0-D199-9D72-04FBDA810AA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{859E74FE-AEE0-D199-9D72-04FBDA810AA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{859E74FE-AEE0-D199-9D72-04FBDA810AA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{859E74FE-AEE0-D199-9D72-04FBDA810AA7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{588C65EC-73DE-E743-739D-9D5F96F689EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{588C65EC-73DE-E743-739D-9D5F96F689EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{588C65EC-73DE-E743-739D-9D5F96F689EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{588C65EC-73DE-E743-739D-9D5F96F689EC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(MonoDevelopProperties) = preSolution
+		StartupItem = Assembly-CSharp.csproj
 	EndGlobalSection
 EndGlobal
