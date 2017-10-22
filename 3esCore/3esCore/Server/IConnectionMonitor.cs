@@ -143,5 +143,17 @@ namespace Tes.Server
     /// </summary>
     /// <param name="callback">Optional callback to invoke for each new connection.</param>
     void CommitConnections(NewConnectionCallback callback);
+
+    /// <summary>
+    /// Wait for up to <paramref name="timeoutMs"/> milliseconds for at least one connection before continuing.
+    /// </summary>
+    /// <param name="timeoutMs">The time to wait in milliseconds.</param>
+    /// <returns>True if a new connection has been found.</returns>
+    /// <remarks>
+    /// The method returns once either a new connection exists or <paramref name="timeoutMs"/> has elapsed.
+    /// When there is a new connection, it has yet to be committed. This should be done by calling
+    /// <see cref="CommitConnections(NewConnectionCallback)"/> after this method returns true.
+    /// </remarks>
+    bool WaitForConnections(uint timeoutMs);
   }
 }

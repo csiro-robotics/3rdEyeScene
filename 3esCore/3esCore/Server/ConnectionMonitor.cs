@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Collections.Generic;
@@ -186,6 +187,54 @@ namespace Tes.Server
           _lock.Unlock();
         }
       }
+    }
+
+    /// <summary>
+    /// Wait for up to <paramref name="timeoutMs"/> milliseconds for at least one new connection before continuing.
+    /// </summary>
+    /// <param name="timeoutMs">The time to wait in milliseconds.</param>
+    /// <returns>True if a new connection has been found.</returns>
+    /// <remarks>
+    /// The method returns once either a new connection exists or <paramref name="timeoutMs"/> has elapsed.
+    /// When there is a new connection, it has yet to be committed.
+    /// </remarks>
+    public bool WaitForConnections(uint timeoutMs)
+    {
+      Stopwatch timer = new Stopwatch();
+      timer.Start();
+
+      while (timer.ElapsedMilliseconds < timeoutMs)
+      {
+        _lock.Lock();
+        try
+        {
+          if (_connections.Count > 1)
+          {
+            return true;
+          }
+        }
+        finally
+        {
+          _lock.Unlock();
+        }
+
+        switch (Mode)
+        {
+        case ConnectionMonitorMode.None:
+          // Not actually looking for connections. Abort.
+          return false;
+        case ConnectionMonitorMode.Synchronous:
+          // Synchronous mode. Need to update monitor.
+          MonitorConnections();
+          break;
+        case ConnectionMonitorMode.Asynchronous:
+          // Asynchronous mode. Yield.
+          System.Threading.Thread.Sleep(0);
+          break;
+        }
+      }
+
+      return false;
     }
 
     /// <summary>
