@@ -18,6 +18,7 @@ Shader "Points/Voxel"
       Cull Off
 
       CGPROGRAM
+#pragma target 4.0
 #pragma vertex vert
 #pragma fragment frag
 #pragma geometry geom

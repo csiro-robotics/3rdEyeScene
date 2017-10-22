@@ -55,7 +55,7 @@ Shader "Hidden/EDL"
         // then see if I can remove the outline altogether where we have such edge transition.
         float3 lightDir = float3(0, 0, -1);
         float4 lightPlane = float4(lightDir, -dot(lightDir, float3(0, 0, depth)));
-        float2 uvRadius = _EdlScale * _Radius / float2(_ScreenParams.x, _ScreenParams.y);
+        float2 uvRadius = _Radius / float2(_ScreenParams.x, _ScreenParams.y);
         float2 neighbourRelativeUv, neighbourUv;
         float neighbourDepth, inPlaneNeighbourDepth;
         float sum = 0.0;
