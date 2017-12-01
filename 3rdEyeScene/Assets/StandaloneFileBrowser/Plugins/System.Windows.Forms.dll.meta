@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 7d459a96865cc4aaab657012c6dc4833
-timeCreated: 1507955990
-licenseType: Free
+timeCreated: 1491979494
+licenseType: Pro
 PluginImporter:
   serializedVersion: 2
   iconMap: {}
@@ -15,6 +15,7 @@ PluginImporter:
       second:
         enabled: 0
         settings:
+          Exclude Android: 1
           Exclude Editor: 0
           Exclude Linux: 1
           Exclude Linux64: 1
@@ -25,11 +26,27 @@ PluginImporter:
           Exclude WebGL: 1
           Exclude Win: 0
           Exclude Win64: 0
+          Exclude iOS: 1
+    data:
+      first:
+        '': Editor
+      second:
+        enabled: 0
+        settings:
+          CPU: AnyCPU
+          OS: AnyOS
+    data:
+      first:
+        Android: Android
+      second:
+        enabled: 0
+        settings:
+          CPU: ARMv7
     data:
       first:
         Any: 
       second:
-        enabled: 1
+        enabled: 0
         settings: {}
     data:
       first:
@@ -37,23 +54,21 @@ PluginImporter:
       second:
         enabled: 1
         settings:
-          CPU: AnyCPU
           DefaultValueInitialized: true
-          OS: AnyOS
     data:
       first:
         Facebook: Win
       second:
         enabled: 0
         settings:
-          CPU: None
+          CPU: AnyCPU
     data:
       first:
         Facebook: Win64
       second:
         enabled: 0
         settings:
-          CPU: None
+          CPU: AnyCPU
     data:
       first:
         Standalone: Linux
@@ -102,20 +117,14 @@ PluginImporter:
       second:
         enabled: 1
         settings:
-          CPU: None
+          CPU: AnyCPU
     data:
       first:
         Standalone: Win64
       second:
         enabled: 1
         settings:
-          CPU: None
-    data:
-      first:
-        WebGL: WebGL
-      second:
-        enabled: 0
-        settings: {}
+          CPU: AnyCPU
     data:
       first:
         Windows Store Apps: WindowsStoreApps
@@ -123,6 +132,14 @@ PluginImporter:
         enabled: 0
         settings:
           CPU: AnyCPU
+    data:
+      first:
+        iPhone: iOS
+      second:
+        enabled: 0
+        settings:
+          CompileFlags: 
+          FrameworkDependencies: 
   userData: 
   assetBundleName: 
   assetBundleVariant: 

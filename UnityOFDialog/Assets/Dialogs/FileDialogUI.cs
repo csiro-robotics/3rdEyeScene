@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Text;
+using System;
 
 namespace Dialogs
 {
@@ -36,21 +37,40 @@ namespace Dialogs
     [SerializeField]
     protected Button _cancelButton;
     /// <summary>
-    /// The game object to clone in order to create an icon representation for a drive or file.
+    /// The game objects to clone in order to create icon representations for a drive or file.
+    /// The array caters for different display modes. See <see cref="FileDisplayMode"/>.
     /// </summary>
     [SerializeField]
-    protected GameObject _iconItem;
-    /// <summary>
-    /// The game object to clone in order to create a short list representation for a drive or file.
-    /// </summary>
-    [SerializeField]
-    protected GameObject _listItem;
+    protected GameObject[] _iconItems = new GameObject[Enum.GetNames(typeof(FileDisplayMode)).Length];
     [SerializeField]
     protected ScrollRect _locationView;
     [SerializeField]
     protected ScrollRect _filesView;
     [SerializeField]
     protected FileDialogIcons _iconSet;
+    [SerializeField]
+    protected FileDisplayMode _displayMode = FileDisplayMode.Large;
+    public FileDisplayMode DisplayMode { get { return _displayMode; } set { _displayMode = value; } }
+
+    [SerializeField]
+    protected int[] _iconModeWidths = new int[] { 0, 340, 300 };
+
+    /// <summary>
+    /// Controls the width of the icon item in <see cref="FileDisplayMode.List"/>.
+    /// </summary>
+    public int[] ListModeItemWidths { get { return _iconModeWidths; } }
+    /// <summary>
+    /// Set the display width for icons when using <paramref name="mode"/>.
+    /// </summary>
+    /// <param name="mode">The display mode to set the width for.</param>
+    /// <param name="width">The display width to use.</param>
+    void SetListmodeItemWidth(FileDisplayMode mode, int width) { _iconModeWidths[(int)mode] = width; }
+    /// <summary>
+    /// Get the display width for icons when using <paramref name="mode"/>.
+    /// </summary>
+    /// <param name="mode">The display mode to query the width for.</param>
+    /// <returns>The display width for the selected mode.</returns>
+    int GetListmodeItemWidth(FileDisplayMode mode) { return _iconModeWidths[(int)mode]; }
 
     [SerializeField]
     protected bool _autoGridLayoutSizing = true;
@@ -391,18 +411,18 @@ namespace Dialogs
     {
       get
       {
-        if (_cancelButton != null && _cancelButton.GetComponent<GUIText>() != null)
+        if (_cancelButton != null && _cancelButton.GetComponent<Text>() != null)
         {
-          return _cancelButton.GetComponent<GUIText>().text;
+          return _cancelButton.GetComponent<Text>().text;
         }
         return string.Empty;
       }
 
       set
       {
-        if (_cancelButton != null && _cancelButton.GetComponent<GUIText>() != null)
+        if (_cancelButton != null && _cancelButton.GetComponent<Text>() != null)
         {
-          _cancelButton.GetComponent<GUIText>().text = value;
+          _cancelButton.GetComponent<Text>().text = value;
           NotifyChange("CancelButtonText", value);
         }
       }
@@ -427,7 +447,7 @@ namespace Dialogs
     /// <param name="locations">The locations items.</param>
     public void ShowLinks(IEnumerable<FileSystemEntry> locations)
     {
-      int itemCount = PopulateScrollRect(_locationView, _iconItem, locations, _iconSet);
+      int itemCount = PopulateScrollRect(_locationView, _iconItems[(int)FileDisplayMode.Large], locations, _iconSet, 0);
       if (_locationView != null)
       {
         // Bind selection events. Can't be done easily in static code.
@@ -443,7 +463,7 @@ namespace Dialogs
 
       if (itemCount != 0)
       {
-        StartCoroutine(FixSizeAtEndOfFrame(_locationView, _iconItem));
+        StartCoroutine(FixSizeAtEndOfFrame(_locationView, _iconItems[(int)FileDisplayMode.Large]));
       }
     }
 
@@ -458,7 +478,7 @@ namespace Dialogs
       Location = location.FullName;
       SuppressEvents = false;
       FilenameDisplay = string.Empty;
-      int itemCount = PopulateScrollRect(_filesView, _iconItem, items, _iconSet);
+      int itemCount = PopulateScrollRect(_filesView, _iconItems[(int)DisplayMode], items, _iconSet, _iconModeWidths[(int)DisplayMode]);
       if (_filesView != null)
       {
         FileEntryComponent initialSelection = null;
@@ -486,7 +506,7 @@ namespace Dialogs
 
       if (itemCount != 0 && isActiveAndEnabled)
       {
-        StartCoroutine(FixSizeAtEndOfFrame(_filesView, _iconItem));
+        StartCoroutine(FixSizeAtEndOfFrame(_filesView, _iconItems[(int)DisplayMode]));
       }
 
       _pendingSelection = null;
@@ -509,7 +529,7 @@ namespace Dialogs
       scroll.content.DetachChildren();
     }
 
-    protected int PopulateScrollRect(ScrollRect scroll, GameObject template, IEnumerable<FileSystemEntry> items, FileIconSet icons)
+    protected int PopulateScrollRect(ScrollRect scroll, GameObject template, IEnumerable<FileSystemEntry> items, FileIconSet icons, int targetWidth)
     {
       if (scroll == null)
       {
@@ -521,6 +541,19 @@ namespace Dialogs
       if (template == null)
       {
         return 0;
+      }
+
+      // We modify the template width because it's the the simplest way to implement this feature.
+      if (targetWidth > 0)
+      {
+        // Resize the icon.
+        RectTransform rect = template.transform as RectTransform;
+        if (rect != null)
+        {
+          var sd = rect.sizeDelta;
+          sd.x = targetWidth;
+          rect.sizeDelta = sd;
+        }
       }
 
       int itemCount = 0;
@@ -548,7 +581,7 @@ namespace Dialogs
         // We expect the item to have two images; an icon image and an disabled highlight.
         // We can expect that the highlight is disabled, to hide it for now, and must come
         // first because of Unity uGUI draw order/hierarchy constraints.
-        // For simplicitly, we assume the first image is the highlight, the second image is
+        // For simplicity, we assume the first image is the highlight, the second image is
         // the icon. The icon image is optional.
         foreach (Image image in itemUI.GetComponentsInChildren<Image>())
         {
@@ -593,7 +626,7 @@ namespace Dialogs
     }
 
     /// <summary>
-    /// A couroutine which calls <see cref="FixSize"/> at the end of the current frame.
+    /// A coroutine which calls <see cref="FixSize"/> at the end of the current frame.
     /// </summary>
     /// <remarks>
     /// This addresses layout issues where the size of a scroll view may not have been calculated yet
