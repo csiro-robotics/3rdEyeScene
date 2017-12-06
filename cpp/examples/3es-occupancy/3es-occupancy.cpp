@@ -143,7 +143,7 @@ namespace
       }
 
       // Render slightly smaller than the actual voxel size.
-      TES_VOXELS(*g_tesServer, colour, 0.95f * float(map.getResolution()),
+      TES_VOXELS(g_tesServer, colour, 0.95f * float(map.getResolution()),
                  centres.data()->v, unsigned(centres.size()), sizeof(*centres.data()),
                  0u, category);
     }
@@ -195,9 +195,9 @@ int populateMap(const Options &opt)
   map.setClampingThresMin(0.01);
   //printf("min: %g\n", map.getClampingThresMinLog());
 
-  TES_POINTCLOUDSHAPE(*g_tesServer, TES_COLOUR(SteelBlue), &mapMesh, RES_Map, CAT_Map);
+  TES_POINTCLOUDSHAPE(g_tesServer, TES_COLOUR(SteelBlue), &mapMesh, RES_Map, CAT_Map);
   // Ensure mesh is created for later update.
-  TES_SERVER_UPDATE(*g_tesServer, 0.0f);
+  TES_SERVER_UPDATE(g_tesServer, 0.0f);
 
   // Load the first point.
   bool havePoint = loader.nextPoint(sample, origin, &timestamp);
@@ -249,7 +249,7 @@ int populateMap(const Options &opt)
     {
       if (octomap::OcTree::NodeType *node = map.search(key))
       {
-        // Existing node. 
+        // Existing node.
         const bool initiallyOccupied = map.isNodeOccupied(node);
         map.integrateMiss(node);
         if (initiallyOccupied && !map.isNodeOccupied(node))
@@ -275,7 +275,7 @@ int populateMap(const Options &opt)
     key = map.coordToKey(p2p(sample));
     if (octomap::OcTree::NodeType *node = map.search(key))
     {
-      // Existing node. 
+      // Existing node.
       const bool initiallyOccupied = map.isNodeOccupied(node);
       map.integrateHit(node);
       if (!initiallyOccupied && map.isNodeOccupied(node))
@@ -306,11 +306,11 @@ int populateMap(const Options &opt)
       firstBatchTimestamp = -1;
 
       sprintf(timeStrBuffer, "%g", timestamp - timebase);
-      TES_TEXT2D_SCREEN(*g_tesServer, TES_COLOUR(White), timeStrBuffer, 0u, CAT_Info, Vector3f(0.05f, 0.1f, 0.0f));
+      TES_TEXT2D_SCREEN(g_tesServer, TES_COLOUR(White), timeStrBuffer, 0u, CAT_Info, Vector3f(0.05f, 0.1f, 0.0f));
       // Draw sample lines.
       if (opt.rays & Rays_Lines)
       {
-        TES_LINES(*g_tesServer, TES_COLOUR(DarkOrange),
+        TES_LINES(g_tesServer, TES_COLOUR(DarkOrange),
                   rays.data()->v, unsigned(rays.size()), sizeof(*rays.data()),
                   0u, CAT_Rays);
       }
@@ -326,12 +326,12 @@ int populateMap(const Options &opt)
       }
       if (opt.samples)
       {
-        TES_POINTS(*g_tesServer, TES_COLOUR(Orange),
+        TES_POINTS(g_tesServer, TES_COLOUR(Orange),
                   samples.data()->v, unsigned(samples.size()), sizeof(*samples.data()),
                   0u, CAT_OccupiedCells);
       }
       samples.clear();
-      //TES_SERVER_UPDATE(*g_tesServer, 0.0f);
+      //TES_SERVER_UPDATE(g_tesServer, 0.0f);
 
       // Ensure touchedOccupied does not contain newly occupied nodes for mesh update.
       for (auto key : becomeOccupied)
@@ -350,7 +350,7 @@ int populateMap(const Options &opt)
       touchedOccupied.clear();
       becomeOccupied.clear();
       becomeFree.clear();
-      TES_SERVER_UPDATE(*g_tesServer, float(elapsedTime));
+      TES_SERVER_UPDATE(g_tesServer, float(elapsedTime));
       if (opt.pointLimit && pointCount >= opt.pointLimit ||
           opt.endTime > 0 && lastTimestamp - timebase >= opt.endTime ||
           quit)
@@ -370,7 +370,7 @@ int populateMap(const Options &opt)
     havePoint = loader.nextPoint(sample, origin, &timestamp);
   }
 
-  TES_SERVER_UPDATE(*g_tesServer, 0.0f);
+  TES_SERVER_UPDATE(g_tesServer, 0.0f);
 
   if (!opt.quiet)
   {
@@ -428,21 +428,21 @@ void usage(const Options &opt)
 
 void initialiseDebugCategories(const Options &opt)
 {
-  TES_CATEGORY(*g_tesServer, "Map", CAT_Map, 0, true);
-  TES_CATEGORY(*g_tesServer, "Populate", CAT_Populate, 0, true);
+  TES_CATEGORY(g_tesServer, "Map", CAT_Map, 0, true);
+  TES_CATEGORY(g_tesServer, "Populate", CAT_Populate, 0, true);
   TES_IF(opt.rays & Rays_Lines)
   {
-    TES_CATEGORY(*g_tesServer, "Rays", CAT_Rays, CAT_Populate, (opt.rays & Rays_Lines) != 0);
+    TES_CATEGORY(g_tesServer, "Rays", CAT_Rays, CAT_Populate, (opt.rays & Rays_Lines) != 0);
   }
   TES_IF(opt.rays & Rays_Voxels)
   {
-    TES_CATEGORY(*g_tesServer, "Free", CAT_FreeCells, CAT_Populate, (opt.rays & Rays_Lines) == 0);
+    TES_CATEGORY(g_tesServer, "Free", CAT_FreeCells, CAT_Populate, (opt.rays & Rays_Lines) == 0);
   }
   TES_IF(opt.samples)
   {
-    TES_CATEGORY(*g_tesServer, "Occupied", CAT_OccupiedCells, CAT_Populate, true);
+    TES_CATEGORY(g_tesServer, "Occupied", CAT_OccupiedCells, CAT_Populate, true);
   }
-  TES_CATEGORY(*g_tesServer, "Info", CAT_Info, 0, true);
+  TES_CATEGORY(g_tesServer, "Info", CAT_Info, 0, true);
 }
 
 int main(int argc, char *argv[])
@@ -581,8 +581,8 @@ int main(int argc, char *argv[])
   TES_SERVER_CREATE(g_tesServer, settings, &info);
 
   // Start the server and wait for the connection monitor to start.
-  TES_SERVER_START(*g_tesServer, tes::ConnectionMonitor::Asynchronous);
-  TES_SERVER_START_WAIT(*g_tesServer, 1000);
+  TES_SERVER_START(g_tesServer, tes::ConnectionMonitor::Asynchronous);
+  TES_SERVER_START_WAIT(g_tesServer, 1000);
 
 #ifdef TES_ENABLE
   std::cout << "Starting with " << g_tesServer->connectionCount() << " connection(s)." << std::endl;

@@ -95,7 +95,7 @@ namespace
       }
 
       cursor += count;
-      TES_TRIANGLES(*tesServer, TES_RGB(200, 200, 200), localVertices.data()->v, (unsigned)count, sizeof(*localVertices.data()), SPHERE_ID + shapeCount);
+      TES_TRIANGLES(tesServer, TES_RGB(200, 200, 200), localVertices.data()->v, (unsigned)count, sizeof(*localVertices.data()), SPHERE_ID + shapeCount);
       ++shapeCount;
     }
 
@@ -205,7 +205,7 @@ namespace
     // Send the initial sphere. We know it has less than 65k vertices.
     if (!vertices.empty() && !indices.empty())
     {
-      TES_TRIANGLES(*tesServer, TES_RGB(200, 200, 200), vertices.data()->v, (unsigned)vertices.size(), sizeof(*vertices.data()),
+      TES_TRIANGLES(tesServer, TES_RGB(200, 200, 200), vertices.data()->v, (unsigned)vertices.size(), sizeof(*vertices.data()),
                     indices.data(), (unsigned)indices.size(), SPHERE_ID);
     }
   }
@@ -232,7 +232,7 @@ namespace
       verts[2] = vertices[triangle[2]];
 
       // Highlight the working triangle: extrude it a bit to make it pop.
-      TES_TRIANGLE(*tesServer, TES_COLOUR(FireBrick), verts[0] * 1.01f, verts[1] * 1.01f, verts[2] * 1.01f);
+      TES_TRIANGLE(tesServer, TES_COLOUR(FireBrick), verts[0] * 1.01f, verts[1] * 1.01f, verts[2] * 1.01f);
 
       // Calculate the new vertex at the centre of the existing triangle.
       newVertices[0] = (0.5f * (verts[0] + verts[1])).normalised();
@@ -255,8 +255,8 @@ namespace
       def[1] = insertVertex(newVertices[1], vertices, vertexMap);
       def[2] = insertVertex(newVertices[2], vertices, vertexMap);
 
-      TES_TRIANGLE_I(*tesServer, TES_COLOUR(Cyan), vertices.data()->v, def[0], def[1], def[2]);
-      TES_TRIANGLE_IW(*tesServer, TES_COLOUR(Navy), vertices.data()->v, def[0], def[1], def[2]);
+      TES_TRIANGLE_I(tesServer, TES_COLOUR(Cyan), vertices.data()->v, def[0], def[1], def[2]);
+      TES_TRIANGLE_IW(tesServer, TES_COLOUR(Navy), vertices.data()->v, def[0], def[1], def[2]);
 
       // Replace the original triangle ABC with DEF
       indices[i * 3 + 0] = def[0];
@@ -268,24 +268,24 @@ namespace
       indices.push_back(def[0]);
       indices.push_back(def[2]);
 
-      TES_TRIANGLE_I(*tesServer, TES_COLOUR(Cyan), vertices.data()->v, abc[0], def[0], def[2]);
-      TES_TRIANGLE_IW(*tesServer, TES_COLOUR(Navy), vertices.data()->v, abc[0], def[0], def[2]);
+      TES_TRIANGLE_I(tesServer, TES_COLOUR(Cyan), vertices.data()->v, abc[0], def[0], def[2]);
+      TES_TRIANGLE_IW(tesServer, TES_COLOUR(Navy), vertices.data()->v, abc[0], def[0], def[2]);
 
       indices.push_back(abc[1]);
       indices.push_back(def[1]);
       indices.push_back(def[0]);
 
-      TES_TRIANGLE_I(*tesServer, TES_COLOUR(Cyan), vertices.data()->v, abc[1], def[1], def[0]);
-      TES_TRIANGLE_IW(*tesServer, TES_COLOUR(Navy), vertices.data()->v, abc[1], def[1], def[0]);
+      TES_TRIANGLE_I(tesServer, TES_COLOUR(Cyan), vertices.data()->v, abc[1], def[1], def[0]);
+      TES_TRIANGLE_IW(tesServer, TES_COLOUR(Navy), vertices.data()->v, abc[1], def[1], def[0]);
 
       indices.push_back(abc[2]);
       indices.push_back(def[2]);
       indices.push_back(def[1]);
 
-      TES_TRIANGLE_I(*tesServer, TES_COLOUR(Cyan), vertices.data()->v, abc[2], def[2], def[1]);
-      TES_TRIANGLE_IW(*tesServer, TES_COLOUR(Navy), vertices.data()->v, abc[2], def[2], def[1]);
+      TES_TRIANGLE_I(tesServer, TES_COLOUR(Cyan), vertices.data()->v, abc[2], def[2], def[1]);
+      TES_TRIANGLE_IW(tesServer, TES_COLOUR(Navy), vertices.data()->v, abc[2], def[2], def[1]);
 
-      TES_SERVER_UPDATE(*tesServer, 0, true); // Flush.
+      TES_SERVER_UPDATE(tesServer, 0, true); // Flush.
     }
   }
 }
@@ -332,8 +332,8 @@ int main(int argc, char **argvNonConst)
   TES_SERVER_CREATE(tesServer, settings, &info);
 
   // Start the server and wait for the connection monitor to start.
-  TES_SERVER_START(*tesServer, tes::ConnectionMonitor::Asynchronous);
-  TES_SERVER_START_WAIT(*tesServer, 1000);
+  TES_SERVER_START(tesServer, tes::ConnectionMonitor::Asynchronous);
+  TES_SERVER_START_WAIT(tesServer, 1000);
 
 #ifdef TES_ENABLE
   std::cout << "Starting with " << tesServer->connectionCount() << " connection(s)." << std::endl;
@@ -343,8 +343,8 @@ int main(int argc, char **argvNonConst)
   std::cout << "Initialise sphere for " << iterations << " iterations." << std::endl;
   sphereInitialise(vertices, indices, &sphereMap);
   const tes::Vector3f textPos(0.05f, 0.05f, 0);
-  TES_TEXT2D_SCREEN(*tesServer, TES_COLOUR(LimeGreen), "Initial", textPos);
-  TES_SERVER_UPDATE(*tesServer, 0.0f);
+  TES_TEXT2D_SCREEN(tesServer, TES_COLOUR(LimeGreen), "Initial", textPos);
+  TES_SERVER_UPDATE(tesServer, 0.0f);
 
 #ifdef TES_ENABLE
   // Start with one shape.
@@ -360,18 +360,18 @@ int main(int argc, char **argvNonConst)
 #ifdef TES_ENABLE
     for (int i = 0; i < shapeCount; ++i)
     {
-      TES_TRIANGLES_END(*tesServer, SPHERE_ID + i);
+      TES_TRIANGLES_END(tesServer, SPHERE_ID + i);
     }
     // Send the updated sphere. We must unroll into sets of triangles of less than 65K vertices.
     shapeCount = tesUnrollDisplay(vertices, indices);
     if (i)
     {
-      TES_TEXT2D_END(*tesServer, TEXT_ID);
+      TES_TEXT2D_END(tesServer, TEXT_ID);
     }
 #endif // TES_ENABLE
-    TES_TEXT2D_SCREEN(*tesServer, TES_COLOUR(LimeGreen), label.str().c_str(), TEXT_ID, textPos);
+    TES_TEXT2D_SCREEN(tesServer, TES_COLOUR(LimeGreen), label.str().c_str(), TEXT_ID, textPos);
     // Update after every iteration.
-    TES_SERVER_UPDATE(*tesServer, 0.0f);
+    TES_SERVER_UPDATE(tesServer, 0.0f);
   }
 
   std::cout << "Done" << std::endl;

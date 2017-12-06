@@ -551,24 +551,24 @@ int main(int argc, char **argvNonConst)
   auto onNewConnection = [&shapes](Server &/*server*/, Connection &connection)
   {
     // Test categories API.
-    TES_CATEGORY(connection, "3D", Cat3D, CatRoot, true);
-    TES_CATEGORY(connection, "Text", CatText, CatRoot, true);
-    TES_CATEGORY(connection, "Primitives", CatSimple3D, Cat3D, true);
-    TES_CATEGORY(connection, "Mesh Based", CatComplex3D, Cat3D, true);
-    TES_CATEGORY(connection, "Arrows", CatArrow, CatSimple3D, true);
-    TES_CATEGORY(connection, "Boxes", CatBox, CatSimple3D, true);
-    TES_CATEGORY(connection, "Capsules", CatCapsule, CatSimple3D, true);
-    TES_CATEGORY(connection, "Cylinders", CatCylinder, CatSimple3D, true);
-    TES_CATEGORY(connection, "Cones", CatCone, CatSimple3D, true);
-    TES_CATEGORY(connection, "Lines", CatLines, CatComplex3D, true);
-    TES_CATEGORY(connection, "Meshes", CatMesh, CatComplex3D, true);
-    TES_CATEGORY(connection, "Planes", CatPlane, CatSimple3D, true);
-    TES_CATEGORY(connection, "Points", CatPoints, CatComplex3D, true);
-    TES_CATEGORY(connection, "Spheres", CatSphere, CatSimple3D, true);
-    TES_CATEGORY(connection, "Stars", CatStar, CatSimple3D, true);
-    TES_CATEGORY(connection, "Text2D", CatText2D, CatText, true);
-    TES_CATEGORY(connection, "Text3D", CatText3D, CatText, true);
-    TES_CATEGORY(connection, "Triangles", CatTriangles, CatComplex3D, true);
+    TES_CATEGORY(&connection, "3D", Cat3D, CatRoot, true);
+    TES_CATEGORY(&connection, "Text", CatText, CatRoot, true);
+    TES_CATEGORY(&connection, "Primitives", CatSimple3D, Cat3D, true);
+    TES_CATEGORY(&connection, "Mesh Based", CatComplex3D, Cat3D, true);
+    TES_CATEGORY(&connection, "Arrows", CatArrow, CatSimple3D, true);
+    TES_CATEGORY(&connection, "Boxes", CatBox, CatSimple3D, true);
+    TES_CATEGORY(&connection, "Capsules", CatCapsule, CatSimple3D, true);
+    TES_CATEGORY(&connection, "Cylinders", CatCylinder, CatSimple3D, true);
+    TES_CATEGORY(&connection, "Cones", CatCone, CatSimple3D, true);
+    TES_CATEGORY(&connection, "Lines", CatLines, CatComplex3D, true);
+    TES_CATEGORY(&connection, "Meshes", CatMesh, CatComplex3D, true);
+    TES_CATEGORY(&connection, "Planes", CatPlane, CatSimple3D, true);
+    TES_CATEGORY(&connection, "Points", CatPoints, CatComplex3D, true);
+    TES_CATEGORY(&connection, "Spheres", CatSphere, CatSimple3D, true);
+    TES_CATEGORY(&connection, "Stars", CatStar, CatSimple3D, true);
+    TES_CATEGORY(&connection, "Text2D", CatText2D, CatText, true);
+    TES_CATEGORY(&connection, "Text3D", CatText3D, CatText, true);
+    TES_CATEGORY(&connection, "Triangles", CatTriangles, CatComplex3D, true);
     for (Shape *shape : shapes)
     {
       connection.create(*shape);

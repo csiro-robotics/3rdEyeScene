@@ -9,6 +9,9 @@
 
 namespace tes
 {
+  /// Defines a rectangular prism shape.
+  ///
+  /// The box is defined by its centre, scale and orientation. The scale defines the full extents from one corner to another.
   class _3es_coreAPI Box : public Shape
   {
   public:
