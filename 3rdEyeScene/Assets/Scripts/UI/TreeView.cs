@@ -190,6 +190,7 @@ namespace UI
         AddVisuals(child, 0);
       }
       Spacer.SetParent(ScrollView.content, false);
+      ScrollView.LayoutContentV();
     }
 
     /// <summary>

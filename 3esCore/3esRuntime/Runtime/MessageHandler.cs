@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using Tes.IO;
 using UnityEngine;
@@ -97,6 +98,11 @@ namespace Tes.Runtime
     {
       get; protected set;
     }
+
+    /// <summary>
+    /// List the root objects this message handler has instantiated.
+    /// </summary>
+    public virtual IEnumerable<GameObject> Objects { get { return new GameObject[0]; } }
 
     /// <summary>
     /// Called to initialise the handler with various 3rd Eye Scene components.

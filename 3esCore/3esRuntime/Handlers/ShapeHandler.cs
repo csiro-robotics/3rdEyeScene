@@ -70,6 +70,23 @@ namespace Tes.Handlers
     public abstract Mesh WireframeMesh { get; }
 
     /// <summary>
+    /// List the root objects this message handler has instantiated.
+    /// </summary>
+    public override IEnumerable<GameObject> Objects
+    {
+      get
+      {
+        if (_root)
+        {
+          for (int i = 0; i < _root.transform.childCount; ++i)
+          {
+            yield return _root.transform.GetChild(i).gameObject;
+          }
+        }
+      }
+    }
+
+    /// <summary>
     /// Initialise the shape handler by initialising the shape scene root and
     /// fetching the default materials.
     /// </summary>
