@@ -4,6 +4,7 @@
 *@{
 *
 * @namespace tes
+* The core 3<sup>rd</sup> Eye Scene API.
 *
 *@}
 */

@@ -1,13 +1,27 @@
-project(3es-core)
+set(TES_CORE_ONLY Off)
+# Project setup if this is being built as a stand alone project.
+if(NOT ${CMAKE_PROJECT_NAME})
+  project(3es-core)
 
-cmake_minimum_required(VERSION 3.0)
+  cmake_minimum_required(VERSION 3.5)
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+  set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_compile_options(3es-core PRIVATE "-Wno-logical-op-parentheses")
+  endif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+
+  set(TES_CORE_ONLY On)
+endif(NOT ${CMAKE_PROJECT_NAME})
 
 option(TES_ZLIB_OFF "Disable ZLIB usage even if found? Intended for testing." OFF)
+set(TES_SOCKETS "custom" CACHE STRING "Select the TCP socket implementation. The 'custom' implementaiton is based on Berkley sockets or Winsock2.")
+set_property(CACHE TES_SOCKETS PROPERTY STRINGS custom Qt)
+
+message(STATUS "Using ${TES_SOCKETS} sockets")
 
 set(TES_ZLIB 0)
 if(NOT DEFINED TES_ZLIB_OFF OR NOT TES_ZLIB_OFF)
@@ -31,11 +45,6 @@ if(NOT DEFINED TES_IS_BIG_ENDIAN)
   endif(IS_BIG_ENDIAN)
 endif(NOT DEFINED TES_IS_BIG_ENDIAN)
 
-set(TES_SOCKETS "custom" CACHE STRING "Select the TCP socket implementation. The 'custom' implementaiton is based on Berkley sockets or Winsock2.")
-set_property(CACHE TES_SOCKETS PROPERTY STRINGS custom Qt)
-
-message(STATUS "Using ${TES_SOCKETS} sockets")
-
 list(APPEND DOXYGEN_INPUT_LIST "${CMAKE_CURRENT_LIST_DIR}" "${CMAKE_CURRENT_LIST_DIR}/tcp")
 if(TES_SOCKETS STREQUAL "custom")
   list(APPEND DOXYGEN_INPUT_LIST "${CMAKE_CURRENT_LIST_DIR}/tcp")
@@ -54,12 +63,6 @@ set(DOXYGEN_INPUT_LIST "${DOXYGEN_INPUT_LIST}" PARENT_SCOPE)
 
 add_library(3es-core ${PUBLIC_HEADERS} ${SOURCES} ${PRIVATE_HEADERS} ${PRIVATE_SOURCES})
 
-# Include directories
-target_include_directories(3es-core
-  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-         $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
-         $<INSTALL_INTERFACE:include>
-)
 # Library setup.
 include(GenerateExportHeader)
 generate_export_header(3es-core
@@ -69,20 +72,39 @@ generate_export_header(3es-core
       STATIC_DEFINE TES_STATIC
       )
 
+# set_target_properties(3es-core PROPERTIES FOLDER core)
+
+# Setup target versioning.
+set_target_properties(3es-core PROPERTIES
+  # Build version.
+  VERSION ${TES_VERSION}
+  # API version.
+  SOVERSION 0 # API version.
+  # Compatibility versioning. Referenced via the COMPATIBLE_INTERFACE_STRING property.
+  INTERFACE_3escore_MAJOR_VERSION 0
+)
+# Help enforce version compability by ensuring all link dependencies expect the same INTERFACE_3escore_MAJOR_VERSION
+set_property(TARGET 3es-core APPEND PROPERTY COMPATIBLE_INTERFACE_STRING INTERFACE_3escore_MAJOR_VERSION)
+
+# Include directories
+target_include_directories(3es-core
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}>
+    $<INSTALL_INTERFACE:include>
+)
+
+# Need to explicitly define some compile flags because the target name starts with a number.
 if(BUILD_SHARED_LIBS)
   target_compile_definitions(3es-core PRIVATE -D_3es_core_EXPORTS)
 else(BUILD_SHARED_LIBS)
   target_compile_definitions(3es-core PUBLIC -DTES_STATIC)
 endif(BUILD_SHARED_LIBS)
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  target_compile_options(3es-core PRIVATE "-Wno-logical-op-parentheses")
-endif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-
-if(ZLIB_FOUND)
+if(ZLIB_FOUND AND NOT TES_ZLIB_OFF)
   target_include_directories(3es-core PRIVATE "${ZLIB_INCLUDE_DIRS}")
   target_link_libraries(3es-core ${ZLIB_LIBRARIES})
-endif(ZLIB_FOUND)
+endif(ZLIB_FOUND AND NOT TES_ZLIB_OFF)
 
 if(MSVC)
   # Windows build requires Winsock2.
@@ -94,31 +116,41 @@ if(TES_SOCKETS STREQUAL "Qt")
   target_include_directories(3es-core PRIVATE "${Qt5Network_INCLUDE_DIRS}")
 endif()
 
+# Setup installation.
+set(CONFIG_SUFFIX -config-targets)
+if(TES_CORE_ONLY)
+  set(CONFIG_SUFFIX -config)
+endif(TES_CORE_ONLY)
+
+# Binary installation
+install(TARGETS 3es-core EXPORT ${CMAKE_PROJECT_NAME}${CONFIG_SUFFIX}
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include
+)
+
+# Install PDB files (MSVC) in part to avoid unsupressable linker warnings.
+if(BUILD_SHARED_LIBS)
+  install(FILES $<TARGET_PDB_FILE:3es-core> DESTINATION bin OPTIONAL)
+endif(BUILD_SHARED_LIBS)
+
+# Header installation
+install(FILES ${PUBLIC_HEADERS} DESTINATION include/3es-core COMPONENT Devel)
+
+export(EXPORT ${CMAKE_PROJECT_NAME}${CONFIG_SUFFIX}
+  FILE "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}${CONFIG_SUFFIX}.cmake"
+  NAMESPACE 3es::
+)
+install(EXPORT ${CMAKE_PROJECT_NAME}${CONFIG_SUFFIX}
+  FILE ${CMAKE_PROJECT_NAME}${CONFIG_SUFFIX}.cmake
+  NAMESPACE 3es::
+  DESTINATION ${ConfigPackageLocation}
+)
+
 source_group("source" FILES "${CMAKE_CURRENT_BINARY_DIR}/3es-core.h")
 source_group("source" REGULAR_EXPRESSION ".*$")
 source_group("source\\private" REGULAR_EXPRESSION "/private/.*$")
 source_group("source\\qt" REGULAR_EXPRESSION "/qt/.*$")
 source_group("source\\shapes" REGULAR_EXPRESSION "/shapes/.*$")
 source_group("source\\tcp" REGULAR_EXPRESSION "/tcp/.*$")
-
-install(TARGETS 3es-core EXPORT 3es-core
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        INCLUDES DESTINATION include
-        )
-install(FILES ${PUBLIC_HEADERS} DESTINATION include)
-install(EXPORT 3es-core DESTINATION lib/3es-core)
-
-# FIXME: use BundleUtilities to copy the dependencies (ZLIB, Qt, etc).
-# set(APPS 3es-core)
-# set(DIRS)
-
-# foreach(LIB ${ZLIB_LIBRARIES})
-#   get_filename_component(LIBPATH "${ZLIB_LIBRARIES}" DIRECTORY)
-#   list(APPEND DIRS "${LIBPATH}")
-# endforeach(LIB)
-# INSTALL(CODE "
-# include(BundleUtilities)
-# fixup_bundle(\"${APPS}\"   \"\"   \"${DIRS}\")
-# ")

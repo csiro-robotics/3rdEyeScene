@@ -10,6 +10,7 @@
 
 namespace tes
 {
+  /// A 4D rotational quaternion class.
   template <typename T>
   class Quaternion
   {

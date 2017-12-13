@@ -11,12 +11,25 @@
 
 namespace tes
 {
+  /// Defines a square planar section to display.
+  ///
+  /// The scale is interpreted as the size of the square to display at the plane origin. The normal render length is
+  /// also adjustable.
   class _3es_coreAPI Plane : public Shape
   {
   public:
+    /// Defines the default plane normal orientation.
     static const Vector3f DefaultNormal;
 
+    /// @overload
     Plane(uint32_t id = 0u, const V3Arg &position = V3Arg(0, 0, 0), const V3Arg &normal = DefaultNormal, float scale = 1.0f, float normalLength = 1.0f);
+    /// Create a plane.
+    /// @param id The shape ID. Zero for transient shapes.
+    /// @param category The category grouping for the shape used for filtering.
+    /// @param position Defines the plane origin and where the plane's square is display.
+    /// @param normal Defines the plane normal.
+    /// @param scale Defines the size of the square to display.
+    /// @param normalLength Adjusts the display length of the normal.
     Plane(uint32_t id, uint16_t category, const V3Arg &position = V3Arg(0, 0, 0), const V3Arg &normal = DefaultNormal, float scale = 1.0f, float normalLength = 1.0f);
 
     Plane &setNormal(const V3Arg &normal);

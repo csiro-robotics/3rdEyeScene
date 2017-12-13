@@ -33,8 +33,9 @@ list(APPEND SOURCES
   p2p.h
 )
 
-get_target_property(3ESCORE_INCLUDE_DIRS 3es-core INCLUDE_DIRECTORIES)
 add_executable(3es-occupancy ${SOURCES})
+set_target_properties(3es-occupancy PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
+
 target_link_libraries(3es-occupancy
   3es-core
   ${OCTOMAP_LIBRARIES}
@@ -43,9 +44,9 @@ target_link_libraries(3es-occupancy
 )
 target_include_directories(3es-occupancy
   PRIVATE
-    "${3ESCORE_INCLUDE_DIRS}"
+    $<TARGET_PROPERTY:3es-core,INCLUDE_DIRECTORIES>
     "${OCTOMAP_INCLUDE_DIRS}"
     "${LIBLAS_INCLUDE_DIR}"
     "${LASZIP_INCLUDE_DIR}"
 )
-source_group("source" REGULAR_EXPRESSION ".*$")
+source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" PREFIX source FILES ${SOURCES})

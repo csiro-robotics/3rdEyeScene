@@ -12,7 +12,6 @@
 #include <unordered_map>
 #include <vector>
 
-/// Tessellates the plane primitive.
 namespace tes
 {
   struct _3es_coreAPI SphereVertexHash

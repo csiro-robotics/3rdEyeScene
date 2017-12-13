@@ -1,27 +1,48 @@
-project(3rd-eye-scene)
+# Project setup and minimum cmake version.
+cmake_minimum_required(VERSION 3.5)
 
-file(TO_CMAKE_PATH "$ENV{CMAKE_MODULE_PATH}" CMK_MOD_DIR)
-set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_LIST_DIR}/cmake;${CMK_MOD_DIR}")
+# Setup project details.
+project(3es)
+set(TES_VERSION 0.7)
+set(ConfigPackageLocation lib/cmake/${CMAKE_PROJECT_NAME})
 
-file(TO_CMAKE_PATH "$ENV{CMAKE_PREFIX_PATH}" CMK_PREFIX_DIR)
-set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${CMK_PREFIX_DIR}")
-
-cmake_minimum_required(VERSION 3.0)
-
-set(CMAKE_CXX_STANDARD 11)
+# C++ standards setup.
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_Debug "${CMAKE_BINARY_DIR}/Debug")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_Release "${CMAKE_BINARY_DIR}/Release")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RelWithDebInfo "${CMAKE_BINARY_DIR}/RelWithDebInfo")
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_MinSizeRel "${CMAKE_BINARY_DIR}/MinSizeRel")
+# Add cmake directory to the modules path.
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};${CMAKE_CURRENT_LIST_DIR}/cmake")
 
-option(TES_DOXYGEN "Build Doxygen documentation if doxygen is available?" ON)
+# Ensure debug libraries are built with different named to release builds. This is to address issues such as MSVC
+# having different debug and release runtime libraries. For a well setup API, one which hides resource allocation and
+# ensures symmetrical deallcation occurs from the same allocator, this won't be a problem, but the consistency is
+# useful.
+set(CMAKE_DEBUG_POSTFIX "d")
+# Marshall all binaries to the same directory. This is expecially useful on Windows when trying to run exectuables from
+# this project with shared libraries. Otherwise those shared libraries aren't on the path. Note that other package
+# binaries should be on the path already.
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+# Add project level options here.
+option(TES_BUILD_DOXYGEN "Build doxgen documentation?" OFF)
+option(TES_BUILD_EXAMPLES "Build examples?" OFF)
+option(TES_BUILD_TESTS "Build unit tests?" OFF)
+
+# Allow the use of folders to group targets in supporting environments.
+# For example Visual Studio solution folders.
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# Enable PDB files in release builds for MSVC to facilitate debugging.
+# Manage warnings, disabling ones we want to ignore.
+# message("CMAKE_CXX_COMPILER_ID: ${CMAKE_CXX_COMPILER_ID}")
+if(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang.*")
+  add_compile_options("-Wno-logical-op-parentheses")
+endif(CMAKE_CXX_COMPILER_ID MATCHES ".*Clang.*")
+
+# For Visual Studio, force PDB based debug information even in release builds.
+# This has a small impact on the size of the of the DLLs, but provides debug information for release mode crashes.
+# The PDBs can be kept for debugging specific releases, but do not need to be shipped as part of the runtime, unless
+# shipping an SDK. The last point is to address MSVC linked warnings which are impossible to suppress without providing
+# PDB files.
 if(MSVC)
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Zi")
   set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /Zi")
@@ -30,86 +51,74 @@ if(MSVC)
   set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/debug ${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
 endif(MSVC)
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-  add_compile_options("-Wno-logical-op-parentheses")
-endif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-
+# Include sub projects.
 add_subdirectory(3es-core)
-add_subdirectory(examples)
-add_subdirectory(test)
+if(TES_BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif(TES_BUILD_EXAMPLES)
 
-function(tes_doxygen_target DOXYFILE)
-  CMAKE_PARSE_ARGUMENTS(GDT "INSTALL" "OUTDIR" "" "${ARGN}")
+if(TES_BUILD_TESTS)
+  # We can enable testing here and/or in the subdirectory, but doing it here allows us to run CTest from the build root.
+  # To run the tests, we execute:
+  #   CTest -C [Debug|Release|RelWithDebInfo|MinSizeRel] --output-on-failure
+  # CTest normally shows only a very terse test ouput, but we make sure failed tests show all output by adding
+  #   --output-on-failure
+  # The full test output is always available in:
+  #   <build>/Testing/Temporary/LastTest.log
+  enable_testing()
+  add_subdirectory(test)
+endif(TES_BUILD_TESTS)
 
-  # Only generate for the top level CMAKE_LISTS file
-  find_package(Doxygen QUIET)
+# Package configuration script configuration.
+# Setup import scripts.
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+  "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}-config-version.cmake"
+  VERSION ${TES_VERSION}
+  COMPATIBILITY AnyNewerVersion
+)
 
-  if(NOT DOXYGEN_FOUND)
-    message("Doxygen not found. Skipping.")
-    return()
-  endif(NOT DOXYGEN_FOUND)
+# Installation of the package configuration file.
+configure_file(cmake/${CMAKE_PROJECT_NAME}-config.cmake "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}-config.cmake" COPYONLY)
+install(FILES cmake/${CMAKE_PROJECT_NAME}-config.cmake "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}-config-version.cmake"
+  DESTINATION ${ConfigPackageLocation}
+  COMPONENT Devel)
 
-  if(NOT DEFINED DOXYGEN_INPUT_LIST OR NOT DOXYGEN_INPUT_LIST)
-    message(SEND_ERROR "Nothing for doxygen to process for project 3es-doc.")
-    return()
-  endif(NOT DEFINED DOXYGEN_INPUT_LIST OR NOT DOXYGEN_INPUT_LIST)
-
-  if(DOXYGEN_FOUND)
-    set(DOXYGEN_HTML_OUTPUT doc)
-
-    # Break up doxygen input dirs.
-    set(DOXYGEN_DIRS ${DOXYGEN_INPUT_LIST})
-    set(DOXYGEN_INPUT_LIST)
-    foreach(dir ${DOXYGEN_DIRS})
-      set(DOXYGEN_INPUT_LIST "${DOXYGEN_INPUT_LIST} \\\n  ${dir}")
-    endforeach(dir)
-    set(DOXYGEN_DIRS ${DOXYGEN_IMAGE_PATH})
-    set(DOXYGEN_IMAGE_PATH)
-    foreach(dir ${DOXYGEN_DIRS})
-      set(DOXYGEN_IMAGE_PATH "${DOXYGEN_IMAGE_PATH} \\\n  ${dir}")
-    endforeach(dir)
-    set(DOXYGEN_DIRS ${DOXYGEN_EXAMPLE_PATH})
-    set(DOXYGEN_EXAMPLE_PATH)
-    foreach(dir ${DOXYGEN_DIRS})
-      set(DOXYGEN_EXAMPLE_PATH "${DOXYGEN_EXAMPLE_PATH} \\\n  ${dir}")
-    endforeach(dir)
-
-    configure_file("${DOXYFILE}" "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile")
-    get_filename_component(DOXYFILE_PATH "${DOXYFILE}" ABSOLUTE)
-    add_custom_target(3es-doc
-                      "${DOXYGEN_EXECUTABLE}" "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
-                      DEPENDS
-                        "${DOXYFILE_PATH}"
-                        "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile"
-                      )
-    # Restrict build configurations. Default to restricting to Release.
-    foreach(CONFIG DEBUG;MINSIZEREL;RELWITHDEBINFO)
-      set_target_properties(${DOXYGEN_TARGET} PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD_${CONFIG} True)
-    endforeach(CONFIG)
-
-    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doc DESTINATION doc ${ARG_COMPONENT} ${ARG_COMPONENT_NAME} CONFIGURATIONS Release)
-  endif(DOXYGEN_FOUND)
-endfunction(tes_doxygen_target)
-
-if(TES_DOXYGEN)
-  list(APPEND DOXYGEN_IMAGE_PATH ${DOXYGEN_INPUT_LIST})
-  list(APPEND DOXYGEN_IMAGE_PATH "3es-doc/images")
-  list(APPEND DOXYGEN_IMAGE_PATH "3es-doc/images/ui")
-  list(APPEND DOXYGEN_IMAGE_PATH "3es-doc/images/usecase")
-  if(IS_DIRECTORY  "../3rdEyeScene/Assets/UI/Images")
-    list(APPEND DOXYGEN_IMAGE_PATH "../3rdEyeScene/Assets/UI/Images")
-  endif(IS_DIRECTORY  "../3rdEyeScene/Assets/UI/Images")
-  tes_doxygen_target(cmake/doxyfile.in)
-endif(TES_DOXYGEN)
-
+# Install MSVC runtime libraries. This will also affect the CPack installation.
 include(InstallRequiredSystemLibraries)
 
-#-------------------------------------------------------------------------------
-# Marshalling DLLs to the build directory (not installation, Windows only)
-#-------------------------------------------------------------------------------
-# set(DEPENDENCY_PATHS)
-# foreach(PPATH ${CMAKE_PREFIX_PATH})
-#   list(APPEND DEPENDENCY_PATHS "${PPATH}")
-#   list(APPEND DEPENDENCY_PATHS "${PPATH}/bin")
-# endforeach(PPATH)
-# marshal_exe_dependencies(3es-marshal 3est-server PATHS "" ${DEPENDENCY_PATHS})
+# Doxygen setup.
+if(TES_BUILD_DOXYGEN)
+  # Include Doxygen helper functions. This also finds the Doxygen package.
+  include(cmake/doxygen.cmake)
+
+  if(DOXYGEN_FOUND)
+    # Create a target to build the documentation.
+    # Here we also setup various documentation variables passed through to the doxyfile configuration.
+    # Each named argument below describes the Doxygen variable it sets.
+    doxygen_create(
+      # DOXYFILE cmake/doxyfile.in  # Doxyfile to configure.
+      PROJECT ${CMAKE_PROJECT_NAME} # PROJECT_NAME
+      VERSION ${TES_VERSION}        # PROJECT_NUMBER
+      OUTPUT_DIR html               # HTML_OUPTUT
+      # CSS <style>.css             # HTML_STYLESHEET
+      PUBLISHER "CSIRO"             # DOCSET_PUBLISHER_NAME
+      PUBLISHER_ID au.csiro         # DOCSET_PUBLISHER_ID
+      PROJECT_ID au.csiro.3es       # DOCSET_BUNDLE_ID, QHP_NAMESPACE, ECLIPSE_DOC_ID
+      PATHS                         # INPUT (RECURSIVE is on)
+        3es-doc  # Must come first.
+        3es-core
+      EXCLUDE_PATHS                 # EXCLUDE
+        3es-core/private
+      # Where to find source code examples.
+      # EXAMPLE_PATHS <paths>        # EXAMPLE_PATH
+      # Where to find images.
+      IMAGE_PATHS                    # IMAGE_PATH
+        3es-doc/images
+        ../3rdEyeScene/Assets/UI/Images
+      )
+
+    # Setup installation of the generated documentation: source, destination.
+    doxygen_install(${CMAKE_CURRENT_BINARY_DIR}/html 3es)
+  endif(DOXYGEN_FOUND)
+endif(TES_BUILD_DOXYGEN)

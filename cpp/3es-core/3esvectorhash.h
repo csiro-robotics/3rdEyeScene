@@ -110,14 +110,14 @@ namespace tes
 
 
   /// Hash structure for use with standard library maps.
-  /// @tparam The vector3 type. Must support x, y, z members (not functions). 
+  /// @tparam The vector3 type. Must support x, y, z members (not functions).
   template <class T>
   class Vector3Hash
   {
   public:
     /// Operator to convert the vector @p p to its hash code.
     /// @param p A vector3 object.
-    /// @return The 32-bit hash code for @p p.  
+    /// @return The 32-bit hash code for @p p.
     inline size_t operator()(const T &p) const
     {
       return vhash::hash(p.x, p.y, p.z);

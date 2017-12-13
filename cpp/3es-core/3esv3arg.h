@@ -14,16 +14,16 @@ namespace tes
   struct V3Arg
   {
     /// Single precision pointer constructor.
-    /// @param q Vector 3 array.
+    /// @param v Vector 3 array.
     inline V3Arg(const float v[3]) : v3(v) {}
     /// Double precision pointer constructor.
-    /// @param q Vector 3  array.
+    /// @param v Vector 3  array.
     inline V3Arg(const double v[3]) : v3(Vector3d(v)) {}
     /// Single precision vector constructor.
-    /// @param q Vector 3 value.
+    /// @param v Vector 3 value.
     inline V3Arg(const Vector3f &v) : v3(v) {}
     /// Double precision vector constructor.
-    /// @param q Vector 3 value.
+    /// @param v Vector 3 value.
     inline V3Arg(const Vector3d &v) : v3(v) {}
 
     /// Component wise constructor.
