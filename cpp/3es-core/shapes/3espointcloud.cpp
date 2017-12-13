@@ -240,6 +240,12 @@ void PointCloud::addPoints(const Vector3f *points, unsigned count)
     {
       _imp->normals[i] = Vector3f::zero;
     }
+
+    const Colour c = Colour::Colours[Colour::White];
+    for (unsigned i = initial; i < _imp->vertexCount; ++i)
+    {
+      _imp->colours[i] = c;
+    }
   }
 }
 
@@ -253,6 +259,13 @@ void PointCloud::addPoints(const Vector3f *points, const Vector3f *normals, unsi
     resize(_imp->vertexCount + count);
     memcpy(_imp->vertices + initial, points, sizeof(*points) * count);
     memcpy(_imp->normals + initial, normals, sizeof(*normals) * count);
+
+    // Initialise other data
+    const Colour c = Colour::Colours[Colour::White];
+    for (unsigned i = initial; i < _imp->vertexCount; ++i)
+    {
+      _imp->colours[i] = c;
+    }
   }
 }
 
@@ -300,7 +313,7 @@ void PointCloud::setPoints(unsigned index, const Vector3f *points, unsigned coun
 
   if (index + count > _imp->vertexCount)
   {
-    count -= index + count - _imp->vertexCount;
+    count = index + count - _imp->vertexCount;
   }
 
   if (!count)
@@ -310,12 +323,6 @@ void PointCloud::setPoints(unsigned index, const Vector3f *points, unsigned coun
 
   copyOnWrite();
   memcpy(_imp->vertices + index, points, sizeof(*points) * count);
-
-  // Initialise other data
-  for (unsigned i = index; i < count; ++i)
-  {
-    _imp->normals[i] = Vector3f::zero;
-  }
 }
 
 
@@ -328,7 +335,7 @@ void PointCloud::setPoints(unsigned index, const Vector3f *points, const Vector3
 
   if (index + count > _imp->vertexCount)
   {
-    count -= index + count - _imp->vertexCount;
+    count = index + count - _imp->vertexCount;
   }
 
   if (!count)
@@ -351,7 +358,7 @@ void PointCloud::setPoints(unsigned index, const Vector3f *points, const Vector3
 
   if (index + count > _imp->vertexCount)
   {
-    count -= index + count - _imp->vertexCount;
+    count = index + count - _imp->vertexCount;
   }
 
   if (!count)
