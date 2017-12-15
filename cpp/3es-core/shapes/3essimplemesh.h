@@ -14,8 +14,7 @@ namespace tes
 {
   struct SimpleMeshImp;
 
-  /// An encapsulated definition of a mesh. It manages all its own vertices,
-  /// indices, etc.
+  /// An encapsulated definition of a mesh. It manages all its own vertices, indices, etc.
   class _3es_coreAPI SimpleMesh : public MeshResource
   {
   public:
@@ -31,26 +30,49 @@ namespace tes
       Uv = (1 << 4)
     };
 
+    /// Construct a @c SimpleMesh resource.
+    /// @param id An ID unique among all @c tes::Resource objects.
+    /// @param vertexCount Number of vertices to preallocate.
+    /// @param indexCount Number of indices to preallocate.
+    /// @param drawType Defines the primitive type being indexed.
+    /// @param components The components defined by this mesh. See @c ComponentFlag.
     SimpleMesh(uint32_t id, unsigned vertexCount = 0, unsigned indexCount = 0, DrawType drawType = DtTriangles,
                unsigned components = Vertex | Index);
 
   protected:
+    /// Copy constructor supporting initial, shallow copy with copy on write semantics.
+    /// @param other The mesh to copy.
     SimpleMesh(const SimpleMesh &other);
 
   public:
+    /// Destructor.
     ~SimpleMesh();
 
+    /// Reset this mesh to a simple mesh with only @c Vertex and @c Index components.
     virtual void clear();
 
-    /// Clear only the data arrays.
+    /// Clear only the data arrays. Memory is preserved.s
     virtual void clearData();
 
+    /// @copydoc Resource::id()
     virtual uint32_t id() const override;
 
+    /// @copydoc Resource::transform()
     virtual Matrix4f transform() const override;
+
+    /// Set the object transformation matrix for this mesh.
+    ///
+    /// This will often be redundant when the mesh is used with a @c MeshSet object as that object defines its own
+    /// object matrix and a transformation matrix for each contains @c MeshResource.
+    ///
+    /// @param transform The object transformation matrix for the mesh.
     void setTransform(const Matrix4f &transform);
 
+    /// @copydoc MeshResource::tint()
     virtual uint32_t tint() const override;
+    /// Set the colour tint value for the mesh. The colour is defined in hex as 0xRRGGBBAA, best calculated using the
+    /// @c Colour class.
+    /// @param tint The RGBA tint colour.
     void setTint(uint32_t tint);
 
     /// Performs a shallow copy of this mesh. Note that any modification
@@ -58,14 +80,25 @@ namespace tes
     /// @c SimpleMesh objects can share their data.
     SimpleMesh *clone() const override;
 
-  public:
+    /// @copydoc::MeshResource::drawType()
     virtual uint8_t drawType(int stream) const override;
+
+    /// Get the @c drawType() as a @c DrawType value.
     DrawType getDrawType() const;
+    /// Set the draw type as a @c DrawType value.
+    /// @param type The draw type to set.
     void setDrawType(DrawType type);
 
+    /// Query the @c ComponentFlag components used by this mesh.
+    /// @return The @c ComponentFlag values.
     unsigned components() const;
-    void setComponents(unsigned comps);
 
+    /// Set the @c ComponentFlag components for this mesh.
+    /// @param components @c ComponentFlag values to set.
+    void setComponents(unsigned components);
+
+    /// Add @c ComponentFlag values to the existing set.
+    /// @param components Additional @c ComponentFlag values to set. Already set values are effectively ignored.
     void addComponents(unsigned components);
 
     unsigned vertexCount() const;

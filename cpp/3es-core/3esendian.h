@@ -1,8 +1,8 @@
-// 
+//
 // author: Kazys Stepanas
-// 
-#ifndef _3ESENDIAN_H_ 
-#define _3ESENDIAN_H_ 
+//
+#ifndef _3ESENDIAN_H_
+#define _3ESENDIAN_H_
 
 #include "3es-core.h"
 
@@ -103,38 +103,38 @@ namespace tes
   /// @param[in,out] data Value to swap the Endian of.
   inline void endianSwap(uint8_t &data) {}
   /// Single byte "Endian swap" for completeness: noop.
-  /// @param[in,out] Value to swap the Endian of.
+  /// @param[in,out] data Value to swap the Endian of.
   inline void endianSwap(int8_t &data) {}
 
   /// Two byte integer Endian swap.
-  /// @param[in,out] Value to swap the Endian of.
+  /// @param[in,out] data Value to swap the Endian of.
   inline void endianSwap(uint16_t &data) { endianSwap2(reinterpret_cast<uint8_t*>(&data)); }
   /// Two byte integer Endian swap.
-  /// @param[in,out] Value to swap the Endian of.
+  /// @param[in,out] data Value to swap the Endian of.
   inline void endianSwap(int16_t &data) { endianSwap2(reinterpret_cast<uint8_t*>(&data)); }
 
   /// Four byte integer Endian swap.
-  /// @param[in,out] Value to swap the Endian of.
+  /// @param[in,out] data Value to swap the Endian of.
   inline void endianSwap(uint32_t &data) { endianSwap4(reinterpret_cast<uint8_t*>(&data)); }
   /// Four byte integer Endian swap.
-  /// @param[in,out] Value to swap the Endian of.
+  /// @param[in,out] data Value to swap the Endian of.
   inline void endianSwap(int32_t &data) { endianSwap4(reinterpret_cast<uint8_t*>(&data)); }
 
   /// Eight byte integer Endian swap.
-  /// @param[in,out] Value to swap the Endian of.
+  /// @param[in,out] data Value to swap the Endian of.
   inline void endianSwap(uint64_t &data) { endianSwap8(reinterpret_cast<uint8_t*>(&data)); }
   /// Eight byte integer Endian swap.
-  /// @param[in,out] Value to swap the Endian of.
+  /// @param[in,out] data Value to swap the Endian of.
   inline void endianSwap(int64_t &data) { endianSwap8(reinterpret_cast<uint8_t*>(&data)); }
 
   /// Four byte floating point Endian swap.
-  /// @param[in,out] Value to swap the Endian of.
+  /// @param[in,out] data Value to swap the Endian of.
   inline void endianSwap(float &data) { endianSwap4(reinterpret_cast<uint8_t*>(&data)); }
   /// Eight byte floating point Endian swap.
-  /// @param[in,out] Value to swap the Endian of.
+  /// @param[in,out] data Value to swap the Endian of.
   inline void endianSwap(double &data) { endianSwap8(reinterpret_cast<uint8_t*>(&data)); }
 
-  
+
   /// Return a copy of @p data with reversed byte order.
   /// @return The @p data value with reversed byte order.
   template <class T>
@@ -158,14 +158,14 @@ namespace tes
   }
 
   /// For completeness: noop.
-  /// @param[in,out] Value to potentially swap the Endian of.
+  /// @param[in,out] data Value to potentially swap the Endian of.
   inline void networkEndianSwap(uint8_t &data) {}
   /// For completeness: noop.
-  /// @param[in,out] Value to potentially swap the Endian of.
+  /// @param[in,out] data Value to potentially swap the Endian of.
   inline void networkEndianSwap(int8_t &data) {}
 
   /// Two byte switch of @p data to/from network byte order.
-  /// @param[in,out] Value to potentially swap the Endian of.
+  /// @param[in,out] data Value to potentially swap the Endian of.
   inline void networkEndianSwap(uint16_t &data)
   {
 #if !TES_IS_NETWORK_ENDIAN
@@ -174,7 +174,7 @@ namespace tes
   }
 
   /// Two byte switch of @p data to/from network byte order.
-  /// @param[in,out] Value to potentially swap the Endian of.
+  /// @param[in,out] data Value to potentially swap the Endian of.
   inline void networkEndianSwap(int16_t &data)
   {
 #if !TES_IS_NETWORK_ENDIAN
@@ -183,7 +183,7 @@ namespace tes
   }
 
   /// Four byte switch of @p data to/from network byte order.
-  /// @param[in,out] Value to potentially swap the Endian of.
+  /// @param[in,out] data Value to potentially swap the Endian of.
   inline void networkEndianSwap(uint32_t &data)
   {
 #if !TES_IS_NETWORK_ENDIAN
@@ -192,7 +192,7 @@ namespace tes
   }
 
   /// Four byte switch of @p data to/from network byte order.
-  /// @param[in,out] Value to potentially swap the Endian of.
+  /// @param[in,out] data Value to potentially swap the Endian of.
   inline void networkEndianSwap(int32_t &data)
   {
 #if !TES_IS_NETWORK_ENDIAN
@@ -201,16 +201,16 @@ namespace tes
   }
 
   /// Eight byte switch of @p data to/from network byte order.
-  /// @param[in,out] Value to potentially swap the Endian of.
+  /// @param[in,out] data Value to potentially swap the Endian of.
   inline void networkEndianSwap(uint64_t &data)
   {
 #if !TES_IS_NETWORK_ENDIAN
     endianSwap8(reinterpret_cast<uint8_t*>(&data));
 #endif // !TES_IS_NETWORK_ENDIAN
   }
-  
+
   /// Eight byte switch of @p data to/from network byte order.
-  /// @param[in,out] Value to potentially swap the Endian of.
+  /// @param[in,out] data Value to potentially swap the Endian of.
   inline void networkEndianSwap(int64_t &data)
   {
 #if !TES_IS_NETWORK_ENDIAN
@@ -219,7 +219,7 @@ namespace tes
   }
 
   /// Four byte switch of @p data to/from network byte order.
-  /// @param[in,out] Value to potentially swap the Endian of.
+  /// @param[in,out] data Value to potentially swap the Endian of.
   inline void networkEndianSwap(float &data)
   {
 #if !TES_IS_NETWORK_ENDIAN
@@ -228,7 +228,7 @@ namespace tes
   }
 
   /// Eight byte switch of @p data to/from network byte order.
-  /// @param[in,out] Value to potentially swap the Endian of.
+  /// @param[in,out] data Value to potentially swap the Endian of.
   inline void networkEndianSwap(double &data)
   {
 #if !TES_IS_NETWORK_ENDIAN
@@ -249,4 +249,4 @@ namespace tes
   }
 }
 
-#endif // _3ESENDIAN_H_ 
+#endif // _3ESENDIAN_H_

@@ -66,7 +66,7 @@ namespace tes
     ///
     /// @param compress True to compress data as written.
     /// @param bufferSize The initial bufferSize
-    /// @fixme Specifying a buffer size too close to 0xffff (even correctly accounting for
+    /// @bug Specifying a buffer size too close to 0xffff (even correctly accounting for
     ///   the expected overhead) results in dropped packets despite the network layer
     ///   not reporting errors. Likely I'm missing some overhead detail. For now, use
     ///   a lower packet size.

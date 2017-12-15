@@ -23,12 +23,23 @@ namespace tes
   class _3es_coreAPI PointCloudShape : public Shape
   {
   public:
+    /// Construct a point cloud shape object.
+    /// mesh The mesh resource to render point data from. See class comments.
+    /// @param id The shape ID, unique among @c Arrow objects, or zero for a transient shape.
+    /// @param category The category grouping for the shape used for filtering.
+    /// @param pointSize Desired point render size (pixels).
     PointCloudShape(const MeshResource *mesh, uint32_t id = 0, uint16_t category = 0, uint8_t pointSize = 1);
 
+    /// Destructor.
     ~PointCloudShape();
 
+    /// Set the desired point render size (pixels).
+    /// @param size The desired render size (pixels).
+    /// @return @c *this
+    inline PointCloudShape &setPointSize(uint8_t size) { _pointSize = size; return *this; }
+    /// Get the desired point render size (pixels).
+    /// @return The desired point render size.
     inline uint8_t pointSize() const { return _pointSize; }
-    inline void setPointSize(uint8_t size) { _pointSize = size; }
 
     /// Sets the (optional) indices for this @c PointCloudShape @c Shape.
     /// This shape will only visualise the indexed points from its @c PointSource.
@@ -46,16 +57,32 @@ namespace tes
     template <typename I>
     PointCloudShape &setIndices(I begin, uint32_t indexCount);
 
+    /// Get the mesh resource containing the point data to render.
+    /// @return The point cloud mesh resource.
     inline const MeshResource *mesh() const { return _mesh; }
 
     /// Writes the standard create message and appends the point cloud ID (@c uint32_t).
     /// @param stream The stream to write to.
     /// @return True on success.
     virtual bool writeCreate(PacketWriter &stream) const override;
+
+    /// Write index data set in @c setIndices() if any.
+    /// @param stream The data stream to write to.
+    /// @param[in,out] progressMarker Indicates data transfer progress.
+    ///   Initially zero, the @c Shape manages its own semantics.
+    /// @return Indicates completion progress. 0 indicates completion,
+    ///   1 indicates more data are available and more calls should be made.
+    ///   -1 indicates an error. No more calls should be made.
     virtual int writeData(PacketWriter &stream, unsigned &progressMarker) const override;
 
+    /// Defines this class as a complex shape. See Shape::isComplex().
+    /// @return @c true
     virtual inline bool isComplex() const override { return true; }
 
+    /// Enumerates the mesh resource given on construction. See @c Shape::enumerateResources().
+    /// @param resources Resource output array.
+    /// @param capacity of @p resources.
+    /// @param fetchOffset Indexing offset for the resources in this object.
     int enumerateResources(const Resource **resources, int capacity, int fetchOffset) const override;
 
     /// Deep copy clone. The source is only cloned if @c ownSource() is true.

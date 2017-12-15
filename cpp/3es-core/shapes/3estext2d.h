@@ -25,6 +25,9 @@ namespace tes
     //Text2D(const char *text, uint16_t textLength, uint32_t id, const V3Arg &pos = V3Arg(0, 0, 0));
     Text2D(const char *text, uint32_t id, const V3Arg &pos = V3Arg(0, 0, 0));
     //Text2D(const char *text, uint16_t textLength, uint32_t id, uint16_t category, const V3Arg &pos = V3Arg(0, 0, 0));
+    /// Construct a box object.
+    /// @param id The shape ID, unique among @c Arrow objects, or zero for a transient shape.
+    /// @param category The category grouping for the shape used for filtering.
     Text2D(const char *text, uint32_t id, uint16_t category, const V3Arg &pos = V3Arg(0, 0, 0));
 
     ~Text2D();

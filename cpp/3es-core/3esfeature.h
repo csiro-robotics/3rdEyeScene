@@ -44,7 +44,7 @@ namespace tes
 
   /// Check if a particular @c Feature is available.
   /// @param feature The feature to check for.
-  /// @return True if the feature is available or enabled.  
+  /// @return True if the feature is available or enabled.
   bool _3es_coreAPI checkFeature(Feature feature);
 
   /// Check for a feature by its flag.
@@ -60,8 +60,8 @@ namespace tes
   /// @c Feature to a feature flag.
   ///
   /// Only valid feature flags are checked. Always true if @p featureFlags is zero.
-  /// @param featureFlag Set of features to check for.
-  /// @return True if all features in @p featureFlags are available. 
+  /// @param featureFlags Set of features to check for.
+  /// @return True if all features in @p featureFlags are available.
   bool _3es_coreAPI checkFeatures(uint64_t featureFlags);
 }
 

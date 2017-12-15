@@ -137,7 +137,7 @@
   info.defaultFrameTime = defaultFrameTime;
 
 /// @ingroup tesmacros
-/// Initialise @p server to a new @c Server object with the given @C ServerSettings and
+/// Initialise @p server to a new @c Server object with the given @c ServerSettings and
 /// @c ServerInfoMessage.
 /// @param server The @c Server or @c Connection object. Must be a dereferenced pointer.
 /// @param settings The @c ServerSettings structure to initialise the server with.
@@ -149,7 +149,7 @@
 ///
 /// After this call, the server can accept connections.
 /// @param server The @c Server or @c Connection object. Must be a dereferenced pointer.
-/// @mode The server mode: @c ConnectionMonitor::Synchronous or @c ConnectionMonitor::Asynchronous.
+/// @param mode The server mode: @c ConnectionMonitor::Synchronous or @c ConnectionMonitor::Asynchronous.
 #define TES_SERVER_START(server, mode) if (server) { (server)->connectionMonitor()->start(mode); }
 
 /// @ingroup tesmacros
@@ -216,6 +216,7 @@
 /// @ingroup tesmacros
 /// Enable/disable @p server.
 /// @param server The @c Server or @c Connection object. Must be a dereferenced pointer.
+/// @param _active @c true to activate, @c false to deactivate.
 #define TES_SET_ACTIVE(server, _active) if (server) { (server)->setActive(_active) }
 
 /// @ingroup tesmacros
@@ -375,6 +376,8 @@
 /// @ingroup tesmacros
 /// @param server The @c Server or @c Connection object. Must be a dereferenced pointer.
 /// @param colour The colour to apply to the shape.
+/// @param v0 Vertex of the first line end point.
+/// @param v1 Second vertex for the line starting at @p v0.
 /// @param ... Additional arguments follow, passed to @p MeshShape() constructor.
 #define TES_LINE(server, colour, v0, v1, ...) \
   if (server) \
@@ -569,8 +572,14 @@
 
 /// @ingroup tesmacros
 /// Single triangle.
+///
+/// Vertices are specified as any type which can be used as a constructor argument to @c Vector3f. Generally
+/// <tt>const float *</tt> is recommended.
 /// @param server The @c Server or @c Connection object. Must be a dereferenced pointer.
 /// @param colour The colour to apply to the shape.
+/// @param v0 First triangle vertex: castable to a @c Vector3f (such as <tt>const float *</tt>).
+/// @param v1 Second triangle vertex.
+/// @param v2 Third triangle vertex.
 /// @param ... Additional arguments follow, passed to @p MeshShape() constructor.
 #define TES_TRIANGLE(server, colour, v0, v1, v2, ...) \
   if (server) \
@@ -730,6 +739,7 @@ if (server) \
 /// @ingroup tesmacros
 /// Destroy point cloud with @p id.
 /// @param server The @c Server or @c Connection object. Must be a dereferenced pointer.
+/// @param cloud The @c MeshResource (e.g., @c PointCloud) containing the point vertex data.
 /// @param id The ID of the shape to destroy.
 #define TES_POINTCLOUDSHAPE_END(server, cloud, id) if (server) { (server)->destroy(tes::PointCloudShape(cloud, static_cast<uint32_t>(id))); }
 /// @ingroup tesmacros

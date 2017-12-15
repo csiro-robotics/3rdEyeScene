@@ -21,7 +21,7 @@ namespace tes
       PC_On = 0,      ///< On or part of the plane.
       PC_InFront = 1  ///< In front of the plane.
     };
-   
+
     /// Create a plane from a normal and distance (D) value.
     /// @param normal The plane normal. Must be normalised.
     /// @param distance the plane D component.
@@ -65,7 +65,7 @@ namespace tes
 
 
     /// Classify a point with respect to a plane (see @c PlaneClassification).
-    /// @plane The plane equation.
+    /// @param plane The plane equation.
     /// @param point The point of interest.
     /// @param epsilon Epsilon value used as a tolerance for @c PC_On results.
     /// @return The point's @c PlaneClassification.

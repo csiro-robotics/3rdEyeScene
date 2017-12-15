@@ -28,7 +28,7 @@ namespace tes
   /// The buffer size must be large enough for the @ PacketHeader. Remaining space is available
   /// for the payload.
   ///
-  /// @bug Use the payloadOffset in various calculations hereing. It was added after this
+  /// @bug Use the payloadOffset in various calculations herein. It was added after this
   /// class was written, but is currently only supported as being zero, so it's not an issue
   /// yet.
   class _3es_coreAPI PacketWriter : public PacketStream<PacketHeader>

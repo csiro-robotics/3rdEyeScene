@@ -40,6 +40,9 @@ namespace tes
   {
   public:
     Shape(uint16_t routingId, uint32_t id = 0);
+    /// Construct a box object.
+    /// @param id The shape ID, unique among @c Arrow objects, or zero for a transient shape.
+    /// @param category The category grouping for the shape used for filtering.
     Shape(uint16_t routingId, uint32_t id, uint16_t category);
     virtual inline ~Shape() {}
 
@@ -103,7 +106,7 @@ namespace tes
     /// Used in maintaining cached copies of shapes. The shapes should
     /// already represent the same object.
     ///
-    /// Not all attributes need to be updated. Only attributes which may be updated 
+    /// Not all attributes need to be updated. Only attributes which may be updated
     /// via an @c UpdateMessage for this shape need be copied.
     ///
     /// The default implementation copies only the @c ObjectAttributes.

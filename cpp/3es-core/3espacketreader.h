@@ -12,7 +12,7 @@ namespace tes
 {
   /// A utility class for dealing with reading packets.
   ///
-  /// @bug Use the payloadOffset in various calculations hereing. It was added after this
+  /// @bug Use the payloadOffset in various calculations herein. It was added after this
   /// class was written, but is currently only supported as being zero, so it's not an issue
   /// yet.
   class _3es_coreAPI PacketReader : public PacketStream<const PacketHeader>

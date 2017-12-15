@@ -9,15 +9,39 @@
 
 namespace tes
 {
+  /// Defines a star to display. A star is a shape with extrusions in both directions along each axis with spherical
+  /// extents.
+  ///
+  /// A sphere is defined by:
+  /// Component      | Description
+  /// -------------- | -----------------------------------------------------------------------------------------------
+  /// @c centre()    | The sphere centre. An alias for @p position().
+  /// @c radius()    | The sphere radius.
   class _3es_coreAPI Star : public Shape
   {
   public:
     Star(uint32_t id = 0u, const V3Arg &centre = V3Arg(0, 0, 0), float radius = 1.0f);
+    /// Create a star.
+    /// @param id The shape ID, unique among @c Star objects, or zero for a transient shape.
+    /// @param category The category grouping for the shape used for filtering.
+    /// @param centre Defines the star centre coordinate.
+    /// @param radius The star radius.
     Star(uint32_t id, uint16_t category, const V3Arg &centre = V3Arg(0, 0, 0), float radius = 1.0f);
 
+    /// Set the star radial extents.
+    /// @param radius The star radius.
+    /// @return @c *this
     Star &setRadius(float radius);
+    /// Get the star radial extents.
+    /// @return The star radius.
     float radius() const;
+
+    /// Set the star centre coordinate.
+    /// @param centre The new star centre.
+    /// @return @c *this
     Star &setCentre(const V3Arg &centre);
+    /// Get the star centre coordinate.
+    /// @return The star centre.
     Vector3f centre() const;
   };
 
