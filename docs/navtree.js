@@ -1,380 +1,156 @@
-var NAVTREE =
-[
-  [ "3rd Eye Scene", "index.html", [
-    [ "3rd Eye Scene Documentation", "index.html", [
-      [ "3rd Eye Scene Viewer Application", "docviewer.html", null ],
-      [ "Library Organisation", "docorganisation.html", null ],
-      [ "Building 3rd Eye Scene", "docbuild.html", null ],
-      [ "Using 3rd Eye Scene Server Code", "docusage.html", null ],
-      [ "Messaging Protocol", "docprotocol.html", null ],
-      [ "File Format", "docfileformat.html", null ],
-      [ "Message Handler Plugins", "docplugins.html", null ],
-      [ "Third Party Components", "docthirdparty.html", null ],
-      [ "3rd Eye Scene License", "doclicense.html", null ]
-    ] ],
-    [ "Related Pages", "pages.html", [
-      [ "Todo List", "todo.html", null ],
-      [ "Bug List", "bug.html", null ]
-    ] ],
-    [ "Modules", "modules.html", [
-      [ "C++ Interface", "group__tescpp.html", [
-        [ "MeshResource Messages", "group__meshmsg.html", [
-          [ "Enumerations", "group__meshmsg.html", [
-            [ "DrawType", "group__meshmsg.html#gab5582c6d384194a428a8253685ad55e1", null ],
-            [ "MeshBuildFlags", "group__meshmsg.html#ga0caf08cdbaf307f91e3daf69088ea95f", null ],
-            [ "MeshMessageType", "group__meshmsg.html#gacc5a8ff56ea8b1df2161a941be9a63ef", null ]
-          ] ],
-          [ "Classes", "group__meshmsg.html", [
-            [ "tes::MeshCreateMessage", "structtes_1_1MeshCreateMessage.html", null ],
-            [ "tes::MeshRedefineMessage", "structtes_1_1MeshRedefineMessage.html", null ],
-            [ "tes::MeshDestroyMessage", "structtes_1_1MeshDestroyMessage.html", null ],
-            [ "tes::MeshComponentMessage", "structtes_1_1MeshComponentMessage.html", null ],
-            [ "tes::Material", "structtes_1_1Material.html", null ],
-            [ "tes::MeshFinaliseMessage", "structtes_1_1MeshFinaliseMessage.html", null ]
-          ] ]
-        ] ],
-        [ "Namespaces", "group__tescpp.html", [
-          [ "tes", "namespacetes.html", null ]
-        ] ]
-      ] ]
-    ] ],
-    [ "Class List", "annotated.html", [
-      [ "tes::Arrow", "classtes_1_1Arrow.html", null ],
-      [ "tes::Bounds< T >", "classtes_1_1Bounds.html", null ],
-      [ "tes::Box", "classtes_1_1Box.html", null ],
-      [ "tes::Capsule", "classtes_1_1Capsule.html", null ],
-      [ "tes::CategoryNameMessage", "structtes_1_1CategoryNameMessage.html", null ],
-      [ "tes::CollatedPacket", "classtes_1_1CollatedPacket.html", null ],
-      [ "tes::CollatedPacketMessage", "structtes_1_1CollatedPacketMessage.html", null ],
-      [ "tes::Colour", "classtes_1_1Colour.html", null ],
-      [ "tes::Cone", "classtes_1_1Cone.html", null ],
-      [ "tes::Connection", "classtes_1_1Connection.html", null ],
-      [ "tes::ConnectionMonitor", "classtes_1_1ConnectionMonitor.html", null ],
-      [ "tes::ControlMessage", "structtes_1_1ControlMessage.html", null ],
-      [ "tes::CreateMessage", "structtes_1_1CreateMessage.html", null ],
-      [ "tes::Cylinder", "classtes_1_1Cylinder.html", null ],
-      [ "tes::DataMessage", "structtes_1_1DataMessage.html", null ],
-      [ "tes::DestroyMessage", "structtes_1_1DestroyMessage.html", null ],
-      [ "tes::PacketStream< HEADER >::IsConst< T >", "structtes_1_1PacketStream_1_1IsConst.html", null ],
-      [ "tes::PacketStream< HEADER >::IsConst< const T >", "structtes_1_1PacketStream_1_1IsConst_3_01const_01T_01_4.html", null ],
-      [ "tes::ItemTransfer", "classtes_1_1ItemTransfer.html", null ],
-      [ "tes::Material", "structtes_1_1Material.html", null ],
-      [ "tes::Matrix3< T >", "classtes_1_1Matrix3.html", null ],
-      [ "tes::Matrix4< T >", "classtes_1_1Matrix4.html", null ],
-      [ "tes::MeshComponentMessage", "structtes_1_1MeshComponentMessage.html", null ],
-      [ "tes::MeshCreateMessage", "structtes_1_1MeshCreateMessage.html", null ],
-      [ "tes::MeshDestroyMessage", "structtes_1_1MeshDestroyMessage.html", null ],
-      [ "tes::MeshFinaliseMessage", "structtes_1_1MeshFinaliseMessage.html", null ],
-      [ "tes::MeshPlaceholder", "classtes_1_1MeshPlaceholder.html", null ],
-      [ "tes::MeshRedefineMessage", "structtes_1_1MeshRedefineMessage.html", null ],
-      [ "tes::MeshResource", "classtes_1_1MeshResource.html", null ],
-      [ "tes::MeshSet", "classtes_1_1MeshSet.html", null ],
-      [ "tes::MeshShape", "classtes_1_1MeshShape.html", null ],
-      [ "tes::ObjectAttributes", "structtes_1_1ObjectAttributes.html", null ],
-      [ "OccupancyLoader", "classOccupancyLoader.html", null ],
-      [ "OccupancyMesh", "classOccupancyMesh.html", null ],
-      [ "tes::PacketBuffer", "classtes_1_1PacketBuffer.html", null ],
-      [ "tes::PacketHeader", "structtes_1_1PacketHeader.html", null ],
-      [ "tes::PacketReader", "classtes_1_1PacketReader.html", null ],
-      [ "tes::PacketStream< HEADER >", "classtes_1_1PacketStream.html", null ],
-      [ "tes::PacketWriter", "classtes_1_1PacketWriter.html", null ],
-      [ "tes::Plane", "classtes_1_1Plane.html", null ],
-      [ "tes::PointCloud", "classtes_1_1PointCloud.html", null ],
-      [ "tes::PointCloudShape", "classtes_1_1PointCloudShape.html", null ],
-      [ "tes::Quaternion< T >", "classtes_1_1Quaternion.html", null ],
-      [ "tes::QuaternionArg", "structtes_1_1QuaternionArg.html", null ],
-      [ "tes::Resource", "classtes_1_1Resource.html", null ],
-      [ "tes::ResourcePacker", "classtes_1_1ResourcePacker.html", null ],
-      [ "tes::Server", "classtes_1_1Server.html", null ],
-      [ "tes::ServerInfoMessage", "structtes_1_1ServerInfoMessage.html", null ],
-      [ "tes::ServerSettings", "structtes_1_1ServerSettings.html", null ],
-      [ "tes::Shape", "classtes_1_1Shape.html", null ],
-      [ "tes::SimpleMesh", "classtes_1_1SimpleMesh.html", null ],
-      [ "tes::Sphere", "classtes_1_1Sphere.html", null ],
-      [ "tes::SphereVertexHash", "structtes_1_1SphereVertexHash.html", null ],
-      [ "tes::SpinLock", "classtes_1_1SpinLock.html", null ],
-      [ "tes::Star", "classtes_1_1Star.html", null ],
-      [ "tes::TcpConnection", "classtes_1_1TcpConnection.html", null ],
-      [ "tes::TcpConnectionMonitor", "classtes_1_1TcpConnectionMonitor.html", null ],
-      [ "tes::TcpListenSocket", "classtes_1_1TcpListenSocket.html", null ],
-      [ "tes::TcpListenSocketDetail", "structtes_1_1TcpListenSocketDetail.html", null ],
-      [ "tes::TcpServer", "classtes_1_1TcpServer.html", null ],
-      [ "tes::TcpSocket", "classtes_1_1TcpSocket.html", null ],
-      [ "tes::TcpSocketDetail", "structtes_1_1TcpSocketDetail.html", null ],
-      [ "tes::Text2D", "classtes_1_1Text2D.html", null ],
-      [ "tes::Text3D", "classtes_1_1Text3D.html", null ],
-      [ "tes::Timer", "classtes_1_1Timer.html", null ],
-      [ "tes::Timing", "structtes_1_1Timing.html", null ],
-      [ "tes::TransferProgress", "structtes_1_1TransferProgress.html", null ],
-      [ "tes::UpdateMessage", "structtes_1_1UpdateMessage.html", null ],
-      [ "tes::V3Arg", "structtes_1_1V3Arg.html", null ],
-      [ "tes::Vector3< T >", "classtes_1_1Vector3.html", null ],
-      [ "tes::Vector3Hash< T >", "classtes_1_1Vector3Hash.html", null ],
-      [ "tes::Vector4< T >", "classtes_1_1Vector4.html", null ]
-    ] ],
-    [ "Class Index", "classes.html", null ],
-    [ "Class Hierarchy", "hierarchy.html", [
-      [ "tes::Bounds< T >", "classtes_1_1Bounds.html", null ],
-      [ "tes::CategoryNameMessage", "structtes_1_1CategoryNameMessage.html", null ],
-      [ "tes::CollatedPacketMessage", "structtes_1_1CollatedPacketMessage.html", null ],
-      [ "tes::Colour", "classtes_1_1Colour.html", null ],
-      [ "tes::Connection", "classtes_1_1Connection.html", [
-        [ "tes::CollatedPacket", "classtes_1_1CollatedPacket.html", null ],
-        [ "tes::Server", "classtes_1_1Server.html", [
-          [ "tes::TcpServer", "classtes_1_1TcpServer.html", null ]
-        ] ],
-        [ "tes::TcpConnection", "classtes_1_1TcpConnection.html", null ]
-      ] ],
-      [ "tes::ConnectionMonitor", "classtes_1_1ConnectionMonitor.html", [
-        [ "tes::TcpConnectionMonitor", "classtes_1_1TcpConnectionMonitor.html", null ]
-      ] ],
-      [ "tes::ControlMessage", "structtes_1_1ControlMessage.html", null ],
-      [ "tes::CreateMessage", "structtes_1_1CreateMessage.html", null ],
-      [ "tes::DataMessage", "structtes_1_1DataMessage.html", null ],
-      [ "tes::DestroyMessage", "structtes_1_1DestroyMessage.html", null ],
-      [ "tes::PacketStream< HEADER >::IsConst< T >", "structtes_1_1PacketStream_1_1IsConst.html", null ],
-      [ "tes::PacketStream< HEADER >::IsConst< const T >", "structtes_1_1PacketStream_1_1IsConst_3_01const_01T_01_4.html", null ],
-      [ "tes::ItemTransfer", "classtes_1_1ItemTransfer.html", null ],
-      [ "tes::Material", "structtes_1_1Material.html", null ],
-      [ "tes::Matrix3< T >", "classtes_1_1Matrix3.html", null ],
-      [ "tes::Matrix4< T >", "classtes_1_1Matrix4.html", null ],
-      [ "tes::MeshComponentMessage", "structtes_1_1MeshComponentMessage.html", null ],
-      [ "tes::MeshCreateMessage", "structtes_1_1MeshCreateMessage.html", [
-        [ "tes::MeshRedefineMessage", "structtes_1_1MeshRedefineMessage.html", null ]
-      ] ],
-      [ "tes::MeshDestroyMessage", "structtes_1_1MeshDestroyMessage.html", null ],
-      [ "tes::MeshFinaliseMessage", "structtes_1_1MeshFinaliseMessage.html", null ],
-      [ "tes::ObjectAttributes", "structtes_1_1ObjectAttributes.html", null ],
-      [ "OccupancyLoader", "classOccupancyLoader.html", null ],
-      [ "tes::PacketBuffer", "classtes_1_1PacketBuffer.html", null ],
-      [ "tes::PacketHeader", "structtes_1_1PacketHeader.html", null ],
-      [ "tes::PacketStream< HEADER >", "classtes_1_1PacketStream.html", null ],
-      [ "tes::PacketStream< const PacketHeader >", "classtes_1_1PacketStream.html", [
-        [ "tes::PacketReader", "classtes_1_1PacketReader.html", null ]
-      ] ],
-      [ "tes::PacketStream< PacketHeader >", "classtes_1_1PacketStream.html", [
-        [ "tes::PacketWriter", "classtes_1_1PacketWriter.html", null ]
-      ] ],
-      [ "tes::Quaternion< T >", "classtes_1_1Quaternion.html", null ],
-      [ "tes::QuaternionArg", "structtes_1_1QuaternionArg.html", null ],
-      [ "tes::Resource", "classtes_1_1Resource.html", [
-        [ "tes::MeshResource", "classtes_1_1MeshResource.html", [
-          [ "OccupancyMesh", "classOccupancyMesh.html", null ],
-          [ "tes::MeshPlaceholder", "classtes_1_1MeshPlaceholder.html", null ],
-          [ "tes::PointCloud", "classtes_1_1PointCloud.html", null ],
-          [ "tes::SimpleMesh", "classtes_1_1SimpleMesh.html", null ]
-        ] ]
-      ] ],
-      [ "tes::ResourcePacker", "classtes_1_1ResourcePacker.html", null ],
-      [ "tes::ServerInfoMessage", "structtes_1_1ServerInfoMessage.html", null ],
-      [ "tes::ServerSettings", "structtes_1_1ServerSettings.html", null ],
-      [ "tes::Shape", "classtes_1_1Shape.html", [
-        [ "tes::Arrow", "classtes_1_1Arrow.html", null ],
-        [ "tes::Box", "classtes_1_1Box.html", null ],
-        [ "tes::Capsule", "classtes_1_1Capsule.html", null ],
-        [ "tes::Cone", "classtes_1_1Cone.html", null ],
-        [ "tes::Cylinder", "classtes_1_1Cylinder.html", null ],
-        [ "tes::MeshSet", "classtes_1_1MeshSet.html", null ],
-        [ "tes::MeshShape", "classtes_1_1MeshShape.html", null ],
-        [ "tes::Plane", "classtes_1_1Plane.html", null ],
-        [ "tes::PointCloudShape", "classtes_1_1PointCloudShape.html", null ],
-        [ "tes::Sphere", "classtes_1_1Sphere.html", null ],
-        [ "tes::Star", "classtes_1_1Star.html", null ],
-        [ "tes::Text2D", "classtes_1_1Text2D.html", null ],
-        [ "tes::Text3D", "classtes_1_1Text3D.html", null ]
-      ] ],
-      [ "tes::SphereVertexHash", "structtes_1_1SphereVertexHash.html", null ],
-      [ "tes::SpinLock", "classtes_1_1SpinLock.html", null ],
-      [ "tes::TcpListenSocket", "classtes_1_1TcpListenSocket.html", null ],
-      [ "tes::TcpListenSocketDetail", "structtes_1_1TcpListenSocketDetail.html", null ],
-      [ "tes::TcpSocket", "classtes_1_1TcpSocket.html", null ],
-      [ "tes::TcpSocketDetail", "structtes_1_1TcpSocketDetail.html", null ],
-      [ "tes::Timer", "classtes_1_1Timer.html", null ],
-      [ "tes::Timing", "structtes_1_1Timing.html", null ],
-      [ "tes::TransferProgress", "structtes_1_1TransferProgress.html", null ],
-      [ "tes::UpdateMessage", "structtes_1_1UpdateMessage.html", null ],
-      [ "tes::V3Arg", "structtes_1_1V3Arg.html", null ],
-      [ "tes::Vector3< T >", "classtes_1_1Vector3.html", null ],
-      [ "tes::Vector3Hash< T >", "classtes_1_1Vector3Hash.html", null ],
-      [ "tes::Vector4< T >", "classtes_1_1Vector4.html", null ]
-    ] ],
-    [ "Class Members", "functions.html", null ],
-    [ "Namespace List", "namespaces.html", [
-      [ "tes", "namespacetes.html", null ],
-      [ "tes::planegeom", "namespacetes_1_1planegeom.html", null ],
-      [ "tes::trigeom", "namespacetes_1_1trigeom.html", null ],
-      [ "tes::vhash", "namespacetes_1_1vhash.html", null ]
-    ] ],
-    [ "Namespace Members", "namespacemembers.html", null ],
-    [ "File List", "files.html", [
-      [ "3es-core-export.h", null, null ],
-      [ "3es-core.h", null, null ],
-      [ "3es-core.in.h", null, null ],
-      [ "3es-occupancy.h", null, null ],
-      [ "3esarrow.h", null, null ],
-      [ "3esbounds.h", null, null ],
-      [ "3esbox.h", null, null ],
-      [ "3escapsule.h", null, null ],
-      [ "3escollatedpacket.h", null, null ],
-      [ "3escolour.h", null, null ],
-      [ "3escone.h", null, null ],
-      [ "3esconnection.h", null, null ],
-      [ "3esconnectionmonitor.h", null, null ],
-      [ "3escoordinateframe.h", null, null ],
-      [ "3escoredoc.h", null, null ],
-      [ "3escoreutil.h", null, null ],
-      [ "3escrc.h", null, null ],
-      [ "3escylinder.h", null, null ],
-      [ "3esdocbuilding.h", null, null ],
-      [ "3esdocfileformat.h", null, null ],
-      [ "3esdoclicense.h", null, null ],
-      [ "3esdocmain.h", null, null ],
-      [ "3esdocogranisation.h", null, null ],
-      [ "3esdocprotocol.h", null, null ],
-      [ "3esdocthirdparty.h", null, null ],
-      [ "3esdocusage.h", null, null ],
-      [ "3esdocviewer.h", null, null ],
-      [ "3esendian.h", null, null ],
-      [ "3esfeature.h", null, null ],
-      [ "3esitemtransfer.h", null, null ],
-      [ "3esmaths.h", null, null ],
-      [ "3esmatrix3.h", null, null ],
-      [ "3esmatrix4.h", null, null ],
-      [ "3esmeshmessages.h", null, null ],
-      [ "3esmeshplaceholder.h", null, null ],
-      [ "3esmeshresource.h", null, null ],
-      [ "3esmeshset.h", null, null ],
-      [ "3esmeshshape.h", null, null ],
-      [ "3esmessages.h", null, null ],
-      [ "3esmeta.h", null, null ],
-      [ "3espacketbuffer.h", null, null ],
-      [ "3espacketheader.h", null, null ],
-      [ "3espacketreader.h", null, null ],
-      [ "3espacketstream.h", null, null ],
-      [ "3espacketwriter.h", null, null ],
-      [ "3esplane.h", null, null ],
-      [ "3esplanegeom.h", null, null ],
-      [ "3esplugins.h", null, null ],
-      [ "3espointcloud.h", null, null ],
-      [ "3espointcloudshape.h", null, null ],
-      [ "3esquaternion.h", null, null ],
-      [ "3esquaternionarg.h", null, null ],
-      [ "3esresource.h", null, null ],
-      [ "3esresourcepacker.h", null, null ],
-      [ "3esrotation.h", null, null ],
-      [ "3esserver.h", null, null ],
-      [ "3esservermacros.h", null, null ],
-      [ "3esserverutil.h", null, null ],
-      [ "3esshape.h", null, null ],
-      [ "3esshapes.h", null, null ],
-      [ "3essimplemesh.h", null, null ],
-      [ "3essphere.h", null, null ],
-      [ "3esspheretessellator.h", null, null ],
-      [ "3esspinlock.h", null, null ],
-      [ "3esstar.h", null, null ],
-      [ "3estcpbase.h", null, null ],
-      [ "3estcpconnection.h", null, null ],
-      [ "3estcpconnectionmonitor.h", null, null ],
-      [ "qt/3estcpdetail.h", null, null ],
-      [ "tcp/3estcpdetail.h", null, null ],
-      [ "3estcplistensocket.h", null, null ],
-      [ "3estcpserver.h", null, null ],
-      [ "3estcpsocket.h", null, null ],
-      [ "3estext2d.h", null, null ],
-      [ "3estext3d.h", null, null ],
-      [ "3estimer.h", null, null ],
-      [ "3estransferprogress.h", null, null ],
-      [ "3estrigeom.h", null, null ],
-      [ "3esv3arg.h", null, null ],
-      [ "3esvector3.h", null, null ],
-      [ "3esvector4.h", null, null ],
-      [ "3esvectorhash.h", null, null ],
-      [ "debugids.h", null, null ],
-      [ "occupancyloader.h", null, null ],
-      [ "occupancymesh.h", null, null ],
-      [ "p2p.h", null, null ]
-    ] ]
-  ] ]
-];
+var navTreeSubIndices = new Array();
+var arrowDown = '&#9660;';
+var arrowRight = '&#9658;';
+
+function getData(varName)
+{
+  var i = varName.lastIndexOf('/');
+  var n = i>=0 ? varName.substring(i+1) : varName;
+  return eval(n.replace(/\-/g,'_'));
+}
+
+function stripPath(uri)
+{
+  return uri.substring(uri.lastIndexOf('/')+1);
+}
+
+function stripPath2(uri)
+{
+  var i = uri.lastIndexOf('/');
+  var s = uri.substring(i+1);
+  var m = uri.substring(0,i+1).match(/\/d\w\/d\w\w\/$/);
+  return m ? uri.substring(i-6) : s;
+}
+
+function hashValue()
+{
+  return $(location).attr('hash').substring(1).replace(/[^\w\-]/g,'');
+}
+
+function hashUrl()
+{
+  return '#'+hashValue();
+}
+
+function pathName()
+{
+  return $(location).attr('pathname').replace(/[^-A-Za-z0-9+&@#/%?=~_|!:,.;\(\)]/g, '');
+}
+
+function localStorageSupported()
+{
+  try {
+    return 'localStorage' in window && window['localStorage'] !== null && window.localStorage.getItem;
+  }
+  catch(e) {
+    return false;
+  }
+}
+
+
+function storeLink(link)
+{
+  if (!$("#nav-sync").hasClass('sync') && localStorageSupported()) {
+      window.localStorage.setItem('navpath',link);
+  }
+}
+
+function deleteLink()
+{
+  if (localStorageSupported()) {
+    window.localStorage.setItem('navpath','');
+  }
+}
+
+function cachedLink()
+{
+  if (localStorageSupported()) {
+    return window.localStorage.getItem('navpath');
+  } else {
+    return '';
+  }
+}
+
+function getScript(scriptName,func,show)
+{
+  var head = document.getElementsByTagName("head")[0];
+  var script = document.createElement('script');
+  script.id = scriptName;
+  script.type = 'text/javascript';
+  script.onload = func;
+  script.src = scriptName+'.js';
+  if ($.browser.msie && $.browser.version<=8) {
+    // script.onload does not work with older versions of IE
+    script.onreadystatechange = function() {
+      if (script.readyState=='complete' || script.readyState=='loaded') {
+        func(); if (show) showRoot();
+      }
+    }
+  }
+  head.appendChild(script); 
+}
 
 function createIndent(o,domNode,node,level)
 {
-  if (node.parentNode && node.parentNode.parentNode)
-  {
-    createIndent(o,domNode,node.parentNode,level+1);
-  }
-  var imgNode = document.createElement("img");
-  if (level==0 && node.childrenData)
-  {
+  var level=-1;
+  var n = node;
+  while (n.parentNode) { level++; n=n.parentNode; }
+  if (node.childrenData) {
+    var imgNode = document.createElement("span");
+    imgNode.className = 'arrow';
+    imgNode.style.paddingLeft=(16*level).toString()+'px';
+    imgNode.innerHTML=arrowRight;
     node.plus_img = imgNode;
     node.expandToggle = document.createElement("a");
     node.expandToggle.href = "javascript:void(0)";
-    node.expandToggle.onclick = function() 
-    {
-      if (node.expanded) 
-      {
+    node.expandToggle.onclick = function() {
+      if (node.expanded) {
         $(node.getChildrenUL()).slideUp("fast");
-        if (node.isLast)
-        {
-          node.plus_img.src = node.relpath+"ftv2plastnode.png";
-        }
-        else
-        {
-          node.plus_img.src = node.relpath+"ftv2pnode.png";
-        }
+        node.plus_img.innerHTML=arrowRight;
         node.expanded = false;
-      } 
-      else 
-      {
-        expandNode(o, node, false);
+      } else {
+        expandNode(o, node, false, false);
       }
     }
     node.expandToggle.appendChild(imgNode);
     domNode.appendChild(node.expandToggle);
+  } else {
+    var span = document.createElement("span");
+    span.className = 'arrow';
+    span.style.width   = 16*(level+1)+'px';
+    span.innerHTML = '&#160;';
+    domNode.appendChild(span);
   }
-  else
+}
+
+var animationInProgress = false;
+
+function gotoAnchor(anchor,aname,updateLocation)
+{
+  var pos, docContent = $('#doc-content');
+  var ancParent = $(anchor.parent());
+  if (ancParent.hasClass('memItemLeft') ||
+      ancParent.hasClass('fieldname') ||
+      ancParent.hasClass('fieldtype') ||
+      ancParent.is(':header'))
   {
-    domNode.appendChild(imgNode);
+    pos = ancParent.position().top;
+  } else if (anchor.position()) {
+    pos = anchor.position().top;
   }
-  if (level==0)
-  {
-    if (node.isLast)
-    {
-      if (node.childrenData)
-      {
-        imgNode.src = node.relpath+"ftv2plastnode.png";
-      }
-      else
-      {
-        imgNode.src = node.relpath+"ftv2lastnode.png";
-        domNode.appendChild(imgNode);
-      }
-    }
-    else
-    {
-      if (node.childrenData)
-      {
-        imgNode.src = node.relpath+"ftv2pnode.png";
-      }
-      else
-      {
-        imgNode.src = node.relpath+"ftv2node.png";
-        domNode.appendChild(imgNode);
-      }
-    }
+  if (pos) {
+    var dist = Math.abs(Math.min(
+               pos-docContent.offset().top,
+               docContent[0].scrollHeight-
+               docContent.height()-docContent.scrollTop()));
+    animationInProgress=true;
+    docContent.animate({
+      scrollTop: pos + docContent.scrollTop() - docContent.offset().top
+    },Math.max(50,Math.min(500,dist)),function(){
+      if (updateLocation) window.location.href=aname;
+      animationInProgress=false;
+    });
   }
-  else
-  {
-    if (node.isLast)
-    {
-      imgNode.src = node.relpath+"ftv2blank.png";
-    }
-    else
-    {
-      imgNode.src = node.relpath+"ftv2vertline.png";
-    }
-  }
-  imgNode.border = "0";
 }
 
 function newNode(o, po, text, link, childrenData, lastNode)
@@ -403,27 +179,50 @@ function newNode(o, po, text, link, childrenData, lastNode)
   var a = document.createElement("a");
   node.labelSpan.appendChild(a);
   node.label = document.createTextNode(text);
+  node.expanded = false;
   a.appendChild(node.label);
-  if (link) 
-  {
-    a.href = node.relpath+link;
-  } 
-  else 
-  {
-    if (childrenData != null) 
+  if (link) {
+    var url;
+    if (link.substring(0,1)=='^') {
+      url = link.substring(1);
+      link = url;
+    } else {
+      url = node.relpath+link;
+    }
+    a.className = stripPath(link.replace('#',':'));
+    if (link.indexOf('#')!=-1) {
+      var aname = '#'+link.split('#')[1];
+      var srcPage = stripPath(pathName());
+      var targetPage = stripPath(link.split('#')[0]);
+      a.href = srcPage!=targetPage ? url : "javascript:void(0)";
+      a.onclick = function(){
+        storeLink(link);
+        if (!$(a).parent().parent().hasClass('selected'))
+        {
+          $('.item').removeClass('selected');
+          $('.item').removeAttr('id');
+          $(a).parent().parent().addClass('selected');
+          $(a).parent().parent().attr('id','selected');
+        }
+        var anchor = $(aname);
+        gotoAnchor(anchor,aname,true);
+      };
+    } else {
+      a.href = url;
+      a.onclick = function() { storeLink(link); }
+    }
+  } else {
+    if (childrenData != null)
     {
       a.className = "nolink";
       a.href = "javascript:void(0)";
       a.onclick = node.expandToggle.onclick;
-      node.expanded = false;
     }
   }
 
   node.childrenUL = null;
-  node.getChildrenUL = function() 
-  {
-    if (!node.childrenUL) 
-    {
+  node.getChildrenUL = function() {
+    if (!node.childrenUL) {
       node.childrenUL = document.createElement("ul");
       node.childrenUL.className = "children_ul";
       node.childrenUL.style.display = "none";
@@ -440,70 +239,223 @@ function showRoot()
   var headerHeight = $("#top").height();
   var footerHeight = $("#nav-path").height();
   var windowHeight = $(window).height() - headerHeight - footerHeight;
-  navtree.scrollTo('#selected',0,{offset:-windowHeight/2});
+  (function (){ // retry until we can scroll to the selected item
+    try {
+      var navtree=$('#nav-tree');
+      navtree.scrollTo('#selected',0,{offset:-windowHeight/2});
+    } catch (err) {
+      setTimeout(arguments.callee, 0);
+    }
+  })();
 }
 
-function expandNode(o, node, imm)
+function expandNode(o, node, imm, showRoot)
 {
-  if (node.childrenData && !node.expanded) 
-  {
-    if (!node.childrenVisited) 
-    {
-      getNode(o, node);
+  if (node.childrenData && !node.expanded) {
+    if (typeof(node.childrenData)==='string') {
+      var varName    = node.childrenData;
+      getScript(node.relpath+varName,function(){
+        node.childrenData = getData(varName);
+        expandNode(o, node, imm, showRoot);
+      }, showRoot);
+    } else {
+      if (!node.childrenVisited) {
+        getNode(o, node);
+      } if (imm || ($.browser.msie && $.browser.version>8)) {
+        // somehow slideDown jumps to the start of tree for IE9 :-(
+        $(node.getChildrenUL()).show();
+      } else {
+        $(node.getChildrenUL()).slideDown("fast");
+      }
+      node.plus_img.innerHTML = arrowDown;
+      node.expanded = true;
     }
-    if (imm)
-    {
-      $(node.getChildrenUL()).show();
-    } 
-    else 
-    {
-      $(node.getChildrenUL()).slideDown("fast",showRoot);
-    }
-    if (node.isLast)
-    {
-      node.plus_img.src = node.relpath+"ftv2mlastnode.png";
-    }
-    else
-    {
-      node.plus_img.src = node.relpath+"ftv2mnode.png";
-    }
-    node.expanded = true;
   }
+}
+
+function glowEffect(n,duration)
+{
+  n.addClass('glow').delay(duration).queue(function(next){
+    $(this).removeClass('glow');next();
+  });
+}
+
+function highlightAnchor()
+{
+  var aname = hashUrl();
+  var anchor = $(aname);
+  if (anchor.parent().attr('class')=='memItemLeft'){
+    var rows = $('.memberdecls tr[class$="'+hashValue()+'"]');
+    glowEffect(rows.children(),300); // member without details
+  } else if (anchor.parent().attr('class')=='fieldname'){
+    glowEffect(anchor.parent().parent(),1000); // enum value
+  } else if (anchor.parent().attr('class')=='fieldtype'){
+    glowEffect(anchor.parent().parent(),1000); // struct field
+  } else if (anchor.parent().is(":header")) {
+    glowEffect(anchor.parent(),1000); // section header
+  } else {
+    glowEffect(anchor.next(),1000); // normal member
+  }
+  gotoAnchor(anchor,aname,false);
+}
+
+function selectAndHighlight(hash,n)
+{
+  var a;
+  if (hash) {
+    var link=stripPath(pathName())+':'+hash.substring(1);
+    a=$('.item a[class$="'+link+'"]');
+  }
+  if (a && a.length) {
+    a.parent().parent().addClass('selected');
+    a.parent().parent().attr('id','selected');
+    highlightAnchor();
+  } else if (n) {
+    $(n.itemDiv).addClass('selected');
+    $(n.itemDiv).attr('id','selected');
+  }
+  if ($('#nav-tree-contents .item:first').hasClass('selected')) {
+    $('#nav-sync').css('top','30px');
+  } else {
+    $('#nav-sync').css('top','5px');
+  }
+  showRoot();
+}
+
+function showNode(o, node, index, hash)
+{
+  if (node && node.childrenData) {
+    if (typeof(node.childrenData)==='string') {
+      var varName    = node.childrenData;
+      getScript(node.relpath+varName,function(){
+        node.childrenData = getData(varName);
+        showNode(o,node,index,hash);
+      },true);
+    } else {
+      if (!node.childrenVisited) {
+        getNode(o, node);
+      }
+      $(node.getChildrenUL()).css({'display':'block'});
+      node.plus_img.innerHTML = arrowDown;
+      node.expanded = true;
+      var n = node.children[o.breadcrumbs[index]];
+      if (index+1<o.breadcrumbs.length) {
+        showNode(o,n,index+1,hash);
+      } else {
+        if (typeof(n.childrenData)==='string') {
+          var varName = n.childrenData;
+          getScript(n.relpath+varName,function(){
+            n.childrenData = getData(varName);
+            node.expanded=false;
+            showNode(o,node,index,hash); // retry with child node expanded
+          },true);
+        } else {
+          var rootBase = stripPath(o.toroot.replace(/\..+$/, ''));
+          if (rootBase=="index" || rootBase=="pages" || rootBase=="search") {
+            expandNode(o, n, true, true);
+          }
+          selectAndHighlight(hash,n);
+        }
+      }
+    }
+  } else {
+    selectAndHighlight(hash);
+  }
+}
+
+function removeToInsertLater(element) {
+  var parentNode = element.parentNode;
+  var nextSibling = element.nextSibling;
+  parentNode.removeChild(element);
+  return function() {
+    if (nextSibling) {
+      parentNode.insertBefore(element, nextSibling);
+    } else {
+      parentNode.appendChild(element);
+    }
+  };
 }
 
 function getNode(o, po)
 {
+  var insertFunction = removeToInsertLater(po.li);
   po.childrenVisited = true;
   var l = po.childrenData.length-1;
-  for (var i in po.childrenData) 
-  {
+  for (var i in po.childrenData) {
     var nodeData = po.childrenData[i];
     po.children[i] = newNode(o, po, nodeData[0], nodeData[1], nodeData[2],
-        i==l);
+      i==l);
+  }
+  insertFunction();
+}
+
+function gotoNode(o,subIndex,root,hash,relpath)
+{
+  var nti = navTreeSubIndices[subIndex][root+hash];
+  o.breadcrumbs = $.extend(true, [], nti ? nti : navTreeSubIndices[subIndex][root]);
+  if (!o.breadcrumbs && root!=NAVTREE[0][1]) { // fallback: show index
+    navTo(o,NAVTREE[0][1],"",relpath);
+    $('.item').removeClass('selected');
+    $('.item').removeAttr('id');
+  }
+  if (o.breadcrumbs) {
+    o.breadcrumbs.unshift(0); // add 0 for root node
+    showNode(o, o.node, 0, hash);
   }
 }
 
-function findNavTreePage(url, data)
+function navTo(o,root,hash,relpath)
 {
-  var nodes = data;
-  var result = null;
-  for (var i in nodes) 
-  {
-    var d = nodes[i];
-    if (d[1] == url) 
-    {
-      return new Array(i);
-    }
-    else if (d[2] != null) // array of children
-    {
-      result = findNavTreePage(url, d[2]);
-      if (result != null) 
-      {
-        return (new Array(i).concat(result));
-      }
-    }
+  var link = cachedLink();
+  if (link) {
+    var parts = link.split('#');
+    root = parts[0];
+    if (parts.length>1) hash = '#'+parts[1].replace(/[^\w\-]/g,'');
+    else hash='';
   }
-  return null;
+  if (hash.match(/^#l\d+$/)) {
+    var anchor=$('a[name='+hash.substring(1)+']');
+    glowEffect(anchor.parent(),1000); // line number
+    hash=''; // strip line number anchors
+  }
+  var url=root+hash;
+  var i=-1;
+  while (NAVTREEINDEX[i+1]<=url) i++;
+  if (i==-1) { i=0; root=NAVTREE[0][1]; } // fallback: show index
+  if (navTreeSubIndices[i]) {
+    gotoNode(o,i,root,hash,relpath)
+  } else {
+    getScript(relpath+'navtreeindex'+i,function(){
+      navTreeSubIndices[i] = eval('NAVTREEINDEX'+i);
+      if (navTreeSubIndices[i]) {
+        gotoNode(o,i,root,hash,relpath);
+      }
+    },true);
+  }
+}
+
+function showSyncOff(n,relpath)
+{
+    n.html('<img src="'+relpath+'sync_off.png" title="'+SYNCOFFMSG+'"/>');
+}
+
+function showSyncOn(n,relpath)
+{
+    n.html('<img src="'+relpath+'sync_on.png" title="'+SYNCONMSG+'"/>');
+}
+
+function toggleSyncButton(relpath)
+{
+  var navSync = $('#nav-sync');
+  if (navSync.hasClass('sync')) {
+    navSync.removeClass('sync');
+    showSyncOff(navSync,relpath);
+    storeLink(stripPath2(pathName())+hashUrl());
+  } else {
+    navSync.addClass('sync');
+    showSyncOn(navSync,relpath);
+    deleteLink();
+  }
 }
 
 function initNavTree(toroot,relpath)
@@ -519,26 +471,47 @@ function initNavTree(toroot,relpath)
   o.node.li.appendChild(o.node.childrenUL);
   o.node.depth = 0;
   o.node.relpath = relpath;
+  o.node.expanded = false;
+  o.node.isLast = true;
+  o.node.plus_img = document.createElement("span");
+  o.node.plus_img.className = 'arrow';
+  o.node.plus_img.innerHTML = arrowRight;
 
-  getNode(o, o.node);
-
-  o.breadcrumbs = findNavTreePage(toroot, NAVTREE);
-  if (o.breadcrumbs == null)
-  {
-    o.breadcrumbs = findNavTreePage("index.html",NAVTREE);
-  }
-  if (o.breadcrumbs != null && o.breadcrumbs.length>0)
-  {
-    var p = o.node;
-    for (var i in o.breadcrumbs) 
-    {
-      var j = o.breadcrumbs[i];
-      p = p.children[j];
-      expandNode(o,p,true);
+  if (localStorageSupported()) {
+    var navSync = $('#nav-sync');
+    if (cachedLink()) {
+      showSyncOff(navSync,relpath);
+      navSync.removeClass('sync');
+    } else {
+      showSyncOn(navSync,relpath);
     }
-    p.itemDiv.className = p.itemDiv.className + " selected";
-    p.itemDiv.id = "selected";
-    $(window).load(showRoot);
+    navSync.click(function(){ toggleSyncButton(relpath); });
   }
+
+  $(window).load(function(){
+    navTo(o,toroot,hashUrl(),relpath);
+    showRoot();
+  });
+
+  $(window).bind('hashchange', function(){
+     if (window.location.hash && window.location.hash.length>1){
+       var a;
+       if ($(location).attr('hash')){
+         var clslink=stripPath(pathName())+':'+hashValue();
+         a=$('.item a[class$="'+clslink.replace(/</g,'\\3c ')+'"]');
+       }
+       if (a==null || !$(a).parent().parent().hasClass('selected')){
+         $('.item').removeClass('selected');
+         $('.item').removeAttr('id');
+       }
+       var link=stripPath2(pathName());
+       navTo(o,link,hashUrl(),relpath);
+     } else if (!animationInProgress) {
+       $('#doc-content').scrollTop(0);
+       $('.item').removeClass('selected');
+       $('.item').removeAttr('id');
+       navTo(o,toroot,hashUrl(),relpath);
+     }
+  })
 }
 
