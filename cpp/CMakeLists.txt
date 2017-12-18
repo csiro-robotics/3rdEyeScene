@@ -100,6 +100,7 @@ if(TES_BUILD_DOXYGEN)
       # DOXYFILE cmake/doxyfile.in  # Doxyfile to configure.
       PROJECT ${CMAKE_PROJECT_NAME} # PROJECT_NAME
       VERSION ${TES_VERSION}        # PROJECT_NUMBER
+      BRIEF "3rd Eye Scene documentation" # PROJECT_BRIEF
       OUTPUT_DIR html               # HTML_OUPTUT
       # CSS <style>.css             # HTML_STYLESHEET
       PUBLISHER "CSIRO"             # DOCSET_PUBLISHER_NAME

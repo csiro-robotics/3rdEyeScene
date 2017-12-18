@@ -7,6 +7,7 @@ find_package(DOXYGEN)
 #   [DOXYFILE doxyfile.in]
 #   [PROJECT name]
 #   [VERSION version]
+#   [BRIEF brief]
 #   [OUTPUT_DIR dir]
 #   [CSS style.css]
 #   [PUBLISHER name]
@@ -32,6 +33,7 @@ find_package(DOXYGEN)
 # DOXYFILE      | N/A                   | The input doxyfile to configure using configure_file.
 # PROJECT       | PROJECT_NAME          | Name of the project.
 # VERSION       | PROJECT_NUMBER        | Project version number, in the form <major>.<minor>[.<patch>]
+# BRIEF         | PROJECT_BRIEF         | Project brief comment.
 # OUTPUT_DIR    | HTML_OUPTUT           | HTML output directory under the build tree. Default is 'html'.
 # CSS           | HTML_STYLESHEET       | Style sheet to style the documentation pages with.
 # PUBLISHER     | DOCSET_PUBLISHER_NAME | Publisher name.

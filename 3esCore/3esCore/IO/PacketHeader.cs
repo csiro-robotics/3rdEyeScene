@@ -22,8 +22,7 @@ namespace Tes.IO
   /// </summary>
   ///
   /// <remarks>
-  /// A two byte CRC value is to appear immediately after the @p Packet header and
-  /// payload.
+  /// A two byte CRC value is to appear immediately after the packet header and payload.
   /// </remarks>
   [StructLayout(LayoutKind.Sequential, Pack = 1)]
   public struct PacketHeader

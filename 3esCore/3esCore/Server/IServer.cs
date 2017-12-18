@@ -99,7 +99,7 @@ namespace Tes.Server
     /// Requests the connection at the given index.
     /// </summary>
     /// <remarks>
-    /// This data may be stale if the @c ConnectionMonitor has yet to update.
+    /// This data may be stale if the <see cref="ConnectionMonitor"/> has yet to update.
     /// </remarks>
     /// <param name="index">The index of the requested connection.</param>
     /// <returns>The requested connection, or null if <paramref name="index"/> is out of range.</returns>

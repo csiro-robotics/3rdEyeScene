@@ -14,7 +14,7 @@ namespace Tes.Runtime
 
   /// <summary>
   /// This class defines the interface for any message handler class.
-  /// Messages are routed by the @c routingID().
+  /// Messages are routed by the <see cref="RoutingID"/>.
   /// </summary>
   /// <remarks>
   /// </remarks>
@@ -73,18 +73,16 @@ namespace Tes.Runtime
 
     /// <summary>
     /// A reference name for the handler. Used for debugging and logging.
-    /// @return A debug name for the handler. Null terminated.
     /// </summary>
-    /// <value>The name.</value>
+    /// <value>A debug name for the handler.</value>
     public abstract string Name { get; }
 
     /// <summary>
     /// Returns the unique ID for the message handler. This identifies the type of
     /// handled and in some cases, such as Renderers, the type of object handled.
-    /// ID ranges are described in the @c MessageHandlersIDs enumeration.
-    /// @return The unique type ID for the message handler.
+    /// ID ranges are described in the <see cref="Tes.Net.RoutingID"/> enumeration.
     /// </summary>
-    /// <value>The routing ID.</value>
+    /// <value>The unique routing ID for the message handler.</value>
     public abstract ushort RoutingID { get; }
 
     /// <summary>

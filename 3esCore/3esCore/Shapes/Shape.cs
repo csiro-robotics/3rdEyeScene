@@ -266,7 +266,7 @@ namespace Tes.Shapes
     }
 
     /// <summary>
-    /// Update the attributes of this shape to match @p other.
+    /// Update the attributes of this shape to match <paramref name="other"/>.
     /// </summary>
     /// <param name="other">The shape to update data from.</param>
     /// <remarks>
@@ -274,9 +274,9 @@ namespace Tes.Shapes
     /// already represent the same object.
     ///
     /// Not all attributes need to be updated. Only attributes which may be updated 
-    /// via an @c UpdateMessage for this shape need be copied.
+    /// via an <see cref="UpdateMessage"/> for this shape need be copied.
     ///
-    /// The default implementation copies only the @c ObjectAttributes.
+    /// The default implementation copies only the <see cref="ObjectAttributes"/>.
     /// </remarks>
     public virtual void UpdateFrom(Shape other)
     {
@@ -328,7 +328,7 @@ namespace Tes.Shapes
     ///
     /// <param name="packet">The data stream to write to.</param>
     /// <param name="progressMarker">Indicates data transfer progress.
-    ///   Initially zero, the @c Shape manages its own semantics.
+    ///   Initially zero, the <see cref="Shape"/> manages its own semantics.
     /// </param>
     /// <returns>
     /// Indicates completion progress. 0 indicates completion,

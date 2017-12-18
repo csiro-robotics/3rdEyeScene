@@ -251,7 +251,7 @@ namespace Tes.Tessellate
     }
 
     /// <summary>
-    /// Add a vertex to @p points, reusing an existing vertex is a matching one is found.
+    /// Add a vertex to <paramref name="vertices"/>, reusing an existing vertex is a matching one is found.
     /// </summary>
     /// <param name="vertex">The vertex to add.</param>
     /// <param name="vertices">Vertex array to add the vertex to.</param>

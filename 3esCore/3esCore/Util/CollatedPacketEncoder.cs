@@ -42,7 +42,7 @@ namespace Tes.Util
     /// </remarks>
     public static int Overhead { get { return PacketHeader.Size + CollatedPacketMessage.Size + Crc16.CrcSize; } }
     /// <summary>
-    /// The default packet size limit for a @c CollatedPacketMessage.
+    /// The default packet size limit for a <see cref="CollatedPacketMessage"/>.
     /// </summary>
     public static ushort MaxPacketSize { get { return (ushort)0xffffu; } }
 

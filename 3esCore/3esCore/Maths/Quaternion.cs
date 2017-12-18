@@ -291,7 +291,7 @@ namespace Tes.Maths
     /// </summary>
     /// <remarks>
     /// Normalisation fails if the length of this quaternion is less than or
-    /// equal to @p epsilon.
+    /// equal to <see cref="Epsilon"/>.
     /// </remarks>
     /// <returns>A normalised copy of this quaternion, or a zero quaternion if
     /// if normalisation failed.</returns>
