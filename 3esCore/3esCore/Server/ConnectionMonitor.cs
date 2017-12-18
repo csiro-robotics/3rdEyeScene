@@ -74,6 +74,7 @@ namespace Tes.Server
       return true;
     }
 
+
     /// <summary>
     /// Stop listening for connections.
     /// </summary>
@@ -113,6 +114,39 @@ namespace Tes.Server
         _thread = null;
       }
       _lock = null;
+    }
+
+    public bool WaitForStart()
+    {
+      if (Mode == ConnectionMonitorMode.Synchronous)
+      {
+        return true;
+      }
+
+      if (Mode == ConnectionMonitorMode.None || _thread == null)
+      {
+        return false;
+      }
+
+      for (;;)
+      {
+        switch (_thread.ThreadState)
+        {
+          case System.Threading.ThreadState.Aborted:
+          case System.Threading.ThreadState.Stopped:
+          case System.Threading.ThreadState.Suspended:
+          case System.Threading.ThreadState.Unstarted:
+            return false;
+
+          case System.Threading.ThreadState.WaitSleepJoin:
+          case System.Threading.ThreadState.Running:
+            return true;
+
+          default:
+            System.Threading.Thread.Sleep(0);
+            break;
+        }
+      }
     }
 
     /// <summary>
@@ -203,7 +237,7 @@ namespace Tes.Server
       Stopwatch timer = new Stopwatch();
       timer.Start();
 
-      while (timer.ElapsedMilliseconds < timeoutMs)
+      do
       {
         _lock.Lock();
         try
@@ -220,20 +254,38 @@ namespace Tes.Server
 
         switch (Mode)
         {
-        case ConnectionMonitorMode.None:
-          // Not actually looking for connections. Abort.
-          return false;
-        case ConnectionMonitorMode.Synchronous:
-          // Synchronous mode. Need to update monitor.
-          MonitorConnections();
-          break;
-        case ConnectionMonitorMode.Asynchronous:
-          // Asynchronous mode. Yield.
-          System.Threading.Thread.Sleep(0);
-          break;
+          case ConnectionMonitorMode.None:
+            // Not actually looking for connections. Abort.
+            return false;
+          case ConnectionMonitorMode.Synchronous:
+            // Synchronous mode. Need to update monitor.
+            MonitorConnections();
+            break;
+          case ConnectionMonitorMode.Asynchronous:
+            // Asynchronous mode. Yield.
+            System.Threading.Thread.Sleep(0);
+            break;
         }
+      } while (timer.ElapsedMilliseconds < timeoutMs);
+
+      // Final check.
+      if (Mode == ConnectionMonitorMode.Synchronous)
+      {
+        MonitorConnections();
       }
 
+      _lock.Lock();
+      try
+      {
+        if (_connections.Count > 1)
+        {
+          return true;
+        }
+      }
+      finally
+      {
+        _lock.Unlock();
+      }
       return false;
     }
 
@@ -279,7 +331,7 @@ namespace Tes.Server
       while (!_quitFlag)
       {
         MonitorConnections();
-        System.Threading.Thread.Sleep(100);
+        System.Threading.Thread.Sleep(50);
       }
 
       StopListening();
