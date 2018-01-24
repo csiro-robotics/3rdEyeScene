@@ -20,6 +20,7 @@ namespace tes
   class TcpListenSocket;
   class TcpServer;
 
+  /// A TCP based implementation of a 3es @c Server.
   class TcpServer : public Server
   {
   public:
@@ -81,7 +82,7 @@ namespace tes
     int send(const PacketWriter &packet) override;
     int send(const CollatedPacket &collated) override;
     int send(const uint8_t *data, int byteCount) override;
-    
+
     ConnectionMonitor *connectionMonitor() override;
     unsigned connectionCount() const override;
     Connection *connection(unsigned index) override;

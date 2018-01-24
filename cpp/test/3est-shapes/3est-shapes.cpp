@@ -13,9 +13,13 @@
 #include <3esserver.h>
 #include <shapes/3esshapes.h>
 
+#include <3estcplistensocket.h>
+
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <iostream>
+#include <thread>
 #include <vector>
 
 namespace tes
@@ -141,9 +145,26 @@ namespace tes
 
     memset(&readServerInfo, 0, sizeof(readServerInfo));
 
+    int attempt = 0;
     int readCount = 0;
-    while ((readCount = socket.readAvailable(readBuffer.data(), readBuffer.size())) > 0)
+
+    // Make a number of attempts to allow time for data to get through.
+    // Kludgy, but it will do for the unit tests.
+    while (attempt++ < 1000)
     {
+      readCount = socket.readAvailable(readBuffer.data(), readBuffer.size());
+      if (readCount < 0)
+      {
+        // Read error. Abort.
+        break;
+      }
+
+      if  (readCount == 0)
+      {
+        // Nothing read. Wait.
+        continue;
+      }
+
       packetBuffer.addBytes(readBuffer.data(), readCount);
 
       while (PacketHeader *packetHeader = packetBuffer.extractPacket())
@@ -230,16 +251,19 @@ namespace tes
     //   serverFlags |= SF_Compress;
     // }
     ServerSettings serverSettings(serverFlags);
+    serverSettings.portRange = 1000;
     Server *server = Server::create(serverSettings, &info);
-    server->connectionMonitor()->start(tes::ConnectionMonitor::Asynchronous);
 
-    // Create client.
+    // std::cout << "Start on port " << serverSettings.listenPort << std::endl;
+    ASSERT_TRUE(server->connectionMonitor()->start(tes::ConnectionMonitor::Asynchronous));
+    // std::cout << "Server listening on port " << server->connectionMonitor()->port() << std::endl;;
+
+    // Create client and connect.
     TcpSocket client;
-
-    client.open("127.0.0.1", serverSettings.listenPort);
+    client.open("127.0.0.1", server->connectionMonitor()->port());
 
     // Wait for connection.
-    if (server->connectionMonitor()->waitForConnection(20000U) > 0)
+    if (server->connectionMonitor()->waitForConnection(5000U) > 0)
     {
       server->connectionMonitor()->commitConnections();
     }
@@ -255,6 +279,7 @@ namespace tes
     // Process client messages.
     validateClient(client, shape, info);
 
+    client.close();
     server->close();
 
     server->connectionMonitor()->stop();
@@ -262,8 +287,6 @@ namespace tes
 
     server->dispose();
     server = nullptr;
-
-    client.close();
   }
 
   TEST(Shapes, Arrow)
@@ -329,14 +352,14 @@ namespace tes
     testShape(Star(42, 1, Vector3f(1.2f, 2.3f, 3.4f), 1.26f));
   }
 
-  TEST(Shapes, DISABLED_Text2D)
+  TEST(Shapes, Text2D)
   {
     testShape(Text2D("Transient Text2D", Vector3f(1.2f, 2.3f, 3.4f)));
     testShape(Text2D("Persistent Text2D", 42, Vector3f(1.2f, 2.3f, 3.4f)));
     testShape(Text2D("Persistent, categorised Text2D", 42, 1, Vector3f(1.2f, 2.3f, 3.4f)));
   }
 
-  TEST(Shapes, DISABLED_Text3D)
+  TEST(Shapes, Text3D)
   {
     // Validate all the constructors.
     testShape(Text3D("Transient Text3D", Vector3f(1.2f, 2.3f, 3.4f), 14));

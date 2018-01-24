@@ -20,16 +20,52 @@ namespace tes
   class TcpServer;
   class TcpListenSocket;
 
+  /// Implements a @c ConnectionMonitor using the TCP protocol. Intended only for use with a @c TcpServer.
   class TcpConnectionMonitor : public ConnectionMonitor
   {
   public:
     typedef SpinLock Lock;
 
+    /// Error codes.
+    enum ConnectionError
+    {
+      CE_None,
+      /// Failed to listen on the requested port.
+      CE_ListenFailure,
+      /// Timeout has expired.
+      CE_Timeout
+    };
+
+    /// Construct a TCP based connection monitor for @p server.
+    /// @param server The server owning this connection monitor.
     TcpConnectionMonitor(TcpServer &server);
+
+    /// Destructor.
     ~TcpConnectionMonitor();
 
+    /// Get the @c TcpServer which owns this @c ConnectionMonitor.
+    /// @return The owning server.
     inline TcpServer &server() { return _server; }
+
+    /// @overload
     inline const TcpServer &server() const { return _server; }
+
+    /// Get the TCP socket used to manage connections.
+    /// @return The @c TcpListenSocket the connection monitor listens on.
+    ///    May be null when not currently listening (before @c start()).
+    inline const TcpListenSocket *socket() const { return _listen; }
+
+    /// Get the last error code.
+    /// @return The @c ConnectionError for the last error.
+    int lastErrorCode() const;
+
+    /// Clear the last error code.
+    /// @return The @c ConnectionError for the last error.
+    int clearErrorCode();
+
+    /// Report the port on which the connection monitor is listening.
+    /// @return The listen port or zero if not listening.
+    int port() const override;
 
     /// Starts the monitor thread (asynchronous mode).
     bool start(Mode mode) override;
@@ -102,7 +138,7 @@ namespace tes
     void commitConnections() override;
 
   private:
-    void listen();
+    bool listen();
     void stopListening();
     void monitorThread();
 
@@ -112,6 +148,8 @@ namespace tes
     Mode _mode; ///< Current execution mode.
     std::vector<TcpConnection *> _connections;
     std::vector<TcpConnection *> _expired;
+    std::atomic_int _listenPort;
+    std::atomic_int _errorCode;
     std::atomic_bool _running;
     std::atomic_bool _quitFlag;
     mutable Lock _connectionLock;

@@ -45,12 +45,16 @@ bool Text2D::readCreate(PacketReader &stream)
   if (_textLength < textLength)
   {
     delete [] _text;
-    _text = new char[_textLength + 1];
+    _text = new char[textLength + 1];
   }
-  _text[0] = '\0';
   _textLength = textLength;
-  ok = ok && stream.readArray(_text, textLength) == sizeof(*_text) * textLength;
-  _text[textLength] = '\0';
+
+  if (_textLength)
+  {
+    _text[0] = '\0';
+    ok = ok && stream.readArray(_text, textLength) == sizeof(*_text) * textLength;
+    _text[textLength] = '\0';
+  }
 
   return ok;
 }
@@ -85,6 +89,7 @@ Text2D &Text2D::setText(const char *text, uint16_t textLength)
 #else  // _MSC_VER
     strncpy(_text, text, textLength);
 #endif // _MSC_VER
+    _text[textLength] = '\0';
   }
   return *this;
 }
