@@ -21,7 +21,7 @@ namespace tes
   {
   public:
     //Text2D(const char *text, uint16_t textLength, const V3Arg &pos = V3Arg(0, 0, 0));
-    Text2D(const char *text, const V3Arg &pos = V3Arg(0, 0, 0));
+    Text2D(const char *text = "", const V3Arg &pos = V3Arg(0, 0, 0));
     //Text2D(const char *text, uint16_t textLength, uint32_t id, const V3Arg &pos = V3Arg(0, 0, 0));
     Text2D(const char *text, uint32_t id, const V3Arg &pos = V3Arg(0, 0, 0));
     //Text2D(const char *text, uint16_t textLength, uint32_t id, uint16_t category, const V3Arg &pos = V3Arg(0, 0, 0));

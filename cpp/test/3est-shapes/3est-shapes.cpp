@@ -4,6 +4,7 @@
 
 #include <3escoordinateframe.h>
 #include <3esconnectionmonitor.h>
+#include <3esmaths.h>
 #include <3esmessages.h>
 #include <3espacketbuffer.h>
 #include <3espacketreader.h>
@@ -268,5 +269,80 @@ namespace tes
   TEST(Shapes, Arrow)
   {
     testShape(Arrow(42, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), 2.0f, 0.05f));
+    testShape(Arrow(42, 1, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), 2.0f, 0.05f));
+  }
+
+  TEST(Shapes, Box)
+  {
+    testShape(Box(42, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 3, 2), Quaternionf().setAxisAngle(Vector3f(1, 1, 1).normalised(), degToRad(18.0f))));
+    testShape(Box(42, 1, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 3, 2), Quaternionf().setAxisAngle(Vector3f(1, 1, 1).normalised(), degToRad(18.0f))));
+  }
+
+  TEST(Shapes, Capsule)
+  {
+    testShape(Capsule(42, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), 0.3f, 2.05f));
+    testShape(Capsule(42, 1, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), 0.3f, 2.05f));
+  }
+
+  TEST(Shapes, Cone)
+  {
+    testShape(Cone(42, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), degToRad(35.0f), 3.0f));
+    testShape(Cone(42, 1, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), degToRad(35.0f), 3.0f));
+  }
+
+  TEST(Shapes, Cylinder)
+  {
+    testShape(Cylinder(42, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), 0.25f, 1.05f));
+    testShape(Cylinder(42, 1, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), 0.25f, 1.05f));
+  }
+
+  // TEST(Shapes, MeshSet)
+  // {
+  //   testShape(MeshSet(42, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), 2.0f, 0.05f));
+  // }
+
+  // TEST(Shapes, Mesh)
+  // {
+  //   testShape(MeshShape(42, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), 2.0f, 0.05f));
+  // }
+
+  TEST(Shapes, Plane)
+  {
+    testShape(Plane(42, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), 5.0f, 0.75f));
+    testShape(Plane(42, 1, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), 5.0f, 0.75f));
+  }
+
+  // TEST(Shapes, PointCloud)
+  // {
+  //   testShape(PointCloudShape(42, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), 2.0f, 0.05f));
+  // }
+
+  TEST(Shapes, Sphere)
+  {
+    testShape(Sphere(42, Vector3f(1.2f, 2.3f, 3.4f), 1.26f));
+    testShape(Sphere(42, 1, Vector3f(1.2f, 2.3f, 3.4f), 1.26f));
+  }
+
+  TEST(Shapes, Star)
+  {
+    testShape(Star(42, Vector3f(1.2f, 2.3f, 3.4f), 1.26f));
+    testShape(Star(42, 1, Vector3f(1.2f, 2.3f, 3.4f), 1.26f));
+  }
+
+  TEST(Shapes, DISABLED_Text2D)
+  {
+    testShape(Text2D("Transient Text2D", Vector3f(1.2f, 2.3f, 3.4f)));
+    testShape(Text2D("Persistent Text2D", 42, Vector3f(1.2f, 2.3f, 3.4f)));
+    testShape(Text2D("Persistent, categorised Text2D", 42, 1, Vector3f(1.2f, 2.3f, 3.4f)));
+  }
+
+  TEST(Shapes, DISABLED_Text3D)
+  {
+    // Validate all the constructors.
+    testShape(Text3D("Transient Text3D", Vector3f(1.2f, 2.3f, 3.4f), 14));
+    testShape(Text3D("Transient oriented Text3D", Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 2, 3).normalised(), 8));
+    testShape(Text3D("Persistent Text3D", 42, Vector3f(1.2f, 2.3f, 3.4f), 23));
+    testShape(Text3D("Persistent oriented Text3D", 42, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 2, 3).normalised(), 12));
+    testShape(Text3D("Persistent, categorised, oriented Text3D", 42, 1, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 2, 3).normalised(), 15));
   }
 }

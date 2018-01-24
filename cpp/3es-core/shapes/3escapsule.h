@@ -29,7 +29,7 @@ namespace tes
     static const Vector3f DefaultAxis;
 
     /// @overload
-    Capsule(uint32_t id, const V3Arg &centre = V3Arg(0, 0, 0), const V3Arg &axis = DefaultAxis, float radius = 1.0f, float length = 1.0f);
+    Capsule(uint32_t id = 0, const V3Arg &centre = V3Arg(0, 0, 0), const V3Arg &axis = DefaultAxis, float radius = 1.0f, float length = 1.0f);
     /// Construct a capsule object.
     /// @param id The shape ID, unique among @c Capsule objects, or zero for a transient shape.
     /// @param category The category grouping for the shape used for filtering.
