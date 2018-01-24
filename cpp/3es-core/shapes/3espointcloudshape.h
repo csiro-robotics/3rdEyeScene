@@ -33,6 +33,8 @@ namespace tes
     /// Destructor.
     ~PointCloudShape();
 
+    inline const char *type() const override { return "pointCloudShape"; }
+
     /// Set the desired point render size (pixels).
     /// @param size The desired render size (pixels).
     /// @return @c *this
@@ -40,6 +42,20 @@ namespace tes
     /// Get the desired point render size (pixels).
     /// @return The desired point render size.
     inline uint8_t pointSize() const { return _pointSize; }
+
+    /// Return the number of @c indices().
+    ///
+    /// Only non-zero when referencing a subset of @c mesh() vertices.
+    ///
+    /// @return Zero when using all @c mesh() vertices, non-zero when referencing a subset of @c mesh().
+    unsigned indexCount() const { return _indexCount; }
+
+    /// Return the index array when a subset of @c mesh() vertices.
+    ///
+    /// Indices are only set when overriding indexing from @c mesh().
+    ///
+    /// @return An array of indices, length @c indexCount(), or null when referencing all vertices from @c mesh().
+    const unsigned *indices() const { return _indices; }
 
     /// Sets the (optional) indices for this @c PointCloudShape @c Shape.
     /// This shape will only visualise the indexed points from its @c PointSource.
@@ -64,7 +80,7 @@ namespace tes
     /// Writes the standard create message and appends the point cloud ID (@c uint32_t).
     /// @param stream The stream to write to.
     /// @return True on success.
-    virtual bool writeCreate(PacketWriter &stream) const override;
+    bool writeCreate(PacketWriter &stream) const override;
 
     /// Write index data set in @c setIndices() if any.
     /// @param stream The data stream to write to.
@@ -73,7 +89,11 @@ namespace tes
     /// @return Indicates completion progress. 0 indicates completion,
     ///   1 indicates more data are available and more calls should be made.
     ///   -1 indicates an error. No more calls should be made.
-    virtual int writeData(PacketWriter &stream, unsigned &progressMarker) const override;
+    int writeData(PacketWriter &stream, unsigned &progressMarker) const override;
+
+    bool readCreate(PacketReader &stream) override;
+
+    bool readData(PacketReader &stream) override;
 
     /// Defines this class as a complex shape. See Shape::isComplex().
     /// @return @c true
@@ -93,6 +113,9 @@ namespace tes
   private:
     void onClone(PointCloudShape *copy) const;
 
+    /// Reallocate the index array preserving current data.
+    /// @param count The new element size for the array.
+    void reallocateIndices(uint32_t count);
     uint32_t *allocateIndices(uint32_t count);
     void freeIndices(const uint32_t *indices);
 
@@ -100,6 +123,7 @@ namespace tes
     uint32_t *_indices;
     uint32_t _indexCount;
     uint8_t _pointSize;
+    bool _ownMesh;
   };
 
 
@@ -109,13 +133,8 @@ namespace tes
     , _indices(nullptr)
     , _indexCount(0)
     , _pointSize(pointSize)
+    , _ownMesh(false)
   {
-  }
-
-
-  inline PointCloudShape::~PointCloudShape()
-  {
-    freeIndices(_indices);
   }
 
 

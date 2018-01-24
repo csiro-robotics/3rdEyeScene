@@ -314,6 +314,13 @@ namespace tes
     /// Transforms the vector @p v by the rotation component of this matrix. No translation is applied.
     /// @return Av, where A is this matrix converted to a 3x3 rotation matrix (no translation).
     Vector4<T> rotate(const Vector4<T> &v) const;
+
+    /// Numerical equality comparison. Reports @c true if each element of this matrix is within of
+    /// @p Epsilon @p a (or equal to).
+    /// @return a Matrix to compare to.
+    /// @param epsilon Comparison tolerance value.
+    /// @return @c true when each element in this matrix is within @p epsilon of each element of @p a.
+    bool equals(const Matrix4<T> &a, const T epsilon = Vector3<T>::Epsilon);
   };
 
   /// Defines a single precision 4x4 matrix.

@@ -65,6 +65,7 @@ if(TES_BUILD_TESTS)
   #   --output-on-failure
   # The full test output is always available in:
   #   <build>/Testing/Temporary/LastTest.log
+  # Note: not all projects under tests actually add something for CTest.
   enable_testing()
   add_subdirectory(test)
 endif(TES_BUILD_TESTS)

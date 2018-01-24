@@ -49,6 +49,9 @@ namespace tes
     /// @copydoc MeshResource::colours()
     const uint32_t *colours(unsigned &stride, int stream = 0) const override;
 
+    /// @copydoc Resource::clone()
+    Resource *clone() const override;
+
   private:
     uint32_t _id;
   };

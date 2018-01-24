@@ -117,6 +117,8 @@ namespace tes
     /// Destructor.
     ~MeshShape();
 
+    inline const char *type() const override { return "meshShape"; }
+
     /// Mark as complex to ensure @c writeData() is called.
     inline bool isComplex() const override { return true; }
 
@@ -165,6 +167,8 @@ namespace tes
     inline size_t normalsStride() const { return _normalsStride; }
     inline size_t normalsByteStride() const { return _normalsStride * sizeof(float); }
     inline size_t normalsCount() const { return _normalsCount; }
+    inline unsigned indexCount() const { return _indexCount; }
+    inline const unsigned *indices() const { return _indices; }
     inline DrawType drawType() const { return _drawType; }
 
     /// Writes the standard create message and appends mesh data.
@@ -176,6 +180,9 @@ namespace tes
     /// @return True on success.
     bool writeCreate(PacketWriter &stream) const override;
     int writeData(PacketWriter &stream, unsigned &progressMarker) const override;
+
+    bool readCreate(PacketReader &stream) override;
+    virtual bool readData(PacketReader &stream) override;
 
     /// Deep copy clone.
     /// @return A deep copy.

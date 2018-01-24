@@ -81,3 +81,9 @@ const uint32_t *MeshPlaceholder::colours(unsigned &stride, int /* stream */) con
 {
   return nullptr;
 }
+
+
+Resource *MeshPlaceholder::clone() const
+{
+  return new MeshPlaceholder(_id);
+}

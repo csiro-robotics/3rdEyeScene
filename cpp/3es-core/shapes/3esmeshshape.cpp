@@ -245,6 +245,150 @@ int MeshShape::writeData(PacketWriter &stream, unsigned &progressMarker) const
 }
 
 
+bool MeshShape::readCreate(PacketReader &stream)
+{
+  if (!Shape::readCreate(stream))
+  {
+    return false;
+  }
+
+  uint32_t vertexCount = 0;
+  uint32_t indexCount = 0;
+  uint8_t drawType = 0;
+  bool ok = true;
+
+  ok = ok && stream.readElement(vertexCount) == sizeof(vertexCount);
+  ok = ok && stream.readElement(indexCount) == sizeof(indexCount);
+
+  if (ok)
+  {
+    if (!_ownPointers)
+    {
+      _vertices = nullptr;
+      _indices = nullptr;
+      _vertexCount = _indexCount = 0;
+    }
+
+    _ownPointers = true;
+    if (_vertexCount < vertexCount || _vertexStride != 3)
+    {
+      freeVertices(_vertices);
+      _vertices = allocateVertices(vertexCount);
+      _vertexStride = 3;
+    }
+
+    if (_indexCount < indexCount)
+    {
+      freeIndices(_indices);
+      _indices = allocateIndices(indexCount);
+    }
+
+    _vertexCount = vertexCount;
+    _indexCount = indexCount;
+  }
+
+  if (_ownNormals)
+  {
+    freeVertices(_normals);
+  }
+
+  // Normals may or may not come. We find out in writeData().
+  // _normalCount will either be 1 (uniform normals) or match _vertexCount.
+  // Depends on SendDataType in readData()
+  _normals = nullptr;
+  _normalsCount = 0;
+  _ownNormals = false;
+
+  ok = ok && stream.readElement(drawType) == sizeof(drawType);
+  _drawType = (DrawType)drawType;
+
+  return ok;
+}
+
+
+bool MeshShape::readData(PacketReader &stream)
+{
+  DataMessage msg;
+  uint32_t offset = 0;
+  uint32_t itemCount = 0;
+  uint16_t dataType = 0;
+  bool ok = true;
+
+  ok = ok && msg.read(stream);
+
+  ok = ok && stream.readElement(dataType) == sizeof(dataType);
+
+  if (dataType == SDT_Vertices)
+  {
+    ok = ok && _ownPointers;
+    if (_ownPointers)
+    {
+      if (itemCount + offset < _vertexCount)
+      {
+        freeVertices(_vertices);
+        _vertices = allocateVertices(itemCount + offset);
+        _vertexCount = itemCount + offset;
+      }
+
+      // FIXME: resolve ownership better. readData was a retrofit.
+      float *vertices = const_cast<float *>(_vertices);
+      ok = ok && stream.readArray(vertices + _vertexStride * offset, itemCount) == itemCount;
+    }
+  }
+  else if (dataType == SDT_Indices)
+  {
+    ok = ok && _ownPointers;
+    if (_ownPointers)
+    {
+      if (itemCount + offset < _indexCount)
+      {
+        freeIndices(_indices);
+        _indices = allocateIndices(itemCount + offset);
+        _indexCount = itemCount + offset;
+      }
+
+      // FIXME: resolve ownership better. readData was a retrofit.
+      unsigned *indices = const_cast<unsigned *>(_indices);
+      ok = ok && stream.readArray(indices + offset, itemCount) == itemCount;
+    }
+  }
+  else if (dataType == SDT_Normals || dataType == SDT_UniformNormal)
+  {
+    if (_ownNormals)
+    {
+      freeVertices(_normals);
+    }
+
+    _normalsCount = (dataType == SDT_UniformNormal) ? 1 : _vertexCount;
+    _ownNormals = true;
+    _normals = allocateVertices(_normalsCount);
+    _normalsStride = 3;
+
+    if (itemCount + offset < _normalsCount)
+    {
+      if (dataType == SDT_UniformNormal)
+      {
+        // Should only have one normal!
+        ok = false;
+      }
+      else
+      {
+        freeVertices(_normals);
+        _normals = allocateVertices(itemCount + offset);
+        _normalsCount = itemCount + offset;
+        _normalsStride = 3;
+      }
+
+      // FIXME: resolve ownership better. readData was a retrofit.
+      float *normals = const_cast<float *>(_normals);
+      ok = ok && stream.readArray(normals + _normalsStride * offset, itemCount) == itemCount;
+    }
+  }
+
+  return ok;
+}
+
+
 Shape *MeshShape::clone() const
 {
   MeshShape *triangles = new MeshShape();

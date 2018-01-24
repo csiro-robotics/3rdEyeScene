@@ -87,21 +87,14 @@ namespace tes
   };
 
   /// Flags controlling the creation and appearance of an object.
-  enum
+  enum ObjectFlag
   {
     OFNone = 0, ///< No flags. Default appearance.
     OFWire = (1 << 0), ///< Show the object as a wireframe mesh.
     OFTransparent = (1 << 1), ///< The object supports transparency. Use the colour alpha channel.
     OFTwoSided = (1 << 2),  ///< Use a two sided shader.
 
-    OFUpdateMode = (1 << 3),  ///< Update attributes using only explicitly specified flags from the following.
-    OFPosition = (1 << 4),    ///< Update position data.
-    OFRotation = (1 << 5),    ///< Update rotation data.
-    OFScale = (1 << 6),       ///< Update scale data.
-    OFColour = (1 << 7),      ///< Update colour data.
-    OFColor = OFColour,       ///< Spelling alias for colour.
-
-    OFUser = (1 << 12)        ///< Use flags start here.
+    OFUser = (1 << 8)        ///< Use flags start here.
   };
 
   /// Additional attributes for point data sources.
@@ -136,10 +129,18 @@ namespace tes
   enum UpdateFlag
   {
     UFNone = 0, ///< No flags. Default appearance.
-    /// Transition to the new position, colour, etc., is interpolated over the render frames.
-    /// This is only used if the render frame rate of this application is higher than that of
-    /// the incoming data.
-    UFInterpolate = (1 << 0)
+
+    // Flags 0, 1, 2 missing for legacy compatibility when moved from @c ObjectFlag
+
+    UFUpdateMode = (1 << 3),  ///< Update attributes using only explicitly specified flags from the following.
+    UFPosition = (1 << 4),    ///< Update position data.
+    UFRotation = (1 << 5),    ///< Update rotation data.
+    UFScale = (1 << 6),       ///< Update scale data.
+    UFColour = (1 << 7),      ///< Update colour data.
+    UFColor = UFColour,       ///< Spelling alias for colour.
+
+    /// User flags.
+    UFUser = (1 << 8)
   };
 
   /// Flags for @c CollatedPacketMessage.
@@ -480,7 +481,7 @@ namespace tes
     enum { MessageId = OIdUpdate };
 
     uint32_t id;        ///< Object creation id. Zero if defining a transient/single frame message.
-    uint16_t flags;     ///< Update flags from @c ObjectFlag.
+    uint16_t flags;     ///< Update flags from @c UpdateFlag.
     ObjectAttributes attributes;  ///< Initial transformation and colour.
 
     /// Read message content.

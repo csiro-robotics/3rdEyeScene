@@ -33,6 +33,31 @@ bool Text3D::writeCreate(PacketWriter &stream) const
 }
 
 
+bool Text3D::readCreate(PacketReader &stream)
+{
+  if (!Shape::readCreate(stream))
+  {
+    return false;
+  }
+
+  bool ok = true;
+  uint16_t textLength = 0;
+  ok = ok && stream.readElement(textLength) == sizeof(textLength);
+
+  if (_textLength < textLength)
+  {
+    delete [] _text;
+    _text = new char[_textLength + 1];
+  }
+  _text[0] = '\0';
+  _textLength = textLength;
+  ok = ok && stream.readArray(_text, textLength) == sizeof(*_text) * textLength;
+  _text[textLength] = '\0';
+
+  return ok;
+}
+
+
 Shape *Text3D::clone() const
 {
   Text3D *copy = new Text3D(nullptr, (uint16_t)0);

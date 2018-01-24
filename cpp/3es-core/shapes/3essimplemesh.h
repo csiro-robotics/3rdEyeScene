@@ -143,6 +143,15 @@ namespace tes
   private:
     void copyOnWrite();
 
+    bool processCreate(const MeshCreateMessage &msg) override;
+    bool processVertices(const MeshComponentMessage &msg, const float *vertices, unsigned vertexCount) override;
+    bool processIndices(const MeshComponentMessage &msg, const uint8_t *indices, unsigned indexCount) override;
+    bool processIndices(const MeshComponentMessage &msg, const uint16_t *indices, unsigned indexCount) override;
+    bool processIndices(const MeshComponentMessage &msg, const uint32_t *indices, unsigned indexCount) override;
+    bool processColours(const MeshComponentMessage &msg, const uint32_t *colours, unsigned colourCount) override;
+    bool processNormals(const MeshComponentMessage &msg, const float *normals, unsigned normalCount) override;
+    bool processUVs(const MeshComponentMessage &msg, const float *uvs, unsigned uvCount) override;
+
     SimpleMeshImp *_imp;
   };
 

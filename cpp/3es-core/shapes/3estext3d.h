@@ -40,6 +40,8 @@ namespace tes
 
     ~Text3D();
 
+    inline const char *type() const override { return "text3D"; }
+
     bool screenFacing() const;
     Text3D &setScreenFacing(bool worldSpace);
 
@@ -55,6 +57,8 @@ namespace tes
     Text3D &setText(const char *text, uint16_t textLength);
 
     virtual bool writeCreate(PacketWriter &stream) const override;
+
+    bool readCreate(PacketReader &stream) override;
 
     Shape *clone() const override;
 

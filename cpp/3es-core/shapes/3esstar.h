@@ -28,6 +28,8 @@ namespace tes
     /// @param radius The star radius.
     Star(uint32_t id, uint16_t category, const V3Arg &centre = V3Arg(0, 0, 0), float radius = 1.0f);
 
+    inline const char *type() const override { return "star"; }
+
     /// Set the star radial extents.
     /// @param radius The star radius.
     /// @return @c *this

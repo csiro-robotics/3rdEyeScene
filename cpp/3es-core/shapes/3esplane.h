@@ -40,6 +40,8 @@ namespace tes
     /// @param normalLength Adjusts the display length of the normal.
     Plane(uint32_t id, uint16_t category, const V3Arg &position = V3Arg(0, 0, 0), const V3Arg &normal = DefaultNormal, float scale = 1.0f, float normalLength = 1.0f);
 
+    inline const char *type() const override { return "plane"; }
+
     /// Set the plane normal. Affects @p rotation().
     /// @param axis The new axis to set.
     /// @return @c *this

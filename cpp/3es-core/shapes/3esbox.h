@@ -31,6 +31,8 @@ namespace tes
     /// @param scale Defines the size of the box, were (1, 1, 1) denotes a unit box.
     /// @param rot Quaternion rotation to apply to the box.
     Box(uint32_t id, uint16_t category, const V3Arg &pos = V3Arg(0, 0, 0), const V3Arg &scale = V3Arg(1, 1, 1), const QuaternionArg &rot = QuaternionArg(0, 0, 0, 1));
+
+    inline const char *type() const override { return "box"; }
   };
 
 

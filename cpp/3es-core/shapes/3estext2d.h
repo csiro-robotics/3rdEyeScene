@@ -32,6 +32,8 @@ namespace tes
 
     ~Text2D();
 
+    inline const char *type() const override { return "text2D"; }
+
     bool inWorldSpace() const;
     Text2D &setInWorldSpace(bool worldSpace);
 
@@ -40,7 +42,9 @@ namespace tes
 
     Text2D &setText(const char *text, uint16_t textLength);
 
-    virtual bool writeCreate(PacketWriter &stream) const override;
+    bool writeCreate(PacketWriter &stream) const override;
+
+    bool readCreate(PacketReader &stream) override;
 
     Shape *clone() const override;
 

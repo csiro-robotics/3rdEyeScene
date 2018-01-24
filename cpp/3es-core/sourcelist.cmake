@@ -98,6 +98,7 @@ list(APPEND SOURCES
   shapes/3escone.cpp
   shapes/3escylinder.cpp
   shapes/3esmeshplaceholder.cpp
+  shapes/3esmeshresource.cpp
   shapes/3esmeshset.cpp
   shapes/3esmeshshape.cpp
   shapes/3esplane.cpp

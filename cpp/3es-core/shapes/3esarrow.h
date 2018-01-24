@@ -39,6 +39,8 @@ namespace tes
     /// @param radius Radius of the arrow body.
     Arrow(uint32_t id, uint16_t category, const V3Arg &origin = V3Arg(0, 0, 0), const V3Arg &dir = V3Arg(0, 0, 1), float length = 1.0f, float radius = 0.025f);
 
+    inline const char *type() const override { return "arrow"; }
+
     /// Set the arrow radius.
     /// @param radius The new arrow radius.
     /// @return @c *this

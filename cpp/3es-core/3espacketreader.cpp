@@ -91,3 +91,18 @@ size_t PacketReader::readRaw(uint8_t *bytes, size_t byteCount)
   _payloadPosition += uint16_t(copyCount);
   return copyCount;
 }
+
+
+size_t PacketReader::peek(uint8_t *dst, size_t byteCount, bool allowByteSwap)
+{
+  size_t copyCount = (byteCount <= bytesAvailable()) ? byteCount : bytesAvailable();
+  memcpy(dst, payload() + _payloadPosition, copyCount);
+  // Do not adjust the payload position.
+
+  if (allowByteSwap)
+  {
+    networkEndianSwap(dst, byteCount);
+  }
+
+  return copyCount;
+}
