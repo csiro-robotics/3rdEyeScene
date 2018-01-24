@@ -189,6 +189,7 @@ namespace tes
     {
       bool ok = true;
       ok = reader.readElement(timeUnit) == sizeof(timeUnit) && ok;
+      ok = reader.readElement(defaultFrameTime) == sizeof(defaultFrameTime) && ok;
       ok = reader.readElement(coordinateFrame) == sizeof(coordinateFrame) && ok;
       ok = reader.readArray(reserved, sizeof(reserved) / sizeof(reserved[0])) == sizeof(reserved) / sizeof(reserved[0]) && ok;
       return ok;
