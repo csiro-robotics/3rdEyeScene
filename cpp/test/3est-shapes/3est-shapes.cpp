@@ -42,7 +42,7 @@ namespace tes
 
     EXPECT_EQ(shape.data().attributes.scale[0], reference.data().attributes.scale[0]);
     EXPECT_EQ(shape.data().attributes.scale[1], reference.data().attributes.scale[1]);
-    EXPECT_EQ(shape.data().attributes.scale[2], reference.data().attributes.position[2]);
+    EXPECT_EQ(shape.data().attributes.scale[2], reference.data().attributes.scale[2]);
   }
 
 
@@ -138,62 +138,67 @@ namespace tes
     bool serverInfoRead = false;
     bool shapeMsgRead = false;
 
+    memset(&readServerInfo, 0, sizeof(readServerInfo));
+
     int readCount = 0;
     while ((readCount = socket.readAvailable(readBuffer.data(), readBuffer.size())) > 0)
     {
       packetBuffer.addBytes(readBuffer.data(), readCount);
-      // FIXME: endian fix.
-      PacketHeader *packetHeader = packetBuffer.extractPacket();
 
-      if (packetHeader)
+      while (PacketHeader *packetHeader = packetBuffer.extractPacket())
       {
-        PacketReader reader(*packetHeader);
-
-        EXPECT_EQ(reader.marker(), PacketMarker);
-        EXPECT_EQ(reader.versionMajor(), PacketVersionMajor);
-        EXPECT_EQ(reader.versionMinor(), PacketVersionMinor);
-
-        if (reader.routingId() == MtServerInfo)
+        if (packetHeader)
         {
-          serverInfoRead = true;
-          readServerInfo.read(reader);
+          PacketReader reader(*packetHeader);
 
-          // Validate server info.
-          EXPECT_EQ(readServerInfo.timeUnit, serverInfo.timeUnit);
-          EXPECT_EQ(readServerInfo.defaultFrameTime, serverInfo.defaultFrameTime);
-          EXPECT_EQ(readServerInfo.coordinateFrame, serverInfo.coordinateFrame);
-          EXPECT_EQ(readServerInfo.reserved, serverInfo.reserved);
-        }
-        else if (reader.routingId() == shape.routingId())
-        {
-          // Shape message the shape.
-          uint16_t messageType = 0;
-          uint32_t shapeId = 0;
-          EXPECT_EQ(reader.readElement(messageType), sizeof(messageType));
-          shapeMsgRead = true;
+          EXPECT_EQ(reader.marker(), PacketMarker);
+          EXPECT_EQ(reader.versionMajor(), PacketVersionMajor);
+          EXPECT_EQ(reader.versionMinor(), PacketVersionMinor);
 
-          // Peek the shape ID.
-          reader.peek((uint8_t *)&shapeId, sizeof(shapeId));
-
-          EXPECT_EQ(shapeId, shape.id());
-
-          switch (messageType)
+          if (reader.routingId() == MtServerInfo)
           {
-          case OIdCreate:
-            EXPECT_TRUE(readShape.readCreate(reader));
-            break;
+            serverInfoRead = true;
+            readServerInfo.read(reader);
 
-          case OIdUpdate:
-            EXPECT_TRUE(readShape.readUpdate(reader));
-            break;
+            // Validate server info.
+            EXPECT_EQ(readServerInfo.timeUnit, serverInfo.timeUnit);
+            EXPECT_EQ(readServerInfo.defaultFrameTime, serverInfo.defaultFrameTime);
+            EXPECT_EQ(readServerInfo.coordinateFrame, serverInfo.coordinateFrame);
 
-          case OIdData:
-            EXPECT_TRUE(readShape.readData(reader));
-            break;
+            for (int i = 0; i < sizeof(readServerInfo.reserved) / sizeof(readServerInfo.reserved[0]); ++i)
+            {
+              EXPECT_EQ(readServerInfo.reserved[i], serverInfo.reserved[i]);
+            }
           }
-        }
+          else if (reader.routingId() == shape.routingId())
+          {
+            // Shape message the shape.
+            uint32_t shapeId = 0;
+            shapeMsgRead = true;
 
-        packetBuffer.releasePacket(packetHeader);
+            // Peek the shape ID.
+            reader.peek((uint8_t *)&shapeId, sizeof(shapeId));
+
+            EXPECT_EQ(shapeId, shape.id());
+
+            switch (reader.messageId())
+            {
+            case OIdCreate:
+              EXPECT_TRUE(readShape.readCreate(reader));
+              break;
+
+            case OIdUpdate:
+              EXPECT_TRUE(readShape.readUpdate(reader));
+              break;
+
+            case OIdData:
+              EXPECT_TRUE(readShape.readData(reader));
+              break;
+            }
+          }
+
+          packetBuffer.releasePacket(packetHeader);
+        }
       }
       // else fail?
     }
@@ -225,6 +230,7 @@ namespace tes
     // }
     ServerSettings serverSettings(serverFlags);
     Server *server = Server::create(serverSettings, &info);
+    server->connectionMonitor()->start(tes::ConnectionMonitor::Asynchronous);
 
     // Create client.
     TcpSocket client;
@@ -237,7 +243,7 @@ namespace tes
       server->connectionMonitor()->commitConnections();
     }
 
-    EXPECT_GT(server->connectionCount(), 1);
+    EXPECT_GT(server->connectionCount(), 0);
     EXPECT_TRUE(client.isConnected());
 
     // Send server messages.

@@ -575,14 +575,14 @@ int main(int argc, char **argvNonConst)
     }
   };
 
+  server->connectionMonitor()->setConnectionCallback(onNewConnection);
+  server->connectionMonitor()->start(tes::ConnectionMonitor::Asynchronous);
+
   // Register shapes with server.
   for (Shape *shape : shapes)
   {
     server->create(*shape);
   }
-
-  server->connectionMonitor()->setConnectionCallback(onNewConnection);
-  server->connectionMonitor()->start(tes::ConnectionMonitor::Asynchronous);
 
   while (!quit)
   {
