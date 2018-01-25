@@ -68,6 +68,7 @@ namespace tes
     CIdForceFrameFlush, ///< Forces a frame update (render) without advancing the time.
     CIdReset,           ///< Clear the scene. This drops all existing data.
     CIdSnapshot,        ///< Request a frame snapshot during playback. @c value32 is the frame number to snap.
+    CIdEnd,             ///< Marks the end of the server stream. Clients may disconnect.
   };
 
   /// Message IDs for @c MtCategory routing.

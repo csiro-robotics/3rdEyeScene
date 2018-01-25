@@ -24,7 +24,7 @@ bool PacketReader::checkCrc()
     return true;
   }
 
-  if ((_packet.flags & PF_NoCrc))
+  if ((flags() & PF_NoCrc))
   {
     _status |= CrcValid;
     return true;

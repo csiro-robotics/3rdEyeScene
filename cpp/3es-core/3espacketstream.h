@@ -71,6 +71,9 @@ namespace tes
     /// Fetch the message ID bytes in local endian.
     /// @return The @c PacketHeader::messageId bytes.
     uint16_t messageId() const { return networkEndianSwapValue(_packet.messageId); }
+    /// Fetch the flags bytes in local endian.
+    /// @return the @c PacketHeader::flags bytes.
+    uint8_t flags() const { return networkEndianSwapValue(_packet.flags); }
     /// Fetch the CRC bytes in local endian.
     /// Invalid for packets with the @c PF_NoCrc flag set.
     /// @return The packet's CRC value.

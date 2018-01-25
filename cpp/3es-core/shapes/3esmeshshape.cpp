@@ -317,13 +317,15 @@ bool MeshShape::readData(PacketReader &stream)
   ok = ok && msg.read(stream);
 
   ok = ok && stream.readElement(dataType) == sizeof(dataType);
+  ok = ok && stream.readElement(offset) == sizeof(offset);
+  ok = ok && stream.readElement(itemCount) == sizeof(itemCount);
 
   if (dataType == SDT_Vertices)
   {
     ok = ok && _ownPointers;
     if (_ownPointers)
     {
-      if (itemCount + offset < _vertexCount)
+      if (itemCount + offset > _vertexCount)
       {
         freeVertices(_vertices);
         _vertices = allocateVertices(itemCount + offset);
@@ -331,8 +333,8 @@ bool MeshShape::readData(PacketReader &stream)
       }
 
       // FIXME: resolve ownership better. readData was a retrofit.
-      float *vertices = const_cast<float *>(_vertices);
-      ok = ok && stream.readArray(vertices + _vertexStride * offset, itemCount) == itemCount;
+      float *vertices = const_cast<float *>(_vertices + offset * _vertexStride);
+      ok = ok && stream.readArray(vertices, _vertexStride * itemCount) == _vertexStride * itemCount;
     }
   }
   else if (dataType == SDT_Indices)
@@ -340,7 +342,7 @@ bool MeshShape::readData(PacketReader &stream)
     ok = ok && _ownPointers;
     if (_ownPointers)
     {
-      if (itemCount + offset < _indexCount)
+      if (itemCount + offset > _indexCount)
       {
         freeIndices(_indices);
         _indices = allocateIndices(itemCount + offset);
@@ -348,40 +350,39 @@ bool MeshShape::readData(PacketReader &stream)
       }
 
       // FIXME: resolve ownership better. readData was a retrofit.
-      unsigned *indices = const_cast<unsigned *>(_indices);
-      ok = ok && stream.readArray(indices + offset, itemCount) == itemCount;
+      unsigned *indices = const_cast<unsigned *>(_indices + offset);
+      ok = ok && stream.readArray(indices, itemCount) == itemCount;
+    }
+    else
+    {
+      ok = false;
     }
   }
   else if (dataType == SDT_Normals || dataType == SDT_UniformNormal)
   {
-    if (_ownNormals)
+    unsigned requiredNormals = (dataType == SDT_UniformNormal) ? 1 : _vertexCount;;
+    if (_normalsCount < requiredNormals || !_ownNormals)
     {
-      freeVertices(_normals);
-    }
-
-    _normalsCount = (dataType == SDT_UniformNormal) ? 1 : _vertexCount;
-    _ownNormals = true;
-    _normals = allocateVertices(_normalsCount);
-    _normalsStride = 3;
-
-    if (itemCount + offset < _normalsCount)
-    {
-      if (dataType == SDT_UniformNormal)
-      {
-        // Should only have one normal!
-        ok = false;
-      }
-      else
+      if (_ownNormals)
       {
         freeVertices(_normals);
-        _normals = allocateVertices(itemCount + offset);
-        _normalsCount = itemCount + offset;
-        _normalsStride = 3;
       }
 
+      _normalsCount = requiredNormals;
+      _ownNormals = true;
+      _normals = allocateVertices(_normalsCount);
+      _normalsStride = 3;
+    }
+
+    if (itemCount + offset <= _normalsCount)
+    {
       // FIXME: resolve ownership better. readData was a retrofit.
-      float *normals = const_cast<float *>(_normals);
-      ok = ok && stream.readArray(normals + _normalsStride * offset, itemCount) == itemCount;
+      float *normals = const_cast<float *>(_normals + _normalsStride * offset);
+      ok = ok && stream.readArray(normals, _normalsStride * itemCount) == _normalsStride * itemCount;
+    }
+    else
+    {
+      ok = false;
     }
   }
 

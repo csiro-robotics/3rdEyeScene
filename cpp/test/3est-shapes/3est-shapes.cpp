@@ -11,6 +11,8 @@
 #include <3espacketwriter.h>
 #include <3estcpsocket.h>
 #include <3esserver.h>
+#include <3esserverutil.h>
+#include <3esspheretessellator.h>
 #include <shapes/3esshapes.h>
 
 #include <3estcplistensocket.h>
@@ -24,6 +26,31 @@
 
 namespace tes
 {
+  void makeHiResSphere(std::vector<Vector3f> &vertices, std::vector<unsigned> &indices, std::vector<Vector3f> *normals)
+  {
+    // Start with a unit sphere so we have normals precalculated.
+    // Use a fine subdivision to ensure we need multiple data packets to transfer vertices.
+    sphereSubdivision(vertices, indices, 1.0f, Vector3f::zero, 5);
+
+    // Normals as vertices. Scale and offset.
+    if (normals)
+    {
+      normals->resize(vertices.size());
+      for (size_t i = 0; i < normals->size(); ++i)
+      {
+        (*normals)[i] = vertices[i];
+      }
+    }
+
+    const float radius = 5.5f;
+    const Vector3f sphereCentre(0.5f, 0, -0.25f);
+    for (size_t i = 0; i < vertices.size(); ++i)
+    {
+      vertices[i] = sphereCentre + vertices[i] * radius;
+    }
+  }
+
+
   void validateShape(const Shape &shape, const Shape &reference)
   {
     EXPECT_EQ(shape.routingId(), reference.routingId());
@@ -134,34 +161,37 @@ namespace tes
 
 
   template <class T>
-  void validateClient(TcpSocket &socket, const T &shape, const ServerInfoMessage &serverInfo)
+  void validateClient(TcpSocket &socket, const T &shape, const ServerInfoMessage &serverInfo,
+                      unsigned timeoutSec = 10)
   {
+    typedef std::chrono::steady_clock Clock;
     ServerInfoMessage readServerInfo;
     std::vector<uint8_t> readBuffer(0xffffu);
     PacketBuffer packetBuffer;
     T readShape;
+    auto startTime = Clock::now();
+    int readCount = 0;
+    bool endMsgReceived = false;
     bool serverInfoRead = false;
     bool shapeMsgRead = false;
 
     memset(&readServerInfo, 0, sizeof(readServerInfo));
 
-    int attempt = 0;
-    int readCount = 0;
-
-    // Make a number of attempts to allow time for data to get through.
-    // Kludgy, but it will do for the unit tests.
-    while (attempt++ < 1000)
+    // Keep looping until we get a CIdEnd ControlMessage or timeoutSec elapses.
+    while (!endMsgReceived && std::chrono::duration_cast<std::chrono::seconds>(Clock::now() - startTime).count() < timeoutSec)
     {
       readCount = socket.readAvailable(readBuffer.data(), readBuffer.size());
+      // Assert no read errors.
+      ASSERT_TRUE(readCount >= 0);
       if (readCount < 0)
       {
-        // Read error. Abort.
         break;
       }
 
       if  (readCount == 0)
       {
         // Nothing read. Wait.
+        std::this_thread::yield();
         continue;
       }
 
@@ -177,8 +207,9 @@ namespace tes
           EXPECT_EQ(reader.versionMajor(), PacketVersionMajor);
           EXPECT_EQ(reader.versionMinor(), PacketVersionMinor);
 
-          if (reader.routingId() == MtServerInfo)
+          switch (reader.routingId())
           {
+          case MtServerInfo:
             serverInfoRead = true;
             readServerInfo.read(reader);
 
@@ -191,32 +222,49 @@ namespace tes
             {
               EXPECT_EQ(readServerInfo.reserved[i], serverInfo.reserved[i]);
             }
-          }
-          else if (reader.routingId() == shape.routingId())
+            break;
+
+          case MtControl:
           {
-            // Shape message the shape.
-            uint32_t shapeId = 0;
-            shapeMsgRead = true;
+            // Only interested in the CIdEnd message to mark the end of the stream.
+            ControlMessage msg;
+            ASSERT_TRUE(msg.read(reader));
 
-            // Peek the shape ID.
-            reader.peek((uint8_t *)&shapeId, sizeof(shapeId));
-
-            EXPECT_EQ(shapeId, shape.id());
-
-            switch (reader.messageId())
+            if (reader.messageId() == CIdEnd)
             {
-            case OIdCreate:
-              EXPECT_TRUE(readShape.readCreate(reader));
-              break;
-
-            case OIdUpdate:
-              EXPECT_TRUE(readShape.readUpdate(reader));
-              break;
-
-            case OIdData:
-              EXPECT_TRUE(readShape.readData(reader));
-              break;
+              endMsgReceived = true;
             }
+            break;
+          }
+
+          default:
+            if (reader.routingId() == shape.routingId())
+            {
+              // Shape message the shape.
+              uint32_t shapeId = 0;
+              shapeMsgRead = true;
+
+              // Peek the shape ID.
+              reader.peek((uint8_t *)&shapeId, sizeof(shapeId));
+
+              EXPECT_EQ(shapeId, shape.id());
+
+              switch (reader.messageId())
+              {
+              case OIdCreate:
+                EXPECT_TRUE(readShape.readCreate(reader));
+                break;
+
+              case OIdUpdate:
+                EXPECT_TRUE(readShape.readUpdate(reader));
+                break;
+
+              case OIdData:
+                EXPECT_TRUE(readShape.readData(reader));
+                break;
+              }
+            }
+            break;
           }
 
           packetBuffer.releasePacket(packetHeader);
@@ -228,6 +276,7 @@ namespace tes
     EXPECT_GT(readCount, -1);
     EXPECT_TRUE(serverInfoRead);
     EXPECT_TRUE(shapeMsgRead);
+    EXPECT_TRUE(endMsgReceived);
 
     // Validate the shape state.
     if (shapeMsgRead)
@@ -271,15 +320,25 @@ namespace tes
     EXPECT_GT(server->connectionCount(), 0);
     EXPECT_TRUE(client.isConnected());
 
-    // Send server messages.
-    server->create(shape);
-    server->updateTransfers(0);
-    server->updateFrame(0.0f, true);
+    // Send server messages from another thread. Otherwise large packets may block.
+    std::thread sendThread([server, &shape] ()
+    {
+      server->create(shape);
+      server->updateTransfers(0);
+      server->updateFrame(0.0f, true);
+
+      // Send end message.
+      ControlMessage ctrlMsg;
+      memset(&ctrlMsg, 0, sizeof(ctrlMsg));
+      sendMessage(*server, MtControl, CIdEnd, ctrlMsg);
+    });
 
     // Process client messages.
     validateClient(client, shape, info);
 
     client.close();
+
+    sendThread.join();
     server->close();
 
     server->connectionMonitor()->stop();
@@ -324,10 +383,54 @@ namespace tes
   //   testShape(MeshSet(42, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), 2.0f, 0.05f));
   // }
 
-  // TEST(Shapes, Mesh)
-  // {
-  //   testShape(MeshShape(42, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), 2.0f, 0.05f));
-  // }
+  TEST(Shapes, Mesh)
+  {
+    std::vector<Vector3f> vertices;
+    std::vector<unsigned> indices;
+    std::vector<Vector3f> normals;
+    makeHiResSphere(vertices, indices, &normals);
+
+    // I> Test each constructor.
+    // 1. drawType, verts, vcount, vstrideBytes, pos, rot, scale
+    testShape(MeshShape(DtPoints, vertices.data()->v, unsigned(vertices.size()), sizeof(*vertices.data()),
+              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18)),
+              Vector3f(1.0f, 1.2f, 0.8f)));
+    // 2. drawType, verts, vcount, vstrideBytes, indices, icount, pos, rot, scale
+    testShape(MeshShape(DtTriangles, vertices.data()->v, unsigned(vertices.size()), sizeof(*vertices.data()),
+              indices.data(), unsigned(indices.size()),
+              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18)),
+              Vector3f(1.0f, 1.2f, 0.8f)));
+    // 3. drawType, verts, vcount, vstrideBytes, id, pos, rot, scale
+    testShape(MeshShape(DtPoints, vertices.data()->v, unsigned(vertices.size()), sizeof(*vertices.data()),
+              42,
+              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18)),
+              Vector3f(1.0f, 1.2f, 0.8f)));
+    // 4. drawType, verts, vcount, vstrideBytes, indices, icount, id, pos, rot, scale
+    testShape(MeshShape(DtTriangles, vertices.data()->v, unsigned(vertices.size()), sizeof(*vertices.data()),
+              indices.data(), unsigned(indices.size()),
+              42,
+              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18)),
+              Vector3f(1.0f, 1.2f, 0.8f)));
+    // 5. drawType, verts, vcount, vstrideBytes, indices, icount, id, cat, pos, rot, scale
+    testShape(MeshShape(DtTriangles, vertices.data()->v, unsigned(vertices.size()), sizeof(*vertices.data()),
+              indices.data(), unsigned(indices.size()),
+              42, 1,
+              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18)),
+              Vector3f(1.0f, 1.2f, 0.8f)));
+
+    // II> Test with uniform normal.
+    testShape(MeshShape(DtVoxels, vertices.data()->v, unsigned(vertices.size()), sizeof(*vertices.data()),
+              42,
+              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18)),
+              Vector3f(1.0f, 1.2f, 0.8f)).setUniformNormal(Vector3f(0.1f, 0.1f, 0.1f)));
+
+    // III> Test will many normals.
+    testShape(MeshShape(DtTriangles, vertices.data()->v, unsigned(vertices.size()), sizeof(*vertices.data()),
+              indices.data(), unsigned(indices.size()),
+              42, 1,
+              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18)),
+              Vector3f(1.0f, 1.2f, 0.8f)).setNormals(normals.data()->v, sizeof(*normals.data())));
+  }
 
   TEST(Shapes, Plane)
   {

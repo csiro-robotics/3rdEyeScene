@@ -15,10 +15,6 @@ namespace tes
   /// @c Use @c MeshSet for large data sets.
   class _3es_coreAPI MeshShape : public Shape
   {
-  protected:
-    /// Constructor for cloning.
-    MeshShape();
-
   public:
     /// Codes for @c writeData(). Note: normals must be sent before completing vertices and indices. Best done first.
     enum SendDataType
@@ -29,6 +25,8 @@ namespace tes
       /// Sending a single normals for all vertices (voxel extents).
       SDT_UniformNormal
     };
+
+    MeshShape();
 
     /// Transient triangle set constructor accepting an iterator and optional positioning.
     /// @param vertices Pointer to the vertex array. Must be at least 3 elements per vertex.
