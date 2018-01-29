@@ -580,7 +580,7 @@ namespace tes
 
 
   template <typename T>
-  inline bool Matrix4<T>::equals(const Matrix4<T> &a, const T epsilon)
+  inline bool Matrix4<T>::equals(const Matrix4<T> &a, const T epsilon) const
   {
     return std::abs(m[0] - a.m[0]) <= epsilon &&
            std::abs(m[1] - a.m[1]) <= epsilon &&

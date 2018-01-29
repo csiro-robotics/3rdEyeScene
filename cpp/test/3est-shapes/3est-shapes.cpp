@@ -13,7 +13,9 @@
 #include <3esserver.h>
 #include <3esserverutil.h>
 #include <3esspheretessellator.h>
+#include <shapes/3espointcloud.h>
 #include <shapes/3esshapes.h>
+#include <shapes/3essimplemesh.h>
 
 #include <3estcplistensocket.h>
 
@@ -23,9 +25,12 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+#include <unordered_map>
 
 namespace tes
 {
+  typedef std::unordered_map<uint64_t, Resource *> ResourceMap;
+
   void makeHiResSphere(std::vector<Vector3f> &vertices, std::vector<unsigned> &indices, std::vector<Vector3f> *normals)
   {
     // Start with a unit sphere so we have normals precalculated.
@@ -51,7 +56,152 @@ namespace tes
   }
 
 
-  void validateShape(const Shape &shape, const Shape &reference)
+  // Validate a mesh resource.
+  void validateMesh(const MeshResource &mesh, const MeshResource &reference)
+  {
+    // Check members.
+    EXPECT_EQ(mesh.id(), reference.id());
+    EXPECT_EQ(mesh.typeId(), reference.typeId());
+    EXPECT_EQ(mesh.uniqueKey(), reference.uniqueKey());
+
+    EXPECT_TRUE(mesh.transform().equals(reference.transform()));
+    EXPECT_EQ(mesh.tint(), reference.tint());
+    EXPECT_EQ(mesh.vertexCount(), reference.vertexCount());
+    EXPECT_EQ(mesh.indexCount(), reference.indexCount());
+
+    // Check vertices and vertex related components.
+    unsigned meshStride, refStride = 0;
+    if (reference.vertexCount() && mesh.vertexCount() == reference.vertexCount())
+    {
+      const float *meshVerts = mesh.vertices(meshStride);
+      const float *refVerts = reference.vertices(refStride);
+
+      ASSERT_NE(meshVerts, nullptr);
+      ASSERT_NE(refVerts, nullptr);
+
+      for (unsigned i = 0; i < mesh.vertexCount(); ++i)
+      {
+        if (meshVerts[0] != refVerts[0] || meshVerts[1] != refVerts[1] || meshVerts[2] != refVerts[2])
+        {
+          FAIL() << "vertex[" << i << "]: (" << meshVerts[0] << ',' << meshVerts[1] << ',' << meshVerts[2]
+                 << ") != (" << refVerts[0] << ',' << refVerts[1] << ',' << refVerts[2] << ")";
+        }
+
+        meshVerts += meshStride / sizeof(float);
+        refVerts += refStride / sizeof(float);
+      }
+
+      // Check normals.
+      if (reference.normals(refStride))
+      {
+        ASSERT_TRUE(mesh.normals(meshStride)) << "Mesh missing normals.";
+
+        const float *meshNorms = mesh.normals(meshStride);
+        const float *refNorms = reference.normals(refStride);
+
+        for (unsigned i = 0; i < mesh.vertexCount(); ++i)
+        {
+          if (meshNorms[0] != refNorms[0] || meshNorms[1] != refNorms[1] || meshNorms[2] != refNorms[2])
+          {
+            FAIL() << "normal[" << i << "]: (" << meshNorms[0] << ',' << meshNorms[1] << ',' << meshNorms[2]
+                  << ") != (" << refNorms[0] << ',' << refNorms[1] << ',' << refNorms[2] << ")";
+          }
+
+          meshNorms += meshStride / sizeof(float);
+          refNorms += refStride / sizeof(float);
+        }
+      }
+
+      // Check colours.
+      if (reference.colours(refStride))
+      {
+        ASSERT_TRUE(mesh.colours(meshStride)) << "Mesh missing colours.";
+
+        const uint32_t *meshColours = mesh.colours(meshStride);
+        const uint32_t *refColours = reference.colours(refStride);
+
+        for (unsigned i = 0; i < mesh.vertexCount(); ++i)
+        {
+          if (*meshColours != *refColours)
+          {
+            FAIL() << "colour[" << i << "]: 0x"
+                   << std::hex << std::setw(8) << std::setfill('0')
+                   << *meshColours << " != 0x" << *refColours
+                   << std::dec << std::setw(0) << std::setfill(' ');
+          }
+
+          meshColours += meshStride / sizeof(uint32_t);
+          refColours += refStride / sizeof(uint32_t);
+        }
+      }
+
+      // Check UVs.
+      if (reference.uvs(refStride))
+      {
+        ASSERT_TRUE(mesh.uvs(meshStride)) << "Mesh missing UVs.";
+
+        const float *meshUVs = mesh.uvs(meshStride);
+        const float *refUVs = reference.uvs(refStride);
+
+        for (unsigned i = 0; i < mesh.vertexCount(); ++i)
+        {
+          if (meshUVs[0] != refUVs[0] || meshUVs[1] != refUVs[1])
+          {
+            FAIL() << "uv[" << i << "]: (" << meshUVs[0] << ',' << meshUVs[1]
+                   << ") != (" << refUVs[0] << ',' << refUVs[1] << ")";
+          }
+
+          meshUVs += meshStride / sizeof(float);
+          refUVs += refStride / sizeof(float);
+        }
+      }
+    }
+
+    // Check indices.
+    if (reference.indexCount() && mesh.indexCount() == reference.indexCount())
+    {
+      unsigned meshWidth = 0, refWidth = 0;
+      const uint8_t *meshInds = mesh.indices(meshStride, meshWidth);
+      const uint8_t *refInds = reference.indices(refStride, refWidth);
+
+      ASSERT_NE(meshInds, nullptr);
+      ASSERT_NE(refInds, nullptr);
+
+      // Handle index widths.
+      std::function<unsigned (const uint8_t*)> meshGetIndex, refGetIndex;
+
+      auto getIndex1 = [] (const uint8_t *mem) { return unsigned(*mem); };
+      auto getIndex2 = [] (const uint8_t *mem) { return unsigned(*reinterpret_cast<const uint16_t *>(mem)); };
+      auto getIndex4 = [] (const uint8_t *mem) { return unsigned(*reinterpret_cast<const uint32_t *>(mem)); };
+
+      switch (meshWidth)
+      {
+        case 1: meshGetIndex = getIndex1; break;
+        case 2: meshGetIndex = getIndex2; break;
+        case 4: meshGetIndex = getIndex4; break;
+        default: ASSERT_TRUE(false) << "Unexpected index width.";
+      }
+
+      switch (refWidth)
+      {
+        case 1: refGetIndex = getIndex1; break;
+        case 2: refGetIndex = getIndex2; break;
+        case 4: refGetIndex = getIndex4; break;
+        default: ASSERT_TRUE(false) << "Unexpected index width.";
+      }
+
+      for (unsigned i = 0; i < mesh.indexCount(); ++i)
+      {
+        EXPECT_EQ(meshGetIndex(meshInds), refGetIndex(refInds));
+
+        meshInds += meshStride;
+        refInds += refStride;
+      }
+    }
+  }
+
+
+  void validateShape(const Shape &shape, const Shape &reference, const ResourceMap &resources)
   {
     EXPECT_EQ(shape.routingId(), reference.routingId());
     EXPECT_EQ(shape.isComplex(), reference.isComplex());
@@ -79,29 +229,29 @@ namespace tes
 
 
   template <typename T>
-  void validateText(const T &shape, const T &reference)
+  void validateText(const T &shape, const T &reference, const ResourceMap &resources)
   {
-    validateShape(static_cast<const Shape>(shape), static_cast<const Shape>(reference));
+    validateShape(static_cast<const Shape>(shape), static_cast<const Shape>(reference), resources);
     EXPECT_EQ(shape.textLength(), reference.textLength());
     EXPECT_STREQ(shape.text(), reference.text());
   }
 
 
-  void validateShape(const Text2D &shape, const Text2D &reference)
+  void validateShape(const Text2D &shape, const Text2D &reference, const ResourceMap &resources)
   {
-    validateText(shape, reference);
+    validateText(shape, reference, resources);
   }
 
 
-  void validateShape(const Text3D &shape, const Text3D &reference)
+  void validateShape(const Text3D &shape, const Text3D &reference, const ResourceMap &resources)
   {
-    validateText(shape, reference);
+    validateText(shape, reference, resources);
   }
 
 
-  void validateShape(const MeshShape &shape, const MeshShape &reference)
+  void validateShape(const MeshShape &shape, const MeshShape &reference, const ResourceMap &resources)
   {
-    validateShape(static_cast<const Shape>(shape), static_cast<const Shape>(reference));
+    validateShape(static_cast<const Shape>(shape), static_cast<const Shape>(reference), resources);
 
     EXPECT_EQ(shape.drawType(), reference.drawType());
     EXPECT_EQ(shape.vertexCount(), reference.vertexCount());
@@ -160,15 +310,153 @@ namespace tes
   }
 
 
+  void validateShape(const PointCloudShape &shape, const PointCloudShape &reference, const ResourceMap &resources)
+  {
+    validateShape(static_cast<const Shape>(shape), static_cast<const Shape>(reference), resources);
+
+    EXPECT_EQ(shape.pointSize(), reference.pointSize());
+    EXPECT_EQ(shape.indexCount(), reference.indexCount());
+
+    // Note: We can't compare the contents of shape.mesh() as it is a placeholder reference.
+    // The real mesh is received and validated separately.
+    ASSERT_NE(shape.mesh(), nullptr);
+    ASSERT_NE(reference.mesh(), nullptr);
+    EXPECT_EQ(shape.mesh()->id(), reference.mesh()->id());
+    EXPECT_EQ(shape.mesh()->typeId(), reference.mesh()->typeId());
+    EXPECT_EQ(shape.mesh()->uniqueKey(), reference.mesh()->uniqueKey());
+
+    if (shape.indexCount() == reference.indexCount())
+    {
+      for (unsigned i = 0; i < shape.indexCount(); ++i)
+      {
+        EXPECT_EQ(shape.indices()[i], reference.indices()[i]);
+      }
+    }
+
+    // Validate resources. Fetch the transferred resource and compare against the reference resource.
+    auto resIter = resources.find(shape.mesh()->uniqueKey());
+    ASSERT_NE(resIter, resources.end());
+    ASSERT_EQ(resIter->second->typeId(), reference.mesh()->typeId());
+
+    const MeshResource *mesh = static_cast<const MeshResource *>(resIter->second);
+    validateMesh(*mesh, *reference.mesh());
+  }
+
+
+  void validateShape(const MeshSet &shape, const MeshSet &reference, const ResourceMap &resources)
+  {
+    validateShape(static_cast<const Shape>(shape), static_cast<const Shape>(reference), resources);
+
+    EXPECT_EQ(shape.partCount(), reference.partCount());
+
+    for (int i = 0; i < std::min(shape.partCount(), reference.partCount()); ++i)
+    {
+      // Remember, the mesh in shape is only a placeholder for the ID. The real mesh is in resources.
+      // Validate resources. Fetch the transferred resource and compare against the reference resource.
+      auto resIter = resources.find(shape.partAt(i)->uniqueKey());
+      ASSERT_NE(resIter, resources.end());
+      ASSERT_EQ(resIter->second->typeId(), reference.partAt(i)->typeId());
+
+      const MeshResource *part = static_cast<const MeshResource *>(resIter->second);
+      const MeshResource *refPart = reference.partAt(i);
+
+      EXPECT_TRUE(shape.partTransform(i).equals(reference.partTransform(i)));
+      validateMesh(*part, *refPart);
+    }
+  }
+
+
   template <class T>
-  void validateClient(TcpSocket &socket, const T &shape, const ServerInfoMessage &serverInfo,
+  void handleShapeMessage(PacketReader &reader, T &shape, const T &referenceShape)
+  {
+    // Shape message the shape.
+    uint32_t shapeId = 0;
+
+    // Peek the shape ID.
+    reader.peek((uint8_t *)&shapeId, sizeof(shapeId));
+
+    EXPECT_EQ(shapeId, referenceShape.id());
+
+    switch (reader.messageId())
+    {
+    case OIdCreate:
+      EXPECT_TRUE(shape.readCreate(reader));
+      break;
+
+    case OIdUpdate:
+      EXPECT_TRUE(shape.readUpdate(reader));
+      break;
+
+    case OIdData:
+      EXPECT_TRUE(shape.readData(reader));
+      break;
+    }
+  }
+
+
+  void handleMeshMessage(PacketReader &reader, ResourceMap &resources)
+  {
+    uint32_t meshId = 0;
+    reader.peek((uint8_t *)&meshId, sizeof(meshId));
+    auto resIter = resources.find(MeshPlaceholder(meshId).uniqueKey());
+    SimpleMesh *mesh = nullptr;
+
+    // If it exists, make sure it's a mesh.
+    if (resIter != resources.end())
+    {
+      ASSERT_TRUE(resIter->second->typeId() == MtMesh);
+      mesh = static_cast<SimpleMesh *>(resIter->second);
+    }
+
+    switch (reader.messageId())
+    {
+      case MmtInvalid:
+        EXPECT_TRUE(false) << "Invalid mesh message sent";
+        break;
+
+      case MmtDestroy:
+        delete mesh;
+        if (resIter != resources.end())
+        {
+          resources.erase(resIter);
+        }
+        break;
+
+      case MmtCreate:
+        // Create message. Should not already exists.
+        EXPECT_EQ(mesh, nullptr) << "Recreating exiting mesh.";
+        delete mesh;
+        mesh = new SimpleMesh(meshId);
+        EXPECT_TRUE(mesh->readCreate(reader));
+        resources.insert(std::make_pair(mesh->uniqueKey(), mesh));
+        break;
+
+      // Not handling these messages.
+      case MmtRedefine:
+      case MmtFinalise:
+        break;
+
+    default:
+      EXPECT_NE(mesh, nullptr);
+      if (mesh)
+      {
+        EXPECT_TRUE(mesh->readTransfer(reader.messageId(), reader));
+      }
+      break;
+    }
+  }
+
+
+  template <class T>
+  void validateClient(TcpSocket &socket, const T &referenceShape, const ServerInfoMessage &serverInfo,
                       unsigned timeoutSec = 10)
   {
     typedef std::chrono::steady_clock Clock;
     ServerInfoMessage readServerInfo;
     std::vector<uint8_t> readBuffer(0xffffu);
+    ResourceMap resources;
     PacketBuffer packetBuffer;
-    T readShape;
+    T shape;
     auto startTime = Clock::now();
     int readCount = 0;
     bool endMsgReceived = false;
@@ -237,32 +525,15 @@ namespace tes
             break;
           }
 
+          case MtMesh:
+            handleMeshMessage(reader, resources);
+            break;
+
           default:
-            if (reader.routingId() == shape.routingId())
+            if (reader.routingId() == referenceShape.routingId())
             {
-              // Shape message the shape.
-              uint32_t shapeId = 0;
               shapeMsgRead = true;
-
-              // Peek the shape ID.
-              reader.peek((uint8_t *)&shapeId, sizeof(shapeId));
-
-              EXPECT_EQ(shapeId, shape.id());
-
-              switch (reader.messageId())
-              {
-              case OIdCreate:
-                EXPECT_TRUE(readShape.readCreate(reader));
-                break;
-
-              case OIdUpdate:
-                EXPECT_TRUE(readShape.readUpdate(reader));
-                break;
-
-              case OIdData:
-                EXPECT_TRUE(readShape.readData(reader));
-                break;
-              }
+              handleShapeMessage(reader, shape, referenceShape);
             }
             break;
           }
@@ -281,7 +552,12 @@ namespace tes
     // Validate the shape state.
     if (shapeMsgRead)
     {
-      validateShape(readShape, shape);
+      validateShape(shape, referenceShape, resources);
+    }
+
+    for (auto &&resource : resources)
+    {
+      delete resource.second;
     }
   }
 
@@ -378,10 +654,111 @@ namespace tes
     testShape(Cylinder(42, 1, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), 0.25f, 1.05f));
   }
 
-  // TEST(Shapes, MeshSet)
-  // {
-  //   testShape(MeshSet(42, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), 2.0f, 0.05f));
-  // }
+  TEST(Shapes, MeshSet)
+  {
+    std::vector<Vector3f> vertices;
+    std::vector<unsigned> indices;
+    std::vector<unsigned> wireIndices;
+    std::vector<Vector3f> normals;
+    std::vector<uint32_t> colours;
+    std::vector<SimpleMesh *> meshes;
+    makeHiResSphere(vertices, indices, &normals);
+
+    // Build per vertex colours by colour cycling.
+    colours.resize(vertices.size());
+    for (size_t i = 0; i < vertices.size(); ++i)
+    {
+      colours[i] = Colour::cycle(unsigned(i)).c;
+    }
+
+    // Build a line based indexing scheme for a wireframe sphere.
+    for (size_t i = 0; i < indices.size(); i += 3)
+    {
+      wireIndices.push_back(indices[i + 0]);
+      wireIndices.push_back(indices[i + 1]);
+      wireIndices.push_back(indices[i + 1]);
+      wireIndices.push_back(indices[i + 2]);
+      wireIndices.push_back(indices[i + 2]);
+      wireIndices.push_back(indices[i + 0]);
+    }
+
+    // Build a number of meshes to include in the mesh set.
+    SimpleMesh *mesh = nullptr;
+    unsigned nextMeshId = 1;
+
+    // Vertices and indices only.
+    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), indices.size(), DtTriangles);
+    mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
+    mesh->setIndices(0, indices.data(), unsigned(indices.size()));
+    meshes.push_back(mesh);
+
+    // Vertices, indices and colours
+    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), indices.size(), DtTriangles,
+                          SimpleMesh::Vertex | SimpleMesh::Index | SimpleMesh::Colour);
+    mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
+    mesh->setNormals(0, normals.data(), unsigned(normals.size()));
+    mesh->setIndices(0, indices.data(), unsigned(indices.size()));
+    meshes.push_back(mesh);
+
+    // Points only (essentially a point cloud)
+    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), indices.size(), DtPoints,
+                          SimpleMesh::Vertex);
+    mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
+    meshes.push_back(mesh);
+
+    // Lines.
+    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), wireIndices.size(), DtLines);
+    mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
+    mesh->setIndices(0, wireIndices.data(), unsigned(wireIndices.size()));
+    meshes.push_back(mesh);
+
+    // One with the lot.
+    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), indices.size(), DtTriangles,
+                          SimpleMesh::Vertex | SimpleMesh::Index | SimpleMesh::Normal | SimpleMesh::Colour);
+    mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
+    mesh->setNormals(0, normals.data(), unsigned(normals.size()));
+    mesh->setColours(0, colours.data(), unsigned(colours.size()));
+    mesh->setIndices(0, indices.data(), unsigned(indices.size()));
+    meshes.push_back(mesh);
+
+    // One with the lot.
+    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), indices.size(), DtTriangles,
+                          SimpleMesh::Vertex | SimpleMesh::Index | SimpleMesh::Normal | SimpleMesh::Colour);
+    mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
+    mesh->setNormals(0, normals.data(), unsigned(normals.size()));
+    mesh->setColours(0, colours.data(), unsigned(colours.size()));
+    mesh->setIndices(0, indices.data(), unsigned(indices.size()));
+    meshes.push_back(mesh);
+
+    // One with the lot.
+    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), indices.size(), DtTriangles,
+                          SimpleMesh::Vertex | SimpleMesh::Index | SimpleMesh::Normal | SimpleMesh::Colour);
+    mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
+    mesh->setNormals(0, normals.data(), unsigned(normals.size()));
+    mesh->setColours(0, colours.data(), unsigned(colours.size()));
+    mesh->setIndices(0, indices.data(), unsigned(indices.size()));
+    meshes.push_back(mesh);
+
+    // First do a single part MeshSet.
+    testShape(MeshSet(meshes[0], 42));
+
+    // Now a multi-part MeshSet.
+    {
+      MeshSet set(42, 1, int(meshes.size()));
+
+      Matrix4f transform = Matrix4f::identity;
+      for (int i = 0; i < int(meshes.size()); ++i)
+      {
+        set.setPart(i, meshes[i], transform);
+      }
+      testShape(set);
+    }
+
+    for (auto &&mesh : meshes)
+    {
+      delete mesh;
+    }
+  }
 
   TEST(Shapes, Mesh)
   {
@@ -438,10 +815,27 @@ namespace tes
     testShape(Plane(42, 1, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), 5.0f, 0.75f));
   }
 
-  // TEST(Shapes, PointCloud)
-  // {
-  //   testShape(PointCloudShape(42, Vector3f(1.2f, 2.3f, 3.4f), Vector3f(1, 1, 1).normalised(), 2.0f, 0.05f));
-  // }
+  TEST(Shapes, PointCloud)
+  {
+    std::vector<Vector3f> vertices;
+    std::vector<unsigned> indices;
+    std::vector<Vector3f> normals;
+    makeHiResSphere(vertices, indices, &normals);
+
+    PointCloud cloud(42);
+    cloud.addPoints(vertices.data(), unsigned(vertices.size()));
+
+    // Full res cloud.
+    testShape(PointCloudShape(&cloud, 42, 0, 8));
+
+    // Indexed (sub-sampled) cloud. Just use half the points.
+    indices.resize(0);
+    for (unsigned i = 0; i < unsigned(vertices.size()/2); ++i)
+    {
+      indices.push_back(i);
+    }
+    testShape(PointCloudShape(&cloud, 42, 0, 8).setIndices(indices.data(), unsigned(indices.size())));
+  }
 
   TEST(Shapes, Sphere)
   {

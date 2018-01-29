@@ -320,7 +320,7 @@ namespace tes
     /// @return a Matrix to compare to.
     /// @param epsilon Comparison tolerance value.
     /// @return @c true when each element in this matrix is within @p epsilon of each element of @p a.
-    bool equals(const Matrix4<T> &a, const T epsilon = Vector3<T>::Epsilon);
+    bool equals(const Matrix4<T> &a, const T epsilon = Vector3<T>::Epsilon) const;
   };
 
   /// Defines a single precision 4x4 matrix.

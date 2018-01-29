@@ -28,7 +28,7 @@ namespace tes
     /// @param id The shape ID, unique among @c Arrow objects, or zero for a transient shape.
     /// @param category The category grouping for the shape used for filtering.
     /// @param pointSize Desired point render size (pixels).
-    PointCloudShape(const MeshResource *mesh, uint32_t id = 0, uint16_t category = 0, uint8_t pointSize = 1);
+    PointCloudShape(const MeshResource *mesh = nullptr, uint32_t id = 0, uint16_t category = 0, uint8_t pointSize = 1);
 
     /// Destructor.
     ~PointCloudShape();
