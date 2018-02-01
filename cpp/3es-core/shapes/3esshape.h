@@ -43,7 +43,7 @@ namespace tes
   /// some of the fields in the @c CreateMessage; e.g., the scale XYZ values
   /// have a particular interpretation for the @c Capsule shape.
   ///
-  /// Shapes may be considered simple or complex (@c isComplete reports
+  /// Shapes may be considered simple or complex (@c isComplex() reports
   /// @c true). Simple shapes only need a @c writeCreate() call to be fully
   /// represented, after which @c writeUpdate() may move the object. Complex
   /// shapes required additional data to be fully represented and the
@@ -61,7 +61,7 @@ namespace tes
   /// easily in a single data packet (~64KiB), then write this information
   /// in @c writeCreate() immediately following the @c CreateMessage. For
   /// larger data requirements, then the shape should report as complex
-  /// (@c isComplete() returning @c true) and this information should be written
+  /// (@c isComplex() returning @c true) and this information should be written
   /// in @c writeData().
   ///
   /// The API also includes message reading functions, which creates a
@@ -224,7 +224,7 @@ namespace tes
     ///
     /// @param stream The stream to read message data from.
     /// @return @c true if the message is successfully read.
-    bool readUpdate(PacketReader &stream);
+    virtual bool readUpdate(PacketReader &stream);
 
     /// Read back data written by @c writeData().
     ///

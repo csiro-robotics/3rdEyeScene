@@ -16,14 +16,30 @@ namespace tes
   class _3es_coreAPI MeshShape : public Shape
   {
   public:
-    /// Codes for @c writeData(). Note: normals must be sent before completing vertices and indices. Best done first.
+    /// Codes for @c writeData().
+    ///
+    /// The @c SDT_End flag is send in the send data value on the last message. However, the flag
+    /// was a retrofit, so the @c SDT_ExpectEnd flag must also be set in every data send message
+    /// so the receiver knows to look for the end flag.
+    ///
+    /// Without the @c SDT_ExpectEnd flag, the receiver assumes finalisation when all vertices
+    /// and indices have been read. Other data such as normals may be written before vertices
+    /// and indices, but this is an optional send implementation.
+    ///
+    /// Note: normals must be sent before completing vertices and indices. Best done first.
     enum SendDataType
     {
       SDT_Vertices,
       SDT_Indices,
       SDT_Normals,
       /// Sending a single normals for all vertices (voxel extents).
-      SDT_UniformNormal
+      SDT_UniformNormal,
+      SDT_Colours,
+
+      /// Should the received expect a message with an explicit finalisation marker?
+      SDT_ExpectEnd = (1u << 14),
+      /// Last send message?
+      SDT_End = (1u << 15),
     };
 
     MeshShape();
@@ -145,6 +161,11 @@ namespace tes
     /// @return this
     MeshShape &setUniformNormal(const Vector3f &normal);
 
+    /// Set the colours array, one per vertex (@c vertexCount()). The array pointer is borrowed if this shape doesn't
+    /// own its own pointers, otherwise it is copied. Should be called before calling @c expandVertices().
+    /// @param colours The colours array.
+    MeshShape &setColours(const uint32_t *colours);
+
     /// Expand the vertex set into a new block of memory.
     ///
     /// This is useful when indexing small primitive from a large set of vertices.
@@ -167,6 +188,7 @@ namespace tes
     inline size_t normalsCount() const { return _normalsCount; }
     inline unsigned indexCount() const { return _indexCount; }
     inline const unsigned *indices() const { return _indices; }
+    inline const uint32_t *colours() const { return _colours; }
     inline DrawType drawType() const { return _drawType; }
 
     /// Writes the standard create message and appends mesh data.
@@ -203,6 +225,7 @@ namespace tes
     unsigned _normalsCount;     ///< Number of @c _normals. Must be 0, 1 or @c _vertexCount.
                                 ///< 0 indicates no normals, 1 indicates a single, shared normal (for voxels),
                                 ///< otherwise there must be one per normal.
+    const uint32_t *_colours;   ///< Per vertex colours. Null for none.
     const unsigned *_indices;   ///< Optional triangle indices.
     unsigned _indexCount;       ///< Number of @c indices. Divide by 3 for the triangle count.
     DrawType _drawType;         ///< The primitive to render.
@@ -219,6 +242,7 @@ namespace tes
     , _normals(nullptr)
     , _normalsStride(3)
     , _normalsCount(0)
+    , _colours(nullptr)
     , _indices(nullptr)
     , _indexCount(0)
     , _drawType(DtTriangles)
@@ -239,6 +263,7 @@ namespace tes
     , _normals(nullptr)
     , _normalsStride(3)
     , _normalsCount(0)
+    , _colours(nullptr)
     , _indices(nullptr)
     , _indexCount(0)
     , _drawType(drawType)
@@ -263,6 +288,7 @@ namespace tes
     , _normals(nullptr)
     , _normalsStride(3)
     , _normalsCount(0)
+    , _colours(nullptr)
     , _indices(indices)
     , _indexCount(indexCount)
     , _drawType(drawType)
@@ -287,6 +313,7 @@ namespace tes
     , _normals(nullptr)
     , _normalsStride(3)
     , _normalsCount(0)
+    , _colours(nullptr)
     , _indices(nullptr)
     , _indexCount(0)
     , _drawType(drawType)
@@ -312,6 +339,7 @@ namespace tes
     , _normals(nullptr)
     , _normalsStride(3)
     , _normalsCount(0)
+    , _colours(nullptr)
     , _indices(indices)
     , _indexCount(indexCount)
     , _drawType(drawType)
@@ -336,6 +364,7 @@ namespace tes
     , _normals(nullptr)
     , _normalsStride(3)
     , _normalsCount(0)
+    , _colours(nullptr)
     , _indices(nullptr)
     , _indexCount(0)
     , _drawType(drawType)
@@ -361,6 +390,7 @@ namespace tes
     , _normals(nullptr)
     , _normalsStride(3)
     , _normalsCount(0)
+    , _colours(nullptr)
     , _indices(indices)
     , _indexCount(indexCount)
     , _drawType(drawType)
@@ -370,20 +400,6 @@ namespace tes
     setPosition(position);
     setRotation(rotation);
     setScale(scale);
-  }
-
-
-  inline MeshShape::~MeshShape()
-  {
-    if (_ownPointers)
-    {
-      freeVertices(_vertices);
-      freeIndices(_indices);
-    }
-    if (_ownNormals)
-    {
-      freeVertices(_normals);
-    }
   }
 
 

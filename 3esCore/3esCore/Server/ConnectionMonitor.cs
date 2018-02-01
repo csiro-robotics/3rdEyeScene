@@ -116,6 +116,10 @@ namespace Tes.Server
       _lock = null;
     }
 
+    /// <summary>
+    /// Block until the connection thread has started.
+    /// </summary>
+    /// <returns><c>true</c> in synchronous mode, or in asynchronous mode and the connection monitor has started.</returns>
     public bool WaitForStart()
     {
       if (Mode == ConnectionMonitorMode.Synchronous)

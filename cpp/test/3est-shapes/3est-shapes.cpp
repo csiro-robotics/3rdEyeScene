@@ -5,6 +5,7 @@
 #include <3escoordinateframe.h>
 #include <3esconnectionmonitor.h>
 #include <3esmaths.h>
+#include <3esmathsstream.h>
 #include <3esmessages.h>
 #include <3espacketbuffer.h>
 #include <3espacketreader.h>
@@ -13,11 +14,10 @@
 #include <3esserver.h>
 #include <3esserverutil.h>
 #include <3esspheretessellator.h>
+#include <3estcplistensocket.h>
 #include <shapes/3espointcloud.h>
 #include <shapes/3esshapes.h>
 #include <shapes/3essimplemesh.h>
-
-#include <3estcplistensocket.h>
 
 #include <gtest/gtest.h>
 
@@ -262,8 +262,10 @@ namespace tes
 
     // Validate vertices.
     Vector3f v, r;
-    if (shape.vertexCount() == reference.vertexCount())
+    if (shape.vertexCount() == reference.vertexCount() && shape.vertexCount())
     {
+      ASSERT_NE(shape.vertices(), nullptr);
+      ASSERT_NE(reference.vertices(), nullptr);
       for (unsigned i = 0; i < shape.vertexCount(); ++i)
       {
         v = Vector3f(shape.vertices() + i * shape.vertexStride());
@@ -277,8 +279,10 @@ namespace tes
       }
     }
 
-    if (shape.indexCount() == reference.indexCount())
+    if (shape.indexCount() == reference.indexCount() && shape.indexCount())
     {
+      ASSERT_NE(shape.indices(), nullptr);
+      ASSERT_NE(reference.indices(), nullptr);
       unsigned is, ir;
       for (unsigned i = 0; i < shape.indexCount(); ++i)
       {
@@ -293,8 +297,10 @@ namespace tes
       }
     }
 
-    if (shape.normalsCount() == reference.normalsCount())
+    if (shape.normalsCount() == reference.normalsCount() && shape.normalsCount())
     {
+      ASSERT_NE(shape.normals(), nullptr);
+      ASSERT_NE(reference.normals(), nullptr);
       for (unsigned i = 0; i < shape.normalsCount(); ++i)
       {
         v = Vector3f(shape.normals() + i * shape.normalsStride());
@@ -304,6 +310,27 @@ namespace tes
         {
           std::cerr << "Normal mismatch at " << i << '\n';
           EXPECT_EQ(v, r);
+        }
+      }
+    }
+
+    if (reference.colours())
+    {
+      ASSERT_NE(shape.colours(), nullptr);
+    }
+
+    if (shape.vertexCount() == reference.vertexCount() && reference.colours())
+    {
+      Colour cs, cr;
+      for (unsigned i = 0; i < shape.vertexCount(); ++i)
+      {
+        cs = shape.colours()[i];
+        cr = reference.colours()[i];
+
+        if (cs != cr)
+        {
+          std::cerr << "Colour mismatch at " << i << '\n';
+          EXPECT_EQ(cs, cr);
         }
       }
     }
@@ -767,6 +794,13 @@ namespace tes
     std::vector<Vector3f> normals;
     makeHiResSphere(vertices, indices, &normals);
 
+    // Build a colour cycle for per-vertex colours.
+    std::vector<uint32_t> colours(vertices.size());
+    for (unsigned i = 0; i < unsigned(colours.size()); ++i)
+    {
+      colours[i] = tes::Colour::cycle(i).c;
+    }
+
     // I> Test each constructor.
     // 1. drawType, verts, vcount, vstrideBytes, pos, rot, scale
     testShape(MeshShape(DtPoints, vertices.data()->v, unsigned(vertices.size()), sizeof(*vertices.data()),
@@ -807,6 +841,12 @@ namespace tes
               42, 1,
               Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18)),
               Vector3f(1.0f, 1.2f, 0.8f)).setNormals(normals.data()->v, sizeof(*normals.data())));
+
+    // IV> Test with colours.
+    testShape(MeshShape(DtTriangles, vertices.data()->v, unsigned(vertices.size()), sizeof(*vertices.data()),
+              indices.data(), unsigned(indices.size()),
+              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18)),
+              Vector3f(1.0f, 1.2f, 0.8f)).setColours(colours.data()));
   }
 
   TEST(Shapes, Plane)

@@ -576,7 +576,13 @@ int main(int argc, char **argvNonConst)
   };
 
   server->connectionMonitor()->setConnectionCallback(onNewConnection);
-  server->connectionMonitor()->start(tes::ConnectionMonitor::Asynchronous);
+
+  if (!server->connectionMonitor()->start(tes::ConnectionMonitor::Asynchronous))
+  {
+    std::cerr << "Failed to start listening." << std::endl;
+    return 1;
+  }
+  std::cout << "Listening on port " << server->connectionMonitor()->port() << std::endl;
 
   // Register shapes with server.
   for (Shape *shape : shapes)

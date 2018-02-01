@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using Tes.IO;
 using Tes.Net;
+using Tes.Shapes;
 using Tes.Runtime;
 using UnityEngine;
 
@@ -30,6 +31,10 @@ namespace Tes.Handlers.Shape3D
       /// </summary>
       public Vector3[] Normals;
       /// <summary>
+      /// Optional mesh colours.
+      /// </summary>
+      public Color32[] Colours;
+      /// <summary>
       /// Mesh indices. Sequential indices into <see cref="Vertices"/> when no explicit
       /// Indices are provided.
       /// </summary>
@@ -46,6 +51,96 @@ namespace Tes.Handlers.Shape3D
       /// </remarks>
       public bool CalculateNormals;
     }
+
+    #region Data read adaptors
+    /// <summary>
+    /// An array adaptor to read <see cref="Maths.Vector3"/> and store as <c>UnityEngine.Vector3</c>.
+    /// </summary>
+    class Vector3ComponentAdaptor : MeshShape.ComponentAdaptor<Maths.Vector3>
+    {
+      /// <summary>
+      /// Accesses the underlying array.
+      /// </summary>
+      /// <value>The array.</value>
+      public Vector3[] Array { get; protected set; }
+
+      /// <summary>
+      /// Create a wrapper around <paramref name="array."/>.
+      /// </summary>
+      /// <param name="array">Array.</param>
+      public Vector3ComponentAdaptor(Vector3[] array)
+      {
+        Array = array;
+      }
+
+      /// <summary>
+      /// Retrieve the array length or resize the array (data lost).
+      /// </summary>
+      public int Count
+      {
+        get { return Array.Length; }
+        set { if (Count != value) { Array = new Vector3[value]; } }
+      }
+
+      /// <summary>
+      /// Set the element at index <paramref name="at"/>.
+      /// </summary>
+      /// <param name="at">The index to set a value at.</param>
+      /// <param name="val">The value to set.</param>
+      public void Set(int at, Maths.Vector3 val) { Array[at] = Maths.Vector3Ext.ToUnity(val); }
+
+      /// <summary>
+      /// Retrieve the value at index <paramref name="at"/>.
+      /// </summary>
+      /// <param name="at">The index to retrieve a value at.</param>
+      /// <returns>The requested value.</returns>
+      public Maths.Vector3 Get(int at) { return Maths.Vector3Ext.FromUnity(Array[at]); }
+    }
+
+    /// <summary>
+    /// An array adaptor to read <see cref="Maths.Colour"/> and store as <c>UnityEngine.Colour32</c>.
+    /// </summary>
+    public class ColoursAdaptor : MeshShape.ComponentAdaptor<Maths.Colour>
+    {
+      /// <summary>
+      /// Accesses the underlying array.
+      /// </summary>
+      /// <value>The array.</value>
+      public Color32[] Array { get; protected set; }
+
+      /// <summary>
+      /// Create a wrapper around <paramref name="array"/>.
+      /// </summary>
+      /// <param name="array">Array.</param>
+      public ColoursAdaptor(Color32[] array)
+      {
+        Array = array;
+      }
+
+      /// <summary>
+      /// Retrieve the array length or resize the array (data lost).
+      /// </summary>
+      public int Count
+      {
+        get { return Array.Length; }
+        set { if (Count != value) { Array = new Color32[value]; } }
+      }
+
+      /// <summary>
+      /// Set the element at index <paramref name="at"/>.
+      /// </summary>
+      /// <param name="at">The index to set a value at.</param>
+      /// <param name="val">The value to set.</param>
+      public void Set(int at, Maths.Colour val) { Array[at] = Maths.ColourExt.ToUnity32(val); }
+
+      /// <summary>
+      /// Retrieve the value at index <paramref name="at"/>.
+      /// </summary>
+      /// <param name="at">The index to retrieve a value at.</param>
+      /// <returns>The requested value.</returns>
+      public Maths.Colour Get(int at) { return Maths.ColourExt.FromUnity(Array[at]); }
+    }
+    #endregion
 
     /// <summary>
     /// Create the shape handler.
@@ -245,100 +340,38 @@ namespace Tes.Handlers.Shape3D
         }
       }
 
-      ushort receiveType = 0;
-      uint offset = 0;
-      uint itemCount = 0;
-
-      // Read what we are receiving, offset and item count.
-      receiveType = reader.ReadUInt16();
-      offset = reader.ReadUInt32();
-      itemCount = reader.ReadUInt32();
-
       // Naive support for multiple packets. Assume:
       // - In order.
       // - Under the overall Unity mesh indexing limit.
       MeshDataComponent meshData = obj.GetComponent<MeshDataComponent>();
 
-      if (receiveType == (ushort)Shapes.MeshShape.SendDataType.Normals ||
-          receiveType == (ushort)Shapes.MeshShape.SendDataType.UniformNormal)  // Normals incoming
+      bool ok;
+      Vector3ComponentAdaptor normalsAdaptor = new Vector3ComponentAdaptor(meshData.Normals);
+      ColoursAdaptor coloursAdaptor = new ColoursAdaptor(meshData.Colours);
+      ok = MeshShape.ReadDataComponents(reader,
+                                        new Vector3ComponentAdaptor(meshData.Vertices),
+                                        new MeshShape.ArrayComponentAdaptor<int>(meshData.Indices),
+                                        normalsAdaptor,
+                                        coloursAdaptor
+                                       );
+
+      if (ok)
       {
-        Vector3[] normals = meshData.Normals;
+        // Normals and colours may have been allocated.
+        meshData.Normals = normalsAdaptor.Array;
+        meshData.Colours = coloursAdaptor.Array;
 
-        if (normals == null || normals.Length < meshData.Vertices.Length)
+
+        if (done)
         {
-          normals = meshData.Normals = new Vector3[meshData.Vertices.Length];
-        }
-
-        // Read new normals.
-        Vector3 n = Vector3.zero;
-        if (receiveType == (ushort)Shapes.MeshShape.SendDataType.Normals)
-        {
-          for (int i = 0; i < itemCount; ++i)
-          {
-            n.x = reader.ReadSingle();
-            n.y = reader.ReadSingle();
-            n.z = reader.ReadSingle();
-            normals[offset + i] = n;
-          }
-        }
-        else
-        {
-          // Single, shared normals. Expand into the array.
-          n.x = reader.ReadSingle();
-          n.y = reader.ReadSingle();
-          n.z = reader.ReadSingle();
-
-          for (int i = 0; i < normals.Length; ++i)
-          {
-            normals[i] = n;
-          }
-        }
-
-        // Can't finalise on normals.
-      }
-      else if (receiveType == (ushort)Shapes.MeshShape.SendDataType.Vertices) // Vertices incoming
-      {
-        Vector3[] vertices = meshData.Vertices;
-
-        // Read new vertices.
-        Vector3 v = Vector3.zero;
-        for (int i = 0; i < itemCount; ++i)
-        {
-          v.x = reader.ReadSingle();
-          v.y = reader.ReadSingle();
-          v.z = reader.ReadSingle();
-          vertices[offset + i] = v;
-        }
-
-        if (offset + itemCount == vertices.Length && meshData.Indices.Length == 0)
-        {
-          // Last vertices and expecting no indices.
+          // All done. Create the mesh.
           _awaitingFinalisation.Add(meshData);
         }
-      }
-      else if (receiveType == (ushort)Shapes.MeshShape.SendDataType.Indices)  // Indices incoming
-      {
-        // Receiving indices.
-        int[] indices = meshData.Indices;
 
-        // Read new indices.
-        for (int i = 0; i < itemCount; ++i)
-        {
-          indices[offset + i] = reader.ReadInt32();
-        }
-
-        if (offset + itemCount == indices.Length)
-        {
-          // Last indices.
-          _awaitingFinalisation.Add(meshData);
-        }
-      }
-      else
-      {
-        return new Error(ErrorCode.MalformedMessage);
+        return new Error();
       }
 
-      return new Error();
+      return new Error(ErrorCode.MalformedMessage);
     }
 
     /// <summary>

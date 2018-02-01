@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text;
 using Tes.IO;
 using Tes.Maths;
@@ -124,6 +125,23 @@ namespace Tes.Shapes
       }
 
       return false;
+    }
+
+    public override bool ReadCreate(BinaryReader reader)
+    {
+      if (!base.ReadCreate(reader))
+      {
+        return false;
+      }
+
+      ushort length = reader.ReadUInt16();
+      if (length > 0)
+      {
+        byte[] text = reader.ReadBytes(length);
+        Text = Encoding.UTF8.GetString(text);
+      }
+
+      return true;
     }
 
     /// <summary>

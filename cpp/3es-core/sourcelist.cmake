@@ -11,6 +11,8 @@ list(APPEND PUBLIC_HEADERS
   3esendian.h
   3esfeature.h
   3esmaths.h
+  3esmathsmanip.h
+  3esmathsstream.h
   3esmatrix3.h
   3esmatrix3.inl
   3esmatrix4.h
@@ -75,6 +77,7 @@ list(APPEND SOURCES
   3escrc.cpp
   3esendian.cpp
   3esfeature.cpp
+  3esmathsmanip.cpp
   3esmatrix3.cpp
   3esmatrix4.cpp
   3esmessages.cpp
