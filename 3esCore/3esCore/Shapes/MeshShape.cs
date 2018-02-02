@@ -90,7 +90,7 @@ namespace Tes.Shapes
 
 
     /// <summary>
-    /// An array adaptor implemenetation interfacing with an array.
+    /// An array adaptor implementation interfacing with an array.
     /// </summary>
     public class ArrayComponentAdaptor<T> : ComponentAdaptor<T>
     {
@@ -594,10 +594,13 @@ namespace Tes.Shapes
       uint itemCount;
       ushort sendType;
 
-
+      int verticesLength = (vertices != null) ? vertices.Length : 0;
+      int normalsLength = (normals != null) ? normals.Length : 0;
+      int coloursLength = (colours != null) ? colours.Length : 0;
+      int indicesLength = (indices != null) ? indices.Length : 0;
       DataPhase[] phases = new DataPhase[]
       {
-        new DataPhase((normals.Length == 1) ? SendDataType.UniformNormal : SendDataType.Normals, normals.Length,
+        new DataPhase((normalsLength == 1) ? SendDataType.UniformNormal : SendDataType.Normals, normalsLength,
                       (uint index) => {
                         Vector3 n = normals[index];
                         packet.WriteBytes(BitConverter.GetBytes(n.X), true);
@@ -605,10 +608,10 @@ namespace Tes.Shapes
                         packet.WriteBytes(BitConverter.GetBytes(n.Z), true);
                       },
                       4, 3),
-        new DataPhase(SendDataType.Colours, colours.Length,
+        new DataPhase(SendDataType.Colours, coloursLength,
                       (uint index) => { packet.WriteBytes(BitConverter.GetBytes(colours[index]), true); },
                       4),
-        new DataPhase(SendDataType.Vertices, vertices.Length,
+        new DataPhase(SendDataType.Vertices, verticesLength,
                       (uint index) => {
                         Vector3 v = vertices[index];
                         packet.WriteBytes(BitConverter.GetBytes(v.X), true);
@@ -616,7 +619,7 @@ namespace Tes.Shapes
                         packet.WriteBytes(BitConverter.GetBytes(v.Z), true);
                       },
                       4, 3),
-        new DataPhase(SendDataType.Indices, indices.Length,
+        new DataPhase(SendDataType.Indices, indicesLength,
                       (uint index) => { packet.WriteBytes(BitConverter.GetBytes(indices[index]), true); },
                       4),
       };

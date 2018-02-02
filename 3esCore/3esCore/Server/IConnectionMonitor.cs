@@ -99,6 +99,11 @@ namespace Tes.Server
     ConnectionMonitorMode Mode { get; }
 
     /// <summary>
+    /// Port on which the server is listening (if relevant).
+    /// </summary>
+    int Port { get; }
+
+    /// <summary>
     /// Starts the monitor listening in the specified mode.
     /// </summary>
     /// <param name="mode">The listening mode. Mode <c>None</c> is ignored.</param>

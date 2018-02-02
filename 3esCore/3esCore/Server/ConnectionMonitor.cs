@@ -24,6 +24,26 @@ namespace Tes.Server
     public ConnectionMonitorMode Mode { get; protected set; }
 
     /// <summary>
+    /// Port on which the server is listening (if relevant).
+    /// </summary>
+    public int Port
+    {
+      get
+      {
+        if (_listen != null)
+        {
+          IPEndPoint ipEndPoint = _listen.LocalEndpoint as IPEndPoint;
+          //DnsEndPoint dnsEndPoint = _listen.LocalEndpoint as DnsEndPoit;
+          if (ipEndPoint != null)
+          {
+            return ipEndPoint.Port;
+          }
+        }
+        return 0;
+      }
+    }
+
+    /// <summary>
     /// Create a connection monitor for the given server.
     /// </summary>
     /// <param name="server">The server object.</param>
@@ -61,9 +81,12 @@ namespace Tes.Server
 
       case ConnectionMonitorMode.Asynchronous:
         _quitFlag = false;
-        _thread = new System.Threading.Thread(MonitorThread);
-        _thread.Start();
-        Mode = ConnectionMonitorMode.Asynchronous;
+        if (Listen())
+        {
+          _thread = new System.Threading.Thread(MonitorThread);
+          _thread.Start();
+          Mode = ConnectionMonitorMode.Asynchronous;
+        }
         break;
 
       default:
@@ -71,7 +94,7 @@ namespace Tes.Server
         return false;
       }
 
-      return true;
+      return Mode != ConnectionMonitorMode.None;
     }
 
 
@@ -296,16 +319,30 @@ namespace Tes.Server
     /// <summary>
     /// Start listening for connections.
     /// </summary>
-    private void Listen()
+    private bool Listen()
     {
       if (_listen != null)
       {
-        return;
+        return true;
       }
 
       IPAddress local = IPAddress.Loopback;
-      _listen = new TcpListener(local, _server.Settings.ListenPort);
-      _listen.Start();
+      int port = _server.Settings.ListenPort;
+      while (_listen == null && port <= _server.Settings.ListenPort + _server.Settings.PortRange)
+      {
+        _listen = new TcpListener(local, port++);
+        try
+        {
+          _listen.Start();
+          return true;
+        }
+        catch (SocketException /*e*/)
+        {
+          _listen = null;
+        }
+      }
+
+      return false;
     }
 
     /// <summary>
@@ -330,7 +367,10 @@ namespace Tes.Server
     /// </summary>
     private void MonitorThread()
     {
-      Listen();
+      if (_listen == null)
+      {
+        return;
+      }
 
       while (!_quitFlag)
       {
