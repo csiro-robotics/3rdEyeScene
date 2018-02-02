@@ -78,7 +78,7 @@ namespace Tes.Handlers.Shape3D
       /// </summary>
       public int Count
       {
-        get { return Array.Length; }
+        get { return (Array != null) ? Array.Length : 0; }
         set { if (Count != value) { Array = new Vector3[value]; } }
       }
 
@@ -122,7 +122,7 @@ namespace Tes.Handlers.Shape3D
       /// </summary>
       public int Count
       {
-        get { return Array.Length; }
+        get { return (Array != null) ? Array.Length : 0; }
         set { if (Count != value) { Array = new Color32[value]; } }
       }
 
@@ -345,33 +345,42 @@ namespace Tes.Handlers.Shape3D
       // - Under the overall Unity mesh indexing limit.
       MeshDataComponent meshData = obj.GetComponent<MeshDataComponent>();
 
-      bool ok;
       Vector3ComponentAdaptor normalsAdaptor = new Vector3ComponentAdaptor(meshData.Normals);
       ColoursAdaptor coloursAdaptor = new ColoursAdaptor(meshData.Colours);
-      ok = MeshShape.ReadDataComponents(reader,
-                                        new Vector3ComponentAdaptor(meshData.Vertices),
-                                        new MeshShape.ArrayComponentAdaptor<int>(meshData.Indices),
-                                        normalsAdaptor,
-                                        coloursAdaptor
-                                       );
+      int readComponent = MeshShape.ReadDataComponent(reader,
+                                          new Vector3ComponentAdaptor(meshData.Vertices),
+                                          new MeshShape.ArrayComponentAdaptor<int>(meshData.Indices),
+                                          normalsAdaptor,
+                                          coloursAdaptor
+                                         );
 
-      if (ok)
+      if (readComponent == -1)
       {
-        // Normals and colours may have been allocated.
-        meshData.Normals = normalsAdaptor.Array;
-        meshData.Colours = coloursAdaptor.Array;
-
-
-        if (done)
-        {
-          // All done. Create the mesh.
-          _awaitingFinalisation.Add(meshData);
-        }
-
-        return new Error();
+        return new Error(ErrorCode.MalformedMessage, DataMessage.MessageID);
       }
 
-      return new Error(ErrorCode.MalformedMessage);
+      // Normals and colours may have been (re)allocated. Store the results.
+      switch (readComponent & ~(int)(MeshShape.SendDataType.End | MeshShape.SendDataType.ExpectEnd))
+      {
+        case (int)MeshShape.SendDataType.Normals:
+        case (int)MeshShape.SendDataType.UniformNormal:
+          // Normals array may have been (re)allocated.
+          meshData.Normals = normalsAdaptor.Array;
+          break;
+
+        case (int)MeshShape.SendDataType.Colours:
+          // Colours array may have been (re)allocated.
+          meshData.Colours = coloursAdaptor.Array;
+          break;
+      }
+
+      // Check for finalisation.
+      if ((readComponent & (int)MeshShape.SendDataType.End) != 0)
+      {
+        _awaitingFinalisation.Add(meshData);
+      }
+
+      return new Error();
     }
 
     /// <summary>
@@ -481,8 +490,10 @@ namespace Tes.Handlers.Shape3D
     {
       MeshFilter meshFilter = obj.GetComponent<MeshFilter>();
       MeshTopology topology = MeshCache.DrawTypeToTopology(meshData.DrawType);
-      bool haveNormals = (meshData.Normals != null && meshData.Vertices != null &&
-                          meshData.Normals.Length == meshData.Vertices.Length);
+      bool haveNormals = meshData.Normals != null && meshData.Vertices != null &&
+                         meshData.Normals.Length == meshData.Vertices.Length;
+      bool haveColours = meshData.Colours != null && meshData.Vertices != null &&
+                         meshData.Colours.Length == meshData.Vertices.Length;
       if (meshData.Vertices.Length < 65000)
       {
         if (meshFilter == null)
@@ -501,6 +512,11 @@ namespace Tes.Handlers.Shape3D
         else
         {
           mesh.normals = null;
+        }
+        
+        if (haveColours)
+        {
+          mesh.colors32 = meshData.Colours;
         }
 
         if (meshData.Indices.Length > 0)
@@ -586,6 +602,7 @@ namespace Tes.Handlers.Shape3D
 
           Vector3[] partVerts = new Vector3[elementCount];
           Vector3[] partNorms = (haveNormals) ? new Vector3[elementCount] : null;
+          Color32[] partColours = (haveColours) ? new Color32[elementCount] : null;
           int[] partInds = new int[elementCount];
 
           for (int i = 0; i < elementCount; ++i)
@@ -595,6 +612,10 @@ namespace Tes.Handlers.Shape3D
             {
               partNorms[i] = meshData.Normals[indices[i + indexOffset]];
             }
+            if (partColours != null)
+            {
+              partColours[i] = meshData.Colours[indices[i + indexOffset]];
+            }
             partInds[i] = i;
           }
 
@@ -603,6 +624,10 @@ namespace Tes.Handlers.Shape3D
           if (partNorms != null)
           {
             partMesh.normals = partNorms;
+          }
+          if (partColours != null)
+          {
+            partMesh.colors32 = partColours;
           }
           partMesh.SetIndices(partInds, topology, 0);
           partMesh.RecalculateBounds();

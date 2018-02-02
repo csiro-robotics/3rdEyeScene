@@ -141,7 +141,7 @@ MeshSet *createMeshSet(unsigned id, const std::vector<Vector3f> &vertices, const
     SimpleMesh *mesh = new SimpleMesh(id * 100 + i, unsigned(vertices.size()), unsigned(indices.size()));
     mesh->addComponents(SimpleMesh::Normal);
 
-    mesh->setTransform(Matrix4f::translation(Vector3f(i * 2, i * 2, 0)));
+    mesh->setTransform(Matrix4f::translation(Vector3f(i * 2.0f, i * 2.0f, 0)));
 
     mesh->addVertices(vertices.data(), unsigned(vertices.size()));
     mesh->addIndices(indices.data(), unsigned(indices.size()));
@@ -215,7 +215,7 @@ void defineCategory(Server *server, const char *name, unsigned id, unsigned pare
 template <class T>
 T *initShape(T *shape)
 {
-  shape->setPosition(Vector3f(shape->id(), 0.1f * shape->id(), -0.75f * shape->id()));
+  shape->setPosition(Vector3f(1.0f * shape->id(), 0.1f * shape->id(), -0.75f * shape->id()));
   shape->setColour(Colour::cycle(shape->id()));
   return shape;
 }

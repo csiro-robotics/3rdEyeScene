@@ -105,7 +105,7 @@ bool TcpConnectionMonitor::start(Mode mode)
     while (!_running && !_errorCode && elapsedMs <= _server.settings().asyncTimeoutMs)
     {
       std::this_thread::yield();
-      elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - waitStart).count();
+      elapsedMs = (unsigned)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - waitStart).count();
     }
 
     // Running will be true if the thread started ok.

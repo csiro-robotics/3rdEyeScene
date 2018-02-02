@@ -173,9 +173,13 @@ namespace tes
     /// the vertices by traversing the index array. This ensure only the indexed
     /// subset is present.
     ///
-    /// Does nothing when the shape does not use indices.
+    /// Invokes @c duplicateArrays() when the shape does not use indices.
     /// @return this
     MeshShape &expandVertices();
+
+    /// Duplicate internal arrays and take ownership of the memory.
+    /// Does nothing if already owning the memory.
+    MeshShape &duplicateArrays();
 
     inline unsigned vertexCount() const { return _vertexCount; }
     inline const float *vertices() const { return _vertices; }
@@ -211,11 +215,7 @@ namespace tes
   protected:
     void onClone(MeshShape *copy) const;
 
-    float *allocateVertices(unsigned count);
-    void freeVertices(const float *&vertices);
-
-    unsigned *allocateIndices(unsigned count);
-    void freeIndices(const unsigned *&indices);
+    void releaseArrays();
 
     const float *_vertices;     ///< Mesh vertices.
     unsigned _vertexStride;     ///< Stride into _vertices in float elements, not bytes.

@@ -495,7 +495,7 @@ namespace tes
     // Keep looping until we get a CIdEnd ControlMessage or timeoutSec elapses.
     while (!endMsgReceived && std::chrono::duration_cast<std::chrono::seconds>(Clock::now() - startTime).count() < timeoutSec)
     {
-      readCount = socket.readAvailable(readBuffer.data(), readBuffer.size());
+      readCount = socket.readAvailable(readBuffer.data(), int(readBuffer.size()));
       // Assert no read errors.
       ASSERT_TRUE(readCount >= 0);
       if (readCount < 0)
@@ -620,7 +620,7 @@ namespace tes
       server->connectionMonitor()->commitConnections();
     }
 
-    EXPECT_GT(server->connectionCount(), 0);
+    EXPECT_GT(server->connectionCount(), 0u);
     EXPECT_TRUE(client.isConnected());
 
     // Send server messages from another thread. Otherwise large packets may block.
@@ -714,13 +714,13 @@ namespace tes
     unsigned nextMeshId = 1;
 
     // Vertices and indices only.
-    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), indices.size(), DtTriangles);
+    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), unsigned(indices.size()), DtTriangles);
     mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
     mesh->setIndices(0, indices.data(), unsigned(indices.size()));
     meshes.push_back(mesh);
 
     // Vertices, indices and colours
-    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), indices.size(), DtTriangles,
+    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), unsigned(indices.size()), DtTriangles,
                           SimpleMesh::Vertex | SimpleMesh::Index | SimpleMesh::Colour);
     mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
     mesh->setNormals(0, normals.data(), unsigned(normals.size()));
@@ -728,19 +728,19 @@ namespace tes
     meshes.push_back(mesh);
 
     // Points only (essentially a point cloud)
-    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), indices.size(), DtPoints,
+    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), unsigned(indices.size()), DtPoints,
                           SimpleMesh::Vertex);
     mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
     meshes.push_back(mesh);
 
     // Lines.
-    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), wireIndices.size(), DtLines);
+    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), unsigned(wireIndices.size()), DtLines);
     mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
     mesh->setIndices(0, wireIndices.data(), unsigned(wireIndices.size()));
     meshes.push_back(mesh);
 
     // One with the lot.
-    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), indices.size(), DtTriangles,
+    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), unsigned(indices.size()), DtTriangles,
                           SimpleMesh::Vertex | SimpleMesh::Index | SimpleMesh::Normal | SimpleMesh::Colour);
     mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
     mesh->setNormals(0, normals.data(), unsigned(normals.size()));
@@ -749,7 +749,7 @@ namespace tes
     meshes.push_back(mesh);
 
     // One with the lot.
-    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), indices.size(), DtTriangles,
+    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), unsigned(indices.size()), DtTriangles,
                           SimpleMesh::Vertex | SimpleMesh::Index | SimpleMesh::Normal | SimpleMesh::Colour);
     mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
     mesh->setNormals(0, normals.data(), unsigned(normals.size()));
@@ -758,7 +758,7 @@ namespace tes
     meshes.push_back(mesh);
 
     // One with the lot.
-    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), indices.size(), DtTriangles,
+    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), unsigned(indices.size()), DtTriangles,
                           SimpleMesh::Vertex | SimpleMesh::Index | SimpleMesh::Normal | SimpleMesh::Colour);
     mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
     mesh->setNormals(0, normals.data(), unsigned(normals.size()));
@@ -804,48 +804,48 @@ namespace tes
     // I> Test each constructor.
     // 1. drawType, verts, vcount, vstrideBytes, pos, rot, scale
     testShape(MeshShape(DtPoints, vertices.data()->v, unsigned(vertices.size()), sizeof(*vertices.data()),
-              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18)),
+              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18.0f)),
               Vector3f(1.0f, 1.2f, 0.8f)));
     // 2. drawType, verts, vcount, vstrideBytes, indices, icount, pos, rot, scale
     testShape(MeshShape(DtTriangles, vertices.data()->v, unsigned(vertices.size()), sizeof(*vertices.data()),
               indices.data(), unsigned(indices.size()),
-              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18)),
+              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18.0f)),
               Vector3f(1.0f, 1.2f, 0.8f)));
     // 3. drawType, verts, vcount, vstrideBytes, id, pos, rot, scale
     testShape(MeshShape(DtPoints, vertices.data()->v, unsigned(vertices.size()), sizeof(*vertices.data()),
               42,
-              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18)),
+              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18.0f)),
               Vector3f(1.0f, 1.2f, 0.8f)));
     // 4. drawType, verts, vcount, vstrideBytes, indices, icount, id, pos, rot, scale
     testShape(MeshShape(DtTriangles, vertices.data()->v, unsigned(vertices.size()), sizeof(*vertices.data()),
               indices.data(), unsigned(indices.size()),
               42,
-              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18)),
+              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18.0f)),
               Vector3f(1.0f, 1.2f, 0.8f)));
     // 5. drawType, verts, vcount, vstrideBytes, indices, icount, id, cat, pos, rot, scale
     testShape(MeshShape(DtTriangles, vertices.data()->v, unsigned(vertices.size()), sizeof(*vertices.data()),
               indices.data(), unsigned(indices.size()),
               42, 1,
-              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18)),
+              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18.0f)),
               Vector3f(1.0f, 1.2f, 0.8f)));
 
     // II> Test with uniform normal.
     testShape(MeshShape(DtVoxels, vertices.data()->v, unsigned(vertices.size()), sizeof(*vertices.data()),
               42,
-              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18)),
+              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18.0f)),
               Vector3f(1.0f, 1.2f, 0.8f)).setUniformNormal(Vector3f(0.1f, 0.1f, 0.1f)));
 
     // III> Test will many normals.
     testShape(MeshShape(DtTriangles, vertices.data()->v, unsigned(vertices.size()), sizeof(*vertices.data()),
               indices.data(), unsigned(indices.size()),
               42, 1,
-              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18)),
+              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18.0f)),
               Vector3f(1.0f, 1.2f, 0.8f)).setNormals(normals.data()->v, sizeof(*normals.data())));
 
     // IV> Test with colours.
     testShape(MeshShape(DtTriangles, vertices.data()->v, unsigned(vertices.size()), sizeof(*vertices.data()),
               indices.data(), unsigned(indices.size()),
-              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18)),
+              Vector3f(1.2f, 2.3f, 3.4f), Quaternionf().setAxisAngle(Vector3f(1, 1, 1), degToRad(18.0f)),
               Vector3f(1.0f, 1.2f, 0.8f)).setColours(colours.data()));
   }
 

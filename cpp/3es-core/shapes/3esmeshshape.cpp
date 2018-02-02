@@ -81,16 +81,7 @@ namespace
 
 MeshShape::~MeshShape()
 {
-  if (_ownPointers)
-  {
-    freeVertices(_vertices);
-    freeIndices(_indices);
-    delete [] _colours;
-  }
-  if (_ownNormals)
-  {
-    freeVertices(_normals);
-  }
+  releaseArrays();
 }
 
 
@@ -98,7 +89,7 @@ MeshShape &MeshShape::setNormals(const float *normals, size_t normalByteSize)
 {
   if (_ownNormals)
   {
-    freeVertices(_normals);
+    delete[] _normals;
   }
   _ownNormals = false;
   _normals = normals;
@@ -111,7 +102,7 @@ MeshShape &MeshShape::setNormals(const float *normals, size_t normalByteSize)
     _normalsStride = 3;
     if (_normalsCount)
     {
-      newNormals = allocateVertices(_normalsCount);
+      newNormals = new float[3 * _normalsCount];
       if (normalByteSize == sizeof(*_normals) * _normalsStride)
       {
         memcpy(newNormals, normals, normalByteSize * _normalsCount);
@@ -140,10 +131,10 @@ MeshShape &MeshShape::setUniformNormal(const Vector3f &normal)
 {
   if (_ownNormals)
   {
-    freeVertices(_normals);
+    delete[] _normals;
   }
 
-  float *normals = allocateVertices(1);
+  float *normals = new float[3 * 1];
   _normalsCount = 1;
   _normals = normals;
   _ownNormals = true;
@@ -188,10 +179,11 @@ MeshShape &MeshShape::expandVertices()
 {
   if (!_indices && !_indexCount)
   {
-    return *this;
+    return duplicateArrays();
   }
+
   // We unpack all vertices and stop indexing.
-  float *verts = allocateVertices(_indexCount);
+  float *verts = new float[3 * _indexCount];
   float *dst = verts;
   for (unsigned i = 0; i < _indexCount; ++i)
   {
@@ -203,7 +195,7 @@ MeshShape &MeshShape::expandVertices()
   float *normals = nullptr;
   if (_normals && _normalsCount == _vertexCount)
   {
-    normals = allocateVertices(_indexCount);
+    normals = new float[3 * _indexCount];
     dst = normals;
     for (unsigned i = 0; i < _indexCount; ++i)
     {
@@ -224,15 +216,7 @@ MeshShape &MeshShape::expandVertices()
     }
   }
 
-  if (_ownPointers)
-  {
-    freeVertices(_vertices);
-    freeIndices(_indices);
-  }
-  if (_ownNormals)
-  {
-    freeVertices(_normals);
-  }
+  releaseArrays();
 
   _vertices = verts;
   _vertexCount = _indexCount;
@@ -245,6 +229,87 @@ MeshShape &MeshShape::expandVertices()
   _indexCount = 0;
   _ownPointers = true;
   _ownNormals = normals != nullptr;
+
+  return *this;
+}
+
+
+MeshShape &MeshShape::duplicateArrays()
+{
+  if (!_ownPointers)
+  {
+    float *vertices = nullptr;
+    unsigned *indices = nullptr;
+    uint32_t *colours = nullptr;
+
+    if (_vertexCount)
+    {
+      vertices = new float[3 * _vertexCount];
+      if (_vertexStride == 3)
+      {
+        memcpy(vertices, _vertices, sizeof(*vertices) * 3 * _vertexCount);
+      }
+      else
+      {
+        float *dst = vertices;
+        const float *src = _vertices;
+        for (unsigned i = 0; i < _vertexCount; ++i, dst += 3, src += _vertexStride)
+        {
+          dst[0] = src[0];
+          dst[1] = src[1];
+          dst[2] = src[2];
+        }
+      }
+    }
+
+    if (_indices && _indexCount)
+    {
+      indices = new uint32_t[_indexCount];
+      memcpy(indices, _indices, sizeof(*indices) * _indexCount);
+    }
+
+    if (_colours && _vertexStride)
+    {
+      colours = new uint32_t[_vertexCount];
+      memcpy(colours, _colours, sizeof(*colours) * _vertexCount);
+    }
+
+    _vertices = vertices;
+    _vertexStride = 3;
+    _indices = indices;
+    _colours = colours;
+
+    _ownPointers = true;
+  }
+
+  if (!_ownNormals && _normals)
+  {
+    float *normals = nullptr;
+
+    if (_normalsCount)
+    {
+      normals = new float[3 * _normalsCount];
+      if (_vertexStride == 3)
+      {
+        memcpy(normals, _normals, sizeof(*normals) * 3 * _normalsCount);
+      }
+      else
+      {
+        float *dst = normals;
+        const float *src = _normals;
+        for (unsigned i = 0; i < _normalsCount; ++i, dst += 3, src += _vertexStride)
+        {
+          dst[0] = src[0];
+          dst[1] = src[1];
+          dst[2] = src[2];
+        }
+      }
+    }
+
+    _normals = normals;
+    _normalsStride = 3;
+    _ownNormals = true;
+  }
 
   return *this;
 }
@@ -383,15 +448,15 @@ bool MeshShape::readCreate(PacketReader &stream)
     _ownPointers = true;
     if (_vertexCount < vertexCount || _vertexStride != 3)
     {
-      freeVertices(_vertices);
-      _vertices = allocateVertices(vertexCount);
+      delete[] _vertices;
+      _vertices = new float[3 * vertexCount];
       _vertexStride = 3;
     }
 
     if (_indexCount < indexCount)
     {
-      freeIndices(_indices);
-      _indices = allocateIndices(indexCount);
+      delete[] _indices;
+      _indices = new unsigned[indexCount];
     }
 
     _vertexCount = vertexCount;
@@ -400,7 +465,7 @@ bool MeshShape::readCreate(PacketReader &stream)
 
   if (_ownNormals)
   {
-    freeVertices(_normals);
+    delete[] _normals;
   }
 
   // Normals may or may not come. We find out in writeData().
@@ -478,7 +543,7 @@ bool MeshShape::readData(PacketReader &stream)
       _normalsStride = 3;
       if (_normalsCount)
       {
-        _normals = allocateVertices(_normalsCount);
+        _normals = new float[3 * _normalsCount];
         _ownNormals = true;
       }
     }
@@ -526,6 +591,7 @@ void MeshShape::onClone(MeshShape *copy) const
   copy->_vertices = nullptr;
   copy->_indices = nullptr;
   copy->_normals = nullptr;
+  copy->_colours = nullptr;
   copy->_vertexCount = _vertexCount;
   copy->_normalsCount = _normalsCount;
   copy->_indexCount = _indexCount;
@@ -536,7 +602,7 @@ void MeshShape::onClone(MeshShape *copy) const
   copy->_ownNormals = true;
   if (_vertexCount)
   {
-    float *vertices = copy->allocateVertices(_vertexCount);
+    float *vertices = new float[3 * _vertexCount];
     if (_vertexStride == 3)
     {
       memcpy(vertices, _vertices, sizeof(*vertices) * _vertexCount * 3);
@@ -559,14 +625,14 @@ void MeshShape::onClone(MeshShape *copy) const
 
   if (_indexCount)
   {
-    unsigned *indices = copy->allocateIndices(_indexCount);
+    unsigned *indices = new unsigned[_indexCount];
     memcpy(indices, _indices, sizeof(*indices) * _indexCount);
     copy->_indices = indices;
   }
 
   if (_normalsCount)
   {
-    float *normals = copy->allocateVertices(_normalsCount);
+    float *normals = new float[3 * _normalsCount];
     if (_normalsStride == 3)
     {
       memcpy(normals, _normals, sizeof(*normals) * _normalsCount * 3);
@@ -586,34 +652,31 @@ void MeshShape::onClone(MeshShape *copy) const
     }
     copy->_normals = normals;
   }
+
+  if (_colours && _vertexCount)
+  {
+    uint32_t *colours = new uint32_t[_vertexCount];
+    memcpy(colours, _colours, sizeof(*_colours) * _vertexCount);
+    copy->_colours = colours;
+  }
 }
 
 
-float *MeshShape::allocateVertices(unsigned count)
+void MeshShape::releaseArrays()
 {
-  // Hidden to avoid allocation resource clashes.
-  return new float[count * 3];
-}
+  if (_ownNormals)
+  {
+    delete[] _normals;
+    _normals = nullptr;
+  }
 
-
-void MeshShape::freeVertices(const float *&vertices)
-{
-  // Hidden to deallocate from the same resources.
-  delete[] vertices;
-  vertices = nullptr;
-}
-
-
-unsigned *MeshShape::allocateIndices(unsigned count)
-{
-  // Hidden to avoid allocation resource clashes.
-  return new unsigned[count];
-}
-
-
-void MeshShape::freeIndices(const unsigned *&indices)
-{
-  // Hidden to deallocate from the same resources.
-  delete[] indices;
-  indices = nullptr;
+  if (_ownPointers)
+  {
+    delete[] _vertices;
+    _vertices = nullptr;
+    delete[] _indices;
+    _indices = nullptr;
+    delete[] _colours;
+    _colours = nullptr;
+  }
 }

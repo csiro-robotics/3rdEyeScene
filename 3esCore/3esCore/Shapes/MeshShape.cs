@@ -56,10 +56,10 @@ namespace Tes.Shapes
     #region Data read adaptors
     /// <summary>
     /// Interface for use with the helper method
-    /// <see cref="ReadDataComponents(BinaryReader, ComponentAdaptor&lt;Vector3&gt;, ComponentAdaptor&lt;int&gt;, ComponentAdaptor&lt;Vector3&gt;, ComponentAdaptor&lt;Colour&gt;)">ReadDataComponents()</see>.
+    /// <see cref="ReadDataComponent(BinaryReader, ComponentAdaptor&lt;Vector3&gt;, ComponentAdaptor&lt;int&gt;, ComponentAdaptor&lt;Vector3&gt;, ComponentAdaptor&lt;Colour&gt;)">ReadDataComponent()</see>.
     /// </summary>
     /// <remarks>
-    /// This interface is used to read data from <see cref="DataMessage"/> payloads. The <c>ReadDataComponents()</c> method
+    /// This interface is used to read data from <see cref="DataMessage"/> payloads. The <c>ReadDataComponent()</c> method
     /// uses this interface to prevent read overruns using <see cref="Count"/> and set individual elements via
     /// <see cref="Set(int, T)"/>. For normals and clours, the <see cref="Count"/> property will also be set to ensure
     /// correct array sizing.
@@ -114,7 +114,7 @@ namespace Tes.Shapes
       /// </summary>
       public int Count
       {
-        get { return Array.Length; }
+        get { return (Array != null) ? Array.Length : 0; }
         set { if (Count != value) { Array = new T[value]; } }
       }
 
@@ -158,7 +158,7 @@ namespace Tes.Shapes
       /// </summary>
       public int Count
       {
-        get { return Array.Length; }
+        get { return (Array != null) ? Array.Length : 0; }
         set { if (Count != value) { Array = new UInt32[value]; } }
       }
 
@@ -755,27 +755,45 @@ namespace Tes.Shapes
 
       ArrayComponentAdaptor<Vector3> normalsAdaptor = new ArrayComponentAdaptor<Vector3>(_normals);
       ColoursAdaptor coloursAdaptor = new ColoursAdaptor(_colours);
-      bool ok = ReadDataComponents(reader,
-                                   new ArrayComponentAdaptor<Vector3>(_vertices),
-                                   new ArrayComponentAdaptor<int>(_indices),
-                                   normalsAdaptor, coloursAdaptor);
-      if (ok)
+      int readComponent = ReadDataComponent(reader,
+                                            new ArrayComponentAdaptor<Vector3>(_vertices),
+                                            new ArrayComponentAdaptor<int>(_indices),
+                                            normalsAdaptor, coloursAdaptor);
+
+      if (readComponent == -1)
       {
-        // Normals and colours may have been (re)allocated. Store the results.
-        _normals = normalsAdaptor.Array;
-        _colours = coloursAdaptor.Array;
+        return false;
       }
 
-      return ok;
+      // Normals and colours may have been (re)allocated. Store the results.
+      switch (readComponent & ~(int)(SendDataType.End | SendDataType.ExpectEnd))
+      {
+        case (int)SendDataType.Normals:
+        case (int)SendDataType.UniformNormal:
+          // Normals array may have been (re)allocated.
+          _normals = normalsAdaptor.Array;
+          break;
+
+        case (int)SendDataType.Colours:
+          // Colours array may have been (re)allocated.
+          _colours = coloursAdaptor.Array;
+          break;
+      }
+
+      // Check for finalisation.
+      // Complete if ((readComponent & (int)SendDataType.End) != 0)
+
+      return true;
     }
 
-    // Returns the updated component SendDataType. SendDataType also set, or alone when done.
+
+    // Returns the updated component SendDataType. SendDataType.End also set, or alone when done.
     // Returns -1 on failure.
-    public static int ReadDataComponents(BinaryReader reader,
-                                                  ComponentAdaptor<Vector3> vertices,
-                                                  ComponentAdaptor<int> indices,
-                                                  ComponentAdaptor<Vector3> normals,
-                                                  ComponentAdaptor<Colour> colours)
+    public static int ReadDataComponent(BinaryReader reader,
+                                        ComponentAdaptor<Vector3> vertices,
+                                        ComponentAdaptor<int> indices,
+                                        ComponentAdaptor<Vector3> normals,
+                                        ComponentAdaptor<Colour> colours)
     {
       UInt32 offset;
       UInt32 itemCount;

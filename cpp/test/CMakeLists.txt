@@ -11,6 +11,7 @@ set_target_properties(3est-server PROPERTIES FOLDER test)
 # Add unit tests
 if(GTEST_FOUND)
   add_subdirectory(3est-shapes)
+  set_target_properties(3est-shapes PROPERTIES FOLDER test)
 else(GTEST_FOUND)
   message("Missing GTest. Unit tests will not be built.")
 endif(GTEST_FOUND)

@@ -305,7 +305,11 @@ int populateMap(const Options &opt)
       elapsedTime = std::min(elapsedTime, 1.0);
       firstBatchTimestamp = -1;
 
+#ifdef _MSC_VER
+      sprintf_s(timeStrBuffer, "%g", timestamp - timebase);
+#else  // _MSC_VER
       sprintf(timeStrBuffer, "%g", timestamp - timebase);
+#endif // _MSC_VER
       TES_TEXT2D_SCREEN(g_tesServer, TES_COLOUR(White), timeStrBuffer, 0u, CAT_Info, Vector3f(0.05f, 0.1f, 0.0f));
       // Draw sample lines.
       if (opt.rays & Rays_Lines)
