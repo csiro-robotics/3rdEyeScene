@@ -43,12 +43,14 @@
     <Compile Include="Net\CategoryMessageID.cs" />
     <Compile Include="Net\CoordinateFrame.cs" />
     <Compile Include="Net\IConnection.cs" />
+    <Compile Include="Net\IMessage.cs" />
     <Compile Include="Net\MeshShapeFlag.cs" />
     <Compile Include="Server\ConnectionMonitor.cs" />
     <Compile Include="Server\IConnectionMonitor.cs" />
     <Compile Include="Server\IServer.cs" />
     <Compile Include="Server\ServerFlag.cs" />
     <Compile Include="Server\ServerSettings.cs" />
+    <Compile Include="Server\ServerUtil.cs" />
     <Compile Include="Server\TcpConnection.cs" />
     <Compile Include="Server\TcpServer.cs" />
     <Compile Include="Shapes\Arrow.cs" />

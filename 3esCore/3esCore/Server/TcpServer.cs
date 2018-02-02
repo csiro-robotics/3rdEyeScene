@@ -364,6 +364,29 @@ namespace Tes.Server
     }
 
     /// <summary>
+    /// Close the server connection, stopping the connection monitor and disconnecting all clients.
+    /// </summary>
+    public void Close()
+    {
+      ConnectionMonitor.Stop();
+      ConnectionMonitor.Join();
+
+      _lock.Lock();
+      try
+      {
+        foreach (TcpConnection connection in _connections)
+        {
+          connection.Close();
+        }
+        _connections.Clear();
+      }
+      finally
+      {
+        _lock.Unlock();
+      }
+    }
+
+    /// <summary>
     /// Mutex lock on <see cref="_connections"/>.
     /// </summary>
     private SpinLock _lock = new SpinLock();

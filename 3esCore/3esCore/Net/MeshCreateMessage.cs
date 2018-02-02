@@ -9,7 +9,7 @@ namespace Tes.Net
   /// Message used to define a new mesh resource.
   /// </summary>
   [StructLayout(LayoutKind.Sequential, Pack = 1)]
-  public struct MeshCreateMessage
+  public struct MeshCreateMessage : IMessage
   {
     /// <summary>
     /// <see cref="MeshMessageType"/> for this message.

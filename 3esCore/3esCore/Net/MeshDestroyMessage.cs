@@ -9,7 +9,7 @@ namespace Tes.Net
   /// Message sent to destroy a previously defined mesh resource.
   /// </summary>
   [StructLayout(LayoutKind.Sequential, Pack = 1)]
-  public struct MeshDestroyMessage
+  public struct MeshDestroyMessage : IMessage
   {
     /// <summary>
     /// <see cref="MeshMessageType"/> for this message.

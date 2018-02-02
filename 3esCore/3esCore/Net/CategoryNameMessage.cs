@@ -12,7 +12,7 @@ namespace Tes.Net
   /// The category name is encoded using a two byte string byte count, followed by the
   /// UTF8 character bytes.
   /// </remarks>
-  public struct CategoryNameMessage
+  public struct CategoryNameMessage : IMessage
   {
     /// <summary>
     /// Category message ID.

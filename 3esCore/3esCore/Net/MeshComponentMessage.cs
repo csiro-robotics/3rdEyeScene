@@ -20,7 +20,7 @@ namespace Tes.Net
   /// </list>
   /// </remarks>
   [StructLayout(LayoutKind.Sequential, Pack = 1)]
-  public struct MeshComponentMessage
+  public struct MeshComponentMessage : IMessage
   {
     /// <summary>
     /// ID of the target mesh.

@@ -55,6 +55,10 @@ namespace Tes.Net
     /// to improve step-back updates.
     /// </remarks>
     Keyframe,
+    /// <summary>
+    /// Marks the end of the server stream. Clients may disconnect.
+    /// </summary>
+    End
   }
 
 

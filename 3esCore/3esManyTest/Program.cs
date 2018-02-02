@@ -76,7 +76,7 @@ namespace Tes
       //  ShowUsage();
       //  return;
       //}
-
+      
       Console.CancelKeyPress += new ConsoleCancelEventHandler(ControlCHandler);
 
       ServerSettings serverSettings = ServerSettings.Default;

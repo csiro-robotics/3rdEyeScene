@@ -67,7 +67,7 @@ namespace tes
     CIdFrameCount,      ///< Set the total number of frames to expect (@c value32). More for serialised streams.
     CIdForceFrameFlush, ///< Forces a frame update (render) without advancing the time.
     CIdReset,           ///< Clear the scene. This drops all existing data.
-    CIdSnapshot,        ///< Request a frame snapshot during playback. @c value32 is the frame number to snap.
+    CIdKeyframe,        ///< Request a keframe. @c value32 is the frame number.
     CIdEnd,             ///< Marks the end of the server stream. Clients may disconnect.
   };
 

@@ -254,24 +254,26 @@ namespace Tes.Server
     /// Wait for up to <paramref name="timeoutMs"/> milliseconds for at least one new connection before continuing.
     /// </summary>
     /// <param name="timeoutMs">The time to wait in milliseconds.</param>
-    /// <returns>True if a new connection has been found.</returns>
+    /// <returns>The number of connections. These may need to be committed.</returns>
     /// <remarks>
     /// The method returns once either a new connection exists or <paramref name="timeoutMs"/> has elapsed.
     /// When there is a new connection, it has yet to be committed.
     /// </remarks>
-    public bool WaitForConnections(uint timeoutMs)
+    public int WaitForConnections(uint timeoutMs)
     {
       Stopwatch timer = new Stopwatch();
       timer.Start();
 
+      int connectionCount = 0;
       do
       {
         _lock.Lock();
         try
         {
-          if (_connections.Count > 1)
+          connectionCount = _connections.Count;
+          if (connectionCount > 0)
           {
-            return true;
+            return _connections.Count;
           }
         }
         finally
@@ -283,7 +285,7 @@ namespace Tes.Server
         {
           case ConnectionMonitorMode.None:
             // Not actually looking for connections. Abort.
-            return false;
+            return 0;
           case ConnectionMonitorMode.Synchronous:
             // Synchronous mode. Need to update monitor.
             MonitorConnections();
@@ -304,16 +306,14 @@ namespace Tes.Server
       _lock.Lock();
       try
       {
-        if (_connections.Count > 1)
-        {
-          return true;
-        }
+        connectionCount = _connections.Count;
       }
       finally
       {
         _lock.Unlock();
       }
-      return false;
+
+      return connectionCount;
     }
 
     /// <summary>

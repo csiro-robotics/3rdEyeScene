@@ -478,6 +478,11 @@ namespace Tes.Shapes
     }
 
     /// <summary>
+    /// Access vertex array.
+    /// </summary>
+    public Vector3[] Vertices { get { return _vertices; } }
+
+    /// <summary>
     /// Optional normals access.
     /// </summary>
     public Vector3[] Normals
@@ -505,7 +510,7 @@ namespace Tes.Shapes
     }
 
     /// <summary>
-    /// Read the optional colours array coverted to the <see cref="Colour"/> type.
+    /// Read the optional colours array converted to the <see cref="Colour"/> type.
     /// </summary>
     public IEnumerable<Colour> ConvertedColours
     {
@@ -520,6 +525,11 @@ namespace Tes.Shapes
         }
       }
     }
+
+    /// <summary>
+    /// Access indices array.
+    /// </summary>
+    public int[] Indices { get { return _indices; } }
 
     /// <summary>
     /// Defines the mesh topology.
