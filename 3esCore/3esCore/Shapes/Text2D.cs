@@ -21,6 +21,11 @@ namespace Tes.Shapes
     /// <summary>
     /// Create a 2D text shape.
     /// </summary>
+    public Text2D() : this(string.Empty, Vector3.Zero) { }
+
+    /// <summary>
+    /// Create a 2D text shape.
+    /// </summary>
     /// <param name="text">The text string to display.</param>
     /// <param name="pos">The text position.</param>
     public Text2D(string text, Vector3 pos)
@@ -29,7 +34,6 @@ namespace Tes.Shapes
       Position = pos;
       Text = text;
     }
-
 
     /// <summary>
     /// Create a 2D text shape.
@@ -58,7 +62,6 @@ namespace Tes.Shapes
       Position = pos;
       Text = text;
     }
-
 
     /// <summary>
     /// Create a 2D text shape.

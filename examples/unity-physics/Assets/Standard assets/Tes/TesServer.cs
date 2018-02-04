@@ -208,7 +208,7 @@ public class TesServer : MonoBehaviour
       _dynamicViews.Add(view);
     }
     else
-    { 
+    {
       _staticViews.Add(view);
     }
 
@@ -627,11 +627,11 @@ public class TesServer : MonoBehaviour
   /// <param name="dir"></param>
   /// <param name="angle">Angle in degrees.</param>
   /// <param name="length"></param>
-  public static void Cone(uint id, Color colour, Vector3 apex, Vector3 dir, float angle, float length, bool update = false)
+  public static void Cone(uint id, Color colour, Vector3 apex, Vector3 dir, float length, float angle, bool update = false)
   {
     if (Instance != null)
     {
-      var shape = new Tes.Shapes.Cone(id, ToTes(apex), ToTes(dir), angle / 180.0f * Mathf.PI, length);
+      var shape = new Tes.Shapes.Cone(id, ToTes(apex), ToTes(dir), length, angle / 180.0f * Mathf.PI);
       shape.Colour = ToTes(colour).Value;
       if (!update || id == 0)
       {
@@ -653,9 +653,9 @@ public class TesServer : MonoBehaviour
   /// <param name="dir"></param>
   /// <param name="angle">Angle in degrees.</param>
   /// <param name="length"></param>
-  public static void Cone(Color colour, Vector3 apex, Vector3 dir, float angle, float length)
+  public static void Cone(Color colour, Vector3 apex, Vector3 dir, float length, float angle)
   {
-    Cone(0u, colour, apex, dir, angle, length);
+    Cone(0u, colour, apex, dir, length, angle);
   }
 
   /// <summary>

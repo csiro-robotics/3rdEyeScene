@@ -12,9 +12,17 @@ using Tes.Shapes;
 
 namespace Tes.CoreTests
 {
-  public class ShapeTestFramework
+  public static class ShapeTestFramework
   {
-    public void TestShape<S>(S reference) where S : Shape, new()
+    public delegate void ShapeValidationFunction(Shape shape, Shape reference, Dictionary<ulong, Resource> resources);
+    public delegate Shape CreateShapeFunction();
+
+    public static void TestShape(Shape reference, CreateShapeFunction createShape)
+    {
+      TestShape(reference, createShape, ShapeTestFramework.ValidateShape);
+    }
+
+    public static void TestShape(Shape reference, CreateShapeFunction createShape, ShapeValidationFunction validate)
     {
       ServerInfoMessage info = ServerInfoMessage.Default;
       info.CoordinateFrame = CoordinateFrame.XYZ;
@@ -56,7 +64,7 @@ namespace Tes.CoreTests
       sendThread.Start();
 
       // Process client messages.
-      ValidateClient(client, reference, info);
+      ValidateClient(client, reference, info, createShape, validate);
 
       client.Close();
 
@@ -67,13 +75,13 @@ namespace Tes.CoreTests
       server.ConnectionMonitor.Join();
     }
 
-    void ValidateClient<S>(TcpClient socket, S reference, ServerInfoMessage serverInfo, uint timeoutSec = 10u) where S : Shape, new()
+    static void ValidateClient(TcpClient socket, Shape reference, ServerInfoMessage serverInfo, CreateShapeFunction createShape, ShapeValidationFunction validate, uint timeoutSec = 10u)
     {
       Stopwatch timer = new Stopwatch();
       ServerInfoMessage readServerInfo = new ServerInfoMessage();
       Dictionary<ulong, Resource> resources = new Dictionary<ulong, Resource>();
       PacketBuffer packetBuffer = new PacketBuffer(64 * 1024);
-      S shape = new S();
+      Shape shape = createShape();
       bool endMsgReceived = false;
       bool serverInfoRead = false;
       bool shapeMsgRead = false;
@@ -169,12 +177,12 @@ namespace Tes.CoreTests
       // Validate the shape state.
       if (shapeMsgRead)
       {
-        ValidateShape(shape, reference, resources);
+        validate(shape, reference, resources);
       }
     }
 
 
-    void HandleShapeMessage(PacketBuffer packet, NetworkReader reader, Shape shape, Shape reference)
+    static void HandleShapeMessage(PacketBuffer packet, NetworkReader reader, Shape shape, Shape reference)
     {
       // Shape message the shape.
       uint shapeId = 0;
@@ -201,7 +209,7 @@ namespace Tes.CoreTests
     }
 
 
-    void ValidateShape(Shape shape, Shape reference, Dictionary<ulong, Resource> resources)
+    public static void ValidateShape(Shape shape, Shape reference, Dictionary<ulong, Resource> resources)
     {
       Assert.AreEqual(reference.RoutingID, shape.RoutingID);
       Assert.AreEqual(reference.IsComplex, shape.IsComplex);
@@ -225,20 +233,7 @@ namespace Tes.CoreTests
       Assert.AreEqual(reference.ScaleZ, shape.ScaleZ);
     }
 
-    void Validate(Text2D shape, Text2D reference, Dictionary<ulong, Resource> resources)
-    {
-      ValidateShape((Shape)shape, (Shape)reference, resources);
-      Assert.AreEqual(reference.Text, shape.Text);
-    }
-
-    void Validate(Text3D shape, Text3D reference, Dictionary<ulong, Resource> resources)
-    {
-      ValidateShape((Shape)shape, (Shape)reference, resources);
-      Assert.AreEqual(reference.Text, shape.Text);
-    }
-
-
-    void ValidateShape(MeshShape shape, MeshShape reference, Dictionary<ulong, Resource> resources)
+    public static void ValidateShape(MeshShape shape, MeshShape reference, Dictionary<ulong, Resource> resources)
     {
       ValidateShape((Shape)shape, (Shape)reference, resources);
 

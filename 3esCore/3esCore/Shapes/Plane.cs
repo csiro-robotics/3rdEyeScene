@@ -18,6 +18,18 @@ namespace Tes.Shapes
     public static Vector3 DefaultNormal = Vector3.AxisZ;
 
     /// <summary>
+    /// Construct a transient, Z up plane shape at the origin.
+    /// </summary>
+    public Plane() : this(0, 0) { }
+
+    /// <summary>
+    /// Construct a plane shape.
+    /// </summary>
+    /// <param name="id">The shape ID. Zero for transient shapes.</param>
+    /// <param name="category">Category to which the shape belongs.</param>
+    public Plane(uint id, ushort category = 0) : this(id, 0, Vector3.Zero, DefaultNormal) { }
+
+    /// <summary>
     /// Construct a plane shape.
     /// </summary>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
@@ -33,13 +45,6 @@ namespace Tes.Shapes
       Scale = scale;
       NormalLength = normalLength;
     }
-
-    /// <summary>
-    /// Construct a plane shape.
-    /// </summary>
-    /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    /// <param name="category">Category to which the shape belongs.</param>
-    public Plane(uint id = 0u, ushort category = 0) : this(id, 0, Vector3.Zero, DefaultNormal) { }
 
     /// <summary>
     /// Construct a plane shape.

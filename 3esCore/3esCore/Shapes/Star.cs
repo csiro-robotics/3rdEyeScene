@@ -9,6 +9,18 @@ namespace Tes.Shapes
   public class Star : Shape
   {
     /// <summary>
+    /// Create a transient star shape at the origin.
+    /// </summary>
+    public Star() : this(0, 0) { }
+
+    /// <summary>
+    /// Create a star shape.
+    /// </summary>
+    /// <param name="id">The shape ID. Zero for transient shapes.</param>
+    /// <param name="category">Category to which the shape belongs.</param>
+    public Star(uint id, ushort category = 0) : this(id, 0, Vector3.Zero) { }
+
+    /// <summary>
     /// Create a star shape.
     /// </summary>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
@@ -20,13 +32,6 @@ namespace Tes.Shapes
       Position = position;
       Radius = radius;
     }
-
-    /// <summary>
-    /// Create a star shape.
-    /// </summary>
-    /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    /// <param name="category">Category to which the shape belongs.</param>
-    public Star(uint id = 0u, ushort category = 0) : this(id, 0, Vector3.Zero) { }
 
     /// <summary>
     /// Create a star shape.

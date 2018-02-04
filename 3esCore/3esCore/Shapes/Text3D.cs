@@ -19,6 +19,11 @@ namespace Tes.Shapes
     /// <summary>
     /// Create 3D text to render.
     /// </summary>
+    public Text3D() : this(string.Empty, Vector3.Zero) { }
+
+    /// <summary>
+    /// Create 3D text to render.
+    /// </summary>
     /// <param name="text">The text string to display.</param>
     /// <param name="pos">The text 3D position.</param>
     /// <param name="fontSize">Text size.</param>

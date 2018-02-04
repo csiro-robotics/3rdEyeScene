@@ -27,6 +27,19 @@ namespace Tes.Shapes
     public const float DefaultLength = 1.0f;
 
     /// <summary>
+    /// Default constructor, defining a transient object.
+    /// </summary>
+    public Cone() : this(0, 0) { }
+
+    /// <summary>
+    /// Create a new cone.
+    /// </summary>
+    /// <param name="id">The shape ID. Zero for transient shapes.</param>
+    /// <param name="category">Category to which the shape belongs.</param>
+    public Cone(uint id, ushort category = 0)
+      : this(id, category, Vector3.Zero, DefaultDirection, DefaultLength, DefaultAngle) { }
+
+    /// <summary>
     /// Create a new cone.
     /// </summary>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
@@ -34,7 +47,7 @@ namespace Tes.Shapes
     /// <param name="dir">The major axis.</param>
     /// <param name="angle">The cone angle (radians).</param>
     /// <param name="length">The length of the cone.</param>
-    public Cone(uint id, Vector3 origin, Vector3 dir, float angle, float length)
+    public Cone(uint id, Vector3 origin, Vector3 dir, float length, float angle)
       : this(id, 0, origin, dir, angle, length)
     {
     }
@@ -56,19 +69,11 @@ namespace Tes.Shapes
     /// </summary>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
     /// <param name="category">Category to which the shape belongs.</param>
-    public Cone(uint id = 0u, ushort category = 0)
-      : this(id, category, Vector3.Zero, DefaultDirection, DefaultAngle, DefaultLength) { }
-
-    /// <summary>
-    /// Create a new cone.
-    /// </summary>
-    /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    /// <param name="category">Category to which the shape belongs.</param>
     /// <param name="origin">The apex of the cone.</param>
     /// <param name="dir">The major axis.</param>
     /// <param name="angle">The cone angle (radians).</param>
     /// <param name="length">The length of the cone.</param>
-    public Cone(uint id, ushort category, Vector3 origin, Vector3 dir, float angle, float length)
+    public Cone(uint id, ushort category, Vector3 origin, Vector3 dir, float length, float angle)
       : base((ushort)Tes.Net.ShapeID.Cone, id, category)
     {
       Position = origin;
