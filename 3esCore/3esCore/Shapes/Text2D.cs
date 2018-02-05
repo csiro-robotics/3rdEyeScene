@@ -130,6 +130,11 @@ namespace Tes.Shapes
       return false;
     }
 
+    /// <summary>
+    /// Read create message and appended text string.
+    /// </summary>
+    /// <param name="reader">Stream to read from</param>
+    /// <returns>True on success.</returns>
     public override bool ReadCreate(BinaryReader reader)
     {
       if (!base.ReadCreate(reader))

@@ -1,4 +1,5 @@
-﻿using Tes.IO;
+﻿using System.IO;
+using Tes.IO;
 
 namespace Tes
 {
@@ -92,6 +93,21 @@ namespace Tes
     /// The semantics of this value are entirely dependent on the internal implementation.
     /// </remarks>
     void Transfer(PacketBuffer packet, int byteLimit, ref TransferProgress progress);
+
+    /// <summary>
+    /// Create resource <see cref="Create(PacketBuffer)"/> message content.
+    /// </summary>
+    /// <param name="reader">Stream to read from.</param>
+    /// <returns>True on success.</returns>
+    bool ReadCreate(BinaryReader reader);
+
+    /// <summary>
+    /// Read data <see cref="Transfer(PacketBuffer, int, ref TransferProgress)"/> message content.
+    /// </summary>
+    /// <param name="messageType">Identifies the received message ID from the <see cref="PacketHeader"/>.</param>
+    /// <param name="reader">Stream to read from.</param>
+    /// <returns>True on success.</returns>
+    bool ReadTransfer(int messageType, BinaryReader reader);
   }
 
 
@@ -109,7 +125,7 @@ namespace Tes
     /// </remarks>
     /// <returns>The unique resource key.</returns>
     /// <param name="resource">The resource to generate a key for.</param>
-    static ulong UniqueKey(this Resource resource)
+    public static ulong UniqueKey(this Resource resource)
     {
       return (ulong)resource.TypeID << 32 | (ulong)resource.ID;
     }

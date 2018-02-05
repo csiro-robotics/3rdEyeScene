@@ -58,6 +58,7 @@
     <Compile Include="Shapes\Capsule.cs" />
     <Compile Include="Shapes\Cone.cs" />
     <Compile Include="Shapes\Cylinder.cs" />
+    <Compile Include="Shapes\PlaceholderMesh.cs" />
     <Compile Include="Shapes\Resource.cs" />
     <Compile Include="Shapes\MeshSet.cs" />
     <Compile Include="Shapes\MeshResource.cs" />

@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Tes.IO
@@ -40,7 +42,10 @@ namespace Tes.IO
     /// <returns>The requested value.</returns>
     public override float ReadSingle()
     {
-      return Endian.FromNetwork(base.ReadSingle());
+      // For floating point values we must bit convert the bytes, then convert to float or we can
+      // mutate the data.
+      return BitConverter.ToSingle(Endian.FromNetwork(base.ReadBytes(Marshal.SizeOf(typeof(float)))), 0);
+      //return Endian.FromNetwork(base.ReadSingle());
     }
 
     /// <summary>
@@ -49,7 +54,10 @@ namespace Tes.IO
     /// <returns>The requested value.</returns>
     public override double ReadDouble()
     {
-      return Endian.FromNetwork(base.ReadDouble());
+      // For floating point values we must bit convert the bytes, then convert to float or we can
+      // mutate the data.
+      return BitConverter.ToDouble(Endian.FromNetwork(base.ReadBytes(Marshal.SizeOf(typeof(double)))), 0);
+      //return Endian.FromNetwork(base.ReadDouble());
     }
 
     /// <summary>

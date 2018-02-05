@@ -115,7 +115,7 @@ namespace Tes.Maths
         }
         fixed (float* m = _m)
         {
-          return m[r * 2 + c];
+          return m[r * 3 + c];
         }
       }
 
@@ -127,7 +127,7 @@ namespace Tes.Maths
         }
         fixed (float* m = _m)
         {
-          m[r * 2 + c] = value;
+          m[r * 3 + c] = value;
         }
       }
     }

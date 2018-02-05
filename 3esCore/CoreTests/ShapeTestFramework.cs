@@ -89,7 +89,8 @@ namespace Tes.CoreTests
       timer.Start();
 
       // Keep looping until we get a CIdEnd ControlMessage or timeoutSec elapses.
-      while (!endMsgReceived && timer.ElapsedMilliseconds / 1000u < timeoutSec)
+      // Timeout ignored when debugger is attached.
+      while (!endMsgReceived && (Debugger.IsAttached || timer.ElapsedMilliseconds / 1000u < timeoutSec))
       {
         if (socket.Available <= 0)
         {
@@ -154,7 +155,7 @@ namespace Tes.CoreTests
                 }
 
               case (int)RoutingID.Mesh:
-                //HandleMeshMessage(packetReader, resources);
+                HandleMeshMessage(completedPacket, packetReader, resources);
                 break;
 
               default:
@@ -209,6 +210,53 @@ namespace Tes.CoreTests
     }
 
 
+    static void HandleMeshMessage(PacketBuffer packet, NetworkReader reader, Dictionary<ulong, Resource> resources)
+    {
+      uint meshId = 0;
+      // Peek the mesh ID.
+      meshId = packet.PeekUInt32(PacketHeader.Size);
+
+      Resource resource;
+      SimpleMesh mesh = null;
+
+      // If it exists, make sure it's a mesh.
+      if (resources.TryGetValue(ResourceUtil.UniqueKey(new PlaceholderMesh(meshId)), out resource))
+      {
+        Assert.AreEqual((ushort)RoutingID.Mesh, resource.TypeID);
+        mesh = (SimpleMesh)resource;
+      }
+
+      switch (packet.Header.MessageID)
+      {
+        case (int)MeshMessageType.Invalid:
+          Assert.Fail("Invalid mesh message sent");
+          break;
+
+        case (int)MeshMessageType.Destroy:
+          Assert.IsNotNull(mesh);
+          resources.Remove(mesh.UniqueKey());
+          break;
+
+        case (int)MeshMessageType.Create:
+          // Create message. Should not already exists.
+          Assert.IsNull(mesh, "Recreating exiting mesh.");
+          mesh = new SimpleMesh(meshId);
+          Assert.IsTrue(mesh.ReadCreate(reader));
+          resources.Add(mesh.UniqueKey(), mesh);
+          break;
+
+        // Not handling these messages.
+        case (int)MeshMessageType.Redefine:
+        case (int)MeshMessageType.Finalise:
+          break;
+
+        default:
+          Assert.IsNotNull(mesh);
+          mesh.ReadTransfer(packet.Header.MessageID, reader);
+          break;
+      }
+    }
+    
     public static void ValidateShape(Shape shape, Shape reference, Dictionary<ulong, Resource> resources)
     {
       Assert.AreEqual(reference.RoutingID, shape.RoutingID);

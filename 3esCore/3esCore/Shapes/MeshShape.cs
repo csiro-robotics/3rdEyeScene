@@ -179,6 +179,11 @@ namespace Tes.Shapes
     #endregion
 
     /// <summary>
+    /// Default constructor creating a transient, empty mesh shape.
+    /// </summary>
+    public MeshShape() : this(MeshDrawType.Points, new Vector3[0]) { }
+
+    /// <summary>
     /// Create a mesh shape.
     /// </summary>
     /// <param name="drawType">Mesh topology.</param>
@@ -316,21 +321,6 @@ namespace Tes.Shapes
     public MeshShape(MeshDrawType drawType, Vector3[] vertices, int[] indices, Vector3 position)
       : this(drawType, vertices, indices, position, Quaternion.Identity, Vector3.One)
     { }
-    /// <summary>
-    /// Create a mesh shape.
-    /// </summary>
-    /// <param name="drawType">Mesh topology.</param>
-    /// <param name="vertices">Vertex data.</param>
-    public MeshShape(MeshDrawType drawType, Vector3[] vertices) : this(drawType, vertices, null) { }
-    /// <summary>
-    /// Create a mesh shape.
-    /// </summary>
-    /// <param name="drawType">Mesh topology.</param>
-    /// <param name="vertices">Vertex data.</param>
-    /// <param name="indices">Index data. Must match topology.</param>
-    public MeshShape(MeshDrawType drawType, Vector3[] vertices, int[] indices)
-      : this(drawType, vertices, indices, Vector3.Zero, Quaternion.Identity, Vector3.One)
-    { }
 
     /// <summary>
     /// Create a mesh shape.
@@ -380,18 +370,9 @@ namespace Tes.Shapes
     /// <param name="drawType">Mesh topology.</param>
     /// <param name="vertices">Vertex data.</param>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    public MeshShape(MeshDrawType drawType, Vector3[] vertices, uint id)
+    /// <param name="category">Optional display category for the shape.</param>
+    public MeshShape(MeshDrawType drawType, Vector3[] vertices, uint id = 0, ushort category = 0)
       : this(drawType, vertices, null, id) { }
-    /// <summary>
-    /// Create a mesh shape.
-    /// </summary>
-    /// <param name="drawType">Mesh topology.</param>
-    /// <param name="vertices">Vertex data.</param>
-    /// <param name="indices">Index data. Must match topology.</param>
-    /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    public MeshShape(MeshDrawType drawType, Vector3[] vertices, int[] indices, uint id)
-      : this(drawType, vertices, indices, id, Vector3.Zero, Quaternion.Identity, Vector3.One)
-    { }
 
     /// <summary>
     /// Create a mesh shape.
@@ -444,19 +425,10 @@ namespace Tes.Shapes
     /// </summary>
     /// <param name="drawType">Mesh topology.</param>
     /// <param name="vertices">Vertex data.</param>
-    /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    /// <param name="category">Category to which the shape belongs.</param>
-    public MeshShape(MeshDrawType drawType, Vector3[] vertices, uint id, ushort category)
-      : this(drawType, vertices, null, id, category) { }
-    /// <summary>
-    /// Create a mesh shape.
-    /// </summary>
-    /// <param name="drawType">Mesh topology.</param>
-    /// <param name="vertices">Vertex data.</param>
     /// <param name="indices">Index data. Must match topology.</param>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
     /// <param name="category">Category to which the shape belongs.</param>
-    public MeshShape(MeshDrawType drawType, Vector3[] vertices, int[] indices, uint id, ushort category)
+    public MeshShape(MeshDrawType drawType, Vector3[] vertices, int[] indices, uint id = 0, ushort category = 0)
       : this(drawType, vertices, indices, id, category, Vector3.Zero, Quaternion.Identity, Vector3.One)
     { }
 
@@ -495,9 +467,10 @@ namespace Tes.Shapes
     /// Set a single normal to be applied to all vertices (e.g. for voxels).
     /// </summary>
     /// <param name="normal">The shared normal.</param>
-    public void SetUniformNormal(Vector3 normal)
+    public MeshShape SetUniformNormal(Vector3 normal)
     {
       Normals = new Vector3[] { normal };
+      return this;
     }
 
     /// <summary>
@@ -587,6 +560,7 @@ namespace Tes.Shapes
     /// <param name="vertices">Mesh vertex array.</param>
     /// <param name="normals">Mesh normal array. One per vertex or just a single normal to apply to all vertices.</param>
     /// <param name="indices">Mesh indices.</param>
+    /// <param name="colours">Per vertex colours. See <see cref="Colour"/> for format details.</param>
     /// <remarks>Call recursively until zero is returned. Packet does not get finalised here.</remarks>
     public static int WriteData(ushort routingID, uint objectID,
                                 PacketBuffer packet, ref uint progressMarker,
@@ -697,6 +671,14 @@ namespace Tes.Shapes
       return WriteData(RoutingID, ID, packet, ref progressMarker, _vertices, _normals, _indices, _colours);
     }
 
+    /// <summary>
+    /// Read a <see cref="CreateMessage"/> and additional payload.
+    /// </summary>
+    /// <param name="reader">Stream to read from</param>
+    /// <returns>True on success.</returns>
+    /// <remarks>
+    /// Read the additional payload to resolve vertex and index counts.
+    /// </remarks>
     public override bool ReadCreate(BinaryReader reader)
     {
       if (!base.ReadCreate(reader))
@@ -755,13 +737,21 @@ namespace Tes.Shapes
       return offset + itemCount;
     }
 
+    /// <summary>
+    /// Read <see cref="DataMessage"/> and payload generated by <see cref="WriteData(PacketBuffer, ref uint)"/>.
+    /// </summary>
+    /// <param name="reader">Stream to read from</param>
+    /// <returns>True on success.</returns>
     public override bool ReadData(BinaryReader reader)
     {
       DataMessage msg = new DataMessage();
 
-      ID = msg.ObjectID;
-
       if (!msg.Read(reader))
+      {
+        return false;
+      }
+
+      if (ID != msg.ObjectID)
       {
         return false;
       }
@@ -800,8 +790,26 @@ namespace Tes.Shapes
     }
 
 
-    // Returns the updated component SendDataType. SendDataType.End also set, or alone when done.
-    // Returns -1 on failure.
+    /// <summary>
+    /// A utility function for reading the payload of a <see cref="DataMessage"/> for a <c>MeshShape</c>.
+    /// </summary>
+    /// <param name="reader"></param>
+    /// <param name="vertices"></param>
+    /// <param name="indices"></param>
+    /// <param name="normals"></param>
+    /// <param name="colours"></param>
+    /// <returns>Returns the updated component <see cref="SendDataType"/>. The <see cref="SendDataType.End"/>
+    /// flag is also set, or alone when done. Returns -1 on failure.</returns>
+    /// <remarks>
+    /// This may be called immediately after reading the <see cref="DataMessage"/> for a
+    /// <c>MeshShape</c> to decode the payload content. The method uses a set of
+    /// <see cref="ComponentAdaptor{T}"/> interfaces to resolve data adaption to the required type or
+    /// container. Each call will only interface with the adaptor relevant to the message payload
+    /// calling <see cref="ComponentAdaptor{T}.Set(int, T)"/> for the incoming data. Vertices and
+    /// indices must be correctly pre-sized, while other components may have the
+    /// <see cref="ComponentAdaptor{T}.Count"/> property set to ensure the correct size (matching
+    /// the vertex count, or 1 for uniform normals).
+    /// </remarks>
     public static int ReadDataComponent(BinaryReader reader,
                                         ComponentAdaptor<Vector3> vertices,
                                         ComponentAdaptor<int> indices,
@@ -862,11 +870,13 @@ namespace Tes.Shapes
         case SendDataType.UniformNormal:
           if (normals == null)
           {
-            int normalsCount = ((SendDataType)dataType == SendDataType.Normals) ? vertices.Count : 1;
-            if (normalsCount > 0)
-            {
-              normals.Count = normalsCount;
-            }
+            return -1;
+          }
+
+          int normalsCount = ((SendDataType)dataType == SendDataType.Normals) ? vertices.Count : 1;
+          if (normals.Count != normalsCount)
+          {
+            normals.Count = normalsCount;
           }
 
           endReadCount = ReadElements(offset, itemCount, (uint)normals.Count,

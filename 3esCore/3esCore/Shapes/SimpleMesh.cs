@@ -308,6 +308,202 @@ namespace Tes.Shapes
     }
 
     /// <summary>
+    /// Process the <see cref="MeshCreateMessage"/>.
+    /// </summary>
+    /// <param name="msg">The message to read.</param>
+    /// <returns>True on success</returns>
+    /// 
+    protected override bool ProcessCreate(MeshCreateMessage msg)
+    {
+      if (ID != msg.MeshID)
+      {
+        return false;
+      }
+
+      // Presize vertex list.
+      if (_vertices == null)
+      {
+        _vertices = new List<Vector3>((int)msg.VertexCount);
+      }
+
+      if (_vertices.Count < msg.VertexCount)
+      {
+        for (int i = _vertices.Count; i < msg.VertexCount; ++i)
+        {
+          _vertices.Add(Vector3.Zero);
+        }
+      }
+      else
+      {
+        if (msg.VertexCount > 0)
+        {
+          while (_vertices.Count > msg.VertexCount)
+          {
+            _vertices.RemoveAt(_vertices.Count - 1);
+          }
+        }
+        else
+        {
+          _vertices.Clear();
+        }
+      }
+
+      // Presize index list.
+      if (_indices == null)
+      {
+        _indices = new List<int>((int)msg.IndexCount);
+      }
+
+      if (_indices.Count < msg.IndexCount)
+      {
+        for (int i = _indices.Count; i < msg.IndexCount; ++i)
+        {
+          _indices.Add(0);
+        }
+      }
+      else
+      {
+        if (msg.IndexCount > 0)
+        {
+          while (_indices.Count > msg.IndexCount)
+          {
+            _indices.RemoveAt(_indices.Count - 1);
+          }
+        }
+        else
+        {
+          _indices.Clear();
+        }
+      }
+
+      _normals = null;
+      _colours = null;
+      _uvs = null;
+
+      DrawType = msg.DrawType;
+      Transform = msg.Attributes.GetTransform();
+      Tint = msg.Attributes.Colour;
+      return true;
+    }
+
+    /// <summary>
+    /// Process data for a <see cref="MeshMessageType.Vertex"/> message.
+    /// </summary>
+    /// <param name="msg">Message details.</param>
+    /// <param name="vertices">New vertices read from the message payload.</param>
+    /// <returns>True on success.</returns>
+    protected override bool ProcessVertices(MeshComponentMessage msg, Vector3[] vertices)
+    {
+      for (int i = 0; i < msg.Count; ++i)
+      {
+        SetVertex(i + (int)msg.Offset, vertices[i]);
+      }
+      return true;
+    }
+
+    /// <summary>
+    /// Process data for a <see cref="MeshMessageType.Index"/> message when receiving 2-byte indices.
+    /// </summary>
+    /// <param name="msg">Message details.</param>
+    /// <param name="indices">New 2-byte indices read from the message payload.</param>
+    /// <returns>True on success.</returns>
+    protected override bool ProcessIndices(MeshComponentMessage msg, ushort[] indices)
+    {
+      for (int i = 0; i < msg.Count; ++i)
+      {
+        SetIndex(i + (int)msg.Offset, indices[i]);
+      }
+      return true;
+    }
+
+    /// <summary>
+    /// Process data for a <see cref="MeshMessageType.Index"/> message when receiving 4-byte indices.
+    /// </summary>
+    /// <param name="msg">Message details.</param>
+    /// <param name="indices">New 4-byte indices read from the message payload.</param>
+    /// <returns>True on success.</returns>
+    protected override bool ProcessIndices(MeshComponentMessage msg, int[] indices)
+    {
+      for (int i = 0; i < msg.Count; ++i)
+      {
+        SetIndex(i + (int)msg.Offset, indices[i]);
+      }
+      return true;
+    }
+
+    /// <summary>
+    /// Process data for a <see cref="MeshMessageType.VertexColour"/> message.
+    /// </summary>
+    /// <param name="msg">Message details.</param>
+    /// <param name="colours">New colours read from the message payload.</param>
+    /// <returns>True on success.</returns>
+    /// <remarks>
+    /// Colours may be decoded using the <see cref="Colour"/> class.
+    /// </remarks>
+    protected override bool ProcessColours(MeshComponentMessage msg, uint[] colours)
+    {
+      EnsureColours();
+      for (int i = 0; i < msg.Count; ++i)
+      {
+        if (_colours.Count < i + (int)msg.Offset)
+        {
+          _colours[i + (int)msg.Offset] = colours[i];
+        }
+        else
+        {
+          _colours.Add(colours[i]);
+        }
+      }
+      return true;
+    }
+
+    /// <summary>
+    /// Process data for a <see cref="MeshMessageType.Normal"/> message.
+    /// </summary>
+    /// <param name="msg">Message details.</param>
+    /// <param name="normals">New normals read from the message payload.</param>
+    /// <returns>True on success.</returns>
+    protected override bool ProcessNormals(MeshComponentMessage msg, Vector3[] normals)
+    {
+      EnsureNormals();
+      for (int i = 0; i < msg.Count; ++i)
+      {
+        if (_normals.Count < i + (int)msg.Offset)
+        {
+          _normals[i + (int)msg.Offset] = normals[i];
+        }
+        else
+        {
+          _normals.Add(normals[i]);
+        }
+      }
+      return true;
+    }
+
+    /// <summary>
+    /// Process data for a <see cref="MeshMessageType.UV"/> message.
+    /// </summary>
+    /// <param name="msg">Message details.</param>
+    /// <param name="uvs">New uvs read from the message payload.</param>
+    /// <returns>True on success.</returns>
+    protected override bool ProcessUVs(MeshComponentMessage msg, Vector2[] uvs)
+    {
+      EnsureUVs();
+      for (int i = 0; i < msg.Count; ++i)
+      {
+        if (_uvs.Count < i + (int)msg.Offset)
+        {
+          _uvs[i + (int)msg.Offset] = uvs[i];
+        }
+        else
+        {
+          _uvs.Add(uvs[i]);
+        }
+      }
+      return true;
+    }
+
+    /// <summary>
     /// Vertex array.
     /// </summary>
     private List<Vector3> _vertices = null;

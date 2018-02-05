@@ -32,6 +32,7 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SceneGenerator.cs" />
+    <Compile Include="SphereTessellator.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\3esCore\3esCore.csproj">
