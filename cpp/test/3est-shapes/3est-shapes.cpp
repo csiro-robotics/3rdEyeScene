@@ -724,37 +724,21 @@ namespace tes
                           SimpleMesh::Vertex | SimpleMesh::Index | SimpleMesh::Colour);
     mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
     mesh->setNormals(0, normals.data(), unsigned(normals.size()));
+    mesh->setColours(0, colours.data(), unsigned(colours.size()));
     mesh->setIndices(0, indices.data(), unsigned(indices.size()));
     meshes.push_back(mesh);
 
-    // Points only (essentially a point cloud)
+    // Points and colours only (essentially a point cloud)
     mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), unsigned(indices.size()), DtPoints,
-                          SimpleMesh::Vertex);
+                          SimpleMesh::Vertex | SimpleMesh::Colour);
     mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
+    mesh->setColours(0, colours.data(), unsigned(colours.size()));
     meshes.push_back(mesh);
 
     // Lines.
     mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), unsigned(wireIndices.size()), DtLines);
     mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
     mesh->setIndices(0, wireIndices.data(), unsigned(wireIndices.size()));
-    meshes.push_back(mesh);
-
-    // One with the lot.
-    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), unsigned(indices.size()), DtTriangles,
-                          SimpleMesh::Vertex | SimpleMesh::Index | SimpleMesh::Normal | SimpleMesh::Colour);
-    mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
-    mesh->setNormals(0, normals.data(), unsigned(normals.size()));
-    mesh->setColours(0, colours.data(), unsigned(colours.size()));
-    mesh->setIndices(0, indices.data(), unsigned(indices.size()));
-    meshes.push_back(mesh);
-
-    // One with the lot.
-    mesh = new SimpleMesh(nextMeshId++, unsigned(vertices.size()), unsigned(indices.size()), DtTriangles,
-                          SimpleMesh::Vertex | SimpleMesh::Index | SimpleMesh::Normal | SimpleMesh::Colour);
-    mesh->setVertices(0, vertices.data(), unsigned(vertices.size()));
-    mesh->setNormals(0, normals.data(), unsigned(normals.size()));
-    mesh->setColours(0, colours.data(), unsigned(colours.size()));
-    mesh->setIndices(0, indices.data(), unsigned(indices.size()));
     meshes.push_back(mesh);
 
     // One with the lot.
@@ -776,6 +760,9 @@ namespace tes
       Matrix4f transform = Matrix4f::identity;
       for (int i = 0; i < int(meshes.size()); ++i)
       {
+        transform = prsTransform(Vector3f(i, i - 3.2f, 1.5f * i),
+                                 Quaternionf().setAxisAngle(Vector3f(i, i + 1, i - 3).normalised(), degToRad((i + 1) * 6.0f)),
+                                 Vector3f(0.75f, 0.75f, 0.75f));
         set.setPart(i, meshes[i], transform);
       }
       testShape(set);
