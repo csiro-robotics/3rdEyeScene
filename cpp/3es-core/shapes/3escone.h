@@ -28,7 +28,7 @@ namespace tes
     /// The default is <tt>(0, 0, 1)</tt>
     static const Vector3f DefaultDir;
 
-    Cone(uint32_t id = 0u, const V3Arg &point = V3Arg(0, 0, 0), const V3Arg &dir = DefaultDir, float angle = 45.0f / 360.0f * float(M_PI), float length = 1.0f);
+    Cone(uint32_t id = 0u, const V3Arg &point = V3Arg(0, 0, 0), const V3Arg &dir = DefaultDir, float angle = 45.0f / 180.0f * float(M_PI), float length = 1.0f);
     /// Construct a cone object.
     /// @param id The shape ID, unique among @c Cone objects, or zero for a transient shape.
     /// @param category The category grouping for the shape used for filtering.
@@ -36,7 +36,9 @@ namespace tes
     /// @param dir Cone direction.
     /// @param angle Angle from cone axis to walls at the apex (radians).
     /// @param length Length of the cone from apex to base.
-    Cone(uint32_t id, uint16_t category, const V3Arg &point = V3Arg(0, 0, 0), const V3Arg &dir = DefaultDir, float angle = 45.0f / 360.0f * float(M_PI), float length = 1.0f);
+    Cone(uint32_t id, uint16_t category, const V3Arg &point = V3Arg(0, 0, 0), const V3Arg &dir = DefaultDir, float angle = 45.0f / 180.0f * float(M_PI), float length = 1.0f);
+
+    inline const char *type() const override { return "cone"; }
 
     /// Sets the cone angle at the apex (radians).
     /// @param angle The angle to set (radians).

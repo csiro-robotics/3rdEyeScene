@@ -3,7 +3,7 @@
 //
 #include "3espointcloudshape.h"
 
-#include "3esmeshresource.h"
+#include "3esmeshplaceholder.h"
 
 #include <3escoreutil.h>
 #include <3espacketwriter.h>
@@ -11,6 +11,18 @@
 #include <algorithm>
 
 using namespace tes;
+
+
+
+PointCloudShape::~PointCloudShape()
+{
+  freeIndices(_indices);
+  if (_ownMesh)
+  {
+    delete _mesh;
+  }
+}
+
 
 bool PointCloudShape::writeCreate(PacketWriter &stream) const
 {
@@ -64,6 +76,74 @@ int PointCloudShape::writeData(PacketWriter &stream, unsigned &progressMarker) c
 }
 
 
+bool PointCloudShape::readCreate(PacketReader &stream)
+{
+  if (!Shape::readCreate(stream))
+  {
+    return false;
+  }
+
+  bool ok = true;
+
+  uint32_t valueU32 = 0;
+
+  // Mesh ID.
+  ok = ok && stream.readElement(valueU32) == sizeof(valueU32);
+  if (_ownMesh)
+  {
+    delete _mesh;
+  }
+  _mesh = new MeshPlaceholder(valueU32);
+  _ownMesh = true;
+
+  // Index count.
+  ok = ok && stream.readElement(valueU32) == sizeof(valueU32);
+  if (_indexCount < valueU32)
+  {
+    freeIndices(_indices);
+    _indices = allocateIndices(valueU32);
+  }
+  _indexCount = valueU32;
+
+  // Point size.
+  ok = ok && stream.readElement(_pointSize) == sizeof(_pointSize);
+  return ok;
+}
+
+
+bool PointCloudShape::readData(PacketReader &stream)
+{
+  DataMessage msg;
+  bool ok = true;
+
+  ok = msg.read(stream);
+
+  if (ok)
+  {
+    setId(msg.id);
+  }
+
+  uint32_t offset = 0;
+  uint32_t count = 0;
+
+  ok = ok && stream.readElement(offset) == sizeof(offset);
+  ok = ok && stream.readElement(count) == sizeof(count);
+
+  if (count)
+  {
+    if (count + offset > _indexCount)
+    {
+      reallocateIndices(count + offset);
+      _indexCount = count + offset;
+    }
+
+    ok = ok && stream.readArray(_indices + offset, count) == count;
+  }
+
+  return ok;
+}
+
+
 int PointCloudShape::enumerateResources(const Resource **resources, int capacity, int fetchOffset) const
 {
   if (!resources || !capacity)
@@ -100,6 +180,30 @@ void PointCloudShape::onClone(PointCloudShape *copy) const
   }
   copy->_mesh = _mesh;
   copy->_pointSize = _pointSize;
+}
+
+
+void PointCloudShape::reallocateIndices(uint32_t count)
+{
+  if (count)
+  {
+    uint32_t *newIndices = allocateIndices(count);
+    if (_indices)
+    {
+      if (_indexCount)
+      {
+        memcpy(newIndices, _indices, sizeof(*_indices) * std::min(count, _indexCount));
+      }
+      freeIndices(_indices);
+    }
+    _indices = newIndices;
+  }
+  else
+  {
+    freeIndices(_indices);
+    _indices = nullptr;
+  }
+  _indexCount = count;
 }
 
 

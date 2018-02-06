@@ -31,6 +31,35 @@ bool Text2D::writeCreate(PacketWriter &stream) const
 }
 
 
+bool Text2D::readCreate(PacketReader &stream)
+{
+  if (!Shape::readCreate(stream))
+  {
+    return false;
+  }
+
+  bool ok = true;
+  uint16_t textLength = 0;
+  ok = ok && stream.readElement(textLength) == sizeof(textLength);
+
+  if (_textLength < textLength)
+  {
+    delete [] _text;
+    _text = new char[textLength + 1];
+  }
+  _textLength = textLength;
+
+  if (_textLength)
+  {
+    _text[0] = '\0';
+    ok = ok && stream.readArray(_text, textLength) == sizeof(*_text) * textLength;
+    _text[textLength] = '\0';
+  }
+
+  return ok;
+}
+
+
 Shape *Text2D::clone() const
 {
   Text2D *copy = new Text2D(nullptr, (uint16_t)0);
@@ -60,6 +89,7 @@ Text2D &Text2D::setText(const char *text, uint16_t textLength)
 #else  // _MSC_VER
     strncpy(_text, text, textLength);
 #endif // _MSC_VER
+    _text[textLength] = '\0';
   }
   return *this;
 }

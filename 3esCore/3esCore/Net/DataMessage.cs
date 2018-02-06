@@ -12,7 +12,7 @@ namespace Tes.Net
   /// This is the message header and the payload follows.
   /// </summary>
   [StructLayout(LayoutKind.Sequential, Pack = 1)]
-  public struct DataMessage
+  public struct DataMessage : IMessage
   {
     /// <summary>
     /// <see cref="ObjectMessageID"/> for this message.

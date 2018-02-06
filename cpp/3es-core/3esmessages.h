@@ -67,7 +67,8 @@ namespace tes
     CIdFrameCount,      ///< Set the total number of frames to expect (@c value32). More for serialised streams.
     CIdForceFrameFlush, ///< Forces a frame update (render) without advancing the time.
     CIdReset,           ///< Clear the scene. This drops all existing data.
-    CIdSnapshot,        ///< Request a frame snapshot during playback. @c value32 is the frame number to snap.
+    CIdKeyframe,        ///< Request a keframe. @c value32 is the frame number.
+    CIdEnd,             ///< Marks the end of the server stream. Clients may disconnect.
   };
 
   /// Message IDs for @c MtCategory routing.
@@ -87,21 +88,14 @@ namespace tes
   };
 
   /// Flags controlling the creation and appearance of an object.
-  enum
+  enum ObjectFlag
   {
     OFNone = 0, ///< No flags. Default appearance.
     OFWire = (1 << 0), ///< Show the object as a wireframe mesh.
     OFTransparent = (1 << 1), ///< The object supports transparency. Use the colour alpha channel.
     OFTwoSided = (1 << 2),  ///< Use a two sided shader.
 
-    OFUpdateMode = (1 << 3),  ///< Update attributes using only explicitly specified flags from the following.
-    OFPosition = (1 << 4),    ///< Update position data.
-    OFRotation = (1 << 5),    ///< Update rotation data.
-    OFScale = (1 << 6),       ///< Update scale data.
-    OFColour = (1 << 7),      ///< Update colour data.
-    OFColor = OFColour,       ///< Spelling alias for colour.
-
-    OFUser = (1 << 12)        ///< Use flags start here.
+    OFUser = (1 << 8)        ///< Use flags start here.
   };
 
   /// Additional attributes for point data sources.
@@ -135,11 +129,11 @@ namespace tes
   /// Flags controlling the creation and appearance of an object.
   enum UpdateFlag
   {
-    UFNone = 0, ///< No flags. Default appearance.
-    /// Transition to the new position, colour, etc., is interpolated over the render frames.
-    /// This is only used if the render frame rate of this application is higher than that of
-    /// the incoming data.
-    UFInterpolate = (1 << 0)
+    UFUpdateMode = (OFUser << 1),  ///< Update attributes using only explicitly specified flags from the following.
+    UFPosition = (OFUser << 2),    ///< Update position data.
+    UFRotation = (OFUser << 3),    ///< Update rotation data.
+    UFScale = (OFUser << 4),       ///< Update scale data.
+    UFColour = (OFUser << 5),      ///< Update colour data.
   };
 
   /// Flags for @c CollatedPacketMessage.
@@ -188,6 +182,7 @@ namespace tes
     {
       bool ok = true;
       ok = reader.readElement(timeUnit) == sizeof(timeUnit) && ok;
+      ok = reader.readElement(defaultFrameTime) == sizeof(defaultFrameTime) && ok;
       ok = reader.readElement(coordinateFrame) == sizeof(coordinateFrame) && ok;
       ok = reader.readArray(reserved, sizeof(reserved) / sizeof(reserved[0])) == sizeof(reserved) / sizeof(reserved[0]) && ok;
       return ok;
@@ -480,7 +475,7 @@ namespace tes
     enum { MessageId = OIdUpdate };
 
     uint32_t id;        ///< Object creation id. Zero if defining a transient/single frame message.
-    uint16_t flags;     ///< Update flags from @c ObjectFlag.
+    uint16_t flags;     ///< Update flags from @c UpdateFlag.
     ObjectAttributes attributes;  ///< Initial transformation and colour.
 
     /// Read message content.

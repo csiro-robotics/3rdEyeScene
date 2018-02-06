@@ -29,7 +29,7 @@ namespace tes
     static const Vector3f DefaultAxis;
 
     /// @overload
-    Capsule(uint32_t id, const V3Arg &centre = V3Arg(0, 0, 0), const V3Arg &axis = DefaultAxis, float radius = 1.0f, float length = 1.0f);
+    Capsule(uint32_t id = 0, const V3Arg &centre = V3Arg(0, 0, 0), const V3Arg &axis = DefaultAxis, float radius = 1.0f, float length = 1.0f);
     /// Construct a capsule object.
     /// @param id The shape ID, unique among @c Capsule objects, or zero for a transient shape.
     /// @param category The category grouping for the shape used for filtering.
@@ -38,6 +38,8 @@ namespace tes
     /// @param radius Radius of the capsule cylinder and end caps.
     /// @param length Length of the capsule cylinder body.
     Capsule(uint32_t id, uint16_t category, const V3Arg &centre = V3Arg(0, 0, 0), const V3Arg &axis = DefaultAxis, float radius = 1.0f, float length = 1.0f);
+
+    inline const char *type() const override { return "capsule"; }
 
     /// Set the capsule body radius.
     /// @param radius The radius to set.

@@ -28,7 +28,7 @@ namespace tes
     //Text3D(const char *text, uint16_t textLength, uint32_t id, const V3Arg &pos, const V3Arg &facing, int fontSize = 12);
     //Text3D(const char *text, uint16_t textLength, uint32_t id, uint16_t category, const V3Arg &pos = V3Arg(0, 0, 0), int fontSize = 12);
     //Text3D(const char *text, uint16_t textLength, uint32_t id, uint16_t category, const V3Arg &pos, const V3Arg &facing, int fontSize = 12);
-    Text3D(const char *text, const V3Arg &pos = V3Arg(0, 0, 0), int fontSize = 12);
+    Text3D(const char *text = "", const V3Arg &pos = V3Arg(0, 0, 0), int fontSize = 12);
     Text3D(const char *text, const V3Arg &pos, const V3Arg &facing, int fontSize = 12);
     Text3D(const char *text, uint32_t id, const V3Arg &pos = V3Arg(0, 0, 0), int fontSize = 12);
     Text3D(const char *text, uint32_t id, const V3Arg &pos, const V3Arg &facing, int fontSize = 12);
@@ -39,6 +39,8 @@ namespace tes
     Text3D(const char *text, uint32_t id, uint16_t category, const V3Arg &pos, const V3Arg &facing, int fontSize = 12);
 
     ~Text3D();
+
+    inline const char *type() const override { return "text3D"; }
 
     bool screenFacing() const;
     Text3D &setScreenFacing(bool worldSpace);
@@ -55,6 +57,8 @@ namespace tes
     Text3D &setText(const char *text, uint16_t textLength);
 
     virtual bool writeCreate(PacketWriter &stream) const override;
+
+    bool readCreate(PacketReader &stream) override;
 
     Shape *clone() const override;
 

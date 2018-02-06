@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Text;
 using Tes.IO;
 using Tes.Maths;
@@ -14,6 +15,11 @@ namespace Tes.Shapes
     /// The default text facing.
     /// </summary>
     public static Vector3 DefaultFacing  = new Vector3(0, -1, 0);
+
+    /// <summary>
+    /// Create 3D text to render.
+    /// </summary>
+    public Text3D() : this(string.Empty, Vector3.Zero) { }
 
     /// <summary>
     /// Create 3D text to render.
@@ -162,6 +168,28 @@ namespace Tes.Shapes
       }
 
       return false;
+    }
+
+    /// <summary>
+    /// Read create message and appended text string.
+    /// </summary>
+    /// <param name="reader">Stream to read from</param>
+    /// <returns>True on success.</returns>
+    public override bool ReadCreate(BinaryReader reader)
+    {
+      if (!base.ReadCreate(reader))
+      {
+        return false;
+      }
+
+      ushort length = reader.ReadUInt16();
+      if (length > 0)
+      {
+        byte[] text = reader.ReadBytes(length);
+        Text = Encoding.UTF8.GetString(text);
+      }
+
+      return true;
     }
 
     /// <summary>

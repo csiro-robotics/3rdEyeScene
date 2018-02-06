@@ -11,6 +11,9 @@
 
 namespace tes
 {
+  struct MeshCreateMessage;
+  struct MeshComponentMessage;
+
   /// Represents a mesh part or object. These are visualised via @c MeshSet,
   /// which may contain several @c MeshResource parts.
   class _3es_coreAPI MeshResource : public Resource
@@ -237,8 +240,22 @@ namespace tes
                                  const uint8_t *dataSource, unsigned dataStride,
                                  uint32_t componentCount);
 
+    bool readCreate(PacketReader &packet) override;
+
+    // Must peek the meshId before calling this method. Mesh id must match this object.
+    bool readTransfer(int messageType, PacketReader &packet) override;
+
   protected:
     virtual void nextPhase(TransferProgress &progress) const;
+
+    virtual bool processCreate(const MeshCreateMessage &msg);
+    virtual bool processVertices(const MeshComponentMessage &msg, const float *vertices, unsigned vertexCount);
+    virtual bool processIndices(const MeshComponentMessage &msg, const uint8_t *indices, unsigned indexCount);
+    virtual bool processIndices(const MeshComponentMessage &msg, const uint16_t *indices, unsigned indexCount);
+    virtual bool processIndices(const MeshComponentMessage &msg, const uint32_t *indices, unsigned indexCount);
+    virtual bool processColours(const MeshComponentMessage &msg, const uint32_t *colours, unsigned colourCount);
+    virtual bool processNormals(const MeshComponentMessage &msg, const float *normals, unsigned normalCount);
+    virtual bool processUVs(const MeshComponentMessage &msg, const float *uvs, unsigned uvCount);
   };
 }
 

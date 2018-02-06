@@ -26,6 +26,14 @@ TcpListenSocket::~TcpListenSocket()
 }
 
 
+
+uint16_t TcpListenSocket::port() const
+{
+
+  return _detail->listenSocket.serverPort();
+}
+
+
 bool TcpListenSocket::listen(unsigned short port)
 {
   if (isListening())
@@ -68,7 +76,7 @@ TcpSocket *TcpListenSocket::accept(unsigned timeoutMs)
   QTcpSocket *newSocket = _detail->listenSocket.nextPendingConnection();
   if (!newSocket)
   {
-    return nullptr; 
+    return nullptr;
   }
   TcpSocketDetail *clientDetail = new TcpSocketDetail;
   clientDetail->socket = newSocket;

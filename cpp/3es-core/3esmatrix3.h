@@ -239,6 +239,13 @@ namespace tes
     /// An alias for @c transform().
     /// @return Av, where A is this matrix.
     Vector3<T> rotate(const Vector3<T> &v) const;
+
+    /// Numerical equality comparison. Reports @c true if each element of this matrix is within of
+    /// @p Epsilon @p a (or equal to).
+    /// @return a Matrix to compare to.
+    /// @param epsilon Comparison tolerance value.
+    /// @return @c true when each element in this matrix is within @p epsilon of each element of @p a.
+    bool equals(const Matrix3<T> &a, const T epsilon = Vector3<T>::Epsilon) const;
   };
 
   /// Defines a single precision 4x4 matrix.

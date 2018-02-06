@@ -10,6 +10,7 @@
 
 namespace tes
 {
+  class PacketReader;
   class PacketWriter;
   struct TransferProgress;
 
@@ -19,7 +20,7 @@ namespace tes
   /// e.g., mesh or material - while the @p id() is unique amongst objects of that type.
   ///
   /// The IDs are most significantly used in reference counting resource usage and to
-  /// identify which resources require transfer to each client. A @c Resource is transfered
+  /// identify which resources require transfer to each client. A @c Resource is transferred
   /// to a client when first referenced and a destroy message sent when the last shape
   /// using that resource is destroyed.
   ///
@@ -77,7 +78,7 @@ namespace tes
     /// Populate a packet with additional resource data to send to a connected client.
     ///
     /// This function is called repeatedly to transfer the resource data, possibly over several
-    /// update cycles. The @p progress is used to track which data have been transfered already.
+    /// update cycles. The @p progress is used to track which data have been transferred already.
     /// The semantics of the @c TransferProgress @p progress and @p phase values are entirely
     /// dependent on a @p transfer() function implementation.
     ///
@@ -93,10 +94,13 @@ namespace tes
     ///
     /// @param packet A packet to populate and send.
     /// @param byteLimit A nominal byte limit on how much data a single @p transfer() call may add.
-    /// @param[in,out] progress A progress marker tracking how much has already been transfered, and
+    /// @param[in,out] progress A progress marker tracking how much has already been transferred, and
     ///     updated to indicate what has been added to @p packet.
     /// @return Zero on success, an error code otherwise.
     virtual int transfer(PacketWriter &packet, int byteLimit, TransferProgress &progress) const = 0;
+
+    virtual bool readCreate(PacketReader &packet) = 0;
+    virtual bool readTransfer(int messageType, PacketReader &packet) = 0;
   };
 }
 

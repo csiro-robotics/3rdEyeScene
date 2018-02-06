@@ -6,6 +6,8 @@
 
 #include "3es-core.h"
 
+#include <cinttypes>
+
 namespace tes
 {
   class TcpSocket;
@@ -21,6 +23,10 @@ namespace tes
     TcpListenSocket();
     /// Destructor.
     ~TcpListenSocket();
+
+    /// The port on which the socket is listening, or zero when not listening.
+    /// @return The TCP listen port.
+    uint16_t port() const;
 
     /// Start listening for connections on the specified port.
     /// @param port The port to listen on.

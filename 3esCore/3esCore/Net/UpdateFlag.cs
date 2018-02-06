@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Tes
+namespace Tes.Net
 {
   /// <summary>
   /// Flags controlling the creation and appearance of an object.
@@ -8,16 +8,29 @@ namespace Tes
   [Flags]
   public enum UpdateFlag : ushort
   {
-    /// <summary>
-    /// Zero value.
+    ///<summary>
+    /// Update attributes using only explicitly specified flags from the following.
     /// </summary>
-    None = 0,
+    UpdateMode = (ObjectFlag.User << 0),
     /// <summary>
-    /// Transition to the new position, colour, etc, is interpolated over the render frames.
-    /// This is only used if the render frame rate of this application is higher than that of
-    /// the incoming data.
+    /// Update position data.
     /// </summary>
-    Interpolate = (1 << 0)
+    Position = (ObjectFlag.User << 1),
+    /// <summary>
+    /// Update rotation data.
+    /// </summary>
+    Rotation = (ObjectFlag.User << 2),
+    /// <summary>
+    /// Update scale data.
+    /// </summary>
+    Scale = (ObjectFlag.User << 3),
+    /// <summary>
+    /// Update colour data.
+    /// </summary>
+    Colour = (ObjectFlag.User << 4),
+    /// <summary>
+    /// Spelling alias for colour.
+    /// </summary>
+    Color = UpdateFlag.Colour,
   }
 }
-

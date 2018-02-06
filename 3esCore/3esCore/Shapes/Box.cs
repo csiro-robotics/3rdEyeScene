@@ -12,6 +12,14 @@ namespace Tes.Shapes
   public class Box : Shape
   {
     /// <summary>
+    /// Default constructor, creating a unit sized, transient box.
+    /// </summary>
+    public Box()
+      : this(0, 0)
+    {
+    }
+
+    /// <summary>
     /// Construct a box shape.
     /// </summary>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
@@ -30,6 +38,14 @@ namespace Tes.Shapes
     /// Construct a box shape.
     /// </summary>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
+    /// <param name="category">Category to which the shape belongs.</param>
+    public Box(uint id, ushort category = 0)
+      : this(id, category, Vector3.Zero, new Vector3(1, 1, 1), Quaternion.Identity) { }
+
+    /// <summary>
+    /// Construct a box shape.
+    /// </summary>
+    /// <param name="id">The shape ID. Zero for transient shapes.</param>
     /// <param name="pos">Defines the centre of the shape.</param>
     /// <param name="scale">The box edge lengths or extents.</param>
     public Box(uint id, Vector3 pos, Vector3 scale)
@@ -42,8 +58,12 @@ namespace Tes.Shapes
     /// </summary>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
     /// <param name="category">Category to which the shape belongs.</param>
-    public Box(uint id = 0u, ushort category = 0)
-      : this(id, category, Vector3.Zero, new Vector3(1, 1, 1), Quaternion.Identity) { }
+    /// <param name="pos">Defines the centre of the shape.</param>
+    /// <param name="scale">The box edge lengths or extents.</param>
+    public Box(uint id, ushort category, Vector3 pos, Vector3 scale)
+    : this(id, category, pos, scale, Quaternion.Identity)
+    {
+    }
 
     /// <summary>
     /// Construct a box shape.
@@ -59,18 +79,6 @@ namespace Tes.Shapes
       Position = pos;
       Rotation = rot;
       Scale = scale;
-    }
-
-    /// <summary>
-    /// Construct a box shape.
-    /// </summary>
-    /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    /// <param name="category">Category to which the shape belongs.</param>
-    /// <param name="pos">Defines the centre of the shape.</param>
-    /// <param name="scale">The box edge lengths or extents.</param>
-    public Box(uint id, ushort category, Vector3 pos, Vector3 scale)
-    : this(id, category, pos, scale, Quaternion.Identity)
-    {
     }
 
     /// <summary>

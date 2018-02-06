@@ -24,7 +24,7 @@ bool PacketReader::checkCrc()
     return true;
   }
 
-  if ((_packet.flags & PF_NoCrc))
+  if ((flags() & PF_NoCrc))
   {
     _status |= CrcValid;
     return true;
@@ -89,5 +89,20 @@ size_t PacketReader::readRaw(uint8_t *bytes, size_t byteCount)
   size_t copyCount = (byteCount <= bytesAvailable()) ? byteCount : bytesAvailable();
   memcpy(bytes, payload() + _payloadPosition, copyCount);
   _payloadPosition += uint16_t(copyCount);
+  return copyCount;
+}
+
+
+size_t PacketReader::peek(uint8_t *dst, size_t byteCount, bool allowByteSwap)
+{
+  size_t copyCount = (byteCount <= bytesAvailable()) ? byteCount : bytesAvailable();
+  memcpy(dst, payload() + _payloadPosition, copyCount);
+  // Do not adjust the payload position.
+
+  if (allowByteSwap)
+  {
+    networkEndianSwap(dst, byteCount);
+  }
+
   return copyCount;
 }

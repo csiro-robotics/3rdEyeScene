@@ -81,6 +81,13 @@ namespace tes
       Asynchronous
     };
 
+    /// Report the port being used by the connection monitor.
+    ///
+    /// This may be TCP specific.
+    ///
+    /// @return The port connections are being monitored on.
+    virtual int port() const = 0;
+
     /// Starts the monitor listening in the specified mode.
     ///
     /// The listening thread is started if @p mode is @c Asynchronous.

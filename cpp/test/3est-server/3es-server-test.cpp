@@ -353,7 +353,16 @@ void createShapes(unsigned &nextId, std::vector<Shape *> &shapes, std::vector<Sh
       Vector3f(0, 0, 0), Vector3f(0.25f, 0, 1), Vector3f(0, -0.25f, 1)
     };
     const unsigned triVertexCount = sizeof(triangleSet) / sizeof(triangleSet[0]);
+    static const uint32_t colours[] =
+    {
+      Colour::Colours[Colour::Red].c, Colour::Colours[Colour::Red].c, Colour::Colours[Colour::Red].c,
+      Colour::Colours[Colour::Green].c, Colour::Colours[Colour::Green].c, Colour::Colours[Colour::Green].c,
+      Colour::Colours[Colour::Blue].c, Colour::Colours[Colour::Blue].c, Colour::Colours[Colour::Blue].c,
+      Colour::Colours[Colour::White].c, Colour::Colours[Colour::White].c, Colour::Colours[Colour::White].c
+    };
     MeshShape *triangles = new MeshShape(DtTriangles, triangleSet[0].v, triVertexCount, sizeof(triangleSet[0]), nextId++, CatTriangles);
+    triangles->setColours(colours);
+    triangles->duplicateArrays();
     shapes.push_back(triangles);
     // if (!noMove)
     // {
@@ -377,13 +386,23 @@ void createShapes(unsigned &nextId, std::vector<Shape *> &shapes, std::vector<Sh
   {
     static const Vector3f pts[] =
     {
-      Vector3f(0, 0, 0), Vector3f(0, 0.25f, 1), Vector3f(0.25f, 0, 1),
-      Vector3f(0, 0, 0), Vector3f(-0.25f, 0, 1), Vector3f(0, 0.25f, 1),
-      Vector3f(0, 0, 0), Vector3f(0, -0.25f, 1), Vector3f(-0.25f, 0, 1),
-      Vector3f(0, 0, 0), Vector3f(0.25f, 0, 1), Vector3f(0, -0.25f, 1)
+      Vector3f(0, 0.25f, 1),
+      Vector3f(0.25f, 0, 1),
+      Vector3f(-0.25f, 0, 1),
+      Vector3f(0, -0.25f, 1),
+      Vector3f(0, -0.25f, 1)
     };
     const unsigned pointsCount = sizeof(pts) / sizeof(pts[0]);
+    static const uint32_t colours[] =
+    {
+      Colour::Colours[Colour::Black].c,
+      Colour::Colours[Colour::Red].c,
+      Colour::Colours[Colour::Green].c,
+      Colour::Colours[Colour::Blue].c,
+      Colour::Colours[Colour::White].c
+    };
     MeshShape *points = new MeshShape(DtPoints, pts[0].v, pointsCount, sizeof(pts[0]), nextId++, CatPoints);
+    points->setColours(colours);
     shapes.push_back(points);
     // if (!noMove)
     // {
@@ -575,14 +594,20 @@ int main(int argc, char **argvNonConst)
     }
   };
 
+  server->connectionMonitor()->setConnectionCallback(onNewConnection);
+
+  if (!server->connectionMonitor()->start(tes::ConnectionMonitor::Asynchronous))
+  {
+    std::cerr << "Failed to start listening." << std::endl;
+    return 1;
+  }
+  std::cout << "Listening on port " << server->connectionMonitor()->port() << std::endl;
+
   // Register shapes with server.
   for (Shape *shape : shapes)
   {
     server->create(*shape);
   }
-
-  server->connectionMonitor()->setConnectionCallback(onNewConnection);
-  server->connectionMonitor()->start(tes::ConnectionMonitor::Asynchronous);
 
   while (!quit)
   {

@@ -77,6 +77,14 @@ namespace tes
     ///   are insufficient data available.
     size_t readRaw(uint8_t *bytes, size_t byteCount);
 
+    /// Peek @p byteCount bytes from the current position in the buffer. This does not affect the stream position.
+    /// @param dst The memory to write to.
+    /// @param byteCount Number of bytes to read.
+    /// @param allowByteSwap @c true to allow the byte ordering to be modified in @p dst. Only performed when
+    ///   the network endian does not match the platform endian.
+    /// @return The number of bytes read. Must match @p byteCount for success.
+    size_t peek(uint8_t *dst, size_t byteCount, bool allowByteSwap = true);
+
     /// Reads a single data item from the packet. This reads a number of bytes
     /// equal to @c sizeof(T) performing an endian swap if necessary.
     /// @param[out] element Set to the data read.
@@ -93,7 +101,7 @@ namespace tes
 
   inline uint16_t PacketReader::bytesAvailable() const
   {
-    return _packet.payloadSize - _payloadPosition;
+    return payloadSize() - _payloadPosition;
   }
 
   template <typename T>

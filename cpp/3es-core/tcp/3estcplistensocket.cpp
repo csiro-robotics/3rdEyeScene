@@ -65,6 +65,12 @@ TcpListenSocket::~TcpListenSocket()
 }
 
 
+uint16_t TcpListenSocket::port() const
+{
+  return (isListening()) ? ntohs(_detail->address.sin_port) : 0;
+}
+
+
 bool TcpListenSocket::listen(unsigned short port)
 {
   if (isListening())

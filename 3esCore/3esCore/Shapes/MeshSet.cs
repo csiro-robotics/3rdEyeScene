@@ -3,6 +3,7 @@ using Tes.Net;
 using Tes.Maths;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Tes.Shapes
 {
@@ -103,6 +104,53 @@ namespace Tes.Shapes
 
         packet.WriteBytes(BitConverter.GetBytes((uint)part.ID), true);
         partAttributes.Write(packet);
+      }
+
+      return true;
+    }
+
+    /// <summary>
+    /// Read the contents of a create message for a <c>MeshSet</c>.
+    /// </summary>
+    /// <param name="reader">Stream to read from</param>
+    /// <returns>True on success.</returns>
+    /// <remarks>
+    /// Reads additional data about the mesh parts contained in the mesh. All parts are represented
+    /// by a <see cref="PlaceholderMesh"/> as real mesh data cannot be resolved here.
+    /// </remarks>
+    public override bool ReadCreate(BinaryReader reader)
+    {
+      if (!_data.Read(reader))
+      {
+        return false;
+      }
+
+      // Read part details.
+      // Note: we can only create placeholder meshes here for referencing resource IDs elsewhere.
+      int partCount = reader.ReadUInt16();
+      _parts.Clear();
+      _transforms.Clear();
+
+      if (partCount > 0)
+      {
+        uint meshId;
+        ObjectAttributes partAttributes = new ObjectAttributes();
+        Matrix4 m;
+
+        for (int i = 0; i < partCount; ++i)
+        {
+          meshId = reader.ReadUInt32();
+
+          if (!partAttributes.Read(reader))
+          {
+            return false;
+          }
+
+          _parts.Add(new PlaceholderMesh(meshId));
+
+          m = partAttributes.GetTransform();
+          _transforms.Add(m);
+        }
       }
 
       return true;

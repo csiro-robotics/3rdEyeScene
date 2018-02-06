@@ -24,6 +24,26 @@ namespace Tes.Server
     public ConnectionMonitorMode Mode { get; protected set; }
 
     /// <summary>
+    /// Port on which the server is listening (if relevant).
+    /// </summary>
+    public int Port
+    {
+      get
+      {
+        if (_listen != null)
+        {
+          IPEndPoint ipEndPoint = _listen.LocalEndpoint as IPEndPoint;
+          //DnsEndPoint dnsEndPoint = _listen.LocalEndpoint as DnsEndPoit;
+          if (ipEndPoint != null)
+          {
+            return ipEndPoint.Port;
+          }
+        }
+        return 0;
+      }
+    }
+
+    /// <summary>
     /// Create a connection monitor for the given server.
     /// </summary>
     /// <param name="server">The server object.</param>
@@ -61,9 +81,12 @@ namespace Tes.Server
 
       case ConnectionMonitorMode.Asynchronous:
         _quitFlag = false;
-        _thread = new System.Threading.Thread(MonitorThread);
-        _thread.Start();
-        Mode = ConnectionMonitorMode.Asynchronous;
+        if (Listen())
+        {
+          _thread = new System.Threading.Thread(MonitorThread);
+          _thread.Start();
+          Mode = ConnectionMonitorMode.Asynchronous;
+        }
         break;
 
       default:
@@ -71,7 +94,7 @@ namespace Tes.Server
         return false;
       }
 
-      return true;
+      return Mode != ConnectionMonitorMode.None;
     }
 
 
@@ -116,6 +139,10 @@ namespace Tes.Server
       _lock = null;
     }
 
+    /// <summary>
+    /// Block until the connection thread has started.
+    /// </summary>
+    /// <returns><c>true</c> in synchronous mode, or in asynchronous mode and the connection monitor has started.</returns>
     public bool WaitForStart()
     {
       if (Mode == ConnectionMonitorMode.Synchronous)
@@ -227,24 +254,26 @@ namespace Tes.Server
     /// Wait for up to <paramref name="timeoutMs"/> milliseconds for at least one new connection before continuing.
     /// </summary>
     /// <param name="timeoutMs">The time to wait in milliseconds.</param>
-    /// <returns>True if a new connection has been found.</returns>
+    /// <returns>The number of connections. These may need to be committed.</returns>
     /// <remarks>
     /// The method returns once either a new connection exists or <paramref name="timeoutMs"/> has elapsed.
     /// When there is a new connection, it has yet to be committed.
     /// </remarks>
-    public bool WaitForConnections(uint timeoutMs)
+    public int WaitForConnections(uint timeoutMs)
     {
       Stopwatch timer = new Stopwatch();
       timer.Start();
 
+      int connectionCount = 0;
       do
       {
         _lock.Lock();
         try
         {
-          if (_connections.Count > 1)
+          connectionCount = _connections.Count;
+          if (connectionCount > 0)
           {
-            return true;
+            return _connections.Count;
           }
         }
         finally
@@ -256,7 +285,7 @@ namespace Tes.Server
         {
           case ConnectionMonitorMode.None:
             // Not actually looking for connections. Abort.
-            return false;
+            return 0;
           case ConnectionMonitorMode.Synchronous:
             // Synchronous mode. Need to update monitor.
             MonitorConnections();
@@ -277,31 +306,43 @@ namespace Tes.Server
       _lock.Lock();
       try
       {
-        if (_connections.Count > 1)
-        {
-          return true;
-        }
+        connectionCount = _connections.Count;
       }
       finally
       {
         _lock.Unlock();
       }
-      return false;
+
+      return connectionCount;
     }
 
     /// <summary>
     /// Start listening for connections.
     /// </summary>
-    private void Listen()
+    private bool Listen()
     {
       if (_listen != null)
       {
-        return;
+        return true;
       }
 
       IPAddress local = IPAddress.Loopback;
-      _listen = new TcpListener(local, _server.Settings.ListenPort);
-      _listen.Start();
+      int port = _server.Settings.ListenPort;
+      while (_listen == null && port <= _server.Settings.ListenPort + _server.Settings.PortRange)
+      {
+        _listen = new TcpListener(local, port++);
+        try
+        {
+          _listen.Start();
+          return true;
+        }
+        catch (SocketException /*e*/)
+        {
+          _listen = null;
+        }
+      }
+
+      return false;
     }
 
     /// <summary>
@@ -326,7 +367,10 @@ namespace Tes.Server
     /// </summary>
     private void MonitorThread()
     {
-      Listen();
+      if (_listen == null)
+      {
+        return;
+      }
 
       while (!_quitFlag)
       {

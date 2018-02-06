@@ -23,19 +23,56 @@ namespace tes
   class PacketWriter;
   class Resource;
 
-  /// A base class for encapsulating a shape which is to be represented remotely.
+  /// A base class for shapes which are to be represented remotely.
   ///
-  /// Simple shapes only need a @c writeCreate() call to be fully represented,
-  /// after which @c writeUpdate() may move the object. Complex shapes required
-  /// additional data to be fully represented and the @c writeCreate() packet
-  /// stream may not be large enough to hold all the data. Such complex shapes
-  /// will have @c writeData() called, with a changing progress marker.
-  /// Complex shapes return @c true from @c isComplex().
+  /// A shape instance is unique represented by its @c routingId() and @c id()
+  /// combined. The @c routingId() can be considered a unique shape type
+  /// identifier (see @c ShapeHandlerIDs), while the @c id() represents the
+  /// shape instance.
+  ///
+  /// Shape instances may be considered transient or persistent. Transient
+  /// shapes have an @c id() of zero and are automatically destroyed (by the
+  /// client) on the next frame update. Persistent shapes have a non-zero
+  /// @c id() and persist until an explicit @c DestroyMessage arrives.
+  ///
+  /// Internally, the @c Shape class is represented by a @c CreateMessage.
+  /// This includes an ID, category, flags, position, rotation, scale and
+  /// colour. These data represent the minimal data required to represent the
+  /// shape and suffice for most primitive shapes. Derivations may store
+  /// additional data members. Derivations may also adjust the semantics of
+  /// some of the fields in the @c CreateMessage; e.g., the scale XYZ values
+  /// have a particular interpretation for the @c Capsule shape.
+  ///
+  /// Shapes may be considered simple or complex (@c isComplex() reports
+  /// @c true). Simple shapes only need a @c writeCreate() call to be fully
+  /// represented, after which @c writeUpdate() may move the object. Complex
+  /// shapes required additional data to be fully represented and the
+  /// @c writeCreate() packet stream may not be large enough to hold all the
+  /// data. Such complex shapes will have @c writeData() called multiple times
+  /// with a changing progress marker.
   ///
   /// Note that a shape which is not complex may override the @c writeCreate()
-  /// method and add additional data. Complex shapes are only required when
-  /// this is not sufficient and the additional data may overflow the packet
-  /// buffer.
+  /// method and add additional data, but must always begin with the
+  /// @c CreateMessage. Complex shapes are only required when this is not
+  /// sufficient and the additional data may overflow the packet buffer.
+  ///
+  /// In general, use the @c CreateMessage only where possible. If additional
+  /// information is required and the additional data is sufficient to fit
+  /// easily in a single data packet (~64KiB), then write this information
+  /// in @c writeCreate() immediately following the @c CreateMessage. For
+  /// larger data requirements, then the shape should report as complex
+  /// (@c isComplex() returning @c true) and this information should be written
+  /// in @c writeData().
+  ///
+  /// The API also includes message reading functions, which creates a
+  /// read/write symmetry. The read methods are intended primarily for testing
+  /// purposes and to serve as an example of how to process messages. Whilst
+  /// reading methods may be used to implement a visualisation client, they
+  /// may lead to sub-optimal message handling and memory duplication. There may
+  /// also be issues with synchronising the shape ID with the intended instance.
+  ///
+  /// No method for reading @c DestroyMessage is provided as it does not apply
+  /// modifications to the shape members.
   class _3es_coreAPI Shape
   {
   public:
@@ -46,7 +83,16 @@ namespace tes
     Shape(uint16_t routingId, uint32_t id, uint16_t category);
     virtual inline ~Shape() {}
 
+    /// Return a reference name for the shape type; e.g., "box". Essentially the class name.
+    ///
+    /// Note this cannot be relied upon except during initial creation.
+    ///
+    /// @return The shape type name.
+    virtual inline const char *type() const { return "unknown"; }
+
     uint16_t routingId() const;
+
+    inline const CreateMessage &data() const { return _data; }
 
     uint32_t id() const;
     Shape &setId(uint32_t id);
@@ -102,6 +148,11 @@ namespace tes
     Shape &setColour(const Colour &colour);
     Colour colour() const;
 
+    /// Is this a complex shape? Complex shapes require @c writeData() to be
+    /// called.
+    /// @return True if complex, false if simple.
+    virtual inline bool isComplex() const { return false; }
+
     /// Update the attributes of this shape to match @p other.
     /// Used in maintaining cached copies of shapes. The shapes should
     /// already represent the same object.
@@ -114,15 +165,23 @@ namespace tes
     /// @param other The shape to update data from.
     virtual void updateFrom(const Shape &other);
 
-    /// Writes the create message to @p stream.
+    /// Writes the @c CreateMessage to @p stream.
     ///
-    /// Simple shapes will write all data in the create message. More
-    /// complex shapes may have additional data which is required to
-    /// create object (e.g., point clouds). In the latter case, only
-    /// enough data to initialise the object need be written.
+    /// For simple shapes the @c CreateMessage and potential extensions will be
+    /// sufficient. More complex shapes may have extensive additional used data
+    /// to represent object (e.g., a point cloud). In this case the shape
+    /// must report @c isComplex() as @c true and implement @c writeData().
+    /// See class notes.
+    ///
+    /// @param stream The stream to write the @c CreateMessage to.
+    /// @return @c true if the message is successfully written to @c stream.
     virtual bool writeCreate(PacketWriter &stream) const;
 
     /// Called only for complex shapes to write additional creation data.
+    ///
+    /// Complex shapes implementing this method must first write the @c DataMessage as a header identifying
+    /// the shape for which the message is intended, via it's ID. The @c DataMessage acts as a header and
+    /// the data format following the message is entirely dependent on the implementing shape.
     ///
     /// @param stream The data stream to write to.
     /// @param[in,out] progressMarker Indicates data transfer progress.
@@ -132,12 +191,50 @@ namespace tes
     ///   -1 indicates an error. No more calls should be made.
     virtual inline int writeData(PacketWriter &stream, unsigned &progressMarker) const { return 0; }
 
+    /// Writes the @c UpdateMessage to @c stream supporting a change in
+    /// @c ObjectAttributes.
+    ///
+    /// This method only be used when the attributes change.
+    ///
+    /// @param stream The stream to write the @c UpdateMessage to.
+    /// @return @c true if the message is successfully written to @c stream.
     bool writeUpdate(PacketWriter &stream) const;
+
+    /// Write a @c DestroyMessage to @c stream - only for persistent shapes.
+    ///
+    /// The @c id() (combined with @c routingId()) identifies which shape
+    /// instance to destroy.
+    ///
+    /// @param stream The stream to write the @c DestroyMessage to.
+    /// @return @c true if the message is successfully written to @c stream.
     bool writeDestroy(PacketWriter &stream) const;
 
-    /// Is this a complex shape? Complex shapes have @c writeData() called.
-    /// @return True if complex, false if simple.
-    virtual inline bool isComplex() const { return false; }
+    /// Read a @c CreateMessage for this shape. This will override the
+    /// @c id() of this instance.
+    ///
+    /// The @c routingId() must have already been resolved.
+    ///
+    /// @param stream The stream to read message data from.
+    /// @return @c true if the message is successfully read.
+    virtual bool readCreate(PacketReader &stream);
+
+    /// Read an @c UpdateMessage for this shape.
+    ///
+    /// Respects the @c UpdateFlag values, only modifying requested data.
+    ///
+    /// @param stream The stream to read message data from.
+    /// @return @c true if the message is successfully read.
+    virtual bool readUpdate(PacketReader &stream);
+
+    /// Read back data written by @c writeData().
+    ///
+    /// Must be implemented by complex shapes, first reading the @c DataMessage
+    /// then data payload. The base implementation returns @c false assuming a
+    /// simple shape.
+    ///
+    /// @param stream The stream to read message data from.
+    /// @return @c true if the message is successfully read.
+    virtual bool readData(PacketReader &stream);
 
     /// Enumerate the resources used by this shape. Resources are most commonly used by
     /// mesh shapes to expose the mesh data, where the shape simply positions the mesh.

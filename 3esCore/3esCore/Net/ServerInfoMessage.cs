@@ -9,7 +9,7 @@ namespace Tes.Net
   /// A system control message defining some global information about the server.
   /// </summary>
   [StructLayout(LayoutKind.Sequential, Pack = 1)]
-  public unsafe struct ServerInfoMessage
+  public unsafe struct ServerInfoMessage : IMessage
   {
     /// <summary>
     /// Number of bytes reserved in the stream.

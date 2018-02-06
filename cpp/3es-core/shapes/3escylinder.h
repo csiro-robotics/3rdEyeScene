@@ -39,6 +39,8 @@ namespace tes
     /// @param length Length of the cylinder body.
     Cylinder(uint32_t id, uint16_t category, const V3Arg &centre = V3Arg(0, 0, 0), const V3Arg &axis = DefaultAxis, float radius = 1.0f, float length = 1.0f);
 
+    inline const char *type() const override { return "cylinder"; }
+
     /// Set the cylinder body radius.
     /// @param radius The radius to set.
     /// @return @c *this

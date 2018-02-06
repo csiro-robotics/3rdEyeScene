@@ -24,6 +24,19 @@ namespace Tes.Shapes
     public const float DefaultRadius = 0.5f;
 
     /// <summary>
+    /// Create a new cylinder, transient cylinder using default attributes.
+    /// </summary>
+    public Cylinder() : this(0, 0) { }
+
+    /// <summary>
+    /// Create a new cylinder.
+    /// </summary>
+    /// <param name="id">The shape ID. Zero for transient shapes.</param>
+    /// <param name="category">Category to which the shape belongs.</param>
+    public Cylinder(uint id, ushort category = 0)
+      : this(id, category, Vector3.Zero, DefaultUp, DefaultLength, DefaultRadius) { }
+
+    /// <summary>
     /// Create a new cylinder.
     /// </summary>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
@@ -47,14 +60,6 @@ namespace Tes.Shapes
       : this(id, 0, startPoint, endPoint, radius)
     {
     }
-
-    /// <summary>
-    /// Create a new cylinder.
-    /// </summary>
-    /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    /// <param name="category">Category to which the shape belongs.</param>
-    public Cylinder(uint id = 0u, ushort category = 0)
-      : this(id, category, Vector3.Zero, DefaultUp, DefaultLength, DefaultRadius) { }
 
     /// <summary>
     /// Create a new cylinder.

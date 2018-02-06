@@ -9,7 +9,7 @@ namespace Tes.Net
   /// Defines an object update message.
   /// </summary>
   [StructLayout(LayoutKind.Sequential, Pack = 1)]
-  public struct UpdateMessage
+  public struct UpdateMessage : IMessage
   {
     /// <summary>
     /// <see cref="ObjectMessageID"/> for this message.

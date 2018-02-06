@@ -7,7 +7,7 @@ namespace Tes.Net
   /// <summary>
   /// A system control message.
   /// </summary>
-  public struct ControlMessage
+  public struct ControlMessage : IMessage
   {
     /// <summary>
     /// Flags, particular to this <see cref="ControlMessageID"/> type of message.

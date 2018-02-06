@@ -28,6 +28,8 @@ namespace tes
     /// @param radius The sphere radius.
     Sphere(uint32_t id, uint16_t category, const V3Arg &centre = V3Arg(0, 0, 0), float radius = 1.0f);
 
+    inline const char *type() const override { return "sphere"; }
+
     /// Set the sphere radius.
     /// @param radius The sphere radius.
     /// @return @c *this

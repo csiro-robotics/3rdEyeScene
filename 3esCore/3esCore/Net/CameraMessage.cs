@@ -13,7 +13,7 @@ namespace Tes.Net
   /// playback may follow the primary camera at the user's request.
   /// </remarks>
   [StructLayout(LayoutKind.Sequential, Pack = 1)]
-  public struct CameraMessage
+  public struct CameraMessage : IMessage
   {
     /// <summary>
     /// Reserved camera ID for recording the camera properties during playback.

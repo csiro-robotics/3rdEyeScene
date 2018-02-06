@@ -25,7 +25,7 @@ namespace Tes.Net
   /// Message used to (re)finalise a mesh resource. The mesh resource becomes usable after this message.
   /// </summary>
   [StructLayout(LayoutKind.Sequential, Pack = 1)]
-  public struct MeshFinaliseMessage
+  public struct MeshFinaliseMessage : IMessage
   {
     /// <summary>
     /// <see cref="MeshMessageType"/> for this message.

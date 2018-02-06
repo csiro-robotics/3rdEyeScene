@@ -125,9 +125,10 @@ namespace Tes.Net
     /// <param name="transform">The transformation matrix.</param>
     public void SetFromTransform(Matrix4 transform)
     {
-      Vector3 scale = transform.Scale;
-      Vector3 trans = transform.Translation;
-      Quaternion rot = Rotation.ToQuaternion(transform);
+      Matrix4 m = transform;
+      Vector3 scale = m.RemoveScale();
+      Vector3 trans = m.Translation;
+      Quaternion rot = Rotation.ToQuaternion(m);
       X = trans.X;
       Y = trans.Y;
       Z = trans.Z;

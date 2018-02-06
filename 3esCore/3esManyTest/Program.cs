@@ -76,6 +76,8 @@ namespace Tes
       //  ShowUsage();
       //  return;
       //}
+      
+      Console.CancelKeyPress += new ConsoleCancelEventHandler(ControlCHandler);
 
       ServerSettings serverSettings = ServerSettings.Default;
       ServerInfoMessage info = ServerInfoMessage.Default;
@@ -140,6 +142,12 @@ namespace Tes
 
       server.ConnectionMonitor.Stop();
       server.ConnectionMonitor.Join();
+    }
+
+    private static void ControlCHandler(object sender, ConsoleCancelEventArgs args)
+    {
+      Quit = true;
+      args.Cancel = true;
     }
   }
 }

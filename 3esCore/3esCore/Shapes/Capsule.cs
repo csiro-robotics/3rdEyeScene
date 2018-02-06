@@ -27,6 +27,19 @@ namespace Tes.Shapes
     public const float DefaultRadius = 0.25f;
 
     /// <summary>
+    /// Default constructor, creating a Z oriented, transient capsule.
+    /// </summary>
+    public Capsule() : this(0, 0) { }
+
+    /// <summary>
+    /// Create a new capsule.
+    /// </summary>
+    /// <param name="id">The shape ID. Zero for transient shapes.</param>
+    /// <param name="category">Category to which the shape belongs.</param>
+    public Capsule(uint id, ushort category = 0)
+      : this(id, category, Vector3.Zero, DefaultUp, DefaultLength, DefaultRadius) { }
+
+    /// <summary>
     /// Create a new capsule.
     /// </summary>
     /// <param name="id">The shape ID. Zero for transient shapes.</param>
@@ -54,14 +67,6 @@ namespace Tes.Shapes
       : this(id, 0, startPoint, endPoint, radius)
     {
     }
-
-    /// <summary>
-    /// Create a new capsule.
-    /// </summary>
-    /// <param name="id">The shape ID. Zero for transient shapes.</param>
-    /// <param name="category">Category to which the shape belongs.</param>
-    public Capsule(uint id = 0u, ushort category = 0)
-      : this(id, category, Vector3.Zero, DefaultUp, DefaultLength, DefaultRadius) { }
 
     /// <summary>
     /// Create a new capsule.

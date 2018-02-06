@@ -25,32 +25,8 @@ namespace Tes.Net
     /// </summary>
     TwoSided = (1 << 2),
     /// <summary>
-    /// Update attributes using only explicitly specified flags from the following.
-    /// </summary>
-    UpdateMode = (1 << 3),
-    /// <summary>
-    /// Update position data.
-    /// </summary>
-    Position = (1 << 4),
-    /// <summary>
-    /// Update rotation data.
-    /// </summary>
-    Rotation = (1 << 5),
-    /// <summary>
-    /// Update scale data.
-    /// </summary>
-    Scale = (1 << 6),
-    /// <summary>
-    /// Update colour data.
-    /// </summary>
-    Colour = (1 << 7),
-    /// <summary>
-    /// A spelling alias for colour.
-    /// </summary>
-    Color = Colour,
-    /// <summary>
     /// User flags start here.
     /// </summary>
-    User = (1 << 12)
+    User = (1 << 8)
   }
 }

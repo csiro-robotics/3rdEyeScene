@@ -6,6 +6,7 @@
 #include "3esspinlock.h"
 
 #include "3esmeshmessages.h"
+#include "3esrotation.h"
 
 #include <algorithm>
 #include <cstring>
@@ -434,4 +435,97 @@ void PointCloud::copyOnWrite()
     --_imp->references;
     _imp = _imp->clone();
   }
+}
+
+
+bool PointCloud::processCreate(const MeshCreateMessage &msg)
+{
+  if (msg.drawType != DtPoints)
+  {
+    return false;
+  }
+
+  copyOnWrite();
+  _imp->id = msg.meshId;
+
+  _imp->vertexCount = msg.vertexCount;
+  delete _imp->vertices;
+  delete _imp->normals;
+  delete _imp->colours;
+  _imp->capacity = msg.vertexCount;
+  _imp->vertices = new Vector3f[msg.vertexCount];
+  _imp->normals = nullptr; // Pending.
+  _imp->colours = nullptr; // Pending
+
+  Matrix4f transform = prsTransform(Vector3f(msg.attributes.position),
+                                    Quaternionf(msg.attributes.rotation),
+                                    Vector3f(msg.attributes.scale));
+
+  // Does not accept a transform.
+  if (!transform.equals(Matrix4f::identity))
+  {
+    return false;
+  }
+
+  // Does not accept a tint.
+  if (msg.attributes.colour != 0xffffffffu)
+  {
+    return false;
+  }
+
+  return true;
+}
+
+
+bool PointCloud::processVertices(const MeshComponentMessage &msg, const float *vertices, unsigned vertexCount)
+{
+  static_assert(sizeof(Vector3f) == sizeof(float) * 3, "Vertex size mismatch");
+  copyOnWrite();
+  unsigned wrote = 0;
+
+  for (unsigned i = 0; i + msg.offset < _imp->vertexCount && i < msg.count; ++i)
+  {
+    _imp->vertices[i + msg.offset] = Vector3f(vertices + i * 3);
+  }
+
+  return wrote == vertexCount;
+}
+
+
+bool PointCloud::processColours(const MeshComponentMessage &msg, const uint32_t *colours, unsigned colourCount)
+{
+  copyOnWrite();
+  unsigned wrote = 0;
+  if (_imp->colours == nullptr)
+  {
+    _imp->colours = new Colour[_imp->vertexCount];
+  }
+
+  for (unsigned i = 0; i + msg.offset < _imp->vertexCount && i < msg.count; ++i)
+  {
+    _imp->colours[i + msg.offset] = colours[i];
+  }
+
+  return wrote == colourCount;
+}
+
+
+bool PointCloud::processNormals(const MeshComponentMessage &msg, const float *normals, unsigned normalCount)
+{
+  static_assert(sizeof(Vector3f) == sizeof(float) * 3, "Normal size mismatch");
+
+  copyOnWrite();
+  unsigned wrote = 0;
+  if (_imp->normals == nullptr)
+  {
+    _imp->normals = new Vector3f[_imp->vertexCount];
+  }
+
+  for (unsigned i = 0; i + msg.offset < _imp->vertexCount && i < msg.count; ++i)
+  {
+    _imp->normals[i + msg.offset] = Vector3f(normals + i * 3);
+    ++wrote;
+  }
+
+  return wrote == normalCount;
 }

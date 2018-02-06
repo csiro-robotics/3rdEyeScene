@@ -9,7 +9,7 @@ namespace Tes.Net
   /// Defines an object create message.
   /// </summary>
   [StructLayout(LayoutKind.Sequential, Pack = 1)]
-  public struct CreateMessage 
+  public struct CreateMessage : IMessage
   {
     /// <summary>
     /// <see cref="ObjectMessageID"/> for this message.

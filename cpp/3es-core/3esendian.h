@@ -247,6 +247,12 @@ namespace tes
     networkEndianSwap(val);
     return val;
   }
+
+
+  /// @overload
+  inline uint8_t networkEndianSwapValue(const uint8_t &data) { return data; }
+  /// @overload
+  inline int8_t networkEndianSwapValue(const int8_t &data) { return data; }
 }
 
 #endif // _3ESENDIAN_H_

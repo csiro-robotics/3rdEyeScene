@@ -9,7 +9,7 @@ namespace Tes.Net
   /// Defines an object destroy message.
   /// </summary>
   [StructLayout(LayoutKind.Sequential, Pack = 1)]
-  public struct DestroyMessage
+  public struct DestroyMessage : IMessage
   {
     /// <summary>
     /// <see cref="ObjectMessageID"/> for this message.

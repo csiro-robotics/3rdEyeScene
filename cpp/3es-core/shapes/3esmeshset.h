@@ -34,6 +34,8 @@ namespace tes
     /// Destructor.
     ~MeshSet();
 
+    inline const char *type() const override { return "meshSet"; }
+
     /// Get the number of parts to this shape.
     /// @return The number of parts this shape has.
     int partCount() const;
@@ -55,6 +57,17 @@ namespace tes
     /// Overridden to include the number of mesh parts, their IDs and transforms.
     bool writeCreate(PacketWriter &stream) const override;
 
+    /// Reads the @c CreateMessage and details about the mesh parts.
+    ///
+    /// Sucessfully reading the message modifies the data in this shape such
+    /// that the parts (@c partAt()) are only dummy resources
+    /// (@c MeshPlaceholder). This identifies the resource IDs, but the data
+    /// must be resolved separately.
+    ///
+    /// @param stream The stream to read from.
+    /// @return @c true on success.
+    bool readCreate(PacketReader &stream) override;
+
     /// Enumerate the mesh resources for this shape.
     /// @todo Add material resources.
     int enumerateResources(const Resource **resources, int capacity, int fetchOffset = 0) const override;
@@ -67,9 +80,12 @@ namespace tes
     void onClone(MeshSet *copy) const;
 
   private:
+    void cleanupParts();
+
     const MeshResource **_parts;
     Matrix4f *_transforms;
     int _partCount;
+    bool _ownParts;
   };
 
   inline int MeshSet::partCount() const { return _partCount; }

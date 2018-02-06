@@ -4,8 +4,7 @@
 #include "3essimplemesh.h"
 
 #include "3esspinlock.h"
-#include "3esvector3.h"
-#include "3esmatrix4.h"
+#include "3esrotation.h"
 
 #include <vector>
 #include <mutex>
@@ -548,3 +547,70 @@ void SimpleMesh::copyOnWrite()
     _imp = _imp->clone();
   }
 }
+
+
+bool SimpleMesh::processCreate(const MeshCreateMessage &msg)
+{
+  copyOnWrite();
+  _imp->id = msg.meshId;
+  setVertexCount(msg.vertexCount);
+  setIndexCount(msg.indexCount);
+  setDrawType((DrawType)msg.drawType);
+
+  Matrix4f transform = prsTransform(Vector3f(msg.attributes.position),
+                                    Quaternionf(msg.attributes.rotation),
+                                    Vector3f(msg.attributes.scale));
+
+  setTransform(transform);
+  setTint(msg.attributes.colour);
+  return true;
+}
+
+
+bool SimpleMesh::processVertices(const MeshComponentMessage &msg, const float *vertices, unsigned vertexCount)
+{
+  static_assert(sizeof(Vector3f) == sizeof(float) * 3, "Vertex size mismatch");
+  return setVertices(msg.offset, (const Vector3f *)vertices, vertexCount) == vertexCount;
+}
+
+
+bool SimpleMesh::processIndices(const MeshComponentMessage &msg, const uint8_t *indices, unsigned indexCount)
+{
+  // Expect 4 byte indices.
+  return false;
+}
+
+
+bool SimpleMesh::processIndices(const MeshComponentMessage &msg, const uint16_t *indices, unsigned indexCount)
+{
+  // Expect 4 byte indices.
+  return false;
+}
+
+
+bool SimpleMesh::processIndices(const MeshComponentMessage &msg, const uint32_t *indices, unsigned indexCount)
+{
+  // Accept 4 byte indices.
+  return setIndices(msg.offset, indices, indexCount) == indexCount;
+}
+
+
+bool SimpleMesh::processColours(const MeshComponentMessage &msg, const uint32_t *colours, unsigned colourCount)
+{
+  return setColours(msg.offset, colours, colourCount) == colourCount;
+}
+
+
+bool SimpleMesh::processNormals(const MeshComponentMessage &msg, const float *normals, unsigned normalCount)
+{
+  static_assert(sizeof(Vector3f) == sizeof(float) * 3, "Normal size mismatch");
+  return setNormals(msg.offset, (const Vector3f *)normals, normalCount) == normalCount;
+}
+
+
+bool SimpleMesh::processUVs(const MeshComponentMessage &msg, const float *uvs, unsigned uvCount)
+{
+  return setUvs(msg.offset, uvs, uvCount) == uvCount;
+}
+
+

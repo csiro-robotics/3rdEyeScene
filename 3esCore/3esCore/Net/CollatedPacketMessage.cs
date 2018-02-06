@@ -16,7 +16,7 @@ namespace Tes.Net
   /// Use <see cref="T:IO.CollatedPacketDecoder"/> to decode such packets into constituent messages.
   /// </remarks>
   [StructLayout(LayoutKind.Sequential, Pack = 1)]
-  public struct CollatedPacketMessage
+  public struct CollatedPacketMessage : IMessage
   {
     /// <summary>
     /// See CollatedPacketFlag.

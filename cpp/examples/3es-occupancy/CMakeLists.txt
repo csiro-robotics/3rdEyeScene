@@ -38,10 +38,18 @@ set_target_properties(3es-occupancy PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTF
 
 target_link_libraries(3es-occupancy
   3es-core
-  ${OCTOMAP_LIBRARIES}
   ${LIBLAS_LIBRARIES}
   ${LASZIP_LIBRARIES}
 )
+
+# Octomap is not well set up for MSVC builds. Static and shared libraries, for example, build to the same .lib file.
+# Debug libraries aren't correctly defined or distinguished by default.
+if(TARGET octomap)
+  target_link_libraries(3es-occupancy octomap octomath)
+else(TARGET octomap)
+  target_link_libraries(3es-occupancy ${OCTOMAP_LIBRARIES})
+endif(TARGET octomap)
+
 target_include_directories(3es-occupancy
   PRIVATE
     $<TARGET_PROPERTY:3es-core,INCLUDE_DIRECTORIES>

@@ -198,6 +198,11 @@ namespace tes
     /// Make a copy of underlying data if currently shared with another instance.
     void copyOnWrite();
 
+    bool processCreate(const MeshCreateMessage &msg) override;
+    bool processVertices(const MeshComponentMessage &msg, const float *vertices, unsigned vertexCount) override;
+    bool processColours(const MeshComponentMessage &msg, const uint32_t *colours, unsigned colourCount) override;
+    bool processNormals(const MeshComponentMessage &msg, const float *normals, unsigned normalCount) override;
+
     PointCloudImp *_imp;
   };
 

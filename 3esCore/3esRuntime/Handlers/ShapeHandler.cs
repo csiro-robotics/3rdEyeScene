@@ -479,23 +479,23 @@ namespace Tes.Handlers
     /// 
     /// The <paramref name="flags"/> parameter is used to consider the following <see cref="ObjectFlag"/> members:
     /// <list type="bullet">
-    /// <item><see cref="ObjectFlag.UpdateMode"/> to indentify that only some transform elements are present.</item>
-    /// <item><see cref="ObjectFlag.Position"/></item>
-    /// <item><see cref="ObjectFlag.Rotation"/></item>
-    /// <item><see cref="ObjectFlag.Scale"/></item>
+    /// <item><see cref="UpdateFlag.UpdateMode"/> to indentify that only some transform elements are present.</item>
+    /// <item><see cref="UpdateFlag.Position"/></item>
+    /// <item><see cref="UpdateFlag.Rotation"/></item>
+    /// <item><see cref="UpdateFlag.Scale"/></item>
     /// </list>
     /// </remarks>
-    protected virtual void DecodeTransform(ObjectAttributes attributes, Transform transform, ObjectFlag flags = ObjectFlag.None)
+    protected virtual void DecodeTransform(ObjectAttributes attributes, Transform transform, ushort flags = (ushort)ObjectFlag.None)
     {
-      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Position) != 0)
+      if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Position) != 0)
       {
         transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
       }
-      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Rotation) != 0)
+      if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Rotation) != 0)
       {
         transform.localRotation = new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW);
       }
-      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Scale) != 0)
+      if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Scale) != 0)
       {
         transform.localScale = new Vector3(attributes.ScaleX, attributes.ScaleY, attributes.ScaleZ);
       }
@@ -778,10 +778,10 @@ namespace Tes.Handlers
         return new Error(ErrorCode.InvalidObjectID, msg.ObjectID);
       }
 
-      ObjectFlag flags = (ObjectFlag)msg.Flags;
+      ushort flags = msg.Flags;
       DecodeTransform(msg.Attributes, obj.transform, flags);
 
-      if ((flags & ObjectFlag.UpdateMode) == 0 || (flags & ObjectFlag.Colour) != 0)
+      if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Colour) != 0)
       {
         ShapeComponent shapeComp = obj.GetComponent<ShapeComponent>();
         if (shapeComp != null)

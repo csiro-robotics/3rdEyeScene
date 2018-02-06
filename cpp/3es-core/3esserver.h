@@ -29,19 +29,25 @@ namespace tes
     SF_Compress = (1<<2),
   };
 
+  /// Settings used to create the server.
   struct _3es_coreAPI ServerSettings
   {
-    /// Port to listen on.
+    /// First port to try listening on.
     uint16_t listenPort;
+    /// Additional number of ports the server may try listening on.
+    uint16_t portRange;
     /// @c ServerFlag values.
     unsigned flags;
+    /// Timeout used to wait for the connection monitor to start (milliseconds). Only for asynchronous mode.
+    unsigned asyncTimeoutMs;
     /// Size of the client packet buffers.
     uint16_t clientBufferSize;
 
     // TODO: Allowed client IPs.
 
     inline ServerSettings(unsigned flags = SF_Collate, uint16_t port = 33500u, uint16_t bufferSize = 0xffe0)
-      : listenPort(port), flags(flags), clientBufferSize(bufferSize) {}
+      : listenPort(port), portRange(0), flags(flags), asyncTimeoutMs(5000u), clientBufferSize(bufferSize)
+      {}
   };
 
   /// Defines the interface for managing a 3es server.

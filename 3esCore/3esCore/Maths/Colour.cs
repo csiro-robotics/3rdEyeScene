@@ -358,10 +358,21 @@ namespace Tes.Maths
     /// as indexing value. The value is wrapped to the <paramref name="cycle"/> length,
     /// guaranteeing valid colour from the set.
     /// </remarks>
-    public static Colour Cycle(uint number, ColourCycle cycle = ColourCycle.StandardCycle)
+    public static Colour Cycle(int number, ColourCycle cycle = ColourCycle.StandardCycle)
     {
       int[] cycleArray = ColourCycles[(int)cycle];
       return Colours[cycleArray[number % cycleArray.Length]];
+    }
+
+    /// <summary>
+    /// Unsigned integer overload of <see cref="Cycle(int, ColourCycle)"/>.
+    /// </summary>
+    /// <param name="number">An indexing value in the colour cycle. May be out of range as it is wrapped.</param>
+    /// <param name="cycle">The colour cycle to use.</param>
+    /// <returns>A colour from the selected cycle.</returns>
+    public static Colour Cycle(uint number, ColourCycle cycle = ColourCycle.StandardCycle)
+    {
+      return Cycle((int)number, cycle);
     }
 
     /// <summary>
