@@ -156,7 +156,7 @@ This program attempts to connect to and record a Third Eye Scene server.
     {
       int connectionPollTimeSecMs = 250;
       TcpClient socket = null;
-      PacketBuffer packetBuffer = new PacketBuffer(4 * 1024);
+      PacketBuffer packetBuffer = null;
       CollatedPacketDecoder collatedDecoder = new CollatedPacketDecoder();
       BinaryWriter recordingWriter = null;
       bool once = true;
@@ -181,6 +181,8 @@ This program attempts to connect to and record a Third Eye Scene server.
             if (recordingWriter != null)
             {
               Connected = true;
+              // Create a new packet buffer for this connection.
+              packetBuffer = new PacketBuffer(4 * 1024);
             }
             Log.Flush();
           }
