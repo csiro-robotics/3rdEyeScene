@@ -52,7 +52,7 @@ namespace tes
     /// @param position Local to world positioning of the triangles. Defaults to the origin.
     /// @param rotation Local to world rotation of the triangles. Defaults to identity.
     /// @param scale Scaling for the triangles. Defaults to one.
-    MeshShape(DrawType drawType, const float *vertices, const IntArg &vertexCount, size_t vertexByteSize,
+    MeshShape(DrawType drawType, const float *vertices, const UIntArg &vertexCount, size_t vertexByteSize,
               const V3Arg &position = V3Arg(0, 0, 0),
               const QuaternionArg &rotation = QuaternionArg(0, 0, 0, 1),
               const V3Arg &scale = V3Arg(1, 1, 1));
@@ -64,8 +64,8 @@ namespace tes
     /// @param position Local to world positioning of the triangles. Defaults to the origin.
     /// @param rotation Local to world rotation of the triangles. Defaults to identity.
     /// @param scale Scaling for the triangles. Defaults to one.
-    MeshShape(DrawType drawType, const float *vertices, const IntArg &vertexCount, size_t vertexByteSize,
-              const unsigned *indices, const IntArg &indexCount,
+    MeshShape(DrawType drawType, const float *vertices, const UIntArg &vertexCount, size_t vertexByteSize,
+              const unsigned *indices, const UIntArg &indexCount,
               const V3Arg &position = V3Arg(0, 0, 0),
               const QuaternionArg &rotation = QuaternionArg(0, 0, 0, 1),
               const V3Arg &scale = V3Arg(1, 1, 1));
@@ -78,7 +78,7 @@ namespace tes
     /// @param position Local to world positioning of the triangles. Defaults to the origin.
     /// @param rotation Local to world rotation of the triangles. Defaults to identity.
     /// @param scale Scaling for the triangles. Defaults to one.
-    MeshShape(DrawType drawType, const float *vertices, const IntArg &vertexCount, size_t vertexByteSize,
+    MeshShape(DrawType drawType, const float *vertices, const UIntArg &vertexCount, size_t vertexByteSize,
               uint32_t id,
               const V3Arg &position = V3Arg(0, 0, 0),
               const QuaternionArg &rotation = QuaternionArg(0, 0, 0, 1),
@@ -92,8 +92,8 @@ namespace tes
     /// @param position Local to world positioning of the triangles. Defaults to the origin.
     /// @param rotation Local to world rotation of the triangles. Defaults to identity.
     /// @param scale Scaling for the triangles. Defaults to one.
-    MeshShape(DrawType drawType, const float *vertices, const IntArg &vertexCount, size_t vertexByteSize,
-              const unsigned *indices, const IntArg &indexCount, uint32_t id,
+    MeshShape(DrawType drawType, const float *vertices, const UIntArg &vertexCount, size_t vertexByteSize,
+              const unsigned *indices, const UIntArg &indexCount, uint32_t id,
               const V3Arg &position = V3Arg(0, 0, 0),
               const QuaternionArg &rotation = QuaternionArg(0, 0, 0, 1),
               const V3Arg &scale = V3Arg(1, 1, 1));
@@ -107,7 +107,7 @@ namespace tes
     /// @param position Local to world positioning of the triangles. Defaults to the origin.
     /// @param rotation Local to world rotation of the triangles. Defaults to identity.
     /// @param scale Scaling for the triangles. Defaults to one.
-    MeshShape(DrawType drawType, const float *vertices, const IntArg &vertexCount, size_t vertexByteSize,
+    MeshShape(DrawType drawType, const float *vertices, const UIntArg &vertexCount, size_t vertexByteSize,
               uint32_t id, uint16_t category,
               const V3Arg &position = V3Arg(0, 0, 0),
               const QuaternionArg &rotation = QuaternionArg(0, 0, 0, 1),
@@ -122,8 +122,8 @@ namespace tes
     /// @param position Local to world positioning of the triangles. Defaults to the origin.
     /// @param rotation Local to world rotation of the triangles. Defaults to identity.
     /// @param scale Scaling for the triangles. Defaults to one.
-    MeshShape(DrawType drawType, const float *vertices, const IntArg &vertexCount, size_t vertexByteSize,
-              const unsigned *indices, const IntArg &indexCount,
+    MeshShape(DrawType drawType, const float *vertices, const UIntArg &vertexCount, size_t vertexByteSize,
+              const unsigned *indices, const UIntArg &indexCount,
               uint32_t id, uint16_t category,
               const V3Arg &position = V3Arg(0, 0, 0),
               const QuaternionArg &rotation = QuaternionArg(0, 0, 0, 1),
@@ -253,7 +253,7 @@ namespace tes
   }
 
 
-  inline MeshShape::MeshShape(DrawType drawType, const float *vertices, const IntArg &vertexCount, size_t vertexByteSize,
+  inline MeshShape::MeshShape(DrawType drawType, const float *vertices, const UIntArg &vertexCount, size_t vertexByteSize,
                               const V3Arg &position,
                               const QuaternionArg &rotation,
                               const V3Arg &scale)
@@ -277,8 +277,8 @@ namespace tes
   }
 
 
-  inline MeshShape::MeshShape(DrawType drawType, const float *vertices, const IntArg &vertexCount, size_t vertexByteSize,
-                              const unsigned *indices, const IntArg &indexCount,
+  inline MeshShape::MeshShape(DrawType drawType, const float *vertices, const UIntArg &vertexCount, size_t vertexByteSize,
+                              const unsigned *indices, const UIntArg &indexCount,
                               const V3Arg &position,
                               const QuaternionArg &rotation,
                               const V3Arg &scale)
@@ -302,7 +302,7 @@ namespace tes
   }
 
 
-  inline MeshShape::MeshShape(DrawType drawType, const float *vertices, const IntArg &vertexCount, size_t vertexByteSize,
+  inline MeshShape::MeshShape(DrawType drawType, const float *vertices, const UIntArg &vertexCount, size_t vertexByteSize,
                               uint32_t id,
                               const V3Arg &position,
                               const QuaternionArg &rotation,
@@ -327,8 +327,8 @@ namespace tes
   }
 
 
-  inline MeshShape::MeshShape(DrawType drawType, const float *vertices, const IntArg &vertexCount, size_t vertexByteSize,
-                              const unsigned *indices, const IntArg &indexCount,
+  inline MeshShape::MeshShape(DrawType drawType, const float *vertices, const UIntArg &vertexCount, size_t vertexByteSize,
+                              const unsigned *indices, const UIntArg &indexCount,
                               uint32_t id,
                               const V3Arg &position,
                               const QuaternionArg &rotation,
@@ -353,7 +353,7 @@ namespace tes
   }
 
 
-  inline MeshShape::MeshShape(DrawType drawType, const float *vertices, const IntArg &vertexCount, size_t vertexByteSize,
+  inline MeshShape::MeshShape(DrawType drawType, const float *vertices, const UIntArg &vertexCount, size_t vertexByteSize,
                               uint32_t id, uint16_t category,
                               const V3Arg &position,
                               const QuaternionArg &rotation,
@@ -378,8 +378,8 @@ namespace tes
   }
 
 
-  inline MeshShape::MeshShape(DrawType drawType, const float *vertices, const IntArg &vertexCount, size_t vertexByteSize,
-                              const unsigned *indices, const IntArg &indexCount,
+  inline MeshShape::MeshShape(DrawType drawType, const float *vertices, const UIntArg &vertexCount, size_t vertexByteSize,
+                              const unsigned *indices, const UIntArg &indexCount,
                               uint32_t id, uint16_t category,
                               const V3Arg &position,
                               const QuaternionArg &rotation,

@@ -129,7 +129,7 @@ uint8_t PointCloud::drawType(int stream) const
 }
 
 
-void PointCloud::reserve(const IntArg &size)
+void PointCloud::reserve(const UIntArg &size)
 {
   if (_imp->capacity < size)
   {
@@ -138,7 +138,7 @@ void PointCloud::reserve(const IntArg &size)
 }
 
 
-void PointCloud::resize(const IntArg &count)
+void PointCloud::resize(const UIntArg &count)
 {
   if (_imp->capacity < count)
   {
@@ -227,14 +227,14 @@ const float *PointCloud::uvs(unsigned &, int) const
 }
 
 
-void PointCloud::addPoints(const Vector3f *points, const IntArg &count)
+void PointCloud::addPoints(const Vector3f *points, const UIntArg &count)
 {
   if (count)
   {
     copyOnWrite();
     unsigned initial = _imp->vertexCount;
-    resize(_imp->vertexCount + count.u());
-    memcpy(_imp->vertices + initial, points, sizeof(*points) * count.u());
+    resize(_imp->vertexCount + count.i);
+    memcpy(_imp->vertices + initial, points, sizeof(*points) * count.i);
 
     // Initialise other data
     for (unsigned i = initial; i < _imp->vertexCount; ++i)
@@ -251,15 +251,15 @@ void PointCloud::addPoints(const Vector3f *points, const IntArg &count)
 }
 
 
-void PointCloud::addPoints(const Vector3f *points, const Vector3f *normals, const IntArg &count)
+void PointCloud::addPoints(const Vector3f *points, const Vector3f *normals, const UIntArg &count)
 {
   if (count)
   {
     copyOnWrite();
     unsigned initial = _imp->vertexCount;
-    resize(_imp->vertexCount + count.u());
-    memcpy(_imp->vertices + initial, points, sizeof(*points) * count.u());
-    memcpy(_imp->normals + initial, normals, sizeof(*normals) * count.u());
+    resize(_imp->vertexCount + count.i);
+    memcpy(_imp->vertices + initial, points, sizeof(*points) * count.i);
+    memcpy(_imp->normals + initial, normals, sizeof(*normals) * count.i);
 
     // Initialise other data
     const Colour c = Colour::Colours[Colour::White];
@@ -271,41 +271,41 @@ void PointCloud::addPoints(const Vector3f *points, const Vector3f *normals, cons
 }
 
 
-void PointCloud::addPoints(const Vector3f *points, const Vector3f *normals, const Colour *colours, const IntArg &count)
+void PointCloud::addPoints(const Vector3f *points, const Vector3f *normals, const Colour *colours, const UIntArg &count)
 {
   if (count)
   {
     copyOnWrite();
     unsigned initial = _imp->vertexCount;
-    resize(_imp->vertexCount + count.u());
-    memcpy(_imp->vertices + initial, points, sizeof(*points) * count.u());
-    memcpy(_imp->normals + initial, normals, sizeof(*normals) * count.u());
-    memcpy(_imp->colours + initial, colours, sizeof(*colours) * count.u());
+    resize(_imp->vertexCount + count.i);
+    memcpy(_imp->vertices + initial, points, sizeof(*points) * count.i);
+    memcpy(_imp->normals + initial, normals, sizeof(*normals) * count.i);
+    memcpy(_imp->colours + initial, colours, sizeof(*colours) * count.i);
   }
 }
 
 
-void PointCloud::setNormal(const IntArg &index, const Vector3f &normal)
+void PointCloud::setNormal(const UIntArg &index, const Vector3f &normal)
 {
   if (index < _imp->vertexCount)
   {
     copyOnWrite();
-    _imp->normals[index.u()] = normal;
+    _imp->normals[index.i] = normal;
   }
 }
 
 
-void PointCloud::setColour(const IntArg &index, const Colour &colour)
+void PointCloud::setColour(const UIntArg &index, const Colour &colour)
 {
   if (index < _imp->vertexCount)
   {
     copyOnWrite();
-    _imp->colours[index.u()] = colour;
+    _imp->colours[index.i] = colour;
   }
 }
 
 
-void PointCloud::setPoints(const IntArg &index, const Vector3f *points, const IntArg &count)
+void PointCloud::setPoints(const UIntArg &index, const Vector3f *points, const UIntArg &count)
 {
   if (index >= _imp->vertexCount)
   {
@@ -313,9 +313,9 @@ void PointCloud::setPoints(const IntArg &index, const Vector3f *points, const In
   }
 
   unsigned limitedCount = count;
-  if (index.u() + limitedCount > _imp->vertexCount)
+  if (index.i + limitedCount > _imp->vertexCount)
   {
-    limitedCount = index.u() + count.u() - _imp->vertexCount;
+    limitedCount = index.i + count.i - _imp->vertexCount;
   }
 
   if (!limitedCount)
@@ -324,11 +324,11 @@ void PointCloud::setPoints(const IntArg &index, const Vector3f *points, const In
   }
 
   copyOnWrite();
-  memcpy(_imp->vertices + index.u(), points, sizeof(*points) * limitedCount);
+  memcpy(_imp->vertices + index.i, points, sizeof(*points) * limitedCount);
 }
 
 
-void PointCloud::setPoints(const IntArg &index, const Vector3f *points, const Vector3f *normals, const IntArg &count)
+void PointCloud::setPoints(const UIntArg &index, const Vector3f *points, const Vector3f *normals, const UIntArg &count)
 {
   if (index >= _imp->vertexCount)
   {
@@ -336,9 +336,9 @@ void PointCloud::setPoints(const IntArg &index, const Vector3f *points, const Ve
   }
 
   unsigned limitedCount = count;
-  if (index.u() + limitedCount > _imp->vertexCount)
+  if (index.i + limitedCount > _imp->vertexCount)
   {
-    limitedCount = index.u() + count.u() - _imp->vertexCount;
+    limitedCount = index.i + count.i - _imp->vertexCount;
   }
 
   if (!limitedCount)
@@ -347,12 +347,12 @@ void PointCloud::setPoints(const IntArg &index, const Vector3f *points, const Ve
   }
 
   copyOnWrite();
-  memcpy(_imp->vertices + index.u(), points, sizeof(*points) * limitedCount);
-  memcpy(_imp->normals + index.u(), normals, sizeof(*normals) * limitedCount);
+  memcpy(_imp->vertices + index.i, points, sizeof(*points) * limitedCount);
+  memcpy(_imp->normals + index.i, normals, sizeof(*normals) * limitedCount);
 }
 
 
-void PointCloud::setPoints(const IntArg &index, const Vector3f *points, const Vector3f *normals, const Colour *colours, const IntArg &count)
+void PointCloud::setPoints(const UIntArg &index, const Vector3f *points, const Vector3f *normals, const Colour *colours, const UIntArg &count)
 {
   if (index >= _imp->vertexCount)
   {
@@ -360,9 +360,9 @@ void PointCloud::setPoints(const IntArg &index, const Vector3f *points, const Ve
   }
 
   unsigned limitedCount = count;
-  if (index.u() + limitedCount > _imp->vertexCount)
+  if (index.i + limitedCount > _imp->vertexCount)
   {
-    limitedCount = index.u() + count.u() - _imp->vertexCount;
+    limitedCount = index.i + count.i - _imp->vertexCount;
   }
 
   if (!limitedCount)
@@ -371,9 +371,9 @@ void PointCloud::setPoints(const IntArg &index, const Vector3f *points, const Ve
   }
 
   copyOnWrite();
-  memcpy(_imp->vertices + index.u(), points, sizeof(*points) * limitedCount);
-  memcpy(_imp->normals + index.u(), normals, sizeof(*normals) * limitedCount);
-  memcpy(_imp->colours + index.u(), colours, sizeof(*colours) * limitedCount);
+  memcpy(_imp->vertices + index.i, points, sizeof(*points) * limitedCount);
+  memcpy(_imp->normals + index.i, normals, sizeof(*normals) * limitedCount);
+  memcpy(_imp->colours + index.i, colours, sizeof(*colours) * limitedCount);
 }
 
 

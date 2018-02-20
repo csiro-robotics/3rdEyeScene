@@ -11,17 +11,17 @@
 
 using namespace tes;
 
-MeshSet::MeshSet(uint32_t id, uint16_t category, const IntArg &partCount)
+MeshSet::MeshSet(uint32_t id, uint16_t category, const UIntArg &partCount)
   : Shape(SIdMeshSet, id, category)
-  , _parts(partCount.i() ? new const MeshResource *[partCount.i()] : nullptr)
-  , _transforms(partCount.i() ? new Matrix4f[partCount.i()] : nullptr)
+  , _parts(partCount ? new const MeshResource *[partCount.i] : nullptr)
+  , _transforms(partCount ? new Matrix4f[partCount.i] : nullptr)
   , _partCount(partCount)
   , _ownParts(false)
 {
   if (partCount)
   {
-    memset(_parts, 0, sizeof(*_parts) * partCount.i());
-    for (int i = 0; i < partCount.i(); ++i)
+    memset(_parts, 0, sizeof(*_parts) * partCount.i);
+    for (unsigned i = 0; i < partCount; ++i)
     {
       _transforms[i] = Matrix4f::identity;
     }

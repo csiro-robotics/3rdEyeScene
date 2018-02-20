@@ -9,6 +9,7 @@
 #include "3esdebug.h"
 
 #include <cstddef>
+#include <limits>
 
 namespace tes
 {
@@ -20,92 +21,94 @@ namespace tes
   /// lose information generates a runtime error.
   ///
   /// Cast operators are supplied to support casting down to the specific required type.
-  struct IntArg
+  template <typename INT>
+  struct IntArgT
   {
+    typedef INT ValueType;
+
     /// Constructor from @c int.
     /// @param s The argument value.
-    inline IntArg(int s) : _value(s) {}
+    inline IntArgT(int ii) : i(ii) { TES_ASSERT(std::numeric_limits<INT>::min() <= ii); TES_ASSERT(ii <= std::numeric_limits<INT>::max()); }
     /// Constructor from @c unsigned.
     /// @param s The argument value.
-    inline IntArg(unsigned s) : _value(s) {}
+    inline IntArgT(unsigned ii) : i(ii) { TES_ASSERT(std::numeric_limits<INT>::min() <= ii); TES_ASSERT(ii <= std::numeric_limits<INT>::max()); }
 
 #ifdef TES_64
     /// Constructor from @c size_t.
     /// @param s The argument value.
-    inline IntArg(size_t s) : _value(s) {}
+    inline IntArgT(size_t ii) : i(ii) { TES_ASSERT(std::numeric_limits<INT>::min() <= ii); TES_ASSERT(ii <= std::numeric_limits<INT>::max()); }
 #endif // TES_64
 
     /// Boolean cast operator.
-    /// @return @c true if @c _value is non-zero.
-    inline operator bool() const { return _value != 0; }
+    /// @return @c true if @c i is non-zero.
+    inline operator bool() const { return i != 0; }
 
-    /// Convert to @c int. Raised an error if @c _value is too large.
+    /// Convert to @c int. Raised an error if @c i is too large.
     /// @return The size as an integer.
-    inline operator int() const { return i(); }
-
-    /// Convert to @c int. Raised an error if @c _value is too large.
-    /// @return The size as an unsigned integer.
-    inline operator unsigned() const { return u(); }
-
-#ifdef TES_64
-    /// Convert to @c size_t.
-    /// @return The size as an size_t integer.
-    inline operator size_t() const { return _value; }
-#endif // TES_64
-
-    /// Shorthand cast function to @c int.
-    /// @return The value as @c int.
-    inline int i() const { TES_ASSERT(_value <= 0x7FFFFFFFu); return int(_value); }
-    /// Shorthand cast function to @c unsigned.
-    /// @return The value as @c unsigned.
-    inline unsigned u() const { TES_ASSERT(_value <= 0xFFFFFFFFu); return unsigned(_value); }
-    /// Shorthand cast function to @c size_t.
-    /// @return The value as @c size_t.
-    inline size_t st() const { return _value; }
+    inline operator INT() const { return i; }
 
     /// The stored size value.
-    size_t _value;
+    INT i;
   };
+
+  template struct _3es_coreAPI IntArgT<int>;
+  typedef IntArgT<int> IntArg;
+  template struct _3es_coreAPI IntArgT<unsigned>;
+  typedef IntArgT<unsigned> UIntArg;
+#ifdef TES_64
+  template struct _3es_coreAPI IntArgT<size_t>;
+  typedef IntArgT<size_t> SizeTArg;
+#else  // TES_64
+  typedef UIntArg SizeTArg;
+#endif // TES_64
 }
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
-#define _TES_INTARG_BOOL_OP2(INT, OP) \
-  inline bool operator OP(INT a, const tes::IntArg &b) { return a OP static_cast<INT>(b); } \
-  inline bool operator OP(const tes::IntArg &a, INT b) { return static_cast<INT>(a) OP b; }
-//#define _TES_INTARG_ARITH_OP2(INT, OP) \
-//  inline INT operator OP(INT a, const tes::IntArg &b) { return a OP static_cast<INT>(b); } \
-//  inline INT operator OP(const tes::IntArg &a, INT b) { return static_cast<INT>(a) OP b; }
+#define _TES_INTARG_BOOL_OP_SELF(INTARG, OP) \
+  inline bool operator OP(const INTARG &a, const INTARG &b) { return static_cast<INTARG::ValueType>(a) OP static_cast<INTARG::ValueType>(b); }
+#define _TES_INTARG_ARITH_OP_SELF(INTARG, OP) \
+ inline INTARG::ValueType operator OP(const INTARG &a, const INTARG &b) { return static_cast<INTARG::ValueType>(a) OP static_cast<INTARG::ValueType>(b); }
 
-// Comparison operators for @c IntArg.
-#define TES_INTARG_OPERATORS(INT) \
-  _TES_INTARG_BOOL_OP2(INT, <) \
-  _TES_INTARG_BOOL_OP2(INT, <=) \
-  _TES_INTARG_BOOL_OP2(INT, >) \
-  _TES_INTARG_BOOL_OP2(INT, >=) \
-  _TES_INTARG_BOOL_OP2(INT, ==) \
-  _TES_INTARG_BOOL_OP2(INT, !=)
+#define _TES_INTARG_BOOL_OP(INT, INTARG, OP) \
+  inline bool operator OP(INT a, const INTARG &b) { return a OP static_cast<INT>(b); } \
+  inline bool operator OP(const INTARG &a, INT b) { return static_cast<INT>(a) OP b; }
+// #define _TES_INTARG_ARITH_OP(INT, INTARG, OP) \
+//  inline INT operator OP(INT a, const INTARG &b) { return a OP static_cast<INT>(b); } \
+//  inline INT operator OP(const INTARG &a, INT b) { return static_cast<INT>(a) OP b; }
 
-  //inline bool operator<(INT a, const tes::IntArg &b) { return a < static_cast<INT>(b); } \
-  //inline bool operator<=(INT a, const tes::IntArg &b) { return a <= static_cast<INT>(b); } \
-  //inline bool operator>(INT a, const tes::IntArg &b) { return a > static_cast<INT>(b); } \
-  //inline bool operator>=(INT a, const tes::IntArg &b) { return a >= static_cast<INT>(b); } \
-  //inline bool operator<(const tes::IntArg &a, INT b) { return static_cast<INT>(a) < b; } \
-  //inline bool operator<=(const tes::IntArg &a, INT b) { return static_cast<INT>(a) <= b; } \
-  //inline bool operator>(const tes::IntArg &a, INT b) { return static_cast<INT>(a) > b; } \
-  //inline bool operator>=(const tes::IntArg &a, INT b) { return static_cast<INT>(a) >= b; } \
-  //inline bool operator==(INT a, const tes::IntArg &b) { return a == static_cast<INT>(b); } \
-  //inline bool operator!=(INT a, const tes::IntArg &b) { return a != static_cast<INT>(b); } \
-  //inline bool operator==(const tes::IntArg &a, INT b) { return static_cast<INT>(a) == b; } \
-  //inline bool operator!=(const tes::IntArg &a, INT b) { return static_cast<INT>(a) != b; } \
-  //inline INT operator+(INT a, tes::IntArg &)
+// Comparison operators for @c IntArg and similar utilities.
+#define TES_INTARG_OPERATORS(INT, INTARG) \
+  _TES_INTARG_BOOL_OP(INT, INTARG, <) \
+  _TES_INTARG_BOOL_OP(INT, INTARG, <=) \
+  _TES_INTARG_BOOL_OP(INT, INTARG, >) \
+  _TES_INTARG_BOOL_OP(INT, INTARG, >=) \
+  _TES_INTARG_BOOL_OP(INT, INTARG, ==) \
+  _TES_INTARG_BOOL_OP(INT, INTARG, !=)
+  // _TES_INTARG_ARITH_OP(INT, INTARG, +) \
+  // _TES_INTARG_ARITH_OP(INT, INTARG, -) \
+  // _TES_INTARG_ARITH_OP(INT, INTARG, *) \
+  // _TES_INTARG_ARITH_OP(INT, INTARG, /)
 
-TES_INTARG_OPERATORS(int);
-TES_INTARG_OPERATORS(unsigned);
+#define TES_INTARG_OPERATORS_SELF(INTARG) \
+  _TES_INTARG_BOOL_OP_SELF(INTARG, <) \
+  _TES_INTARG_BOOL_OP_SELF(INTARG, <=) \
+  _TES_INTARG_BOOL_OP_SELF(INTARG, >) \
+  _TES_INTARG_BOOL_OP_SELF(INTARG, >=) \
+  _TES_INTARG_BOOL_OP_SELF(INTARG, ==) \
+  _TES_INTARG_BOOL_OP_SELF(INTARG, !=) \
+  _TES_INTARG_ARITH_OP_SELF(INTARG, +) \
+  _TES_INTARG_ARITH_OP_SELF(INTARG, -) \
+  _TES_INTARG_ARITH_OP_SELF(INTARG, *) \
+  _TES_INTARG_ARITH_OP_SELF(INTARG, /)
 
-#ifdef TES_64
-TES_INTARG_OPERATORS(size_t);
-#endif // TES_64
+TES_INTARG_OPERATORS(int, tes::IntArg);
+TES_INTARG_OPERATORS_SELF(tes::IntArg);
+TES_INTARG_OPERATORS(unsigned, tes::UIntArg);
+TES_INTARG_OPERATORS_SELF(tes::UIntArg);
+TES_INTARG_OPERATORS(size_t, tes::SizeTArg);
+TES_INTARG_OPERATORS_SELF(tes::SizeTArg);
+
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
 #endif // _3ESINTARG_H_

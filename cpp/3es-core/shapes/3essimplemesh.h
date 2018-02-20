@@ -37,7 +37,7 @@ namespace tes
     /// @param indexCount Number of indices to preallocate.
     /// @param drawType Defines the primitive type being indexed.
     /// @param components The components defined by this mesh. See @c ComponentFlag.
-    SimpleMesh(uint32_t id, const IntArg &vertexCount = 0u, const IntArg &indexCount = 0u, DrawType drawType = DtTriangles,
+    SimpleMesh(uint32_t id, const UIntArg &vertexCount = 0u, const UIntArg &indexCount = 0u, DrawType drawType = DtTriangles,
                unsigned components = Vertex | Index);
 
   protected:
@@ -104,40 +104,40 @@ namespace tes
 
     unsigned vertexCount() const;
     virtual unsigned vertexCount(int stream) const override;
-    void setVertexCount(const IntArg &count);
-    void reserveVertexCount(const IntArg &count);
+    void setVertexCount(const UIntArg &count);
+    void reserveVertexCount(const UIntArg &count);
 
     inline unsigned addVertex(const Vector3f &v) { return addVertices(&v, 1u); }
-    unsigned addVertices(const Vector3f *v, const IntArg & count);
-    inline bool setVertex(const IntArg &at, const Vector3f &v) { return setVertices(at, &v, 1u) == 1u; }
-    unsigned setVertices(const IntArg &at, const Vector3f *v, const IntArg &count);
+    unsigned addVertices(const Vector3f *v, const UIntArg & count);
+    inline bool setVertex(const UIntArg &at, const Vector3f &v) { return setVertices(at, &v, 1u) == 1u; }
+    unsigned setVertices(const UIntArg &at, const Vector3f *v, const UIntArg &count);
     const Vector3f *vertices() const;
     virtual const float *vertices(unsigned &stride, int stream = 0) const override;
 
     unsigned indexCount() const;
     virtual unsigned indexCount(int stream) const override;
-    void setIndexCount(const IntArg &count);
-    void reserveIndexCount(const IntArg &count);
+    void setIndexCount(const UIntArg &count);
+    void reserveIndexCount(const UIntArg &count);
 
     inline void addIndex(uint32_t i) { return addIndices(&i, 1u); }
-    void addIndices(const uint32_t *idx, const IntArg &count);
-    inline bool setIndex(const IntArg &at, uint32_t i) { return setIndices(at, &i, 1u) == 1u; }
-    unsigned setIndices(const IntArg &at, const uint32_t *idx, const IntArg &count);
+    void addIndices(const uint32_t *idx, const UIntArg &count);
+    inline bool setIndex(const UIntArg &at, uint32_t i) { return setIndices(at, &i, 1u) == 1u; }
+    unsigned setIndices(const UIntArg &at, const uint32_t *idx, const UIntArg &count);
     const uint32_t *indices() const;
     virtual const uint8_t *indices(unsigned &stride, unsigned &width, int stream = 0) const override;
 
-    inline bool setNormal(const IntArg &at, const Vector3f &n) { return setNormals(at, &n, 1u) == 1u; }
-    unsigned setNormals(const IntArg &at, const Vector3f *n, const IntArg &count);
+    inline bool setNormal(const UIntArg &at, const Vector3f &n) { return setNormals(at, &n, 1u) == 1u; }
+    unsigned setNormals(const UIntArg &at, const Vector3f *n, const UIntArg &count);
     const Vector3f *normals() const;
     virtual const float *normals(unsigned &stride, int stream) const override;
 
-    inline bool setColour(const IntArg &at, uint32_t c) { return setColours(at, &c, 1u) == 1u; }
-    unsigned setColours(const IntArg &at, const uint32_t *c, const IntArg &count);
+    inline bool setColour(const UIntArg &at, uint32_t c) { return setColours(at, &c, 1u) == 1u; }
+    unsigned setColours(const UIntArg &at, const uint32_t *c, const UIntArg &count);
     const uint32_t *colours() const;
     virtual const uint32_t *colours(unsigned &stride, int stream) const override;
 
-    inline bool setUv(const IntArg &at, float u, float v) { const float uv[2] = { u, v }; return setUvs(at, uv, 1u) == 1u; }
-    unsigned setUvs(const IntArg &at, const float *uvs, const IntArg &count);
+    inline bool setUv(const UIntArg &at, float u, float v) { const float uv[2] = { u, v }; return setUvs(at, uv, 1u) == 1u; }
+    unsigned setUvs(const UIntArg &at, const float *uvs, const UIntArg &count);
     const float *uvs() const;
     virtual const float *uvs(unsigned &stride, int stream) const override;
 

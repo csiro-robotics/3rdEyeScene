@@ -72,7 +72,7 @@ namespace tes
     /// @param indexCount The number of elements to copy from @p iter.
     /// @return This.
     template <typename I>
-    PointCloudShape &setIndices(I begin, const IntArg &indexCount);
+    PointCloudShape &setIndices(I begin, const UIntArg &indexCount);
 
     /// Get the mesh resource containing the point data to render.
     /// @return The point cloud mesh resource.
@@ -140,7 +140,7 @@ namespace tes
 
 
   template <typename I>
-  PointCloudShape &PointCloudShape::setIndices(I iter, const IntArg &indexCount)
+  PointCloudShape &PointCloudShape::setIndices(I iter, const UIntArg &indexCount)
   {
     freeIndices(_indices);
     _indices = nullptr;
