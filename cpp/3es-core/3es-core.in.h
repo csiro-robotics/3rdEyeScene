@@ -36,6 +36,13 @@
 #define TES_IS_BIG_ENDIAN @TES_IS_BIG_ENDIAN@
 #define TES_IS_NETWORK_ENDIAN @TES_IS_BIG_ENDIAN@
 
+#cmakedefine TES_ASSERT_ENABLE_DEBUG
+#cmakedefine TES_ASSERT_ENABLE_RELEASE
+
+#if defined(NDEBUG) && defined(TES_ASSERT_ENABLE_RELEASE) || !defined(NDEBUG) && defined(TES_ASSERT_ENABLE_DEBUG)
+#define TES_ASSERT_ENABLE 1
+#endif // defined(NDEBUG) && defined(TES_ASSERT_ENABLE_RELEASE) || !defined(NDEBUG) && defined(TES_ASSERT_ENABLE_DEBUG)
+
 #cmakedefine TES_32
 #cmakedefine TES_64
 

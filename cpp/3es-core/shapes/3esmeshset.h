@@ -5,9 +5,9 @@
 #define _3ESMESH_H_
 
 #include "3es-core.h"
+#include "3esmatrix4.h"
 #include "3esshape.h"
-
-#include <3esmatrix4.h>
+#include "3esintarg.h"
 
 #include <cstdint>
 
@@ -24,7 +24,7 @@ namespace tes
     /// @param partCount The number of parts to the mesh.
     /// @param id The unique mesh shape ID, zero for transient (not recommended for mesh shapes).
     /// @param category The mesh shape category.
-    MeshSet(uint32_t id = 0u, uint16_t category = 0u, int partCount = 0);
+    MeshSet(uint32_t id = 0u, uint16_t category = 0u, const IntArg &partCount = 0);
     /// Create a shape with a single @p part with transform matching the shape transform.
     /// @param part The mesh part.
     /// @param id The unique mesh shape ID, zero for transient (not recommended for mesh shapes).

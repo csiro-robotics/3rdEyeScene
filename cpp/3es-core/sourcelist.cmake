@@ -8,6 +8,7 @@ list(APPEND PUBLIC_HEADERS
   3escoordinateframe.h
   3escoreutil.h
   3escrc.h
+  3esdebug.h
   3esendian.h
   3esfeature.h
   3esmaths.h
@@ -123,6 +124,16 @@ list(APPEND PRIVATE_SOURCES
   private/3estcpserver.cpp
   private/3estcpserver.h
 )
+
+if(MSVC)
+  list(APPEND PRIVATE_SOURCES
+    win/3esdebug.cpp
+  )
+else(MSVC)
+  list(APPEND PRIVATE_SOURCES
+    nix/3esdebug.cpp
+  )
+endif(MSVC)
 
 if(TES_SOCKETS STREQUAL "custom")
   list(APPEND PRIVATE_HEADERS

@@ -7,6 +7,7 @@
 #include "3es-core.h"
 
 #include "3escolour.h"
+#include "3esintarg.h"
 #include "3esmeshresource.h"
 
 namespace tes
@@ -55,11 +56,11 @@ namespace tes
 
     /// Reserve sufficient vertex, normal and colour data for @c size points.
     /// @param size The number of points to reserve space for.
-    void reserve(unsigned size);
+    void reserve(const IntArg &size);
 
     /// Resize the point cloud to contain @c count vertices, normals and colours.
     /// @param count The number of points to resize the cloud to.
-    void resize(unsigned count);
+    void resize(const IntArg &count);
 
     /// Reduce allocated memory to exactly match the number of points currently in the cloud.
     void squeeze();
@@ -119,49 +120,49 @@ namespace tes
     /// The normals are set to zero and the colours to white.
     /// @param points The points to add.
     /// @param count Number of points in @p points.
-    void addPoints(const Vector3f *points, unsigned count);
+    void addPoints(const Vector3f *points, const IntArg &count);
     /// Add a set of points to the cloud.
     /// The colours are set to white.
     /// @param points The points to add.
     /// @param normals The point normals.
     /// @param count Number of points in @p points and @p normals.
-    void addPoints(const Vector3f *points, const Vector3f *normals, unsigned count);
+    void addPoints(const Vector3f *points, const Vector3f *normals, const IntArg &count);
     /// Add a set of points to the cloud.
     /// @param points The points to add.
     /// @param normals The point normals.
     /// @param colours The point colours.
     /// @param count Number of points in @p points, @p normals and @p colours.
-    void addPoints(const Vector3f *points, const Vector3f *normals, const Colour *colours, unsigned count);
+    void addPoints(const Vector3f *points, const Vector3f *normals, const Colour *colours, const IntArg &count);
 
     /// Replace an existing point.
     /// Ignore if out of range.
     /// @param index The point index.
     /// @param point The new point coordinate.
-    void setPoint(unsigned index, const Vector3f &point);
+    void setPoint(const IntArg &index, const Vector3f &point);
     /// Replace an existing point.
     /// Ignore if out of range.
     /// @param index The point index.
     /// @param point The new point coordinate.
     /// @param normal The new point normal.
-    void setPoint(unsigned index, const Vector3f &point, const Vector3f &normal);
+    void setPoint(const IntArg &index, const Vector3f &point, const Vector3f &normal);
     /// Replace an existing point.
     /// Ignore if out of range.
     /// @param index The point index.
     /// @param point The new point coordinate.
     /// @param normal The new point normal.
     /// @param colour The new point colour.
-    void setPoint(unsigned index, const Vector3f &point, const Vector3f &normal, const Colour &colour);
+    void setPoint(const IntArg &index, const Vector3f &point, const Vector3f &normal, const Colour &colour);
 
     /// Replace an existing point normal.
     /// Ignore if out of range.
     /// @param index The point index.
     /// @param normal The new point normal.
-    void setNormal(unsigned index, const Vector3f &normal);
+    void setNormal(const IntArg &index, const Vector3f &normal);
     /// Replace an existing point colour.
     /// Ignore if out of range.
     /// @param index The point index.
     /// @param colour The new point colour.
-    void setColour(unsigned index, const Colour &colour);
+    void setColour(const IntArg &index, const Colour &colour);
 
     /// Replace a set of existing points.
     /// Normal and colour data are left as is.
@@ -170,7 +171,7 @@ namespace tes
     /// @param index The point index.
     /// @param points The new point coordinates.
     /// @param count The number of points in @p points.
-    void setPoints(unsigned index, const Vector3f *points, unsigned count);
+    void setPoints(const IntArg &index, const Vector3f *points, const IntArg &count);
     /// Replace a set of existing points.
     /// Colour data are left as is.
     ///
@@ -179,7 +180,7 @@ namespace tes
     /// @param points The new point coordinates.
     /// @param normals The new point normals.
     /// @param count The number of points in @p points and @p normals.
-    void setPoints(unsigned index, const Vector3f *points, const Vector3f *normals, unsigned count);
+    void setPoints(const IntArg &index, const Vector3f *points, const Vector3f *normals, const IntArg &count);
     /// Replace a set of existing points.
     ///
     /// Overrun points are ignored.
@@ -188,7 +189,7 @@ namespace tes
     /// @param normals The new point normals.
     /// @param colours The new point colours.
     /// @param count The number of points in @p points, @p normals and @p colours.
-    void setPoints(unsigned index, const Vector3f *points, const Vector3f *normals, const Colour *colours, unsigned count);
+    void setPoints(const IntArg &index, const Vector3f *points, const Vector3f *normals, const Colour *colours, const IntArg &count);
 
   private:
     /// Reserve memory for @p capacity points.
@@ -226,19 +227,19 @@ namespace tes
 
 
 
-  inline void PointCloud::setPoint(unsigned index, const Vector3f &point)
+  inline void PointCloud::setPoint(const IntArg &index, const Vector3f &point)
   {
     setPoints(index, &point, 1);
   }
 
 
-  inline void PointCloud::setPoint(unsigned index, const Vector3f &point, const Vector3f &normal)
+  inline void PointCloud::setPoint(const IntArg &index, const Vector3f &point, const Vector3f &normal)
   {
     setPoints(index, &point, &normal, 1);
   }
 
 
-  inline void PointCloud::setPoint(unsigned index, const Vector3f &point, const Vector3f &normals, const Colour &colours)
+  inline void PointCloud::setPoint(const IntArg &index, const Vector3f &point, const Vector3f &normals, const Colour &colours)
   {
     setPoints(index, &point, &normals, &colours, 1);
   }

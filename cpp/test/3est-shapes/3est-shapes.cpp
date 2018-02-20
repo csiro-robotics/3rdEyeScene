@@ -760,8 +760,8 @@ namespace tes
       Matrix4f transform = Matrix4f::identity;
       for (int i = 0; i < int(meshes.size()); ++i)
       {
-        transform = prsTransform(Vector3f(i, i - 3.2f, 1.5f * i),
-                                 Quaternionf().setAxisAngle(Vector3f(i, i + 1, i - 3).normalised(), degToRad((i + 1) * 6.0f)),
+        transform = prsTransform(Vector3f(i * 1.0f, i - 3.2f, 1.5f * i),
+                                 Quaternionf().setAxisAngle(Vector3f(i * 1.0f, i + 1.0f, i - 3.0f).normalised(), degToRad((i + 1) * 6.0f)),
                                  Vector3f(0.75f, 0.75f, 0.75f));
         set.setPart(i, meshes[i], transform);
       }

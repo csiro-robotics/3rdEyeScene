@@ -17,6 +17,9 @@ if(NOT ${CMAKE_PROJECT_NAME})
   set(TES_CORE_ONLY On)
 endif(NOT ${CMAKE_PROJECT_NAME})
 
+option(TES_ASSERT_ENABLE_DEBUG "Enable assertions in debug builds." ON)
+option(TES_ASSERT_ENABLE_RELEASE "Enable assertions in release builds." ON)
+
 option(TES_ZLIB_OFF "Disable ZLIB usage even if found? Intended for testing." OFF)
 set(TES_SOCKETS "custom" CACHE STRING "Select the TCP socket implementation. The 'custom' implementaiton is based on Berkley sockets or Winsock2.")
 set_property(CACHE TES_SOCKETS PROPERTY STRINGS custom Qt)
