@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.5)
 
 # Setup project details.
 project(3es)
-set(TES_VERSION 0.7)
-set(ConfigPackageLocation lib/cmake/${CMAKE_PROJECT_NAME})
+include(3es-core/cmake/3es-version.cmake)
+set(ConfigPackageLocation lib/cmake/3es)
 
 # C++ standards setup.
 set(CMAKE_CXX_STANDARD 14)
@@ -24,7 +24,6 @@ set(CMAKE_DEBUG_POSTFIX "d")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 # Add project level options here.
-option(TES_BUILD_DOXYGEN "Build doxgen documentation?" OFF)
 option(TES_BUILD_EXAMPLES "Build examples?" OFF)
 option(TES_BUILD_TESTS "Build unit tests?" OFF)
 
@@ -69,58 +68,3 @@ if(TES_BUILD_TESTS)
   enable_testing()
   add_subdirectory(test)
 endif(TES_BUILD_TESTS)
-
-# Package configuration script configuration.
-# Setup import scripts.
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file(
-  "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}-config-version.cmake"
-  VERSION ${TES_VERSION}
-  COMPATIBILITY AnyNewerVersion
-)
-
-# Installation of the package configuration file.
-configure_file(cmake/${CMAKE_PROJECT_NAME}-config.cmake "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}-config.cmake" COPYONLY)
-install(FILES cmake/${CMAKE_PROJECT_NAME}-config.cmake "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_PROJECT_NAME}-config-version.cmake"
-  DESTINATION ${ConfigPackageLocation}
-  COMPONENT Devel)
-
-# Install MSVC runtime libraries. This will also affect the CPack installation.
-include(InstallRequiredSystemLibraries)
-
-# Doxygen setup.
-if(TES_BUILD_DOXYGEN)
-  # Include Doxygen helper functions. This also finds the Doxygen package.
-  include(cmake/doxygen.cmake)
-
-  if(DOXYGEN_FOUND)
-    # Create a target to build the documentation.
-    # Here we also setup various documentation variables passed through to the doxyfile configuration.
-    # Each named argument below describes the Doxygen variable it sets.
-    doxygen_create(
-      # DOXYFILE cmake/doxyfile.in  # Doxyfile to configure.
-      PROJECT ${CMAKE_PROJECT_NAME} # PROJECT_NAME
-      VERSION ${TES_VERSION}        # PROJECT_NUMBER
-      BRIEF "3rd Eye Scene documentation" # PROJECT_BRIEF
-      OUTPUT_DIR html               # HTML_OUPTUT
-      # CSS <style>.css             # HTML_STYLESHEET
-      PUBLISHER "CSIRO"             # DOCSET_PUBLISHER_NAME
-      PUBLISHER_ID au.csiro         # DOCSET_PUBLISHER_ID
-      PROJECT_ID au.csiro.3es       # DOCSET_BUNDLE_ID, QHP_NAMESPACE, ECLIPSE_DOC_ID
-      PATHS                         # INPUT (RECURSIVE is on)
-        3es-doc  # Must come first.
-        3es-core
-      EXCLUDE_PATHS                 # EXCLUDE
-        3es-core/private
-      # Where to find source code examples.
-      # EXAMPLE_PATHS <paths>        # EXAMPLE_PATH
-      # Where to find images.
-      IMAGE_PATHS                    # IMAGE_PATH
-        3es-doc/images
-        ../3rdEyeScene/Assets/UI/Images
-      )
-
-    # Setup installation of the generated documentation: source, destination.
-    doxygen_install(${CMAKE_CURRENT_BINARY_DIR}/html 3es)
-  endif(DOXYGEN_FOUND)
-endif(TES_BUILD_DOXYGEN)

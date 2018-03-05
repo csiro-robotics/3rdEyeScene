@@ -106,7 +106,7 @@ function(doxygen_create)
     set(DGEN_DOXYFILE "cmake/doxyfile.in")
   endif(NOT DGEN_DOXYFILE)
   configure_file("${DGEN_DOXYFILE}" "${CMAKE_CURRENT_BINARY_DIR}/doxyfile")
-  get_filename_component(DOXYFILE_PATH "cmake/doxyfile.in" ABSOLUTE)
+  get_filename_component(DOXYFILE_PATH "${DGEN_DOXYFILE}" ABSOLUTE)
 
   # Setup the Doxygen target.
   add_custom_target(${DGEN_PROJECT}-doc

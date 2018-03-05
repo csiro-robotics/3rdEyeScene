@@ -794,7 +794,7 @@ if (server) \
 /// @param objectID The ID of the object to update.
 /// @param pos The new position. A @c V3Arg compatible argument.
 #define TES_POS_UPDATE(server, ShapeType, objectID, pos) \
-  if (server) { (server)->update(tes::ShapeType(objectID, 0).setPosition(pos).setFlags(tes::OFUpdateMode | tes::OFPosition)); }
+  if (server) { (server)->update(tes::ShapeType(objectID, 0).setPosition(pos).setFlags(tes::UFUpdateMode | tes::UFPosition)); }
 
 /// @ingroup tesmacros
 /// Send an update message for a shape, updating object rotation.
@@ -803,7 +803,7 @@ if (server) \
 /// @param objectID The ID of the object to update.
 /// @param quaternion The updated quaternion rotation. A @c QuaternionArg compatible argument.
 #define TES_ROT_UPDATE(server, ShapeType, objectID, quaternion) \
-  if (server) { (server)->update(tes::ShapeType(objectID, 0).setRotation(quaternion).setFlags(tes::OFUpdateMode | tes::OFRotation)); }
+  if (server) { (server)->update(tes::ShapeType(objectID, 0).setRotation(quaternion).setFlags(tes::UFUpdateMode | tes::UFRotation)); }
 
 /// @ingroup tesmacros
 /// Send an update message for a shape, updating scale.
@@ -812,7 +812,7 @@ if (server) \
 /// @param objectID The ID of the object to update.
 /// @param scale The new object scale. A @c V3Arg compatible argument.
 #define TES_SCALE_UPDATE(server, ShapeType, objectID, scale) \
-  if (server) { (server)->update(tes::ShapeType(objectID, 0).setScale(scale).setFlags(tes::OFUpdateMode | tes::OFScale)); }
+  if (server) { (server)->update(tes::ShapeType(objectID, 0).setScale(scale).setFlags(tes::UFUpdateMode | tes::UFScale)); }
 
 /// @ingroup tesmacros
 /// Send an update message for a shape, updating colour.
@@ -821,7 +821,7 @@ if (server) \
 /// @param objectID The ID of the object to update.
 /// @param colour The new object @c Colour.
 #define TES_COLOUR_UPDATE(server, ShapeType, objectID, colour) \
-  if (server) { (server)->update(tes::ShapeType(objectID, 0).setColour(colour).setFlags(tes::OFUpdateMode | tes::OFColour)); }
+  if (server) { (server)->update(tes::ShapeType(objectID, 0).setColour(colour).setFlags(tes::UFUpdateMode | tes::UFColour)); }
 
 /// @ingroup tesmacros
 /// Send an update message for a shape, updating colour.
@@ -830,7 +830,7 @@ if (server) \
 /// @param objectID The ID of the object to update.
 /// @param colour The new object @c Colour.
 #define TES_COLOR_UPDATE(server, ShapeType, objectID, colour) \
-  if (server) { (server)->update(tes::ShapeType(objectID, 0).setColour(colour).setFlags(tes::OFUpdateMode | tes::OFColour)); }
+  if (server) { (server)->update(tes::ShapeType(objectID, 0).setColour(colour).setFlags(tes::UFUpdateMode | tes::UFColour)); }
 
 /// @ingroup tesmacros
 /// Send an update message for a shape, updating position and rotation.
@@ -840,7 +840,7 @@ if (server) \
 /// @param pos The new position. A @c V3Arg compatible argument.
 /// @param quaternion The updated quaternion rotation. A @c QuaternionArg compatible argument.
 #define TES_POSROT_UPDATE(server, ShapeType, objectID, pos, quaternion) \
-  if (server) { (server)->update(tes::ShapeType(objectID, 0).setPosition(pos).setRotation(quaternion).setFlags(tes::OFUpdateMode | tes::OFPosition | tes::OFRotation)); }
+  if (server) { (server)->update(tes::ShapeType(objectID, 0).setPosition(pos).setRotation(quaternion).setFlags(tes::UFUpdateMode | tes::UFPosition | tes::UFRotation)); }
 
 /// @ingroup tesmacros
 /// Send an update message for a shape, updating position and scale.
@@ -850,7 +850,7 @@ if (server) \
 /// @param pos The new position. A @c V3Arg compatible argument.
 /// @param scale The new object scale. A @c V3Arg compatible argument.
 #define TES_POSSCALE_UPDATE(server, ShapeType, objectID, pos, scale) \
-  if (server) { (server)->update(tes::ShapeType(objectID, 0).setPosition(pos).setScale(scale).setFlags(tes::OFUpdateMode | tes::OFPosition | tes::OFRotation)); }
+  if (server) { (server)->update(tes::ShapeType(objectID, 0).setPosition(pos).setScale(scale).setFlags(tes::UFUpdateMode | tes::UFPosition | tes::UFRotation)); }
 
 /// @ingroup tesmacros
 /// Send an update message for a shape, updating rotation and scale.
@@ -860,7 +860,7 @@ if (server) \
 /// @param quaternion The updated quaternion rotation. A @c QuaternionArg compatible argument.
 /// @param scale The new object scale. A @c V3Arg compatible argument.
 #define TES_ROTSCALE_UPDATE(server, ShapeType, objectID, quaternion, scale) \
-  if (server) { (server)->update(tes::ShapeType(objectID, 0).setRotation(quaternion).setScale(scale).setFlags(tes::OFUpdateMode | tes::OFRotation | tes::OFScale )); }
+  if (server) { (server)->update(tes::ShapeType(objectID, 0).setRotation(quaternion).setScale(scale).setFlags(tes::UFUpdateMode | tes::UFRotation | tes::UFScale )); }
 
 /// @ingroup tesmacros
 /// Send an update message for a shape, updating position, rotation and scale.
@@ -871,7 +871,7 @@ if (server) \
 /// @param quaternion The updated quaternion rotation. A @c QuaternionArg compatible argument.
 /// @param scale The new object scale. A @c V3Arg compatible argument.
 #define TES_PRS_UPDATE(server, ShapeType, objectID, pos, quaternion, scale) \
-  if (server) { (server)->update(tes::ShapeType(objectID, 0).setPosition(pos).setRotation(quaternion).setScale(scale).setFlags(tes::OFUpdateMode | tes::OFPosition | tes::OFRotation | tes::OFScale )); }
+  if (server) { (server)->update(tes::ShapeType(objectID, 0).setPosition(pos).setRotation(quaternion).setScale(scale).setFlags(tes::UFUpdateMode | tes::UFPosition | tes::UFRotation | tes::UFScale )); }
 
 /// @ingroup tesmacros
 /// Send an update message for a shape, updating position, rotation and colour.
@@ -882,7 +882,7 @@ if (server) \
 /// @param quaternion The updated quaternion rotation. A @c QuaternionArg compatible argument.
 /// @param colour The new object @c Colour.
 #define TES_PRC_UPDATE(server, ShapeType, objectID, pos, quaternion, colour) \
-  if (server) { (server)->update(tes::ShapeType(objectID, 0).setPosition(pos).setRotation(quaternion).setColour(colour).setFlags(tes::OFUpdateMode | tes::OFPosition | tes::OFRotation | tes::OFColour )); }
+  if (server) { (server)->update(tes::ShapeType(objectID, 0).setPosition(pos).setRotation(quaternion).setColour(colour).setFlags(tes::UFUpdateMode | tes::UFPosition | tes::UFRotation | tes::UFColour )); }
 
 /// @ingroup tesmacros
 /// Send an update message for a shape, updating position, scale and colour.
@@ -893,7 +893,7 @@ if (server) \
 /// @param scale The new object scale. A @c V3Arg compatible argument.
 /// @param colour The new object @c Colour.
 #define TES_PSC_UPDATE(server, ShapeType, objectID, pos, scale, colour) \
-  if (server) { (server)->update(tes::ShapeType(objectID, 0).setPosition(pos).setScale(scale).setColour(colour).setFlags(tes::OFUpdateMode | tes::OFPosition | tes::OFScale | tes::OFColour )); }
+  if (server) { (server)->update(tes::ShapeType(objectID, 0).setPosition(pos).setScale(scale).setColour(colour).setFlags(tes::UFUpdateMode | tes::UFPosition | tes::UFScale | tes::UFColour )); }
 
 /// @ingroup tesmacros
 /// Send an update message for a shape, updating rotation, scale and colour.
@@ -904,7 +904,7 @@ if (server) \
 /// @param scale The new object scale. A @c V3Arg compatible argument.
 /// @param colour The new object @c Colour.
 #define TES_RSC_UPDATE(server, ShapeType, objectID, quaternion, scale, colour) \
-  if (server) { (server)->update(tes::ShapeType(objectID, 0).setRotation(quaternion).setScale(scale).setColour(colour).setFlags(tes::OFUpdateMode | tes::OFRotation | tes::OFScale | tes::OFColour )); }
+  if (server) { (server)->update(tes::ShapeType(objectID, 0).setRotation(quaternion).setScale(scale).setColour(colour).setFlags(tes::UFUpdateMode | tes::UFRotation | tes::UFScale | tes::UFColour )); }
 
 /// @ingroup tesmacros
 /// Send an update message for a shape, updating all transform and colour attributes.

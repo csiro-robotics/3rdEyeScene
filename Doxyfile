@@ -871,10 +871,10 @@ EXAMPLE_RECURSIVE      = NO
 # that contain images that are to be included in the documentation (see the
 # \image command).
 
-IMAGE_PATH             = cpp/3es-doc \
-                         cpp/3es-doc/images \
-                         cpp/3es-doc/images/usecase \
-                         cpp/3es-doc/images/ui \
+IMAGE_PATH             = cpp/3es-core/3es-doc \
+                         cpp/3es-core/3es-doc/images \
+                         cpp/3es-core/3es-doc/images/usecase \
+                         cpp/3es-core/3es-doc/images/ui \
                          3rdEyeScene/Assets/UI/Images
 
 # The INPUT_FILTER tag can be used to specify a program that doxygen should

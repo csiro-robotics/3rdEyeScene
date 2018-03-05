@@ -1,5 +1,6 @@
 
 list(APPEND PUBLIC_HEADERS
+  # General headers
   3esbounds.h
   3escollatedpacket.h
   3escolour.h
@@ -11,6 +12,7 @@ list(APPEND PUBLIC_HEADERS
   3esdebug.h
   3esendian.h
   3esfeature.h
+  3esintarg.h
   3esmaths.h
   3esmathsmanip.h
   3esmathsstream.h
@@ -47,7 +49,12 @@ list(APPEND PUBLIC_HEADERS
   3estrigeom.inl
   3esv3arg.h
   3esvector3.h
+  3esvector4.h
+  3esvectorhash.h
+)
 
+list(APPEND PUBLIC_SHAPE_HEADERS
+  # Shape headers
   shapes/3esarrow.h
   shapes/3esbox.h
   shapes/3escapsule.h
