@@ -1,5 +1,0 @@
-add_executable(3est-bandwidth 3est-bandwidth.cpp)
-set_target_properties(3est-bandwidth PROPERTIES DEBUG_POSTFIX ${CMAKE_DEBUG_POSTFIX})
-target_link_libraries(3est-bandwidth 3es-core)
-target_include_directories(3est-bandwidth PRIVATE $<TARGET_PROPERTY:3es-core,INCLUDE_DIRECTORIES>)
-source_group(TREE "${CMAKE_CURRENT_LIST_DIR}" PREFIX source FILES ${SOURCES})
