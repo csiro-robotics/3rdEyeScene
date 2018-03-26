@@ -11,6 +11,13 @@ public class RenderSettings : Settings
     Name = "Render";
   }
 
+  [Browsable(true), SetRange(1, 64), Tooltip("Default point render size (pixels)")]
+  public int DefaultPointSize
+  {
+    get { return PlayerPrefs.GetInt("render.defaultPointSize", 4); }
+    set { PlayerPrefs.SetInt("render.defaultPointSize", value); Notify("DefaultPointSize"); }
+  }
+
   [Browsable(true), Tooltip("Enable Eye-Dome-Lighting shader?")]
   public bool EdlShader
   {

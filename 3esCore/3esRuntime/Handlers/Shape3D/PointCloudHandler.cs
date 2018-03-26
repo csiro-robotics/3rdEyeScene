@@ -427,7 +427,12 @@ namespace Tes.Handlers.Shape3D
             // Rendering a mesh with non-point topology. Set tha points based material.
             renderer.material = mesh.normals.Length > 0 ? _litMaterial : _unlitMaterial;
           }
-          renderer.material.SetInt("_PointSize", points.PointSize);
+          int pointSize = points.PointSize;
+          if (pointSize == 0 && Materials != null)
+          {
+            pointSize = Materials.DefaultPointSize;
+          }
+          renderer.material.SetInt("_PointSize", pointSize);
           renderer.material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
           renderer.material.color = (shape != null) ? shape.Colour : new Color32(255, 255, 255, 255);
           partMesh.transform.SetParent(points.transform, false);

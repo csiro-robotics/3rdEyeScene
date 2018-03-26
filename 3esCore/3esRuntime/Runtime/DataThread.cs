@@ -60,8 +60,8 @@ namespace Tes.Runtime
     /// Is the thread currently catchup up to the desired frame?
     /// </summary>
     /// <remarks>
-    /// This is principally for playback threads when attempting to process data
-    /// for large frame deltas such as when scrubbing.
+    /// Used for playback threads when attempting to process data for large frame deltas such as
+    /// when scrubbing. Used by live streams to ensure update when conneted or connecting.
     /// </remarks>
     public abstract bool CatchingUp { get; }
     /// <summary>

@@ -76,8 +76,8 @@ namespace Tes.Main
     public override uint TargetFrame { get { lock(this) { return _currentFrame; } } set { /* ignored */ } }
     public override bool IsLiveStream { get { return true; } }
     public override bool Started { get { return _thread != null && _thread.Running; } }
-    public override bool Paused {  get { return false; }set { /* ignored */ } }
-    public override bool CatchingUp { get { return false; } }
+    public override bool Paused {  get { return false; } set { /* ignored */ } }
+    public override bool CatchingUp { get { return Status == NetworkThreadStatus.Connected || Status == NetworkThreadStatus.Connecting; } }
 
     public float FrameTime
     {

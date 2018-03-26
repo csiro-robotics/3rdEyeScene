@@ -636,6 +636,9 @@ namespace Tes.Main
     {
       try
       {
+        // FIXME: manage propabating dynamic settings better.
+        Materials.DefaultPointSize = RenderSettings.Instance.DefaultPointSize;
+
         if (_dataThread != null)
         {
           if (Mode == RouterMode.Playing)

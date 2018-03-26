@@ -48,6 +48,11 @@ namespace Tes.Runtime
     public static string Voxels { get { return "voxels"; } }
 
     /// <summary>
+    /// Default pixel size used to render points.
+    /// </summary>
+    public int DefaultPointSize { get; set; }
+
+    /// <summary>
     /// Fetch or register a material under <paramref name="key"/>. Will replace
     /// an existing material under <paramref name="key"/>
     /// </summary>
