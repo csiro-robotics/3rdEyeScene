@@ -9,6 +9,12 @@ TODO for v1.0:
   - Consider moving major/minor version members of PacketHeader into ServerSettings message.
   - Support batch object creation?
 - "Server" implementation which writes directly to a local file.
+- CollatedPackerDecoder for C++
+- Add buffer thread to server. Server send() commands move data into the buffer thread, which will collate, compress and send as required.
+- Support streams send in native Endian, rather than forcing network byte order. Use marker to resolve Endian.
+- Improve packet decoding performance for 3esrec and Unity client.
+- Improve point cloud rendering using spatial tree (KDTree or Octree)
+- Code coverage analysis in unit tests and add unit tests as required.
 
 TODO:
 - Change shape shaders to support GPU instancing.
@@ -28,7 +34,6 @@ TODO:
 Maybe:
 - Convert geometry shaders to use vertex shader with vertex padding in the stream.
 - Support splitting recording files at around 2GB.
-- Consider supporting variable Endian encoding in messages, identified by the byte order of the header marker.
 - Consider adding batched object creation messages.
 
 Performance improvements:
