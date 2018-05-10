@@ -34,8 +34,9 @@ namespace Tes.Server
     /// Send a pre-composed packet to all clients.
     /// </summary>
     /// <param name="packet"></param>
-    /// <returns></returns>
-    int Send(PacketBuffer packet);
+    /// <param name="allowCollation">Allow data to be collated and compressed with other packets?</param>
+    /// <returns>The number of bytes sent. Negative on any failure.</returns>
+    int Send(PacketBuffer packet, bool allowCollation = true);
 
     /// <summary>
     /// Sends a create message for the given shape.

@@ -1,4 +1,7 @@
-﻿﻿﻿using System;
+﻿//#define PACKET_TIMING
+
+using System;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
@@ -17,9 +20,14 @@ namespace Tes
       CollateOnly,
       FileCompression,
       Uncompressed,
+      Passthrough,
 
-      Default = CollateAndCompress
+      Default = Passthrough
     }
+
+#if PACKET_TIMING
+    private const uint PacketLimit = 500u;
+#endif // PACKET_TIMING
 
     public bool Quit { get; set; }
     public bool ArgsOk { get; private set; }
@@ -54,7 +62,8 @@ namespace Tes
       "mc",
       "mC",
       "mz",
-      "mu"
+      "mu",
+      "m-"
     };
 
     public static string ModeToArg(Mode m)
@@ -121,27 +130,39 @@ namespace Tes
 This program attempts to connect to and record a Third Eye Scene server.
 --help, -?:
   Show usage.
+
 --ip <server-ip>:
   Specifies the server IP address to connect to.
--m[c,C,v,z]:
-  Specifies how incoming packets are handled. In all modes incoming collated
-  packets are first decoded.
+
+-m[c,C,v,z,-]:
+  Specifies how incoming packets are handled. In all modes except m-, incoming
+  collated packets are first decoded.
   - mc : Packet collation and compression. Recollate and compress.
   - mC : Packet collation no compression. Recollate only.
   - mu : Uncompressed. Save packets as is. No compression.
   - mz : File level compression. Decode incoming packets and compress at the
-    file level.
-  The default is: {0}
+         file level.
+  - m- : Passthrough. Packets are saved exactly as they come in.
+  The fastest mode is -m- as this performs no additional calculates other than
+  CRC validation. However, this mode requires naked frame packets for accurate
+  frame count finalisation.
+
+  The default mode is: {0}
+
 --port <server-port>:
   Specifies the port to connect on.  The default port is {1}
+
 --persist, -p:
   Persist beyond the first connection. The program keeps running awaiting
   further connections. Use Control-C to terminate.
+
 --quiet, -q:
   Run in quiet mode (disable non-critical logging).
+
 --overwrite, -w:
   Overwrite existing files using the current prefix. The current session
   numbering will not overwrite until they loop to 0.
+
 [prefix]:
   Specifies the file prefix used for recording. The recording file is
   formulated as {{prefix###.3es}}, where the number used is the first missing
@@ -159,6 +180,9 @@ This program attempts to connect to and record a Third Eye Scene server.
       PacketBuffer packetBuffer = null;
       CollatedPacketDecoder collatedDecoder = new CollatedPacketDecoder();
       BinaryWriter recordingWriter = null;
+#if PACKET_TIMING
+      Stopwatch timer = new Stopwatch();
+#endif // PACKET_TIMING
       bool once = true;
 
       Console.CancelKeyPress += new ConsoleCancelEventHandler(ControlCHandler);
@@ -176,6 +200,10 @@ This program attempts to connect to and record a Third Eye Scene server.
         {
           if ((socket = AttemptConnection()) != null)
           {
+#if PACKET_TIMING
+            timer.Reset();
+            timer.Start();
+#endif // PACKET_TIMING
             TotalFrames = 0u;
             recordingWriter = CreateOutputWriter();
             if (recordingWriter != null)
@@ -204,8 +232,8 @@ This program attempts to connect to and record a Third Eye Scene server.
             // read a valid message.
             packetBuffer.Append(socket.GetStream(), socket.Available);
             PacketBuffer completedPacket;
-            bool crcOk = true;
             bool exportPacket = true;
+            bool crcOk = true;
             while ((completedPacket = packetBuffer.PopPacket(out crcOk)) != null || !crcOk)
             {
               if (crcOk)
@@ -214,6 +242,31 @@ This program attempts to connect to and record a Third Eye Scene server.
                 {
                   Console.Error.WriteLine("Dropped {0} bad bytes", packetBuffer.DroppedByteCount);
                   packetBuffer.DroppedByteCount = 0;
+                }
+
+                if (DecodeMode == Mode.Passthrough)
+                {
+                  completedPacket.ExportTo(recordingWriter);
+                  // Approximate packets as frames. Not exactly correct though.
+                  if (completedPacket.Header.RoutingID == (ushort) RoutingID.Control)
+                  {
+                    if (completedPacket.Header.MessageID == (ushort)ControlMessageID.EndFrame)
+                    {
+                      ++TotalFrames;
+                      if (!Quiet)
+                      {
+                        Console.Write(string.Format("\r{0}", TotalFrames));
+                      }
+#if PACKET_TIMING
+                      if (TotalFrames >= PacketLimit)
+                      {
+                        timer.Stop();
+                        Quit = true;
+                      }
+#endif // PACKET_TIMING
+                    }
+                  }
+                  continue;
                 }
 
                 // Decode and decompress collated packets. This will just return the same packet
@@ -233,8 +286,15 @@ This program attempts to connect to and record a Third Eye Scene server.
                       {
                         Console.Write(string.Format("\r{0}", TotalFrames));
                       }
+#if PACKET_TIMING
+                      if (TotalFrames >= PacketLimit)
+                      {
+                        timer.Stop();
+                        Quit = true;
+                      }
+#endif // PACKET_TIMING
                     }
-                    break;
+                      break;
 
                   case (ushort)RoutingID.ServerInfo:
                     NetworkReader packetReader = new NetworkReader(completedPacket.CreateReadStream(true));
@@ -299,6 +359,10 @@ This program attempts to connect to and record a Third Eye Scene server.
         // GC to force flushing streams and collect other resource.
         GC.Collect();
       }
+
+#if PACKET_TIMING
+      Console.WriteLine(string.Format("Processed {0} packets in {1}ms", PacketLimit, timer.ElapsedMilliseconds));
+#endif // PACKET_TIMING
     }
 
 

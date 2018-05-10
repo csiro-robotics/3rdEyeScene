@@ -625,7 +625,32 @@ namespace Tes.IO
     /// </remarks>
     public PacketBuffer PopPacket(out bool crcOk)
     {
-      crcOk = true;
+      return PopPacket(true, out crcOk);
+    }
+
+    /// <summary>
+    /// Pop the next available packet without performing a CRC check. It is marginally faster not to check the CRC.
+    /// </summary>
+    /// <returns>The next available packet or null if not available.</returns>
+    /// <remarks>
+    /// This function behaves the same as <see cref="PopPacket(out bool)"/>, except that it does not
+    /// validate the packet CRC. This means that the packet may be invalid.
+    /// </remarks>
+    public PacketBuffer PopPacket()
+    {
+      bool ignoreCrc = false;
+      return PopPacket(false, out ignoreCrc);
+    }
+
+    /// <summary>
+    /// Pop the next available packet optionally checking the CRC.
+    /// </summary>
+    /// <param name="checkCrc">Should the CRC be validated?</param>
+    /// <param name="crcOk">Informs the result of the CRC check. Set to true when CRC is not checked.</param>
+    /// <returns>The next available packet or null if not available or the CRC check fails.</returns>
+    PacketBuffer PopPacket(bool checkCrc, out bool crcOk)
+    {
+      crcOk = checkCrc;
       if (!ValidHeader)
       {
         // Incomplete header data.
@@ -644,8 +669,18 @@ namespace Tes.IO
       }
 
       PacketBuffer completedPacket = null;
-      crcOk = CheckCrc(totalPacketSize);
-      // Create the packet if CRC is OK.
+
+      // Check CRC as required.
+      if (checkCrc)
+      {
+        crcOk = CheckCrc(totalPacketSize);
+      }
+      else
+      {
+        crcOk = true;
+      }
+
+      // Create the packet if CRC is OK or unchecked.
       if (crcOk)
       {
         completedPacket = ExtractCompletedPacket(totalPacketSize, crcOk);

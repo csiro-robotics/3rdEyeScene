@@ -54,11 +54,12 @@ namespace Tes.Server
     /// Send a packet to all clients.
     /// </summary>
     /// <param name="packet">The packet to send.</param>
+    /// <param name="allowCollation">Allow data to be collated and compressed with other packets?</param>
     /// <returns>The number of bytes sent. Negative on any failure.</returns>
     /// <remarks>
     /// The <paramref name="packet"/> must be finalised before this call.
     /// </remarks>
-    public int Send(PacketBuffer packet)
+    public int Send(PacketBuffer packet, bool allowCollation = true)
     {
       _lock.Lock();
       int transferred = 0;
@@ -67,7 +68,7 @@ namespace Tes.Server
       {
         for (int i = 0; i < _connections.Count; ++i)
         {
-          int txc = _connections[i].Send(packet.Data, 0, packet.Count);
+          int txc = _connections[i].Send(packet.Data, 0, packet.Count, allowCollation);
           if (txc >= 0)
           {
             transferred += txc;

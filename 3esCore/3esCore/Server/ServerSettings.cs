@@ -31,7 +31,7 @@ namespace Tes.Server
         ServerSettings settings = new ServerSettings();
         settings.ListenPort = 33500;
         settings.PortRange = 0;
-        settings.Flags = ServerFlag.Collate;
+        settings.Flags = ServerFlag.Collate | ServerFlag.NakedFrameMessage;
         return settings;
       }
     }
