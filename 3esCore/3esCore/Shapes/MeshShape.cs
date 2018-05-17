@@ -688,9 +688,12 @@ namespace Tes.Shapes
 
       UInt32 vertexCount;
       UInt32 indexCount;
+      byte drawType;
 
       vertexCount = reader.ReadUInt32();
       indexCount = reader.ReadUInt32();
+      drawType = reader.ReadByte();
+      DrawType = (MeshDrawType)drawType;
 
       if (_vertices == null || _vertices.Length != vertexCount)
       {

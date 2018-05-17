@@ -1,7 +1,4 @@
-﻿// Copyright (c) CSIRO 2018
-// Commonwealth Scientific and Industrial Research Organisation (CSIRO)
-// ABN 41 687 119 230
-//
+﻿//
 // author Kazys Stepanas
 //
 using NUnit.Framework;
@@ -16,30 +13,6 @@ namespace Tes.CoreTests
   [TestFixture()]
   public class Shapes
   {
-    static void MakeHiResSphere(List<Vector3> vertices, List<int> indices, List<Vector3> normals)
-    {
-      // Start with a unit sphere so we have normals precalculated.
-      // Use a fine subdivision to ensure we need multiple data packets to transfer vertices.
-      SphereTessellator.SphereSubdivision(vertices, indices, 1.0f, Vector3.Zero, 5);
-
-      // Normals as vertices. Scale and offset.
-      if (normals != null)
-      {
-        normals.Clear();
-        for (int i = 0; i < vertices.Count; ++i)
-        {
-          normals.Add(vertices[i]);
-        }
-      }
-
-      const float radius = 5.5f;
-      Vector3 sphereCentre = new Vector3(0.5f, 0, -0.25f);
-      for (int i = 0; i < vertices.Count; ++i)
-      {
-        vertices[i] = sphereCentre + vertices[i] * radius;
-      }
-    }
-
     [TestCase]
     public void ArrowTest()
     {
@@ -186,6 +159,7 @@ namespace Tes.CoreTests
       MeshShape shape = (MeshShape)shapeArg;
       MeshShape reference = (MeshShape)referenceArg;
 
+      Assert.AreEqual(shape.DrawType, reference.DrawType);
       if (reference.Vertices != null)
       {
         Assert.NotNull(shape.Vertices);
@@ -270,7 +244,7 @@ namespace Tes.CoreTests
       List<int> indices = new List<int>();
       List<Vector3> normals = new List<Vector3>();
       uint[] colours;
-      MakeHiResSphere(vertices, indices, normals);
+      Common.MakeHiResSphere(vertices, indices, normals);
 
       colours = new uint[vertices.Count];
       for (int i = 0; i < colours.Length; ++i)
@@ -468,7 +442,7 @@ namespace Tes.CoreTests
       List<Vector3> normals = new List<Vector3>();
       List<MeshResource> meshes = new List<MeshResource>();
       uint[] colours;
-      MakeHiResSphere(vertices, indices, normals);
+      Common.MakeHiResSphere(vertices, indices, normals);
 
       // Build per vertex colours with colour cycling.
       colours = new uint[vertices.Count];
@@ -572,7 +546,7 @@ namespace Tes.CoreTests
       List<Vector3> normals = new List<Vector3>();
       List<int> indices = new List<int>();
       uint[] colours;
-      MakeHiResSphere(vertices, indices, normals);
+      Common.MakeHiResSphere(vertices, indices, normals);
 
       // Build per vertex colours with colour cycling.
       colours = new uint[vertices.Count];

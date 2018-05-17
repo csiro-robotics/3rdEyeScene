@@ -36,6 +36,8 @@
     <Compile Include="Packets.cs" />
     <Compile Include="Shapes.cs" />
     <Compile Include="ShapeTestFramework.cs" />
+    <Compile Include="Common.cs" />
+    <Compile Include="Collated.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\3esCore\3esCore.csproj">

@@ -16,6 +16,11 @@ namespace Tes.CoreTests
   [TestFixture()]
   public class Packets
   {
+    /// <summary>
+    /// Test generalised packet streaming.
+    /// </summary>
+    /// <param name="collatedPackets">Use collated packets?</param>
+    /// <param name="compressed">Use compressed packets? Requires <paramref name="collatedPackets"/>.</param>
     [TestCase(false, false)]
     [TestCase(true, false)]
     [TestCase(true, true)]
