@@ -447,7 +447,8 @@ namespace Dialogs
     /// <param name="locations">The locations items.</param>
     public void ShowLinks(IEnumerable<FileSystemEntry> locations)
     {
-      int itemCount = PopulateScrollRect(_locationView, _iconItems[(int)FileDisplayMode.Large], locations, _iconSet, 0);
+      int itemCount = PopulateScrollRect(_locationView, _iconItems[(int)FileDisplayMode.Large], locations, _iconSet,
+                                         0, true);
       if (_locationView != null)
       {
         // Bind selection events. Can't be done easily in static code.
@@ -463,7 +464,7 @@ namespace Dialogs
 
       if (itemCount != 0)
       {
-        StartCoroutine(FixSizeAtEndOfFrame(_locationView, _iconItems[(int)FileDisplayMode.Large]));
+        StartCoroutine(FixSizeAtEndOfFrame(_locationView, _iconItems[(int)FileDisplayMode.Large], true));
       }
     }
 
@@ -478,7 +479,9 @@ namespace Dialogs
       Location = location.FullName;
       SuppressEvents = false;
       FilenameDisplay = string.Empty;
-      int itemCount = PopulateScrollRect(_filesView, _iconItems[(int)DisplayMode], items, _iconSet, _iconModeWidths[(int)DisplayMode]);
+      bool horizontal = DisplayMode == FileDisplayMode.Large;
+      int itemCount = PopulateScrollRect(_filesView, _iconItems[(int)DisplayMode], items, _iconSet,
+                                         _iconModeWidths[(int)DisplayMode], horizontal);
       if (_filesView != null)
       {
         FileEntryComponent initialSelection = null;
@@ -506,7 +509,7 @@ namespace Dialogs
 
       if (itemCount != 0 && isActiveAndEnabled)
       {
-        StartCoroutine(FixSizeAtEndOfFrame(_filesView, _iconItems[(int)DisplayMode]));
+        StartCoroutine(FixSizeAtEndOfFrame(_filesView, _iconItems[(int)DisplayMode], horizontal));
       }
 
       _pendingSelection = null;
@@ -529,7 +532,8 @@ namespace Dialogs
       scroll.content.DetachChildren();
     }
 
-    protected int PopulateScrollRect(ScrollRect scroll, GameObject template, IEnumerable<FileSystemEntry> items, FileIconSet icons, int targetWidth)
+    protected int PopulateScrollRect(ScrollRect scroll, GameObject template, IEnumerable<FileSystemEntry> items,
+                                     FileIconSet icons, int targetWidth, bool startHorizontal)
     {
       if (scroll == null)
       {
@@ -556,9 +560,18 @@ namespace Dialogs
         }
       }
 
+      GridLayoutGroup layoutGrid = scroll.content.GetComponent<GridLayoutGroup>();
+      if (layoutGrid != null)
+      {
+        layoutGrid.startAxis = (startHorizontal) ? GridLayoutGroup.Axis.Horizontal : GridLayoutGroup.Axis.Vertical;
+      }
+
+      // Create and position each item.
       int itemCount = 0;
+      // Dodgy way to simulate many items for testing.
       foreach (FileSystemEntry item in items)
       {
+        // Create item
         GameObject itemUI = GameObject.Instantiate(template);
         Text itemText = itemUI.GetComponentInChildren<Text>();
         FileEntryComponent entry = itemUI.GetComponent<FileEntryComponent>();
@@ -576,6 +589,7 @@ namespace Dialogs
         {
           entry = itemUI.AddComponent<FileEntryComponent>();
         }
+
         entry.Entry = item;
 
         // We expect the item to have two images; an icon image and an disabled highlight.
@@ -637,21 +651,22 @@ namespace Dialogs
     /// </remarks>
     /// <param name="scroll">The scroll view.</param>
     /// <param name="template">The template item used to populate the scroll view.</param>
+    /// <param name="verticalExpanding">Scroll view expands in the vertical axis.</param>
     /// <returns></returns>
-    protected IEnumerator FixSizeAtEndOfFrame(ScrollRect scroll, GameObject template)
+    protected IEnumerator FixSizeAtEndOfFrame(ScrollRect scroll, GameObject template, bool verticalExpanding)
     {
       // Fix up the scrolling sensitivity and spacing grid size (if using a grid).
       RectTransform templateRect = (template) ? template.transform as RectTransform : null;
       if (AutoGridLayoutSizing)
       {
-        CheckLayoutSpacing(scroll, templateRect);
+        CheckLayoutSpacing(scroll, templateRect, verticalExpanding);
       }
       if (AutoScrollSensitivity)
       {
         CheckScrollSensitivity(scroll, templateRect);
       }
       yield return new WaitForEndOfFrame();
-      FixSize(scroll, templateRect);
+      FixSize(scroll, templateRect, verticalExpanding);
     }
 
     /// <summary>
@@ -660,7 +675,7 @@ namespace Dialogs
     /// </summary>
     /// <param name="scroll">The scroll view.</param>
     /// <param name="template">The template item transform used to populate the scroll view.</param>
-    protected void CheckLayoutSpacing(ScrollRect scroll, RectTransform templateRect)
+    protected void CheckLayoutSpacing(ScrollRect scroll, RectTransform templateRect, bool verticalExpanding)
     {
       if (templateRect != null && scroll != null)
       {
@@ -669,7 +684,6 @@ namespace Dialogs
         {
           gridLayout.cellSize = new Vector2(templateRect.rect.width, templateRect.rect.height);
         }
-        scroll.scrollSensitivity = templateRect.rect.height;
       }
     }
 
@@ -697,45 +711,89 @@ namespace Dialogs
     /// set the content width as rows * template height.
     ///  </remarks>
     /// <param name="scroll">The scroll view.</param>
-    /// <param name="template">The template item used to populate the scroll view. Used to determine
+    /// <param name="templateRect">The template item used to populate the scroll view. Used to determine
+    /// <param name="verticalExpanding">Scroll view expands in the vertical axis.</param>
     ///  the per item width/height.</param>
-    protected static void FixSize(ScrollRect scroll, RectTransform templateRect)
+    protected static void FixSize(ScrollRect scroll, RectTransform templateRect, bool verticalExpanding)
     {
       // Change the height to suit the number of items.
       RectTransform contentRect = scroll.content.transform as RectTransform;
-      if (!templateRect || !contentRect)
+      RectTransform scrollRect = scroll.transform as RectTransform;
+      if (!templateRect || !contentRect || !scrollRect)
       {
         return;
       }
 
-      if (templateRect.rect.width == 0)
+      if (verticalExpanding)
       {
-        return;
+        if (templateRect.rect.width <= 0)
+        {
+          return;
+        }
+
+        float scrollWidth = contentRect.rect.width;
+
+        // Account for the vertical scroll bar if hidden.
+        if (scroll.verticalScrollbar != null && !scroll.verticalScrollbar.gameObject.activeSelf)
+        {
+          scrollWidth -= scroll.verticalScrollbar.GetComponent<RectTransform>().rect.width;
+        }
+
+        int columnCount = Mathf.FloorToInt(scrollWidth / templateRect.rect.width);
+        if (columnCount == 0)
+        {
+          columnCount = 1;
+        }
+
+        // Review: This assumes a lot about the content layout.
+        int itemCount = contentRect.childCount;
+        int rowCount = (itemCount + columnCount - 1) / columnCount;
+        Vector2 offset = contentRect.offsetMax;
+        offset.y = 0;
+        contentRect.offsetMax = offset;
+        offset = contentRect.offsetMin;
+        offset.y = -rowCount * templateRect.rect.height;
+        contentRect.offsetMin = offset;
       }
-
-      float scrollWidth = contentRect.rect.width;
-
-      // Account for the vertical scroll bar if hidden.
-      if (scroll.verticalScrollbar != null && !scroll.verticalScrollbar.gameObject.activeSelf)
+      else
       {
-        scrollWidth -= scroll.verticalScrollbar.GetComponent<RectTransform>().rect.width;
-      }
+        if (templateRect.rect.height <= 0)
+        {
+          return;
+        }
 
-      int columnCount = Mathf.FloorToInt(scrollWidth / templateRect.rect.width);
-      if (columnCount == 0)
-      {
-        columnCount = 1;
+        float scrollHeight = scrollRect.rect.height;
+
+        // Account for the vertical scroll bar if hidden.
+        if (scroll.horizontalScrollbar != null && !scroll.horizontalScrollbar.gameObject.activeSelf)
+        {
+          scrollHeight -= scroll.horizontalScrollbar.GetComponent<RectTransform>().rect.height;
+        }
+
+        int rowCount = Mathf.FloorToInt(scrollHeight / templateRect.rect.height);
+        if (rowCount == 0)
+        {
+          rowCount = 1;
+        }
+
+        // Review: This assumes a lot about the content layout.
+        int itemCount = contentRect.childCount;
+        // We take two off columnCount to get the right width. Not sure how this works, but it does.
+        const int columnCountOffset = 2;
+        int columnCount = (itemCount + rowCount - 1) / rowCount - columnCountOffset;
+        if (columnCount < 0)
+        {
+          columnCount = 0;
+        }
+        Vector2 offset = contentRect.offsetMax;
+        offset.x = columnCount * templateRect.rect.width;
+        offset.y = 0;
+        contentRect.offsetMax = offset;
+        offset = contentRect.offsetMin;
+        offset.x = 0;
+        offset.y = -scrollHeight;
+        contentRect.offsetMin = offset;
       }
-      // Review: This assumes a lot about the content layout.
-      int itemCount = contentRect.childCount;
-      int rowCount = itemCount / columnCount + ((itemCount % columnCount != 0) ? 1 : 0);
-      Vector2 offset;
-      offset = contentRect.offsetMax;
-      offset.y = 0;
-      contentRect.offsetMax = offset;
-      offset = contentRect.offsetMin;
-      offset.y = -rowCount * templateRect.rect.height;
-      contentRect.offsetMin = offset;
     }
 
     /// <summary>

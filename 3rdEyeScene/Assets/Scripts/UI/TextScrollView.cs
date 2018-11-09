@@ -46,7 +46,7 @@ namespace UI
         {
           Transform child = ScrollView.content.transform.GetChild(0);
           child.SetParent(null);
-          DestroyObject(child.gameObject);
+          Destroy(child.gameObject);
         }
       }
 
