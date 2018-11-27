@@ -320,8 +320,9 @@ namespace Tes.Util
     /// <param name="bytes">The data buffer to send.</param>
     /// <param name="offset">An offset into <paramref name="bytes"/> at which to start sending.</param>
     /// <param name="length">The number of bytes to transfer.</param>
+    /// <param name="allowCollation">Ignored</param>
     /// <returns>The number of bytes transferred or -1 on failure.</returns>
-    public int Send(byte[] bytes, int offset, int length)
+    public int Send(byte[] bytes, int offset, int length, bool allowCollation)
     {
       return Add(bytes, offset, length);
     }

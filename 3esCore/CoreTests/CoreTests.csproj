@@ -1,56 +1,35 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{4C32B89E-175D-4EE1-8C06-66F29E34F954}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>Tes.CoreTests</RootNamespace>
-    <AssemblyName>CoreTests</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG;</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+    <TargetFrameworks>netcoreapp2.1;net461</TargetFrameworks>
+    <RootNamespace>Tes</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
+
+    <Version>0.7.0</Version>
+    <Authors>Kazys Stepanas</Authors>
+    <Company>Commonwealth Scientific and Industrial Research Organisation (CSIRO)</Company>
+    <Product>3rd Eye Scene</Product>
+    <Copyright>Copyright © CSIRO 2015</Copyright>
+    <!-- <PackageId>MyApp</PackageId> -->
+    <!-- <AssemblyVersion>1.0.0.0</AssemblyVersion> -->
+    <!-- <FileVersion>1.0.0.0</FileVersion> -->
+    <!-- <NeutralLanguage>en</NeutralLanguage> -->
+    <!-- <Description>Description here</Description> -->
+    <!-- <PackageLicenseUrl>License URL</PackageLicenseUrl> -->
+    <!-- <PackageProjectUrl>Project URL</PackageProjectUrl> -->
+    <!-- <PackageIconUrl>Icon URL</PackageIconUrl> -->
+    <!-- <RepositoryUrl>Repo URL</RepositoryUrl> -->
+    <!-- <RepositoryType>Repo type</RepositoryType> -->
+    <!-- <PackageTags>Tags</PackageTags> -->
+  <PackageReleaseNotes>Release</PackageReleaseNotes>  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="nunit.framework, Version=3.9.0.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
-      <HintPath>..\packages\NUnit.3.9.0\lib\net45\nunit.framework.dll</HintPath>
-    </Reference>
-    <Reference Include="System" />
+    <PackageReference Include="NUnit" Version="3.11.0" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Packets.cs" />
-    <Compile Include="Shapes.cs" />
-    <Compile Include="ShapeTestFramework.cs" />
-    <Compile Include="Common.cs" />
-    <Compile Include="Collated.cs" />
+    <ProjectReference Include="..\3esCore\3esCore.csproj" />
+    <ProjectReference Include="..\TestSupport\TestSupport.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\3esCore\3esCore.csproj">
-      <Project>{91D3C546-37EF-4EF1-A48A-487A1F367A33}</Project>
-      <Name>3esCore</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\TestSupport\TestSupport.csproj">
-      <Project>{B29F5CC6-EC81-424B-A051-1DFB218FFF3A}</Project>
-      <Name>TestSupport</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+
 </Project>
