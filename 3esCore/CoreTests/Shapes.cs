@@ -1,7 +1,8 @@
 ﻿//
 // author Kazys Stepanas
 //
-using NUnit.Framework;
+using Xunit;
+using Xunit.Abstractions;
 using System;
 using System.Collections.Generic;
 using Tes.Maths;
@@ -10,10 +11,16 @@ using Tes.TestSupport;
 
 namespace Tes.CoreTests
 {
-  [TestFixture()]
   public class Shapes
   {
-    [TestCase]
+    private readonly ITestOutputHelper _output;
+
+    public Shapes(ITestOutputHelper output)
+    {
+      _output = output;
+    }
+
+    [Fact]
     public void ArrowTest()
     {
       ShapeTestFramework.CreateShapeFunction create = () => { return new Arrow(); };
@@ -26,7 +33,7 @@ namespace Tes.CoreTests
       ShapeTestFramework.TestShape(new Arrow(42, 1, new Vector3(1.2f, 2.3f, 3.4f), new Vector3(1, 1, 1).Normalised, 2.0f, 0.05f), create);
     }
 
-    [TestCase]
+    [Fact]
     public void BoxTest()
     {
       ShapeTestFramework.CreateShapeFunction create = () => { return new Box(); };
@@ -39,7 +46,7 @@ namespace Tes.CoreTests
       ShapeTestFramework.TestShape(new Box(42, 1, new Vector3(1.2f, 2.3f, 3.4f), new Vector3(0.7f, 1.2f, 3.0f), new Quaternion(Vector3.One.Normalised, 18.0f * (float)Math.PI / 180.0f)), create);
     }
 
-    [TestCase]
+    [Fact]
     public void CapsuleTest()
     {
       ShapeTestFramework.CreateShapeFunction create = () => { return new Capsule(); };
@@ -52,7 +59,7 @@ namespace Tes.CoreTests
       ShapeTestFramework.TestShape(new Capsule(42, 1, new Vector3(-1.0f, -0.5f, -0.25f), new Vector3(0.25f, 0.25f, 1.0f).Normalised, 0.15f), create);
     }
 
-    [TestCase]
+    [Fact]
     public void CylinderTest()
     {
       ShapeTestFramework.CreateShapeFunction create = () => { return new Cylinder(); };
@@ -65,7 +72,7 @@ namespace Tes.CoreTests
       ShapeTestFramework.TestShape(new Cylinder(42, 1, new Vector3(-1.0f, -0.5f, -0.25f), new Vector3(0.25f, 0.25f, 1.0f).Normalised, 0.15f), create);
     }
 
-    [TestCase]
+    [Fact]
     public void ConeTest()
     {
       ShapeTestFramework.CreateShapeFunction create = () => { return new Cone(); };
@@ -78,7 +85,7 @@ namespace Tes.CoreTests
       ShapeTestFramework.TestShape(new Cone(42, 1, new Vector3(1.2f, 2.3f, 3.4f), new Vector3(0, 0, 0), 1.05f), create);
     }
 
-    [TestCase]
+    [Fact]
     public void PlaneTest()
     {
       ShapeTestFramework.CreateShapeFunction create = () => { return new Plane(); };
@@ -90,7 +97,7 @@ namespace Tes.CoreTests
       ShapeTestFramework.TestShape(new Plane(42, 1, new Vector3(1.2f, 2.3f, 3.4f), new Vector3(0.7f, 1.2f, 3.0f)), create);
     }
 
-    [TestCase]
+    [Fact]
     public void SphereTest()
     {
       ShapeTestFramework.CreateShapeFunction create = () => { return new Sphere(); };
@@ -101,7 +108,7 @@ namespace Tes.CoreTests
       ShapeTestFramework.TestShape(new Sphere(42, 1, new Vector3(1.2f, 2.3f, 3.4f), 0.75f), create);
     }
 
-    [TestCase]
+    [Fact]
     public void StarTest()
     {
       ShapeTestFramework.CreateShapeFunction create = () => { return new Star(); };
@@ -112,15 +119,15 @@ namespace Tes.CoreTests
       ShapeTestFramework.TestShape(new Star(42, 1, new Vector3(1.2f, 2.3f, 3.4f), 0.75f), create);
     }
 
-    public static void ValidateText2D(Shape shapeArg, Shape referenceArg, Dictionary<ulong, Resource> resources)
+    public void ValidateText2D(Shape shapeArg, Shape referenceArg, Dictionary<ulong, Resource> resources)
     {
       ShapeTestFramework.ValidateShape(shapeArg, referenceArg, resources);
       Text2D shape = (Text2D)shapeArg;
       Text2D reference = (Text2D)referenceArg;
-      Assert.AreEqual(reference.Text, shape.Text);
+      Assert.Equal(reference.Text, shape.Text);
     }
 
-    [TestCase]
+    [Fact]
     public void Text2DTest()
     {
       ShapeTestFramework.CreateShapeFunction create = () => { return new Text2D(); };
@@ -132,15 +139,15 @@ namespace Tes.CoreTests
       ShapeTestFramework.TestShape(new Text2D("The answer is...", 42, new Vector3(1.2f, 2.3f, 3.4f)) { InWorldSpace = false }, create, ValidateText2D);
       ShapeTestFramework.TestShape(new Text2D("The answer is...", 42, 1, new Vector3(1.2f, 2.3f, 3.4f)), create, ValidateText2D);
     }
-    public static void ValidateText3D(Shape shapeArg, Shape referenceArg, Dictionary<ulong, Resource> resources)
+    public void ValidateText3D(Shape shapeArg, Shape referenceArg, Dictionary<ulong, Resource> resources)
     {
       ShapeTestFramework.ValidateShape(shapeArg, referenceArg, resources);
       Text3D shape = (Text3D)shapeArg;
       Text3D reference = (Text3D)referenceArg;
-      Assert.AreEqual(reference.Text, shape.Text);
+      Assert.Equal(reference.Text, shape.Text);
     }
 
-    [TestCase]
+    [Fact]
     public void Text3DTest()
     {
       ShapeTestFramework.CreateShapeFunction create = () => { return new Text3D(); };
@@ -153,36 +160,36 @@ namespace Tes.CoreTests
       ShapeTestFramework.TestShape(new Text3D("The answer is...", 42, 1, new Vector3(1.2f, 2.3f, 3.4f)) { Facing = Vector3.One.Normalised }, create, ValidateText3D);
     }
 
-    public static void ValidateMeshShape(Shape shapeArg, Shape referenceArg, Dictionary<ulong, Resource> resources)
+    public void ValidateMeshShape(Shape shapeArg, Shape referenceArg, Dictionary<ulong, Resource> resources)
     {
       ShapeTestFramework.ValidateShape(shapeArg, referenceArg, resources);
       MeshShape shape = (MeshShape)shapeArg;
       MeshShape reference = (MeshShape)referenceArg;
 
-      Assert.AreEqual(shape.DrawType, reference.DrawType);
+      Assert.Equal(shape.DrawType, reference.DrawType);
       if (reference.Vertices != null)
       {
         Assert.NotNull(shape.Vertices);
-        Assert.AreEqual(reference.Vertices.Length, shape.Vertices.Length);
+        Assert.Equal(reference.Vertices.Length, shape.Vertices.Length);
         bool verticesMatch = true;
         for (int i = 0; i < shape.Vertices.Length; ++i)
         {
           if (reference.Vertices[i] != shape.Vertices[i])
           {
             verticesMatch = false;
-            TestContext.WriteLine("vertex mismatch [{0}] : ({1},{2},{3}) != ({4},{5},{6})",
+            _output.WriteLine("vertex mismatch [{0}] : ({1},{2},{3}) != ({4},{5},{6})",
                                   i, reference.Vertices[i].X, reference.Normals[i].Y, reference.Normals[i].Z,
                                   shape.Normals[i].X, shape.Normals[i].Y, shape.Normals[i].Z);
           }
         }
 
-        Assert.IsTrue(verticesMatch);
+        Assert.True(verticesMatch);
       }
 
       if (reference.Normals != null)
       {
         Assert.NotNull(shape.Normals);
-        Assert.AreEqual(reference.Normals.Length, shape.Normals.Length);
+        Assert.Equal(reference.Normals.Length, shape.Normals.Length);
         bool normalsMatch = true;
         for (int i = 0; i < shape.Normals.Length; ++i)
         {
@@ -191,53 +198,53 @@ namespace Tes.CoreTests
               reference.Normals[i].Z != shape.Normals[i].Z)
           {
             normalsMatch = false;
-            TestContext.WriteLine("normal mismatch [{0}] : ({1},{2},{3}) != ({4},{5},{6})",
+            _output.WriteLine("normal mismatch [{0}] : ({1},{2},{3}) != ({4},{5},{6})",
                                   i, reference.Normals[i].X, reference.Normals[i].Y, reference.Normals[i].Z,
                                   shape.Normals[i].X, shape.Normals[i].Y, shape.Normals[i].Z);
           }
         }
 
-        Assert.IsTrue(normalsMatch);
+        Assert.True(normalsMatch);
       }
 
       if (reference.Colours != null)
       {
         Assert.NotNull(shape.Colours);
-        Assert.AreEqual(reference.Colours.Length, shape.Colours.Length);
+        Assert.Equal(reference.Colours.Length, shape.Colours.Length);
         bool coloursMatch = true;
         for (int i = 0; i < shape.Colours.Length; ++i)
         {
           if (reference.Colours[i] != shape.Colours[i])
           {
-            TestContext.WriteLine("colour mismatch [{0}] : 0x{1} != 0x{2}",
+            _output.WriteLine("colour mismatch [{0}] : 0x{1} != 0x{2}",
                                   i, reference.Colours[i].ToString("x"), shape.Colours[i].ToString("x"));
             coloursMatch = false;
           }
         }
 
-        Assert.IsTrue(coloursMatch);
+        Assert.True(coloursMatch);
       }
 
       if (reference.Indices != null)
       {
         Assert.NotNull(shape.Indices);
-        Assert.AreEqual(reference.Indices.Length, shape.Indices.Length);
+        Assert.Equal(reference.Indices.Length, shape.Indices.Length);
         bool indicesMatch = true;
         for (int i = 0; i < shape.Indices.Length; ++i)
         {
           if (reference.Indices[i] != shape.Indices[i])
           {
-            TestContext.WriteLine("index mismatch [{0}] : {1} != {2}",
+            _output.WriteLine("index mismatch [{0}] : {1} != {2}",
                                   i, reference.Indices[i], shape.Indices[i]);
             indicesMatch = false;
           }
         }
 
-        Assert.IsTrue(indicesMatch);
+        Assert.True(indicesMatch);
       }
     }
 
-    [TestCase]
+    [Fact]
     public void TestMeshShape()
     {
       List<Vector3> vertices = new List<Vector3>();
@@ -289,33 +296,30 @@ namespace Tes.CoreTests
       { Normals = normals.ToArray(), Colours = colours }, create, ValidateMeshShape);
     }
 
-    public static void ValidateMesh(MeshResource mesh, MeshResource reference)
+    public void ValidateMesh(MeshResource mesh, MeshResource reference)
     {
-      Assert.AreEqual(reference.ID, mesh.ID);
-      Assert.AreEqual(reference.TypeID, mesh.TypeID);
-      Assert.AreEqual(reference.Transform, mesh.Transform);
-      Assert.AreEqual(reference.Tint, mesh.Tint);
-      Assert.AreEqual(reference.DrawType, mesh.DrawType);
-      Assert.AreEqual(reference.IndexSize, mesh.IndexSize);
-      Assert.AreEqual(reference.VertexCount(), mesh.VertexCount());
-      Assert.AreEqual(reference.IndexCount(), mesh.IndexCount());
+      Assert.Equal(reference.ID, mesh.ID);
+      Assert.Equal(reference.TypeID, mesh.TypeID);
+      Assert.Equal(reference.Transform, mesh.Transform);
+      Assert.Equal(reference.Tint, mesh.Tint);
+      Assert.Equal(reference.DrawType, mesh.DrawType);
+      Assert.Equal(reference.IndexSize, mesh.IndexSize);
+      Assert.Equal(reference.VertexCount(), mesh.VertexCount());
+      Assert.Equal(reference.IndexCount(), mesh.IndexCount());
 
       if (mesh.VertexCount() > 0)
       {
-        Assert.IsNotNull(reference.Vertices());
-        Assert.IsNotNull(mesh.Vertices());
+        Assert.NotNull(reference.Vertices());
+        Assert.NotNull(mesh.Vertices());
 
         Vector3 refv, meshv;
         for (int i = 0; i < mesh.VertexCount(); ++i)
         {
           refv = reference.Vertices()[i];
           meshv = mesh.Vertices()[i];
-          Assert.Multiple(() =>
-          {
-            Assert.AreEqual(refv.X, meshv.X);
-            Assert.AreEqual(refv.Y, meshv.Y);
-            Assert.AreEqual(refv.Z, meshv.Z);
-          });
+          Assert.Equal(refv.X, meshv.X);
+          Assert.Equal(refv.Y, meshv.Y);
+          Assert.Equal(refv.Z, meshv.Z);
         }
       }
 
@@ -323,67 +327,61 @@ namespace Tes.CoreTests
       {
         if (reference.IndexSize == 2)
         {
-          Assert.IsNotNull(mesh.Indices2());
+          Assert.NotNull(mesh.Indices2());
 
           for (int i = 0; i < mesh.IndexCount(); ++i)
           {
-            Assert.AreEqual(reference.Indices2()[i], mesh.Indices2()[i]);
+            Assert.Equal(reference.Indices2()[i], mesh.Indices2()[i]);
           }
         }
         else
         {
-          Assert.IsNotNull(reference.Indices4());
-          Assert.IsNotNull(mesh.Indices4());
+          Assert.NotNull(reference.Indices4());
+          Assert.NotNull(mesh.Indices4());
 
           for (int i = 0; i < mesh.IndexCount(); ++i)
           {
-            Assert.AreEqual(reference.Indices4()[i], mesh.Indices4()[i]);
+            Assert.Equal(reference.Indices4()[i], mesh.Indices4()[i]);
           }
         }
       }
 
       if (mesh.Normals() != null)
       {
-        Assert.IsNotNull(mesh.Normals());
+        Assert.NotNull(mesh.Normals());
 
         Vector3 refn, meshn;
         for (int i = 0; i < mesh.VertexCount(); ++i)
         {
           refn = reference.Normals()[i];
           meshn = mesh.Normals()[i];
-          Assert.Multiple(() =>
-          {
-            Assert.AreEqual(refn.X, meshn.X);
-            Assert.AreEqual(refn.Y, meshn.Y);
-            Assert.AreEqual(refn.Z, meshn.Z);
-          });
+          Assert.Equal(refn.X, meshn.X);
+          Assert.Equal(refn.Y, meshn.Y);
+          Assert.Equal(refn.Z, meshn.Z);
         }
       }
 
       if (mesh.Colours() != null)
       {
-        Assert.IsNotNull(mesh.Colours());
+        Assert.NotNull(mesh.Colours());
 
         for (int i = 0; i < mesh.VertexCount(); ++i)
         {
-          Assert.AreEqual(reference.Colours()[i], mesh.Colours()[i]);
+          Assert.Equal(reference.Colours()[i], mesh.Colours()[i]);
         }
       }
 
       if (mesh.UVs() != null)
       {
-        Assert.IsNotNull(mesh.UVs());
+        Assert.NotNull(mesh.UVs());
 
         Vector2 refuv, meshuv;
         for (int i = 0; i < mesh.VertexCount(); ++i)
         {
           refuv = reference.UVs()[i];
           meshuv = mesh.UVs()[i];
-          Assert.Multiple(() =>
-          {
-            Assert.AreEqual(refuv.X, meshuv.X);
-            Assert.AreEqual(refuv.Y, meshuv.Y);
-          });
+          Assert.Equal(refuv.X, meshuv.X);
+          Assert.Equal(refuv.Y, meshuv.Y);
         }
       }
     }
@@ -394,7 +392,7 @@ namespace Tes.CoreTests
       MeshSet shape = (MeshSet)shapeArg;
       MeshSet reference = (MeshSet)referenceArg;
 
-      Assert.AreEqual(reference.PartCount, shape.PartCount);
+      Assert.Equal(reference.PartCount, shape.PartCount);
 
       Net.ObjectAttributes attrRef = new Net.ObjectAttributes();
       Net.ObjectAttributes attrMesh = new Net.ObjectAttributes();
@@ -405,27 +403,18 @@ namespace Tes.CoreTests
         attrRef.SetFromTransform(reference.PartTransformAt(i));
         attrMesh.SetFromTransform(shape.PartTransformAt(i));
 
-        Assert.Multiple(() =>
-        {
-          Assert.AreEqual(attrRef.X, attrMesh.X, 1e-3f);
-          Assert.AreEqual(attrRef.Y, attrMesh.Y, 1e-3f);
-          Assert.AreEqual(attrRef.Z, attrMesh.Z, 1e-3f);
-        });
+        AssertExt.Near(attrRef.X, attrMesh.X, 1e-3f);
+        AssertExt.Near(attrRef.Y, attrMesh.Y, 1e-3f);
+        AssertExt.Near(attrRef.Z, attrMesh.Z, 1e-3f);
 
-        Assert.Multiple(() =>
-        {
-          Assert.AreEqual(attrRef.RotationX, attrMesh.RotationX, 1e-3f);
-          Assert.AreEqual(attrRef.RotationY, attrMesh.RotationY, 1e-3f);
-          Assert.AreEqual(attrRef.RotationZ, attrMesh.RotationZ, 1e-3f);
-          Assert.AreEqual(attrRef.RotationW, attrMesh.RotationW, 1e-3f);
-        });
+        AssertExt.Near(attrRef.RotationX, attrMesh.RotationX, 1e-3f);
+        AssertExt.Near(attrRef.RotationY, attrMesh.RotationY, 1e-3f);
+        AssertExt.Near(attrRef.RotationZ, attrMesh.RotationZ, 1e-3f);
+        AssertExt.Near(attrRef.RotationW, attrMesh.RotationW, 1e-3f);
 
-        Assert.Multiple(() =>
-        {
-          Assert.AreEqual(attrRef.ScaleX, attrMesh.ScaleX, 1e-3f);
-          Assert.AreEqual(attrRef.ScaleY, attrMesh.ScaleY, 1e-3f);
-          Assert.AreEqual(attrRef.ScaleZ, attrMesh.ScaleZ, 1e-3f);
-        });
+        AssertExt.Near(attrRef.ScaleX, attrMesh.ScaleX, 1e-3f);
+        AssertExt.Near(attrRef.ScaleY, attrMesh.ScaleY, 1e-3f);
+        AssertExt.Near(attrRef.ScaleZ, attrMesh.ScaleZ, 1e-3f);
 
         // Shape will only have a placeholder resource. Lookup in resources.
         MeshResource mesh = (MeshResource)resources[shape.PartAt(i).UniqueKey()];
@@ -433,7 +422,7 @@ namespace Tes.CoreTests
       }
     }
 
-    [TestCase]
+    [Fact]
     public void TestMeshSet()
     {
       List<Vector3> vertices = new List<Vector3>();
@@ -519,27 +508,27 @@ namespace Tes.CoreTests
       ShapeTestFramework.TestShape(set, create, ValidateMeshSetShape);
     }
 
-    public static void ValidatePointCloudShape(Shape shapeArg, Shape referenceArg, Dictionary<ulong, Resource> resources)
+    public void ValidatePointCloudShape(Shape shapeArg, Shape referenceArg, Dictionary<ulong, Resource> resources)
     {
       ShapeTestFramework.ValidateShape(shapeArg, referenceArg, resources);
       PointCloudShape shape = (PointCloudShape)shapeArg;
       PointCloudShape reference = (PointCloudShape)referenceArg;
 
-      Assert.AreEqual(reference.PointSize, shape.PointSize);
+      Assert.Equal(reference.PointSize, shape.PointSize);
       Assert.NotNull(reference.PointCloud);
       Assert.NotNull(shape.PointCloud);
 
-      Assert.AreEqual(reference.PointCloud.ID, shape.PointCloud.ID);
+      Assert.Equal(reference.PointCloud.ID, shape.PointCloud.ID);
 
       // Resolve the mesh resource.
       Resource resource;
-      Assert.IsTrue(resources.TryGetValue(shape.PointCloud.UniqueKey(), out resource));
+      Assert.True(resources.TryGetValue(shape.PointCloud.UniqueKey(), out resource));
       // Remember, resource will be a SimpleMesh, not a PointCloud.
       MeshResource cloud = (MeshResource)resource;
       ValidateMesh(cloud, reference.PointCloud);
     }
 
-    [TestCase]
+    [Fact]
     public void PointCloudTest()
     {
       List<Vector3> vertices = new List<Vector3>();

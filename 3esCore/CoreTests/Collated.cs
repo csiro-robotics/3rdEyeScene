@@ -4,7 +4,7 @@
 // //
 // // author Kazys Stepanas
 //
-using NUnit.Framework;
+using Xunit;
 using System;
 using System.Collections.Generic;
 using Tes.IO;
@@ -14,11 +14,11 @@ using Tes.Shapes;
 
 namespace Tes.CoreTests
 {
-  [TestFixture()]
   public class Collated
   {
-    [TestCase(false)]
-    [TestCase(true)]
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
     public void CollationTest(bool compress)
     {
       // Allocate encoder.
@@ -37,7 +37,7 @@ namespace Tes.CoreTests
       // Use the encoder as a connection.
       // The Create() call will pack the mesh create message and multiple data messages.
       int wroteBytes = encoder.Create(mesh);
-      Assert.Greater(wroteBytes, 0);
+      Assert.True(wroteBytes > 0);
       Assert.True(encoder.FinaliseEncoding());
 
       // Allocate a reader. Contains a CollatedPacketDecoder.
@@ -54,15 +54,15 @@ namespace Tes.CoreTests
         NetworkReader reader = new NetworkReader(packet.CreateReadStream(true));
         ++packetCount;
         Assert.True(packet.ValidHeader);
-        Assert.AreEqual(packet.Header.Marker, PacketHeader.PacketMarker);
-        Assert.AreEqual(packet.Header.VersionMajor, PacketHeader.PacketVersionMajor);
-        Assert.AreEqual(packet.Header.VersionMinor, PacketHeader.PacketVersionMinor);
+        Assert.Equal(packet.Header.Marker, PacketHeader.PacketMarker);
+        Assert.Equal(packet.Header.VersionMajor, PacketHeader.PacketVersionMajor);
+        Assert.Equal(packet.Header.VersionMinor, PacketHeader.PacketVersionMinor);
 
-        Assert.AreEqual(packet.Header.RoutingID, mesh.RoutingID);
+        Assert.Equal(packet.Header.RoutingID, mesh.RoutingID);
 
         // Peek the shape ID.
         uint shapeId = packet.PeekUInt32(PacketHeader.Size);
-        Assert.AreEqual(shapeId, mesh.ID);
+        Assert.Equal(shapeId, mesh.ID);
 
         switch((ObjectMessageID)packet.Header.MessageID)
         {
@@ -80,9 +80,9 @@ namespace Tes.CoreTests
         }
       }
 
-      Assert.Greater(packetCount, 0);
+      Assert.True(packetCount > 0);
       // FIXME: Does not match, but results are fine. processedBytes is 10 greater than wroteBytes.
-      //Assert.AreEqual(processedBytes, wroteBytes);
+      //Assert.Equal(processedBytes, wroteBytes);
 
       // Validate what we've read back.
       ShapeTestFramework.ValidateShape(readMesh, mesh, new Dictionary<ulong, Resource>());

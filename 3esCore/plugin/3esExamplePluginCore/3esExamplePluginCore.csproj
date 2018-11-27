@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFrameworks>netcoreapp2.1;net461</TargetFrameworks>
     <RootNamespace>Tes</RootNamespace>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <Version>0.7.0</Version>
     <Authors>Kazys Stepanas</Authors>

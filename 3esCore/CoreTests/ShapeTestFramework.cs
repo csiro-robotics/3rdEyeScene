@@ -1,7 +1,7 @@
 ﻿//
 // author Kazys Stepanas
 //
-using NUnit.Framework;
+using Xunit;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -36,7 +36,7 @@ namespace Tes.CoreTests
       IServer server = new TcpServer(serverSettings);
 
       // std::cout << "Start on port " << serverSettings.listenPort << std::endl;
-      Assert.IsTrue(server.ConnectionMonitor.Start(ConnectionMonitorMode.Asynchronous));
+      Assert.True(server.ConnectionMonitor.Start(ConnectionMonitorMode.Asynchronous));
       // std::cout << "Server listening on port " << server.connectionMonitor()->port() << std::endl;;
 
       // Create client and connect.
@@ -49,20 +49,20 @@ namespace Tes.CoreTests
         server.ConnectionMonitor.CommitConnections(null);
       }
 
-      Assert.Greater(server.ConnectionCount, 0);
-      Assert.IsTrue(client.Connected);
+      Assert.True(server.ConnectionCount > 0);
+      Assert.True(client.Connected);
 
       // Send server messages from another thread. Otherwise large packets may block.
       Thread sendThread = new Thread(() =>
       {
-        Assert.Greater(server.Create(reference), 0);
-        Assert.GreaterOrEqual(server.UpdateTransfers(0), 0);
-        Assert.Greater(server.UpdateFrame(0.0f), 0);
+        Assert.True(server.Create(reference) > 0);
+        Assert.True(server.UpdateTransfers(0) >= 0);
+        Assert.True(server.UpdateFrame(0.0f) > 0);
 
         // Send end message.
         ControlMessage ctrlMsg = new ControlMessage();
-        Assert.Greater(ServerUtil.SendMessage(server, (ushort)RoutingID.Control, (ushort)ControlMessageID.End, ctrlMsg), 0);
-        Assert.Greater(server.UpdateFrame(0.0f), 0);
+        Assert.True(ServerUtil.SendMessage(server, (ushort)RoutingID.Control, (ushort)ControlMessageID.End, ctrlMsg) > 0);
+        Assert.True(server.UpdateFrame(0.0f) > 0);
       });
       sendThread.Start();
 
@@ -109,7 +109,7 @@ namespace Tes.CoreTests
         bool crcOk = true;
         while ((completedPacket = packetBuffer.PopPacket(out crcOk)) != null || !crcOk)
         {
-          Assert.IsTrue(crcOk);
+          Assert.True(crcOk);
           if (crcOk)
           {
             if (packetBuffer.DroppedByteCount != 0)
@@ -118,9 +118,9 @@ namespace Tes.CoreTests
               packetBuffer.DroppedByteCount = 0;
             }
 
-            Assert.AreEqual(PacketHeader.PacketMarker, completedPacket.Header.Marker);
-            Assert.AreEqual(PacketHeader.PacketVersionMajor, completedPacket.Header.VersionMajor);
-            Assert.AreEqual(PacketHeader.PacketVersionMinor, completedPacket.Header.VersionMinor);
+            Assert.Equal(PacketHeader.PacketMarker, completedPacket.Header.Marker);
+            Assert.Equal(PacketHeader.PacketVersionMajor, completedPacket.Header.VersionMajor);
+            Assert.Equal(PacketHeader.PacketVersionMinor, completedPacket.Header.VersionMinor);
 
             NetworkReader packetReader = new NetworkReader(completedPacket.CreateReadStream(true));
 
@@ -128,18 +128,18 @@ namespace Tes.CoreTests
             {
               case (int)RoutingID.ServerInfo:
                 serverInfoRead = true;
-                Assert.IsTrue(readServerInfo.Read(packetReader));
+                Assert.True(readServerInfo.Read(packetReader));
 
                 // Validate server info.
-                Assert.AreEqual(serverInfo.TimeUnit, readServerInfo.TimeUnit);
-                Assert.AreEqual(serverInfo.DefaultFrameTime, readServerInfo.DefaultFrameTime);
-                Assert.AreEqual(serverInfo.CoordinateFrame, readServerInfo.CoordinateFrame);
+                Assert.Equal(serverInfo.TimeUnit, readServerInfo.TimeUnit);
+                Assert.Equal(serverInfo.DefaultFrameTime, readServerInfo.DefaultFrameTime);
+                Assert.Equal(serverInfo.CoordinateFrame, readServerInfo.CoordinateFrame);
 
                 unsafe
                 {
                   for (int i = 0; i < ServerInfoMessage.ReservedBytes; ++i)
                   {
-                    Assert.AreEqual(serverInfo.Reserved[i], readServerInfo.Reserved[i]);
+                    Assert.Equal(serverInfo.Reserved[i], readServerInfo.Reserved[i]);
                   }
                 }
                 break;
@@ -148,7 +148,7 @@ namespace Tes.CoreTests
                 {
                   // Only interested in the CIdEnd message to mark the end of the stream.
                   ControlMessage msg = new ControlMessage();
-                  Assert.IsTrue(msg.Read(packetReader));
+                  Assert.True(msg.Read(packetReader));
 
                   if (completedPacket.Header.MessageID == (int)ControlMessageID.End)
                   {
@@ -174,9 +174,9 @@ namespace Tes.CoreTests
         // else fail?
       }
 
-      Assert.IsTrue(serverInfoRead);
-      Assert.IsTrue(shapeMsgRead);
-      Assert.IsTrue(endMsgReceived);
+      Assert.True(serverInfoRead);
+      Assert.True(shapeMsgRead);
+      Assert.True(endMsgReceived);
 
       // Validate the shape state.
       if (shapeMsgRead)
@@ -194,20 +194,20 @@ namespace Tes.CoreTests
       // Peek the shape ID.
       shapeId = packet.PeekUInt32(PacketHeader.Size);
 
-      Assert.AreEqual(shapeId, reference.ID);
+      Assert.Equal(shapeId, reference.ID);
 
       switch (packet.Header.MessageID)
       {
         case (int)ObjectMessageID.Create:
-          Assert.IsTrue(shape.ReadCreate(reader));
+          Assert.True(shape.ReadCreate(reader));
           break;
 
         case (int)ObjectMessageID.Update:
-          Assert.IsTrue(shape.ReadUpdate(reader));
+          Assert.True(shape.ReadUpdate(reader));
           break;
 
         case (int)ObjectMessageID.Data:
-          Assert.IsTrue(shape.ReadData(reader));
+          Assert.True(shape.ReadData(reader));
           break;
       }
     }
@@ -225,26 +225,26 @@ namespace Tes.CoreTests
       // If it exists, make sure it's a mesh.
       if (resources.TryGetValue(ResourceUtil.UniqueKey(new PlaceholderMesh(meshId)), out resource))
       {
-        Assert.AreEqual((ushort)RoutingID.Mesh, resource.TypeID);
+        Assert.Equal((ushort)RoutingID.Mesh, resource.TypeID);
         mesh = (SimpleMesh)resource;
       }
 
       switch (packet.Header.MessageID)
       {
         case (int)MeshMessageType.Invalid:
-          Assert.Fail("Invalid mesh message sent");
+          Assert.True(false, "Invalid mesh message sent");
           break;
 
         case (int)MeshMessageType.Destroy:
-          Assert.IsNotNull(mesh);
+          Assert.NotNull(mesh);
           resources.Remove(mesh.UniqueKey());
           break;
 
         case (int)MeshMessageType.Create:
           // Create message. Should not already exists.
-          Assert.IsNull(mesh, "Recreating exiting mesh.");
+          Assert.Null(mesh);//, "Recreating existing mesh.");
           mesh = new SimpleMesh(meshId);
-          Assert.IsTrue(mesh.ReadCreate(reader));
+          Assert.True(mesh.ReadCreate(reader));
           resources.Add(mesh.UniqueKey(), mesh);
           break;
 
@@ -254,7 +254,7 @@ namespace Tes.CoreTests
           break;
 
         default:
-          Assert.IsNotNull(mesh);
+          Assert.NotNull(mesh);
           mesh.ReadTransfer(packet.Header.MessageID, reader);
           break;
       }
@@ -262,63 +262,63 @@ namespace Tes.CoreTests
     
     public static void ValidateShape(Shape shape, Shape reference, Dictionary<ulong, Resource> resources)
     {
-      Assert.AreEqual(reference.RoutingID, shape.RoutingID);
-      Assert.AreEqual(reference.IsComplex, shape.IsComplex);
+      Assert.Equal(reference.RoutingID, shape.RoutingID);
+      Assert.Equal(reference.IsComplex, shape.IsComplex);
 
-      Assert.AreEqual(reference.ID, shape.ID);
-      Assert.AreEqual(reference.Category, shape.Category);
-      Assert.AreEqual(reference.Flags, shape.Flags);
-      //Assert.AreEqual(reference.data().reserved, shape.data().reserved);
-      //Assert.AreEqual(reference.ID, shape.ID);
+      Assert.Equal(reference.ID, shape.ID);
+      Assert.Equal(reference.Category, shape.Category);
+      Assert.Equal(reference.Flags, shape.Flags);
+      //Assert.Equal(reference.data().reserved, shape.data().reserved);
+      //Assert.Equal(reference.ID, shape.ID);
 
-      Assert.AreEqual(reference.Colour, shape.Colour);
+      Assert.Equal(reference.Colour, shape.Colour);
 
-      Assert.AreEqual(reference.X, shape.X);
-      Assert.AreEqual(reference.Y, shape.Y);
-      Assert.AreEqual(reference.Z, shape.Z);
+      Assert.Equal(reference.X, shape.X);
+      Assert.Equal(reference.Y, shape.Y);
+      Assert.Equal(reference.Z, shape.Z);
 
-      Assert.AreEqual(reference.Rotation, shape.Rotation);
+      Assert.Equal(reference.Rotation, shape.Rotation);
 
-      Assert.AreEqual(reference.ScaleX, shape.ScaleX);
-      Assert.AreEqual(reference.ScaleY, shape.ScaleY);
-      Assert.AreEqual(reference.ScaleZ, shape.ScaleZ);
+      Assert.Equal(reference.ScaleX, shape.ScaleX);
+      Assert.Equal(reference.ScaleY, shape.ScaleY);
+      Assert.Equal(reference.ScaleZ, shape.ScaleZ);
     }
 
     public static void ValidateShape(MeshShape shape, MeshShape reference, Dictionary<ulong, Resource> resources)
     {
       ValidateShape((Shape)shape, (Shape)reference, resources);
 
-      Assert.AreEqual(reference.DrawType, shape.DrawType);
+      Assert.Equal(reference.DrawType, shape.DrawType);
 
       if (reference.Vertices != null)
       {
-        Assert.IsNotNull(shape.Vertices);
-        Assert.AreEqual(reference.Vertices.Length, shape.Vertices.Length);
+        Assert.NotNull(shape.Vertices);
+        Assert.Equal(reference.Vertices.Length, shape.Vertices.Length);
       }
 
       if (reference.Normals != null)
       {
-        Assert.IsNotNull(shape.Normals);
-        Assert.AreEqual(reference.Normals.Length, shape.Normals.Length);
+        Assert.NotNull(shape.Normals);
+        Assert.Equal(reference.Normals.Length, shape.Normals.Length);
       }
 
       if (reference.Colours != null)
       {
-        Assert.IsNotNull(shape.Colours);
-        Assert.AreEqual(reference.Colours.Length, shape.Colours.Length);
+        Assert.NotNull(shape.Colours);
+        Assert.Equal(reference.Colours.Length, shape.Colours.Length);
       }
 
       if (reference.Indices != null)
       {
-        Assert.IsNotNull(shape.Indices);
-        Assert.AreEqual(reference.Indices.Length, shape.Indices.Length);
+        Assert.NotNull(shape.Indices);
+        Assert.Equal(reference.Indices.Length, shape.Indices.Length);
       }
 
       if (reference.Vertices != null)
       {
         for (int i = 0; i < reference.Vertices.Length; ++i)
         {
-          Assert.AreEqual(reference.Vertices[i], shape.Vertices[i]);
+          Assert.Equal(reference.Vertices[i], shape.Vertices[i]);
         }
       }
 
@@ -326,7 +326,7 @@ namespace Tes.CoreTests
       {
         for (int i = 0; i < reference.Normals.Length; ++i)
         {
-          Assert.AreEqual(reference.Normals[i], shape.Normals[i]);
+          Assert.Equal(reference.Normals[i], shape.Normals[i]);
         }
       }
 
@@ -334,7 +334,7 @@ namespace Tes.CoreTests
       {
         for (int i = 0; i < reference.Colours.Length; ++i)
         {
-          Assert.AreEqual(reference.Colours[i], shape.Colours[i]);
+          Assert.Equal(reference.Colours[i], shape.Colours[i]);
         }
       }
 
@@ -342,7 +342,7 @@ namespace Tes.CoreTests
       {
         for (int i = 0; i < reference.Indices.Length; ++i)
         {
-          Assert.AreEqual(reference.Indices[i], shape.Indices[i]);
+          Assert.Equal(reference.Indices[i], shape.Indices[i]);
         }
       }
     }

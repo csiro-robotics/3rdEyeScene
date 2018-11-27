@@ -4,7 +4,7 @@
 //
 // author Kazys Stepanas
 //
-using NUnit.Framework;
+using Xunit;
 using System;
 using System.Diagnostics;
 using System.IO;
@@ -13,7 +13,6 @@ using Tes.TestSupport;
 
 namespace Tes.CoreTests
 {
-  [TestFixture()]
   public class Packets
   {
     /// <summary>
@@ -21,9 +20,10 @@ namespace Tes.CoreTests
     /// </summary>
     /// <param name="collatedPackets">Use collated packets?</param>
     /// <param name="compressed">Use compressed packets? Requires <paramref name="collatedPackets"/>.</param>
-    [TestCase(false, false)]
-    [TestCase(true, false)]
-    [TestCase(true, true)]
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
     public void PacketStreamTests(bool collatedPackets, bool compressed)
     {
       Stream sceneStream = SceneGenerator.Generate(collatedPackets, compressed);
@@ -43,8 +43,8 @@ namespace Tes.CoreTests
         packet = packetStream.NextPacket(ref bytesRead);
         if (!packetStream.EndOfStream)
         {
-          Assert.NotNull(packet, "Failed to extract packet.");
-          Assert.AreEqual(PacketBufferStatus.Complete, packet.Status, "Unpexected packet status: {0}", packet.Status.ToString());
+          Assert.NotNull(packet);//, "Failed to extract packet.");
+          Assert.Equal(PacketBufferStatus.Complete, packet.Status);//, "Unpexected packet status: {0}", packet.Status.ToString());
           ++packetCount1;
         }
       }
@@ -58,14 +58,14 @@ namespace Tes.CoreTests
         packet = packetStream.NextPacket(ref bytesRead);
         if (!packetStream.EndOfStream)
         {
-          Assert.NotNull(packet, "Failed to extract packet.");
-          Assert.AreEqual(PacketBufferStatus.Complete, packet.Status, "Unpexected packet status: {0}", packet.Status.ToString());
+          Assert.NotNull(packet);//, "Failed to extract packet.");
+          Assert.Equal(PacketBufferStatus.Complete, packet.Status);//, "Unpexected packet status: {0}", packet.Status.ToString());
           ++packetCount2;
         }
       }
       Console.WriteLine("Read {0} packets", packetCount2);
 
-      Assert.AreEqual(packetCount2, packetCount1, "Packet count mismatch after reset and replay.");
+      Assert.Equal(packetCount2, packetCount1);//, "Packet count mismatch after reset and replay.");
 
       timer.Stop();
       Console.WriteLine("Elapsed: {0}", timer.Elapsed);
