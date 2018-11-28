@@ -1,5 +1,6 @@
 ﻿using System.IO;
-using Ionic.Zlib;
+using SharpCompress.Compressors;
+using SharpCompress.Compressors.Deflate;
 using Tes.IO;
 using Tes.Net;
 
@@ -14,10 +15,10 @@ namespace Tes.Util
   /// much of the .Net core as open source code, some helpful people at
   /// http://www.hitcents.com/ have migrated the <code>GZipStream</code> into a Unity
   /// asset. This has been imported into the <code>Tes.IO.Compression</code> namespace.
-  /// 
+  ///
   /// The zip code asset is available from here: https://www.assetstore.unity3d.com/en/#!/content/31902
   /// Courtesy of http://www.hitcents.com/
-  /// 
+  ///
   /// Note: This class is currently very slow in decoding collated and compress packets.
   /// Needs to be improved to have less buffer allocation.
   /// </remarks>
@@ -55,7 +56,7 @@ namespace Tes.Util
         {
           _packetStream = new GZipStream(_packetStream, CompressionMode.Decompress);
           if (_packetStream != null)
-          { 
+          {
             _streamReader = new NetworkReader(_packetStream);
           }
         }

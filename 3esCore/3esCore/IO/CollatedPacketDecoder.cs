@@ -1,5 +1,6 @@
 ﻿using System.IO;
-using Ionic.Zlib;
+using SharpCompress.Compressors;
+using SharpCompress.Compressors.Deflate;
 using Tes.Net;
 
 namespace Tes.IO
@@ -20,7 +21,7 @@ namespace Tes.IO
     /// True while we have more packets to decode/extract.
     /// </summary>
     public bool Decoding { get { return _packet != null; } }
-    
+
     /// <summary>
     /// Sets the packet to decode.
     /// </summary>
@@ -53,7 +54,7 @@ namespace Tes.IO
         {
           _packetStream = new GZipStream(_packetStream, CompressionMode.Decompress);
           if (_packetStream != null)
-          { 
+          {
             _streamReader = new NetworkReader(_packetStream);
           }
         }

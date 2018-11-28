@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
-using Ionic.Zlib;
+using SharpCompress.Compressors;
+using SharpCompress.Compressors.Deflate;
 using Tes.IO;
 using Tes.Net;
 using Tes.Shapes;
@@ -25,10 +26,10 @@ namespace Tes.Util
   /// <item>Send the encoded packet.</item>
   /// <item>Reset the encoder.</item>
   /// </list>
-  /// 
+  ///
   /// See <see cref="CollatedPacketDecoder"/> for notes on why <code>System.IO.Compression</code>
   /// is not used.
-  /// 
+  ///
   /// Derives the <see cref="IConnection"/> interface for compatibility.
   /// </remarks>
   public class CollatedPacketEncoder : IConnection
@@ -90,7 +91,7 @@ namespace Tes.Util
     /// <code>
     ///   writer.Send(packet.Buffer, 0, packet.Count)
     /// </code>
-    /// 
+    ///
     /// Use with care.
     /// </remarks>
     public byte[] Buffer { get { return _dataStream.BaseStream.GetBuffer(); } }

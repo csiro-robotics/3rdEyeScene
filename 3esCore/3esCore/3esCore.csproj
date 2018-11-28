@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.1;net461</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
     <RootNamespace>Tes</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
@@ -24,7 +24,7 @@
   <PackageReleaseNotes>Release</PackageReleaseNotes>  </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Zlib.Portable" Version="1.11.0" />
+    <PackageReference Include="sharpcompress" Version="0.22.0" />
   </ItemGroup>
 
 </Project>

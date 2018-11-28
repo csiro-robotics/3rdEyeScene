@@ -38,6 +38,10 @@ Maybe:
 
 Performance improvements:
 - Need to investigate how to do more object management off the main thread. Not well supported by Unity as it doesn't allow objects to be created on other threads.
+- Support a native GZip implementation. Options:
+  - Use dynamic shared library loading in .Net to see if zlib is available. Use that version in preference to the .Net implementation if present.
+  - Use the System.IO.Compress version in all .Net uses except for the Unity case (tricky).
+  - Note this is all Moot if Unity support System.IO.Compress as that version already performs well.
 
 Pie in the sky:
 - Load in a mesh/scene for reference and/or context.
