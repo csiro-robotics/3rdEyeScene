@@ -1,6 +1,7 @@
 ﻿﻿using System;
 using System.IO;
-using Ionic.Zlib;
+using SharpCompress.Compressors;
+using SharpCompress.Compressors.Deflate;
 using Tes.Net;
 using Tes.Shapes;
 
@@ -41,7 +42,7 @@ namespace Tes.IO
     /// </remarks>
     public static int Overhead { get { return PacketHeader.Size + CollatedPacketMessage.Size + Crc16.CrcSize; } }
     /// <summary>
-    /// The default packet size limit for a @c CollatedPacketMessage.
+    /// The default packet size limit for a <see cref="CollatedPacketMessage"/>.
     /// </summary>
     public static ushort MaxPacketSize { get { return (ushort)0xffffu; } }
 
@@ -344,8 +345,9 @@ namespace Tes.IO
     /// <param name="bytes">The data buffer to send.</param>
     /// <param name="offset">An offset into <paramref name="bytes"/> at which to start sending.</param>
     /// <param name="length">The number of bytes to transfer.</param>
+    /// <param name="allowCollation">Ignored in this context.</param>
     /// <returns>The number of bytes transferred or -1 on failure.</returns>
-    public int Send(byte[] bytes, int offset, int length)
+    public int Send(byte[] bytes, int offset, int length, bool allowCollation = true)
     {
       return Add(bytes, offset, length);
     }

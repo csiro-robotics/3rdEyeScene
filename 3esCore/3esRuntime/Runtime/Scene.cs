@@ -1,9 +1,8 @@
 ﻿using System;
 using UnityEngine;
-using Tes.Runtime;
 using Tes.Net;
 
-namespace Tes.Main
+namespace Tes.Runtime
 {
   /// <summary>
   /// Manages the scene root object.

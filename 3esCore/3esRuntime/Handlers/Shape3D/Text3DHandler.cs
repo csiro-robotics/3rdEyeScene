@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using Tes.IO;
-using Tes.Main;
 using Tes.Net;
 using Tes.Runtime;
 using UnityEngine;
@@ -137,7 +136,7 @@ namespace Tes.Handlers.Shape3D
         }
 
         byte[] textBytes = reader.ReadBytes(textLength);
-        textMesh.text = System.Text.Encoding.Default.GetString(textBytes);
+        textMesh.text = System.Text.Encoding.UTF8.GetString(textBytes);
         ShapeComponent shapeComp = obj.GetComponent<ShapeComponent>();
         if (shapeComp != null)
         {

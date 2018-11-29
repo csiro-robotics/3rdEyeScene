@@ -42,18 +42,18 @@ void initialiseTes()
   tes::ServerSettings settings(tes::SF_Compress | tes::SF_Collate);
   // Setup server info to the client.
   tes::ServerInfoMessage serverInfo;
-  tes::initDefaultServerInfo(&info);
+  tes::initDefaultServerInfo(&serverInfo);
   // Coordinate axes listed as left/right, forward, up
-  info.coordinateFrame = tes::XYZ;
+  serverInfo.coordinateFrame = tes::XYZ;
 
   // Create the server.
-  g_tesServer = tes::Server::create(settings, serverInfo);
+  g_tesServer = tes::Server::create(settings, &serverInfo);
   // Setup asynchronous connection monitoring.
   // Connections must be committed synchronously.
-  g_tesServer->start(tes::ConnectionMonitor::Asynchronous);
+  g_tesServer->connectionMonitor()->start(tes::ConnectionMonitor::Asynchronous);
 
   // Optional: wait 1000ms for the first connection before continuing.
-  if (g_tesServer->connectionMonitor()->waitForConnections(1000) > 0)
+  if (g_tesServer->connectionMonitor()->waitForConnection(1000) > 0)
   {
     g_tesServer->connectionMonitor()->commitConnections();
   }
@@ -95,20 +95,34 @@ void animateBox(tes::Server &server)
   // Create the box on the client.
   server.create(box);
 
-  const steps = 90;
+  const int steps = 90;
   for (int i = 0; i <= steps; ++i)
   {
     // Update the box.
-    box.setPosZ(std::sin(tes::deg2Rad(i / float(steps) * float(M_PI)));
+    box.setPosZ(std::sin(tes::degToRad(i / float(steps) * float(M_PI))));
     server.update(box);
-    server.updateFrame(1.0f / float(steps));
-    server.updateTransfers();
+    endFrame(1.0f / float(steps));
   }
 
   // Destroy the box.
   server.destroy(box);
-  server.updateFrame(0.0f);
-  server.updateTransfers();
+  endFrame(0.0f);
+}
+```
+
+To correct dispose of the server, call `dispose()`.
+
+```
+void releaseTes()
+{
+  if (g_tesServer)
+  {
+    // Close connections.
+    g_tesServer->close();
+    // Destroy the server.
+    g_tesServer->dispose();
+    g_tesServer = nullptr;
+  }
 }
 ```
 
@@ -163,8 +177,8 @@ void initialiseTes()
   TES_SERVER_CREATE(g_tesServer, settings, &info);
 
   // Start the server and wait for the connection monitor to start.
-  TES_SERVER_START(*g_tesServer, tes::ConnectionMonitor::Asynchronous);
-  TES_SERVER_START_WAIT(*g_tesServer, 1000);
+  TES_SERVER_START(g_tesServer, tes::ConnectionMonitor::Asynchronous);
+  TES_SERVER_START_WAIT(g_tesServer, 1000);
 }
 
 void initCategories()
@@ -218,6 +232,11 @@ void animateBox2(tes::Server &server)
   }
 
   TES_SERVER_UPDATE(0.0f);
+}
+
+void releaseTes()
+{
+  TES_SERVER_STOP(g_tesServer);
 }
 ```
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
-using Ionic.Zlib;
+using SharpCompress.Compressors;
+using SharpCompress.Compressors.Deflate;
 using Tes.IO;
 using Tes.Net;
 using Tes.Shapes;
@@ -25,10 +26,10 @@ namespace Tes.Util
   /// <item>Send the encoded packet.</item>
   /// <item>Reset the encoder.</item>
   /// </list>
-  /// 
+  ///
   /// See <see cref="CollatedPacketDecoder"/> for notes on why <code>System.IO.Compression</code>
   /// is not used.
-  /// 
+  ///
   /// Derives the <see cref="IConnection"/> interface for compatibility.
   /// </remarks>
   public class CollatedPacketEncoder : IConnection
@@ -42,7 +43,7 @@ namespace Tes.Util
     /// </remarks>
     public static int Overhead { get { return PacketHeader.Size + CollatedPacketMessage.Size + Crc16.CrcSize; } }
     /// <summary>
-    /// The default packet size limit for a @c CollatedPacketMessage.
+    /// The default packet size limit for a <see cref="CollatedPacketMessage"/>.
     /// </summary>
     public static ushort MaxPacketSize { get { return (ushort)0xffffu; } }
 
@@ -90,7 +91,7 @@ namespace Tes.Util
     /// <code>
     ///   writer.Send(packet.Buffer, 0, packet.Count)
     /// </code>
-    /// 
+    ///
     /// Use with care.
     /// </remarks>
     public byte[] Buffer { get { return _dataStream.BaseStream.GetBuffer(); } }
@@ -320,8 +321,9 @@ namespace Tes.Util
     /// <param name="bytes">The data buffer to send.</param>
     /// <param name="offset">An offset into <paramref name="bytes"/> at which to start sending.</param>
     /// <param name="length">The number of bytes to transfer.</param>
+    /// <param name="allowCollation">Ignored</param>
     /// <returns>The number of bytes transferred or -1 on failure.</returns>
-    public int Send(byte[] bytes, int offset, int length)
+    public int Send(byte[] bytes, int offset, int length, bool allowCollation)
     {
       return Add(bytes, offset, length);
     }

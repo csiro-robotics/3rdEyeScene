@@ -38,9 +38,9 @@ namespace Tes.Shapes
     }
 
     /// <summary>
-    /// Zero.
+    /// Not used, but returns 4.
     /// </summary>
-    public override int IndexSize { get { return 0; } }
+    public override int IndexSize { get { return 4; } }
 
     /// <summary>
     /// The number of points in the cloud.

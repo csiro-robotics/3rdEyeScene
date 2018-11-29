@@ -1,62 +1,30 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{C7622A88-DB9D-439A-AC34-8FDDEDD9AB2E}</ProjectGuid>
-    <OutputType>Exe</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
     <RootNamespace>Tes</RootNamespace>
-    <AssemblyName>3esPluginTest</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
+
+    <Version>0.7.0</Version>
+    <Authors>Kazys Stepanas</Authors>
+    <Company>Commonwealth Scientific and Industrial Research Organisation (CSIRO)</Company>
+    <Product>3rd Eye Scene</Product>
+    <Copyright>Copyright © CSIRO 2016</Copyright>
+    <!-- <PackageId>MyApp</PackageId> -->
+    <!-- <AssemblyVersion>1.0.0.0</AssemblyVersion> -->
+    <!-- <FileVersion>1.0.0.0</FileVersion> -->
+    <!-- <NeutralLanguage>en</NeutralLanguage> -->
+    <!-- <Description>Description here</Description> -->
+    <!-- <PackageLicenseUrl>License URL</PackageLicenseUrl> -->
+    <!-- <PackageProjectUrl>Project URL</PackageProjectUrl> -->
+    <!-- <PackageIconUrl>Icon URL</PackageIconUrl> -->
+    <!-- <RepositoryUrl>Repo URL</RepositoryUrl> -->
+    <!-- <RepositoryType>Repo type</RepositoryType> -->
+    <!-- <PackageTags>Tags</PackageTags> -->
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>..\..\build\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>..\..\build\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml" />
+    <ProjectReference Include="..\..\3esCore\3esCore.csproj" />
+    <ProjectReference Include="..\3esExamplePluginCore\3esExamplePluginCore.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\3esCore\3esCore.csproj">
-      <Project>{91d3c546-37ef-4ef1-a48a-487a1f367a33}</Project>
-      <Name>3esCore</Name>
-      <Private>False</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\3esExamplePluginCore\3esExamplePluginCore.csproj">
-      <Project>{F5446FC5-E245-4242-9597-38A2CF919C39}</Project>
-      <Name>3esExamplePluginCore</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
 </Project>

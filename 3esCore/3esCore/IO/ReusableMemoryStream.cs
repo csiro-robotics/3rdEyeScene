@@ -18,6 +18,9 @@ namespace Tes.IO
   /// Most members are simply a pass through to the underlying <c>MemoryStream</c>. However
   /// the <see cref="Close()"/> function flushes the buffer, but leaves the <c>MemoryStream</c>
   /// open. In this way, the <c>MemoryStream</c> can continue to be used.
+  ///
+  /// Note the stream is designed to be filled to capacity before reading. Thus the capacity
+  /// denotes the number of bytes available.
   /// </remarks>
   class ReusableMemoryStream : Stream
   {
@@ -30,6 +33,10 @@ namespace Tes.IO
       _buffer = new byte[capacity];
     }
 
+    /// <summary>
+    /// Is this a readable stream?
+    /// </summary>
+    /// <returns><c>true</c></returns>
     public override bool CanRead
     {
       get
@@ -38,6 +45,10 @@ namespace Tes.IO
       }
     }
 
+    /// <summary>
+    /// Is this a seekable stream.?
+    /// </summary>
+    /// <returns><c>true</c></returns>
     public override bool CanSeek
     {
       get
@@ -46,6 +57,10 @@ namespace Tes.IO
       }
     }
 
+    /// <summary>
+    /// Is this a writable stream?
+    /// </summary>
+    /// <returns><c>true</c></returns>
     public override bool CanWrite
     {
       get
@@ -54,6 +69,11 @@ namespace Tes.IO
       }
     }
 
+    /// <summary>
+    /// Query the stream length in bytes.
+    /// </summary>
+    /// <returns>The stream length in bytes.</returns>
+    /// <remarks>This is equivalent to the capacity set on construction.</remarks>
     public override long Length
     {
       get
@@ -62,6 +82,13 @@ namespace Tes.IO
       }
     }
 
+    /// <summary>
+    /// Get/set the current read/write position (byte offset).
+    /// </summary>
+    /// <returns>The current read/write byte offset.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown if the position set is out of range of the internal buffer <see cref="Length"/>.
+    /// </exception>
     public override long Position
     {
       get
@@ -79,22 +106,48 @@ namespace Tes.IO
       }
     }
 
+    /// <summary>
+    /// Access the internal buffer directly.
+    /// </summary>
+    /// <returns>The internal byte buffer.</returns>
     public byte[] GetBuffer()
     {
       return _buffer;
     }
 
+    /// <summary>
+    /// Nominally close the stream (see remarks).
+    /// </summary>
+    /// <remarks>
+    /// This method does not close the stream, only calling <see cref="Flush"/> instead. This is
+    /// the key behavioural difference between this stream and the normal <c>MemoryStream</c> allowing
+    /// this stream to be re-used.
+    /// </remarks>
     public override void Close()
     {
       // Flush, but leave open.
       Flush();
     }
 
+    /// <summary>
+    /// Ignored: the position is preserved for reading.
+    /// </summary>
+    /// <remarks>
+    /// Since the internal position is 
+    /// </remarks>
     public override void Flush()
     {
       // Noop. We need to preserve the position for reading.
     }
 
+    /// <summary>
+    /// Read bytes from the stream.
+    /// </summary>
+    /// <param name="buffer">Buffer to read into.</param>
+    /// <param name="offset">Offset into <paramref name="buffer"/> to write at.</param>
+    /// <param name="count">Number of bytes to read from the stream.</param>
+    /// <returns>The number of bytes read.</returns>
+    /// <remarks>This progresses the <see cref="Position"/> by the number of bytes read.</remarks>
     public override int Read(byte[] buffer, int offset, int count)
     {
       long available = _buffer.LongLength - _position;
@@ -108,6 +161,12 @@ namespace Tes.IO
       return count;
     }
 
+    /// <summary>
+    /// Seek to a position in the stream, adjusting the <see cref="Position"/>.
+    /// </summary>
+    /// <param name="offset">Offset from <paramref name="origin"/> to seek to.</param>
+    /// <param name="origin">Seeking reference position.</param>
+    /// <returns>The <see cref="Position"/> after seeking.</returns>
     public override long Seek(long offset, SeekOrigin origin)
     {
       switch (origin)
@@ -125,6 +184,10 @@ namespace Tes.IO
       return Position;
     }
 
+    /// <summary>
+    /// Resizes the internal buffer, affecting <see cref="Length"/>.
+    /// </summary>
+    /// <param name="value">The new byte length to set the buffer size to.</param>
     public override void SetLength(long value)
     {
       if (_buffer.LongLength != value)
@@ -142,6 +205,14 @@ namespace Tes.IO
       }
     }
 
+    /// <summary>
+    /// Write bytes to the stream.
+    /// </summary>
+    /// <param name="buffer">Buffer to write from.</param>
+    /// <param name="offset">Offset into <paramref name="buffer"/> to read from.</param>
+    /// <param name="count">Number of bytes to write to the stream.</param>
+    /// <returns>The number of bytes written.</returns>
+    /// <remarks>This progresses the <see cref="Position"/> by the number of bytes written.</remarks>
     public override void Write(byte[] buffer, int offset, int count)
     {
       if (_position + count > _buffer.Length)

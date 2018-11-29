@@ -1,43 +1,42 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{B29F5CC6-EC81-424B-A051-1DFB218FFF3A}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <RootNamespace>Tes.TestSupport</RootNamespace>
-    <AssemblyName>TestSupport</AssemblyName>
-    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug</OutputPath>
-    <DefineConstants>DEBUG;</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release</OutputPath>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <ConsolePause>false</ConsolePause>
-  </PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
+    <RootNamespace>Tes</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+
+    <Version>0.7.0</Version>
+    <Authors>Kazys Stepanas</Authors>
+    <Company>Commonwealth Scientific and Industrial Research Organisation (CSIRO)</Company>
+    <Product>3rd Eye Scene</Product>
+    <Copyright>Copyright © CSIRO 2015</Copyright>
+    <!-- <PackageId>MyApp</PackageId> -->
+    <!-- <AssemblyVersion>1.0.0.0</AssemblyVersion> -->
+    <!-- <FileVersion>1.0.0.0</FileVersion> -->
+    <!-- <NeutralLanguage>en</NeutralLanguage> -->
+    <!-- <Description>Description here</Description> -->
+    <!-- <PackageLicenseUrl>License URL</PackageLicenseUrl> -->
+    <!-- <PackageProjectUrl>Project URL</PackageProjectUrl> -->
+    <!-- <PackageIconUrl>Icon URL</PackageIconUrl> -->
+    <!-- <RepositoryUrl>Repo URL</RepositoryUrl> -->
+    <!-- <RepositoryType>Repo type</RepositoryType> -->
+    <!-- <PackageTags>Tags</PackageTags> -->
+  <PackageReleaseNotes>Release</PackageReleaseNotes>  </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="System" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
+    <PackageReference Include="xunit" Version="2.4.1" />
+    <PackageReference Include="xunit.runner.console" Version="2.4.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SceneGenerator.cs" />
+    <ProjectReference Include="..\3esCore\3esCore.csproj" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\3esCore\3esCore.csproj">
-      <Project>{91D3C546-37EF-4EF1-A48A-487A1F367A33}</Project>
-      <Name>3esCore</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

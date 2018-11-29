@@ -5,6 +5,24 @@ using UnityEngine;
 
 namespace Dialogs
 {
+  /// <summary>
+  /// Display modes for the <see cref="FileDialogUI"/>.
+  /// </summary>
+  public enum FileDisplayMode
+  {
+    /// <summary>
+    /// Large icons, text below, arranged in a grid.
+    /// </summary>
+    Large,
+    /// <summary>
+    /// Small icons, text to the right, arranged in a grid.
+    /// </summary>
+    Small,
+    /// <summary>
+    /// Small icons, text to the right, arranged in columns.
+    /// </summary>
+    List
+  };
 
   /// <summary>
   /// Provides an abstraction layer between the <see cref="FileDialog"/> and
@@ -15,9 +33,14 @@ namespace Dialogs
     /// <summary>
     /// Dialog observer.
     /// </summary>
-    FileDialogViewObserver Observer { get; set; }
+    FileDialogViewController Controller { get; set; }
 
     RectTransform UI { get; }
+
+    /// <summary>
+    /// Controls how files in the dialog are displayed.
+    /// </summary>
+    FileDisplayMode DisplayMode { get; set; }
 
     /// <summary>
     /// Support multiple file selections?
@@ -26,7 +49,7 @@ namespace Dialogs
     /// <summary>
     /// The dialog title.
     /// </summary>
-    /// <value>The curent dialog title text.</value>
+    /// <value>The current dialog title text.</value>
     string Title { get; set; }
     /// <summary>
     /// User display of the current location.
@@ -91,6 +114,7 @@ namespace Dialogs
     /// <value>Details of the current file.</value>
     FileSystemEntry CurrentFile { get; set; }
     FileSystemEntry CurrentLocation { get; set; }
+
     /// <summary>
     /// Called to update the links view to display the given items.
     /// For example, the <paramref name="locations"/> may specify a list of drives.

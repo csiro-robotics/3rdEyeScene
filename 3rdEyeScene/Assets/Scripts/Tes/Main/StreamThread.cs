@@ -2,12 +2,15 @@
 using System.Collections;
 using System.IO;
 using System.Runtime.InteropServices;
-using Ionic.Zlib;
+// using Ionic.Zlib;
+using SharpCompress.Compressors;
+using SharpCompress.Compressors.Deflate;
 using UnityEngine;
 using Tes.Collections;
 using Tes.IO;
 using Tes.Logging;
 using Tes.Net;
+using Tes.Runtime;
 
 namespace Tes.Main
 {

@@ -16,6 +16,7 @@ using UnityEngine;
 /// </summary>
 public class TesComponent : Router
 {
+  public Tes.Net.CoordinateFrame Frame = Tes.Net.CoordinateFrame.ZXY;
   public Material VertexColourLitMaterial;
   public Material VertexColourUnlitMaterial;
   public Material VertexColourLitTwoSidedMaterial;
@@ -169,6 +170,7 @@ public class TesComponent : Router
       saveDlg.Filter = FileFilter;
       saveDlg.DefaultExt = "3es";
       saveDlg.AddExtension = true;
+      saveDlg.AllowNative = UISettings.Instance.NativeDialogs;
       _inputStack.SetLayerEnabled("Dialogs", true);
       // Input
       saveDlg.ShowDialog(delegate(CommonDialog dialog, DialogResult result)
@@ -202,6 +204,7 @@ public class TesComponent : Router
       openDlg.Filter = FileFilter;
       openDlg.DefaultExt = "3es";
       openDlg.AddExtension = true;
+      openDlg.AllowNative = UISettings.Instance.NativeDialogs;
       _inputStack.SetLayerEnabled("Dialogs", true);
       openDlg.ShowDialog(delegate (CommonDialog dialog, DialogResult result)
       {
@@ -229,6 +232,23 @@ public class TesComponent : Router
     settingsList.Add(CameraSettings.Instance);
     settingsList.Add(RenderSettings.Instance);
     settingsList.Add(PlaybackSettings.Instance);
+    settingsList.Add(UISettings.Instance);
+  }
+
+  protected override void OnServerInfoUpdate()
+  {
+    Frame = ServerInfo.CoordinateFrame;
+  }
+
+  protected override void Update()
+  {
+    // Debug: Support switching frames in the editor.
+    if (Scene.Frame != Frame)
+    {
+      Scene.Frame = Frame;
+    }
+
+    base.Update();
   }
 
   private void OnCategoryActiveChange(ushort categoryId, bool active)

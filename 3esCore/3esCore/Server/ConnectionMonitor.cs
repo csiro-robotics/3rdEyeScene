@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Collections.Generic;
@@ -21,6 +22,26 @@ namespace Tes.Server
     /// The connection mode.
     /// </summary>
     public ConnectionMonitorMode Mode { get; protected set; }
+
+    /// <summary>
+    /// Port on which the server is listening (if relevant).
+    /// </summary>
+    public int Port
+    {
+      get
+      {
+        if (_listen != null)
+        {
+          IPEndPoint ipEndPoint = _listen.LocalEndpoint as IPEndPoint;
+          //DnsEndPoint dnsEndPoint = _listen.LocalEndpoint as DnsEndPoit;
+          if (ipEndPoint != null)
+          {
+            return ipEndPoint.Port;
+          }
+        }
+        return 0;
+      }
+    }
 
     /// <summary>
     /// Create a connection monitor for the given server.
@@ -60,9 +81,12 @@ namespace Tes.Server
 
       case ConnectionMonitorMode.Asynchronous:
         _quitFlag = false;
-        _thread = new System.Threading.Thread(MonitorThread);
-        _thread.Start();
-        Mode = ConnectionMonitorMode.Asynchronous;
+        if (Listen())
+        {
+          _thread = new System.Threading.Thread(MonitorThread);
+          _thread.Start();
+          Mode = ConnectionMonitorMode.Asynchronous;
+        }
         break;
 
       default:
@@ -70,8 +94,9 @@ namespace Tes.Server
         return false;
       }
 
-      return true;
+      return Mode != ConnectionMonitorMode.None;
     }
+
 
     /// <summary>
     /// Stop listening for connections.
@@ -112,6 +137,43 @@ namespace Tes.Server
         _thread = null;
       }
       _lock = null;
+    }
+
+    /// <summary>
+    /// Block until the connection thread has started.
+    /// </summary>
+    /// <returns><c>true</c> in synchronous mode, or in asynchronous mode and the connection monitor has started.</returns>
+    public bool WaitForStart()
+    {
+      if (Mode == ConnectionMonitorMode.Synchronous)
+      {
+        return true;
+      }
+
+      if (Mode == ConnectionMonitorMode.None || _thread == null)
+      {
+        return false;
+      }
+
+      for (;;)
+      {
+        switch (_thread.ThreadState)
+        {
+          case System.Threading.ThreadState.Aborted:
+          case System.Threading.ThreadState.Stopped:
+          case System.Threading.ThreadState.Suspended:
+          case System.Threading.ThreadState.Unstarted:
+            return false;
+
+          case System.Threading.ThreadState.WaitSleepJoin:
+          case System.Threading.ThreadState.Running:
+            return true;
+
+          default:
+            System.Threading.Thread.Sleep(0);
+            break;
+        }
+      }
     }
 
     /// <summary>
@@ -189,18 +251,98 @@ namespace Tes.Server
     }
 
     /// <summary>
+    /// Wait for up to <paramref name="timeoutMs"/> milliseconds for at least one new connection before continuing.
+    /// </summary>
+    /// <param name="timeoutMs">The time to wait in milliseconds.</param>
+    /// <returns>The number of connections. These may need to be committed.</returns>
+    /// <remarks>
+    /// The method returns once either a new connection exists or <paramref name="timeoutMs"/> has elapsed.
+    /// When there is a new connection, it has yet to be committed.
+    /// </remarks>
+    public int WaitForConnections(uint timeoutMs)
+    {
+      Stopwatch timer = new Stopwatch();
+      timer.Start();
+
+      int connectionCount = 0;
+      do
+      {
+        _lock.Lock();
+        try
+        {
+          connectionCount = _connections.Count;
+          if (connectionCount > 0)
+          {
+            return _connections.Count;
+          }
+        }
+        finally
+        {
+          _lock.Unlock();
+        }
+
+        switch (Mode)
+        {
+          case ConnectionMonitorMode.None:
+            // Not actually looking for connections. Abort.
+            return 0;
+          case ConnectionMonitorMode.Synchronous:
+            // Synchronous mode. Need to update monitor.
+            MonitorConnections();
+            break;
+          case ConnectionMonitorMode.Asynchronous:
+            // Asynchronous mode. Yield.
+            System.Threading.Thread.Sleep(0);
+            break;
+        }
+      } while (timer.ElapsedMilliseconds < timeoutMs);
+
+      // Final check.
+      if (Mode == ConnectionMonitorMode.Synchronous)
+      {
+        MonitorConnections();
+      }
+
+      _lock.Lock();
+      try
+      {
+        connectionCount = _connections.Count;
+      }
+      finally
+      {
+        _lock.Unlock();
+      }
+
+      return connectionCount;
+    }
+
+    /// <summary>
     /// Start listening for connections.
     /// </summary>
-    private void Listen()
+    private bool Listen()
     {
       if (_listen != null)
       {
-        return;
+        return true;
       }
 
       IPAddress local = IPAddress.Loopback;
-      _listen = new TcpListener(local, _server.Settings.ListenPort);
-      _listen.Start();
+      int port = _server.Settings.ListenPort;
+      while (_listen == null && port <= _server.Settings.ListenPort + _server.Settings.PortRange)
+      {
+        _listen = new TcpListener(local, port++);
+        try
+        {
+          _listen.Start();
+          return true;
+        }
+        catch (SocketException /*e*/)
+        {
+          _listen = null;
+        }
+      }
+
+      return false;
     }
 
     /// <summary>
@@ -225,12 +367,15 @@ namespace Tes.Server
     /// </summary>
     private void MonitorThread()
     {
-      Listen();
+      if (_listen == null)
+      {
+        return;
+      }
 
       while (!_quitFlag)
       {
         MonitorConnections();
-        System.Threading.Thread.Sleep(100);
+        System.Threading.Thread.Sleep(50);
       }
 
       StopListening();

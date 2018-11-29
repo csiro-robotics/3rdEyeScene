@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Tes.IO;
 using Tes.Net;
 
@@ -27,6 +28,14 @@ namespace Tes.Shapes
     /// Point render size request. Zero for the default.
     /// </summary>
     public byte PointSize { get; set; }
+
+    /// <summary>
+    /// Default constructor for an empty, transient cloud.
+    /// </summary>
+    public PointCloudShape() : base((ushort)Tes.Net.ShapeID.PointCloud)
+    {
+      IsComplex = true;
+    }
 
     /// <summary>
     /// Create a new point cloud shape.
@@ -62,7 +71,7 @@ namespace Tes.Shapes
     /// By default, the entire point cloud resource is rendered. By assigning indices,
     /// the displayed points are limited to those referenced in the given array.
     /// </remarks>
-    public void SetIndices(uint[] indices) { _indices = indices; }
+    public PointCloudShape SetIndices(uint[] indices) { _indices = indices; return this; }
 
     /// <summary>
     /// Enumerate the shape's resources.
@@ -137,6 +146,75 @@ namespace Tes.Shapes
 
       progressMarker += count;
       return (progressMarker < IndexCount) ? 1 : 0;
+    }
+
+    /// <summary>
+    /// Read the contents of a create message for a <c>MeshSet</c>.
+    /// </summary>
+    /// <param name="reader">Stream to read from</param>
+    /// <returns>True on success.</returns>
+    /// <remarks>
+    /// Reads additional data for the cloud and the cloud mesh ID. The cloud mesh is represented
+    /// by a <see cref="PlaceholderMesh"/> as real mesh data cannot be resolved here.
+    /// </remarks>
+    public override bool ReadCreate(BinaryReader reader)
+    {
+      if (!base.ReadCreate(reader))
+      {
+        return false;
+      }
+
+      uint cloudID = reader.ReadUInt32();
+      uint indexCount = reader.ReadUInt32();
+      byte pointSize = reader.ReadByte();
+
+      PointCloud = new PlaceholderMesh(cloudID);
+      _indices = (indexCount > 0) ? new uint[indexCount] : null;
+      PointSize = pointSize;
+
+      return true;
+    }
+
+    /// <summary>
+    /// Read additional index data for the cloud.
+    /// </summary>
+    /// <param name="reader">Stream to read from</param>
+    /// <returns>True on success.</returns>
+    /// <remarks>
+    /// Reads additional index data if required.
+    /// 
+    /// Fails if the <see cref="DataMessage.ObjectID"/> does not match <see cref="Shape.ID"/>.
+    /// </remarks>
+    public override bool ReadData(BinaryReader reader)
+    {
+      DataMessage msg = new DataMessage();
+      if (!msg.Read(reader))
+      {
+        return false;
+      }
+
+      if (msg.ObjectID != ID)
+      {
+        return false;
+      }
+
+      uint offset = reader.ReadUInt32();
+      uint itemCount = reader.ReadUInt32();
+
+      if (offset + itemCount > 0)
+      {
+        if (_indices == null || offset + itemCount > _indices.Length)
+        {
+          return false;
+        }
+      }
+
+      for (uint i = offset; i < offset + itemCount; ++i)
+      {
+        _indices[i] = reader.ReadUInt32();
+      }
+
+      return true;
     }
 
     /// <summary>

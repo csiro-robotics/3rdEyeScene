@@ -34,8 +34,9 @@ namespace Tes.Server
     /// Send a pre-composed packet to all clients.
     /// </summary>
     /// <param name="packet"></param>
-    /// <returns></returns>
-    int Send(PacketBuffer packet);
+    /// <param name="allowCollation">Allow data to be collated and compressed with other packets?</param>
+    /// <returns>The number of bytes sent. Negative on any failure.</returns>
+    int Send(PacketBuffer packet, bool allowCollation = true);
 
     /// <summary>
     /// Sends a create message for the given shape.
@@ -99,7 +100,7 @@ namespace Tes.Server
     /// Requests the connection at the given index.
     /// </summary>
     /// <remarks>
-    /// This data may be stale if the @c ConnectionMonitor has yet to update.
+    /// This data may be stale if the <see cref="ConnectionMonitor"/> has yet to update.
     /// </remarks>
     /// <param name="index">The index of the requested connection.</param>
     /// <returns>The requested connection, or null if <paramref name="index"/> is out of range.</returns>
@@ -118,6 +119,9 @@ namespace Tes.Server
     /// <param name="callback">Optional callback to invoke for each new connection.</param>
     void UpdateConnections(IList<IConnection> connections, NewConnectionCallback callback = null);
 
-    // FIXME: need an explicit method to kick all clients. Can emulate with ConnectionMonitor.Stop() for now.
+    /// <summary>
+    /// Close the server connection (disconnect).
+    /// </summary>
+    void Close();
   }
 }

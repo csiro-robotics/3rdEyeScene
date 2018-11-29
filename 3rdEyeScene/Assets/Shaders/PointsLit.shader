@@ -117,45 +117,20 @@ Shader "Points/PointsLit"
     return scale * _Color * _Tint * input.colour;
   }
 
-  // Fragment Shader -----------------------------------------------
-  float4 frag_depth(FragmentInput input) : COLOR
-  {
-    const float2 uvoffset = input.tex0 - float2(0.5f, 0.5f);
-    const float uvdist2 = uvoffset.x * uvoffset.x + uvoffset.y * uvoffset.y;
-    // Drop points outside the point size radius.
-    // Use 0.25 because point radius has ended up being 0.5 (from uvoffset)
-    // and we need radius squared (0.25)
-    if (uvdist2 > 0.25f || input.colour.a == 0)
-    {
-      discard;
-    }
-    return input.colour;
-  }
-
   ENDCG
 
   SubShader
   {
-//    // FIXME: Avoid using geometry shader twice just to get EDL working. Help with render to texture?
-//    Pass
-//    {
-//      Tags{ "RenderType" = "Opaque" "LightMode" = "ShadowCaster" "Queue" = "Geometry" }
-//      LOD 200
-//
-//      CGPROGRAM
-//#pragma vertex vert
-//#pragma fragment frag_depth
-//#pragma geometry geom
-//      ENDCG
-//    }
-
     Pass
     {
       //Tags {"RenderType" = "Opaque" "LightMode" = "ShadowCaster" }
       Tags{ "Queue" = "Opaque" "RenderType" = "Opaque" }
       LOD 200
+      // The coordinate system may vary, so we must rendering without culling.
+      Cull Off
 
       CGPROGRAM
+#pragma target 4.0
 #pragma vertex vert
 #pragma fragment frag
 #pragma geometry geom

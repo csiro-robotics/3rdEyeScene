@@ -32,7 +32,7 @@ namespace Tes.Server
   ///
   /// Asynchronous mode is activated by calling <see cref="Start(ConnectionMonitorMode)"/> and stopped with
   /// <see cref="Stop()"/>Calls to <see cref="Join()"/> will block until the monitor thread has
-  /// completed, but should only be called after @c stop() has been called.
+  /// completed, but should only be called after <see cref="Stop()"/> has been called.
   /// The <see cref="CommitConnections(NewConnectionCallback)"/> method must still be called by the main thread
   /// (synchronously) to control when connections are activated and deactivated.
   ///
@@ -88,7 +88,7 @@ namespace Tes.Server
     /// Returns the current running mode.
     /// </summary>
     /// <remarks>
-    /// <code>Asyncrhonous</code> mode is set as soon as <see cref="Start(ConnectionMonitorMode)"/>
+    /// <code>Asynchronous</code> mode is set as soon as <see cref="Start(ConnectionMonitorMode)"/>
     /// is called and drops to <code>None</code> after calling <see cref="Stop()"/> once the thread has stopped.
     ///
     /// <code>Syncrhonous</code> mode is set as soon as <see cref="Start(ConnectionMonitorMode)"/> is called and
@@ -99,9 +99,14 @@ namespace Tes.Server
     ConnectionMonitorMode Mode { get; }
 
     /// <summary>
+    /// Port on which the server is listening (if relevant).
+    /// </summary>
+    int Port { get; }
+
+    /// <summary>
     /// Starts the monitor listening in the specified mode.
     /// </summary>
-    /// <param name="mode">The listening mode. Mode @c Node is ignored.</param>
+    /// <param name="mode">The listening mode. Mode <c>None</c> is ignored.</param>
     /// <returns>
     /// True if listening is running in the specified mode. This includes both newly
     /// started and if it was already running in that mode. False is returned if mode is
@@ -128,8 +133,19 @@ namespace Tes.Server
     void Join();
 
     /// <summary>
+    /// Wait for the monitor thread to start if running in asynchronous mode.
+    /// </summary>
+    /// <returns>True if in asynchronous mode and the thread has started.</returns>
+    /// <remarks>
+    /// In asynchronous mode, this method spins and yields until the thread has started or terminated.
+    /// In synchronous mode, this method returns <c>true</c> immediately. In other modes modes, it
+    /// immediately returns <c>false</c>.
+    /// </remarks>
+    bool WaitForStart();
+
+    /// <summary>
     /// Accepts new connections and checks for expired connections, but
-    /// effects neither in the @c Server.
+    /// effects neither in the owning <see cref="IServer"/>.
     /// </summary>
     /// <remarks>
     /// This is either called on the main thread for synchronous operation,
@@ -138,10 +154,22 @@ namespace Tes.Server
     void MonitorConnections();
 
     /// <summary>
-    /// Migrates new connections to the owning @c Server and removes expired
+    /// Migrates new connections to the owning <see cref="IServer"/> and removes expired
     /// connections.
     /// </summary>
     /// <param name="callback">Optional callback to invoke for each new connection.</param>
     void CommitConnections(NewConnectionCallback callback);
+
+    /// <summary>
+    /// Wait for up to <paramref name="timeoutMs"/> milliseconds for at least one connection before continuing.
+    /// </summary>
+    /// <param name="timeoutMs">The time to wait in milliseconds.</param>
+    /// <returns>The number of connections. These may need to be committed.</returns>
+    /// <remarks>
+    /// The method returns once either a new connection exists or <paramref name="timeoutMs"/> has elapsed.
+    /// When there is a new connection, it has yet to be committed. This should be done by calling
+    /// <see cref="CommitConnections(NewConnectionCallback)"/> after this method returns true.
+    /// </remarks>
+    int WaitForConnections(uint timeoutMs);
   }
 }

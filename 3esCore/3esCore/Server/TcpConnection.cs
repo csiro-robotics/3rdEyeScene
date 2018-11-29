@@ -86,12 +86,29 @@ namespace Tes.Server
       _packetLock.Lock();
       try
       {
+        bool finalisedPacket = false;
         // Send frame number too?
         _packet.Reset((ushort)RoutingID.Control, (ushort)ControlMessageID.EndFrame);
         if (msg.Write(_packet))
         {
-          _packet.FinalisePacket();
-          wrote = SendInternal(_packet.Data, 0, _packet.Count, true);
+          finalisedPacket = _packet.FinalisePacket();
+        }
+
+        if ((ServerFlags | ServerFlag.NakedFrameMessage) != 0)
+        {
+          FlushCollatedPacket();
+          wrote = SendImmediate(_packet.Data, 0, _packet.Count, false);
+        }
+        else
+        {
+          // Flush after sending.
+          SendFlag sendFlags = SendFlag.FlushCollated;
+          if ((ServerFlags & ServerFlag.NakedFrameMessage) == 0)
+          {
+            // Not sending naked frame messages. Collation is allowed.
+            sendFlags |= SendFlag.AllowCollated;
+          }
+          wrote = SendInternal(_packet.Data, 0, _packet.Count, sendFlags);
           FlushCollatedPacket();
         }
       }
@@ -260,14 +277,28 @@ namespace Tes.Server
     /// <param name="data">The data bytes to send.</param>
     /// <param name="offset">Offset into <paramref name="data"/> to start sending from.</param>
     /// <param name="length">Number of bytes to send (from <paramref name="offset"/>).</param>
+    /// <param name="allowCollation">Allow data to be collated and compressed with other packets?</param>
     /// <returns>The number of bytes send on success (<paramref name="length"/>) or -1 on failure.</returns>
     /// <remarks>
     /// The given data are send as is, except that they may be collated and optionally
     /// compressed before sending, depending on the <see cref="ServerFlag"/> options set.
     /// </remarks>
-    public int Send(byte[] data, int offset, int length)
+    public int Send(byte[] data, int offset, int length, bool allowCollation = true)
     {
-      return SendInternal(data, offset, length, false);
+      return SendInternal(data, offset, length, (allowCollation) ? SendFlag.AllowCollated : 0);
+    }
+
+    [Flags]
+    protected enum SendFlag
+    {
+      /// <summary>
+      /// Set to allow data to be collated and compressed.
+      /// </summary>
+      AllowCollated,
+      /// <summary>
+      /// Ensure collated data packet is flushed after send.
+      /// </summary>
+      FlushCollated
     }
 
     /// <summary>
@@ -276,19 +307,18 @@ namespace Tes.Server
     /// <param name="data">The data bytes to send.</param>
     /// <param name="offset">Offset into <paramref name="data"/> to start sending from.</param>
     /// <param name="length">Number of bytes to send (from <paramref name="offset"/>).</param>
-    /// <param name="flushCollated">Ensure collated data packet is flushed after send?</param>
+    /// <param name="flags">Send option flags.</param>
     /// <returns>The number of bytes send on success (<paramref name="length"/>) or -1 on failure.</returns>
     /// <remarks>
     /// The given data are send as is, except that they may be collated and optionally
     /// compressed before sending, depending on the <see cref="ServerFlag"/> options set.
     /// </remarks>
-    protected int SendInternal(byte[] data, int offset, int length, bool flushCollated)
+    protected int SendInternal(byte[] data, int offset, int length, SendFlag flags)
     {
-      bool sendDirect = true;
       _sendLock.Lock();
       try
       {
-        if ((ServerFlags & ServerFlag.Collate) != 0)
+        if ((ServerFlags & ServerFlag.Collate) != 0 && (flags & SendFlag.AllowCollated) != 0)
         {
           if (_collator.CollatedBytes + length >= CollatedPacketEncoder.MaxPacketSize)
           {
@@ -297,38 +327,29 @@ namespace Tes.Server
           }
           int added = _collator.Add(data, offset, length);
           // Flush on request, or if we failed to add to the packet. We'll send the data by itself afterwards.
-          if (flushCollated || added == -1)
+          if ((flags & SendFlag.FlushCollated) != 0 || added == -1)
           {
             // Final flush?
             FlushCollatedPacket();
           }
           if (added != -1)
           {
-            sendDirect = false;
             return added;
           }
           // At this point we may send without collation or compression.
         }
-        
-        if (sendDirect)
+        else if ((ServerFlags & ServerFlag.Collate) != 0)
         {
-          if (_client != null && _client.Connected)
+          // Skipping collation block though collation is enabled. Flush any current collated data before sending.
+          if (_collator.CollatedBytes + length >= CollatedPacketEncoder.MaxPacketSize)
           {
-            try
-            {
-              _client.GetStream().Write(data, offset, length);
-            }
-            catch (System.IO.IOException)
-            {
-              _client.Close();
-              _client = null;
-              return -1;
-            }
+            // Additional bytes would be too much. Flush collated
+            FlushCollatedPacket();
           }
-          return length;
         }
 
-        return -1;
+        // Collation failed or not allowed.
+        return SendImmediate(data, offset, length, true);
       }
       finally
       {
@@ -336,6 +357,55 @@ namespace Tes.Server
       }
     }
 
+    /// <summary>
+    /// Send a message to the client explicitly avoiding collation and compression.
+    /// </summary>
+    /// <param name="data">The data array to send from.</param>
+    /// <param name="offset">Byte offset into <paramref name="data"/> to start sending from.</param>
+    /// <param name="length">Number of bytes from the offset <paramref name="data"/> to send.</param>
+    /// <param name="unguarded">True if <c>_sendLock</c> is already locked and externally managed.
+    ///   Must only be <c>false</c> when <c>_sendLock</c> is not already locked to avoid deadlock.
+    /// </param>
+    /// <returns>The number of bytes send or -1 on error.</returns>
+    /// <remarks>
+    /// The method may be called with the <c>_sendLock</c> already locked only if
+    /// <paramref name="unguarded"/> is <c>true</c>. Otherwise the call will result
+    /// in a deadlock.
+    /// 
+    /// Misused may result in out of phase data.
+    /// </remarks>
+    protected int SendImmediate(byte[] data, int offset, int length, bool unguarded)
+    {
+      if (!unguarded)
+      {
+        _sendLock.Lock();
+      }
+
+      try
+      {
+        if (_client != null && _client.Connected)
+        {
+          try
+          {
+            _client.GetStream().Write(data, offset, length);
+          }
+          catch (System.IO.IOException)
+          {
+            _client.Close();
+            _client = null;
+            return -1;
+          }
+        }
+        return length;
+      }
+      finally
+      {
+        if (!unguarded)
+        {
+          _sendLock.Unlock();
+        }
+      }
+    }
     /// <summary>
     /// Flush the collated/compressed data if required.
     /// </summary>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Tes.IO;
 using Tes.Maths;
 using Tes.Net;
@@ -117,7 +118,7 @@ namespace Tes.Shapes
     public abstract uint[] Colours(int stream = 0);
 
   
-    #region Resource transfer
+    #region Resource transfer - write
     /// <summary>
     /// <see cref="Resource.Transfer(PacketBuffer, int, ref TransferProgress)"/> phases enumeration.
     /// </summary>
@@ -488,6 +489,202 @@ namespace Tes.Shapes
       progress.Progress += msg.Count;
       return progress.Progress == items.Length;
     }
+    #endregion
+
+    #region Resource transfer - read
+    /// <summary>
+    /// Read and handle the <see cref="MeshCreateMessage"/>.
+    /// </summary>
+    /// <param name="reader">Stream to read from.</param>
+    /// <returns>True on success.</returns>
+    /// <remarks>
+    /// Handling is deferred to <see cref="ProcessCreate(MeshCreateMessage)"/> which subclasses
+    /// should implement.
+    /// </remarks>
+    public bool ReadCreate(BinaryReader reader)
+    {
+      MeshCreateMessage msg = new MeshCreateMessage();
+      if (!msg.Read(reader))
+      {
+        return false;
+      }
+
+      return ProcessCreate(msg);
+    }
+
+    /// <summary>
+    /// Read and handle a <see cref="MeshComponentMessage"/> message.
+    /// </summary>
+    /// <param name="messageType">The <see cref="MeshMessageType"/> identifying the mesh component being read.</param>
+    /// <param name="reader">Stream to read from.</param>
+    /// <returns>True on success.</returns>
+    /// <remarks>
+    /// Handling is deferred to one of the process methods which subclasses should implement.
+    /// 
+    /// The <paramref name="messageType"/> identifies the mesh component being read, from the following set;
+    /// <list type="bullet">
+    /// <item><see cref="MeshMessageType.Vertex"/></item>
+    /// <item><see cref="MeshMessageType.Index"/></item>
+    /// <item><see cref="MeshMessageType.VertexColour"/></item>
+    /// <item><see cref="MeshMessageType.Normal"/></item>
+    /// <item><see cref="MeshMessageType.UV"/></item>
+    /// </list>
+    /// </remarks>
+    public bool ReadTransfer(int messageType, BinaryReader reader)
+    {
+      MeshComponentMessage msg = new MeshComponentMessage();
+
+      if (!msg.Read(reader))
+      {
+        return false;
+      }
+
+      switch (messageType)
+      {
+        case (int)MeshMessageType.Vertex:
+          Vector3[] newVertices = new Vector3[msg.Count];
+          for (int i = 0; i < msg.Count; ++i)
+          {
+            newVertices[i] = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+          }
+          return ProcessVertices(msg, newVertices);
+
+        case (int)MeshMessageType.Index:
+          if (IndexSize == 2)
+          {
+            ushort[] newInds = new ushort[msg.Count];
+            for (int i = 0; i < msg.Count; ++i)
+            {
+              newInds[i] = reader.ReadUInt16();
+            }
+            return ProcessIndices(msg, newInds);
+          }
+          else if (IndexSize == 4)
+          {
+            int[] newInds = new int[msg.Count];
+            for (int i = 0; i < msg.Count; ++i)
+            {
+              newInds[i] = reader.ReadInt32();
+            }
+            return ProcessIndices(msg, newInds);
+          }
+          // Unknown index size.
+          return false;
+
+        case (int)MeshMessageType.VertexColour:
+          uint[] newColours = new uint[msg.Count];
+          for (int i = 0; i < msg.Count; ++i)
+          {
+            newColours[i] = reader.ReadUInt32();
+          }
+          return ProcessColours(msg, newColours);
+
+        case (int)MeshMessageType.Normal:
+          Vector3[] newNormals = new Vector3[msg.Count];
+          for (int i = 0; i < msg.Count; ++i)
+          {
+            newNormals[i] = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
+          }
+          return ProcessNormals(msg, newNormals);
+
+        case (int)MeshMessageType.UV:
+          Vector2[] newUVs = new Vector2[msg.Count];
+          for (int i = 0; i < msg.Count; ++i)
+          {
+            newUVs[i] = new Vector2(reader.ReadSingle());
+          }
+          return ProcessUVs(msg, newUVs);
+
+        default:
+          // Unknown message type.
+          break;
+      }
+
+      return false;
+    }
+
+    /// <summary>
+    /// Process the <see cref="MeshCreateMessage"/>.
+    /// </summary>
+    /// <param name="msg">The message to process.</param>
+    /// <returns>True on success</returns>
+    /// <remarks>
+    /// Called from <see cref="ReadCreate(BinaryReader)"/> for subclasses to implement.
+    /// </remarks>
+    protected virtual bool ProcessCreate(MeshCreateMessage msg)
+    {
+      return false;
+    }
+
+    /// <summary>
+    /// Process data for a <see cref="MeshMessageType.Vertex"/> message.
+    /// </summary>
+    /// <param name="msg">Message details.</param>
+    /// <param name="vertices">New vertices read from the message payload.</param>
+    /// <returns>True on success.</returns>
+    protected virtual bool ProcessVertices(MeshComponentMessage msg, Vector3[] vertices)
+    {
+      return false;
+    }
+
+    /// <summary>
+    /// Process data for a <see cref="MeshMessageType.Index"/> message when receiving 2-byte indices.
+    /// </summary>
+    /// <param name="msg">Message details.</param>
+    /// <param name="indices">New 2-byte indices read from the message payload.</param>
+    /// <returns>True on success.</returns>
+    protected virtual bool ProcessIndices(MeshComponentMessage msg, ushort[] indices)
+    {
+      return false;
+    }
+
+    /// <summary>
+    /// Process data for a <see cref="MeshMessageType.Index"/> message when receiving 4-byte indices.
+    /// </summary>
+    /// <param name="msg">Message details.</param>
+    /// <param name="indices">New 4-byte indices read from the message payload.</param>
+    /// <returns>True on success.</returns>
+    protected virtual bool ProcessIndices(MeshComponentMessage msg, int[] indices)
+    {
+      return false;
+    }
+
+    /// <summary>
+    /// Process data for a <see cref="MeshMessageType.VertexColour"/> message.
+    /// </summary>
+    /// <param name="msg">Message details.</param>
+    /// <param name="colours">New colours read from the message payload.</param>
+    /// <returns>True on success.</returns>
+    /// <remarks>
+    /// Colours may be decoded using the <see cref="Colour"/> class.
+    /// </remarks>
+    protected virtual bool ProcessColours(MeshComponentMessage msg, uint[] colours)
+    {
+      return false;
+    }
+
+    /// <summary>
+    /// Process data for a <see cref="MeshMessageType.Normal"/> message.
+    /// </summary>
+    /// <param name="msg">Message details.</param>
+    /// <param name="normals">New normals read from the message payload.</param>
+    /// <returns>True on success.</returns>
+    protected virtual bool ProcessNormals(MeshComponentMessage msg, Vector3[] normals)
+    {
+      return false;
+    }
+
+    /// <summary>
+    /// Process data for a <see cref="MeshMessageType.UV"/> message.
+    /// </summary>
+    /// <param name="msg">Message details.</param>
+    /// <param name="uvs">New uvs read from the message payload.</param>
+    /// <returns>True on success.</returns>
+    protected virtual bool ProcessUVs(MeshComponentMessage msg, Vector2[] uvs)
+    {
+      return false;
+    }
+
     #endregion
   }
 }

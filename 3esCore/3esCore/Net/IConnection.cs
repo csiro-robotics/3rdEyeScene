@@ -79,8 +79,9 @@ namespace Tes.Net
     /// <param name="data">The data buffer to send.</param>
     /// <param name="offset">An offset into <paramref name="data"/> at which to start sending.</param>
     /// <param name="length">The number of bytes to transfer.</param>
+    /// <param name="allowCollation">Allow data to be collated and compressed with other packets?</param>
     /// <returns>The number of bytes transferred or -1 on failure.</returns>
-    int Send(byte[] data, int offset, int length);
+    int Send(byte[] data, int offset, int length, bool allowCollation = true);
 
     /// <summary>
     /// Queries the reference count of the given resource.

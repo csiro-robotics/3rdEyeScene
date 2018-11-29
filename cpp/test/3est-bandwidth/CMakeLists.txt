@@ -1,5 +1,0 @@
-get_target_property(3ESCORE_INCLUDE_DIRS 3es-core INCLUDE_DIRECTORIES)
-add_executable(3est-bandwidth 3est-bandwidth.cpp)
-target_link_libraries(3est-bandwidth 3es-core)
-target_include_directories(3est-bandwidth PRIVATE "${3ESCORE_INCLUDE_DIRS}")
-source_group("source" REGULAR_EXPRESSION ".*$")

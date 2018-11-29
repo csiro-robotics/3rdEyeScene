@@ -17,8 +17,9 @@ The following third party components are distributed with the Software.  You agr
 ___________________________________________________________________
 Unity 3D https://unity3d.com/
 ZLib http://www.zlib.net/
-DotNetZip http://dotnetzip.codeplex.com/wikipage?title=CS-Examples&referringTitle=Examples
+SharpCompress https://github.com/adamhathcock/sharpcompress
 UCLA Game Lab wireframe shaders http://games.ucla.edu/
+Unity StandAloneFileBrowser https://github.com/gkngkc/UnityStandaloneFileBrowser
 CMake project configuration http://www.cmake.org/
 Doxygen documentation http://www.stack.nl/~dimitri/doxygen/
 ___________________________________________________________________

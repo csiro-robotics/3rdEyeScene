@@ -45,47 +45,36 @@ Shader "Hidden/EDL"
       ///////////////////////////////////////////////////////////////////////////
       // Support methods for EDL in fragment shader
 
-      // this actually only returns linear depth values if LOG_BIAS is 1.0
-      // lower values work out more nicely, though.
-#define LOG_BIAS 0.01
-      float logToLinear(float z)
+      // Look at neighbour's depth and return lower factor if neighbours are significantly different.
+      float computeObscurance(float depth, sampler2D depthTex, float2 uv)
       {
-        return (pow((1.0 + LOG_BIAS * _ProjectionParams.z), z) - 1.0) / LOG_BIAS;
-      }
-
-      // transform linear depth to [0,1] interval with 1 being closest to the camera.
-      float ztransform(float linearDepth)
-      {
-        // _ProjectionParams.y is camera near, .z is far
-        return 1.0 - (linearDepth - _ProjectionParams.y) / (_ProjectionParams.z - _ProjectionParams.y);
-      }
-
-      // Look at neighbour's depth and return lower factor if neighbours are significantly different
-      float computeObscurance(float linearDepth, sampler2D depthTex, float2 uv)
-      {
+        // Simulated light direction. I noted that I got much better edge outlining by
+        // making it (0, 0, -1). Using (0, 0, 1) tends to eat away the colour of lines and
+        // points, making them black. Using (0, 0, -1) tends to outline lines and points.
+        // I should really come back to investigate more and see if firstly I can understand why,
+        // then see if I can remove the outline altogether where we have such edge transition.
+        float3 lightDir = float3(0, 0, -1);
+        float4 lightPlane = float4(lightDir, -dot(lightDir, float3(0, 0, depth)));
         float2 uvRadius = _Radius / float2(_ScreenParams.x, _ScreenParams.y);
-
+        float2 neighbourRelativeUv, neighbourUv;
+        float neighbourDepth, inPlaneNeighbourDepth;
         float sum = 0.0;
 
         for (int c = 0; c < NEIGHBOUR_COUNT; c++)
         {
-          float2 N_rel_pos = uvRadius * _NeighbourAddress[c];
-          float2 N_abs_pos = uv + N_rel_pos;
+          neighbourRelativeUv = uvRadius * _NeighbourAddress[c];
+          neighbourUv = uv + neighbourRelativeUv;
 
-#if UNITY_VERSION >= 550
-          // Rerverse depth buffer implemented in Unity 5.5 and beyond.
-          float neighbourDepth = logToLinear(1.0f - UNITY_SAMPLE_DEPTH(tex2D(depthTex, N_abs_pos)));
-          // float neighbourDepth = Linear01Depth(1.0f - UNITY_SAMPLE_DEPTH(tex2D(depthTex, N_abs_pos)));
-#else  // UNITY_VERSION >= 550
-          float neighbourDepth = logToLinear(UNITY_SAMPLE_DEPTH(tex2D(depthTex, N_abs_pos)));
-          // float neighbourDepth = Linear01Depth(UNITY_SAMPLE_DEPTH(tex2D(depthTex, N_abs_pos)));
+          neighbourDepth = LinearEyeDepth(tex2D(depthTex, neighbourUv));
+#if UNITY_VERSION < 550
+          // Convert to reversed depth for older Unity.
+          neighbourDepth = 1.0 - neighbourDepth;
 #endif // UNITY_VERSION >= 550
+          // Try not to darken around transitions from surface to background.
+          neighbourDepth = (neighbourDepth > 0.01) ? neighbourDepth : depth;
 
-          if (neighbourDepth != 0.0)
-          {
-            float Znp = ztransform(neighbourDepth) - ztransform(linearDepth);
-            sum += max(0.0, Znp) / (0.05 * linearDepth);
-          }
+          inPlaneNeighbourDepth = dot(float4(neighbourRelativeUv, neighbourDepth, 1.0), lightPlane);
+          sum += max(0.0, inPlaneNeighbourDepth) / _EdlScale;
         }
         return sum;
       }
@@ -96,16 +85,16 @@ Shader "Hidden/EDL"
       // http://beta.unity3d.com/talks/Siggraph2011_SpecialEffectsWithDepth_WithNotes.pdf
       fixed4 frag(v2f_img i) : SV_Target
       {
+        // Note: we work with depth value of 1 being near the camera, and 0 being far away.
+        // This corresponds to the Unity 5.5+ reversed depth buffer, but for lower versions,
+        // we must reverse the range.
         float2 uv = i.uv;
         sampler2D depthTex = _DepthTexture;
-#if UNITY_VERSION >= 550
-        // Rerverse depth buffer implemented in Unity 5.5 and beyond.
-        float depthValue = logToLinear(1.0f - UNITY_SAMPLE_DEPTH(tex2D(depthTex, uv)));
-        //float depthValue = Linear01Depth(1.0f - UNITY_SAMPLE_DEPTH(tex2D(depthTex, uv)));
-#else  // UNITY_VERSION >= 550
-        float depthValue = logToLinear(UNITY_SAMPLE_DEPTH(tex2D(depthTex, uv)));
-        //float depthValue = Linear01Depth (UNITY_SAMPLE_DEPTH(tex2D(depthTex, uv)));
-#endif // UNITY_VERSION >= 550
+        float depth = LinearEyeDepth(tex2D(depthTex, uv));
+#if UNITY_VERSION < 550
+        // Convert to reversed depth for older Unity.
+        depth = 1.0 - depth;
+#endif // UNITY_VERSION < 550
 
         // The following code may be required in some instances. If the EDL image is flipped
         // then enable this code and uncomment the uniform declaration of '_MainTex_TexelSize'
@@ -117,20 +106,26 @@ Shader "Hidden/EDL"
 //        }
 //#endif // UNITY_UV_STARTS_AT_TOP
 
-        float f = computeObscurance(depthValue, depthTex, uv);
-        f = exp(-_ExpScale * _EdlScale * f);
+        float edlFactor = computeObscurance(depth, depthTex, uv);
+        edlFactor = exp(-_ExpScale * edlFactor);
+
         // For _MainTex, always use i.uv, not uv to cater for the potential flip.
         fixed4 color = tex2D(_MainTex, i.uv);
 
-        if (color.a == 0.0 && f >= 1.0)
+        // if (color.a == 0.0 && edlFactor >= 1.0)
+        // {
+        //   discard;
+        // }
+
+        if (depth <= 0.01)
         {
-          discard;
+          edlFactor = 1.0f;
         }
 
-        return fixed4(color.rgb * f, 1.0f);
+        return fixed4(color.rgb * edlFactor, 1.0);
 
         // Show depth buffer
-        //return fixed4(depthValue, depthValue, depthValue, 1.0f);
+        //return fixed4(depth, depth, depth, 1.0f);
       }
 
       ENDCG

@@ -2,7 +2,7 @@
 using System.Collections;
 
 namespace Dialogs
-{ 
+{
   public enum MessageBoxButtons
   {
     OK,
@@ -20,6 +20,11 @@ namespace Dialogs
     public string Title { get; protected set; }
     public string Message { get; protected set; }
     public Sprite Icon { get; protected set; }
+
+    public override bool CanShowNative
+    {
+      get { return false; }
+    }
 
     protected MessageBox(DialogCloseDelegate callback, string message, string title, MessageBoxButtons buttons, Sprite icon, MessageBoxUI ui)
     {
@@ -87,6 +92,11 @@ namespace Dialogs
       {
         Debug.LogError("Missing message box UI");
       }
+    }
+
+    protected override void OnShowNative()
+    {
+      throw new System.NotSupportedException("Native MessageBox not supported yet.");
     }
 
     protected override void OnShow()

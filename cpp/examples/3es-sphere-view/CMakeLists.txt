@@ -1,5 +1,0 @@
-get_target_property(3ESCORE_INCLUDE_DIRS 3es-core INCLUDE_DIRECTORIES)
-add_executable(3es-sphere-view 3es-sphere-view.cpp)
-target_link_libraries(3es-sphere-view 3es-core)
-target_include_directories(3es-sphere-view PRIVATE "${3ESCORE_INCLUDE_DIRS}")
-source_group("source" REGULAR_EXPRESSION ".*$")

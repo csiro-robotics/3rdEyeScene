@@ -1,9 +1,8 @@
 ﻿using Tes.Collections;
-using Tes;
 using Tes.IO;
 using Tes.Net;
 
-namespace Tes.Main
+namespace Tes.Runtime
 {
   /// <summary>
   /// Base class for thread objects used as message sources.
@@ -61,8 +60,8 @@ namespace Tes.Main
     /// Is the thread currently catchup up to the desired frame?
     /// </summary>
     /// <remarks>
-    /// This is principally for playback threads when attempting to process data
-    /// for large frame deltas such as when scrubbing.
+    /// Used for playback threads when attempting to process data for large frame deltas such as
+    /// when scrubbing. Used by live streams to ensure update when conneted or connecting.
     /// </remarks>
     public abstract bool CatchingUp { get; }
     /// <summary>

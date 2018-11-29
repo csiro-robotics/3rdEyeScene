@@ -9,7 +9,7 @@
 
 3rdEyeScene.app/
 
-cpp/**/build*/
+build*/
 *.unitypackage
 .vscode/
 3esCore/**/bin/

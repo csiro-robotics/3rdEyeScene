@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
-using Ionic.Zlib;
+using SharpCompress.Compressors;
+using SharpCompress.Compressors.Deflate;
 
 namespace Tes.IO
 {

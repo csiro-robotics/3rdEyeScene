@@ -13,6 +13,10 @@ namespace Tes.Server
     /// </summary>
     public ushort ListenPort;
     /// <summary>
+    /// Number of additional ports we can try look beyond <see cref="ListenPort"/>.
+    /// </summary>
+    public ushort PortRange;
+    /// <summary>
     /// The <see cref="ServerFlag"/> flags.
     /// </summary>
     public ServerFlag Flags;
@@ -26,7 +30,8 @@ namespace Tes.Server
       {
         ServerSettings settings = new ServerSettings();
         settings.ListenPort = 33500;
-        settings.Flags = ServerFlag.Collate;
+        settings.PortRange = 0;
+        settings.Flags = ServerFlag.Collate | ServerFlag.NakedFrameMessage;
         return settings;
       }
     }

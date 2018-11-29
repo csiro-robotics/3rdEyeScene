@@ -24,6 +24,19 @@ namespace Tes.Shapes
     public const float DefaultRadius = 0.025f;
 
     /// <summary>
+    /// Default constructor, defining a transient object.
+    /// </summary>
+    public Arrow() : this(0, 0) {}
+
+    /// <summary>
+    /// Construct an arrow shape at the origin.
+    /// </summary>
+    /// <param name="id">ID of the shape. Zero for transient.</param>
+    /// <param name="category">Category to which the shape belongs.</param>
+    public Arrow(uint id, ushort category = 0)
+      : this(id, category, Vector3.Zero, DefaultDirection, DefaultLength, DefaultRadius) { }
+
+    /// <summary>
     /// Construct an arrow shape.
     /// </summary>
     /// <param name="id">ID of the shape. Zero for transient.</param>
@@ -52,14 +65,6 @@ namespace Tes.Shapes
       : this(id, 0, origin, endPoint, radius)
     {
     }
-
-    /// <summary>
-    /// Construct an arrow shape at the origin.
-    /// </summary>
-    /// <param name="id">ID of the shape. Zero for transient.</param>
-    /// <param name="category">Category to which the shape belongs.</param>
-    public Arrow(uint id = 0u, ushort category = 0)
-      : this(id, category, Vector3.Zero, DefaultDirection, DefaultLength, DefaultRadius) { }
 
     /// <summary>
     /// Construct an arrow shape.

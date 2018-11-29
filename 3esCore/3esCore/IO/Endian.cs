@@ -469,5 +469,15 @@ namespace Tes.IO
     /// <param name="val">The value to endian swap.</param>
     /// <returns><paramref name="val"/> with a swapped byte order.</returns>
     public static double FromNetwork(double val) { return (BitConverter.IsLittleEndian) ? Swap(val) : val; }
+
+    /// <summary>
+    /// Network to local Endian swap for an arbitrary byte array. Reversed if an swap is required.
+    /// </summary>
+    /// <param name="bytes">The byte array to operate on.</param>
+    /// <returns>The <paramref name="bytes"/> after potential modification. Returned for convenience.</returns>
+    /// <remarks>
+    /// The <paramref name="bytes"/> array is modified in place and also returned.
+    /// </remarks>
+    public static byte[] FromNetwork(byte[] bytes) { if (BitConverter.IsLittleEndian) { Swap(bytes); } return bytes; }
   }
 }

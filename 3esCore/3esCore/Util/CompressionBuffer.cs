@@ -37,6 +37,9 @@ namespace Tes.Util
       get { return _buffer; }
     }
 
+    /// <summary>
+    /// Pass through to the <see cref="BaseStream"/>.
+    /// </summary>
     public override bool CanRead
     {
       get
@@ -45,6 +48,9 @@ namespace Tes.Util
       }
     }
 
+    /// <summary>
+    /// Pass through to the <see cref="BaseStream"/>.
+    /// </summary>
     public override bool CanSeek
     {
       get
@@ -53,6 +59,9 @@ namespace Tes.Util
       }
     }
 
+    /// <summary>
+    /// Pass through to the <see cref="BaseStream"/>.
+    /// </summary>
     public override bool CanWrite
     {
       get
@@ -61,6 +70,9 @@ namespace Tes.Util
       }
     }
 
+    /// <summary>
+    /// Pass through to the <see cref="BaseStream"/>.
+    /// </summary>
     public override long Length
     {
       get
@@ -69,6 +81,9 @@ namespace Tes.Util
       }
     }
 
+    /// <summary>
+    /// Pass through to the <see cref="BaseStream"/>.
+    /// </summary>
     public override long Position
     {
       get
@@ -82,32 +97,63 @@ namespace Tes.Util
       }
     }
 
+    /// <summary>
+    /// Flush the <see cref="BaseStream"/>, but leave open.
+    /// </summary>
+    /// <remarks>See class comments on why the stream is left open.</remarks>
     public override void Close()
     {
       // Flush, but leave open.
       Flush();
     }
 
+    /// <summary>
+    /// Flush the <see cref="BaseStream"/>.
+    /// </summary>
     public override void Flush()
     {
       _buffer.Flush();
     }
 
+    /// <summary>
+    /// Pass through to the <see cref="BaseStream"/>.
+    /// </summary>
+    /// <param name="buffer">Buffer to read into.</param>
+    /// <param name="offset">Offset into <paramref name="buffer"/> to write at.</param>
+    /// <param name="count">Number of bytes to read from the stream.</param>
+    /// <returns>The number of bytes read.</returns>
     public override int Read(byte[] buffer, int offset, int count)
     {
       return _buffer.Read(buffer, offset, count);
     }
 
+    /// <summary>
+    /// Pass through to the <see cref="BaseStream"/>.
+    /// </summary>
+    /// <param name="offset">Offset from <paramref name="origin"/> to seek to.</param>
+    /// <param name="origin">Seeking reference position.</param>
+    /// <returns>The <see cref="Position"/> after seeking.</returns>
     public override long Seek(long offset, SeekOrigin origin)
     {
       return _buffer.Seek(offset, origin);
     }
 
+    /// <summary>
+    /// Pass through to the <see cref="BaseStream"/>.
+    /// </summary>
+    /// <param name="value">The new byte length to set the buffer size to.</param>
     public override void SetLength(long value)
     {
       _buffer.SetLength(value);
     }
 
+    /// <summary>
+    /// Pass through to the <see cref="BaseStream"/>.
+    /// </summary>
+    /// <param name="buffer">Buffer to write from.</param>
+    /// <param name="offset">Offset into <paramref name="buffer"/> to read from.</param>
+    /// <param name="count">Number of bytes to write to the stream.</param>
+    /// <returns>The number of bytes written.</returns>
     public override void Write(byte[] buffer, int offset, int count)
     {
       _buffer.Write(buffer, offset, count);

@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Tes;
+using System.IO;
 using Tes.IO;
 using Tes.Maths;
 using Tes.Net;
@@ -10,38 +10,56 @@ namespace Tes.Shapes
   /// <summary>
   /// This is the base class for any spatial shape represented by 3rd Eye Scene.
   /// </summary>
+  ///
   /// <remarks>
-  /// The base shape exposes core shape properties, such as position scale and
-  /// rotation, colour, type and message creation. Most simple shapes will not require
-  /// any additional data, however, the semantics of certain properties may vary.
-  /// For instance, a sphere requires only one scale element. A cylinder may use
-  /// the scale fields to represent length and radius.
-  /// 
-  /// Shape message handling depends on <see cref="RoutingID"/>. This this ID must
-  /// be unique for each type of <see cref="Shape"/>. For each <see cref="RoutingID"/>
-  /// value, each shape may have its own unique <see cref="ID"/>. Any shape
-  /// with a non-zero ID is considered persistent and must be explicitly removed from
-  /// a connection later. Any shape with a zero ID is transient, lasting only a single
-  /// frame. Such shapes will not have a destroy message sent.
-  /// 
-  /// The core shape attributes are serialised in creation and update messages via
-  /// <see cref="WriteCreate(PacketBuffer)"/> and <see cref="WriteUpdate(PacketBuffer)"/>. A simple
-  /// destruction message is authored by <see cref="WriteDestroy(PacketBuffer)"/>. Subclasses
-  /// generally need only use the base implementation. Some subclasses may need to
-  /// write additional data on creation by overriding the <see cref="WriteCreate(PacketBuffer)"/>.
-  /// The base method should always be called first before appending custom data.
-  /// 
-  /// Some shapes may be marked as <see cref="IsComplex"/>. These shapes contain a
-  /// large amount of data which cannot be adequately contained in a single (create)
-  /// message. Such shapes may implement <see cref="WriteData(PacketBuffer, ref uint)"/> to serialise
-  /// one or more additional packets of data. This method is only called when
-  /// <see cref="IsComplex"/> is true.
-  /// 
-  /// Finally, a shape may have additional <see cref="Resource"/> requirements.
-  /// A shape exposes its resources via the <see cref="Resources"/> property.
-  /// Resources may be shared between shapes. They are reference counted in a client
-  /// connection and sent and destroyed as needed. See <see cref="Resource"/> for more
-  /// details.
+  /// A shape instance is unique represented by its <see cref="RoutingID"/> and <see cref="ID"/>
+  /// combined. The <see cref="RoutingID"/> can be considered a unique shape type
+  /// identifier (see <see cref="ShapeID"/>), while the <see cref="ID"/> represents the
+  /// shape instance.
+  ///
+  /// Shape instances may be considered transient or persistent. Transient
+  /// shapes have an <see cref="ID"/> of zero and are automatically destroyed (by the
+  /// client) on the next frame update. Persistent shapes have a non-zero
+  /// <see cref="ID"/> and persist until an explicit <see cref="DestroyMessage"/> arrives.
+  ///
+  /// Internally, the <see cref="Shape"/> class is represented by a <see cref="CreateMessage"/>.
+  /// This includes an ID, category, flags, position, rotation, scale and
+  /// colour. These data represent the minimal data required to represent the
+  /// shape and suffice for most primitive shapes. Derivations may store
+  /// additional data members. Derivations may also adjust the semantics of
+  /// some of the fields in the <see cref="CreateMessage"/>; e.g., the scale XYZ values
+  /// have a particular interpretation for the <see cref="Capsule"/> shape.
+  ///
+  /// Shapes may be considered simple or complex (<see cref="IsComplex"/> reports
+  /// <c>true</c>). Simple shapes only need a <see cref="WriteCreate(PacketBuffer)"/> call to be fully
+  /// represented, after which <see cref="WriteUpdate(PacketBuffer)"/> may move the object. Complex
+  /// shapes required additional data to be fully represented and the
+  /// <see cref="WriteCreate(PacketBuffer)"/> packet stream may not be large enough to hold all the
+  /// data. Such complex shapes will have <see cref="WriteData(PacketBuffer, ref uint)"/> called multiple times
+  /// with a changing progress marker.
+  ///
+  /// Note that a shape which is not complex may override the <see cref="WriteCreate(PacketBuffer)"/>
+  /// method and add additional data, but must always begin with the
+  /// <see cref="CreateMessage"/>. Complex shapes are only required when this is not
+  /// sufficient and the additional data may overflow the packet buffer.
+  ///
+  /// In general, use the <see cref="CreateMessage"/> only where possible. If additional
+  /// information is required and the additional data is sufficient to fit
+  /// easily in a single data packet (~64KiB), then write this information
+  /// in <see cref="WriteCreate(PacketBuffer)"/> immediately following the <see cref="CreateMessage"/>. For
+  /// larger data requirements, then the shape should report as complex
+  /// (<see cref="IsComplex"/> returning <c>true</c>) and this information should be written
+  /// in <see cref="WriteData(PacketBuffer, ref uint)"/>.
+  ///
+  /// The API also includes message reading functions, which creates a
+  /// read/write symmetry. The read methods are intended primarily for testing
+  /// purposes and to serve as an example of how to process messages. Whilst
+  /// reading methods may be used to implement a visualisation client, they
+  /// may lead to sub-optimal message handling and memory duplication. There may
+  /// also be issues with synchronising the shape ID with the intended instance.
+  ///
+  /// No method for reading <see cref="DestroyMessage"/> is provided as it does not apply
+  /// modifications to the shape members.
   /// </remarks>
   public class Shape : ICloneable
   {
@@ -266,7 +284,7 @@ namespace Tes.Shapes
     }
 
     /// <summary>
-    /// Update the attributes of this shape to match @p other.
+    /// Update the attributes of this shape to match <paramref name="other"/>.
     /// </summary>
     /// <param name="other">The shape to update data from.</param>
     /// <remarks>
@@ -274,9 +292,9 @@ namespace Tes.Shapes
     /// already represent the same object.
     ///
     /// Not all attributes need to be updated. Only attributes which may be updated 
-    /// via an @c UpdateMessage for this shape need be copied.
+    /// via an <see cref="UpdateMessage"/> for this shape need be copied.
     ///
-    /// The default implementation copies only the @c ObjectAttributes.
+    /// The default implementation copies only the <see cref="ObjectAttributes"/>.
     /// </remarks>
     public virtual void UpdateFrom(Shape other)
     {
@@ -328,7 +346,7 @@ namespace Tes.Shapes
     ///
     /// <param name="packet">The data stream to write to.</param>
     /// <param name="progressMarker">Indicates data transfer progress.
-    ///   Initially zero, the @c Shape manages its own semantics.
+    ///   Initially zero, the <see cref="Shape"/> manages its own semantics.
     /// </param>
     /// <returns>
     /// Indicates completion progress. 0 indicates completion,
@@ -338,6 +356,87 @@ namespace Tes.Shapes
     public virtual int WriteData(PacketBuffer packet, ref uint progressMarker)
     {
       return 0;
+    }
+
+    /// <summary>
+    /// Read a <see cref="CreateMessage"/> for this shape. This will override the
+    /// <see cref="ID"/> of this instance.
+    /// </summary>
+    /// <param name="reader">stream The stream to read message data from.</param>
+    /// <returns><c>true</c> if the message is successfully read.</returns>
+    /// <remarks>
+    /// The <see cref="RoutingID"/> must have already been resolved.
+    /// </remarks>
+    public virtual bool ReadCreate(BinaryReader reader)
+    {
+      return _data.Read(reader);
+    }
+
+    /// <summary>
+    /// Read an <see cref="UpdateMessage"/> for this shape.
+    /// </summary>
+    /// <param name="reader">The stream to read message data from.</param>
+    /// <returns><c>true</c> if the message is successfully read.</returns>
+    /// <remarks>
+    /// Respects the <see cref="UpdateFlag"/> values, only modifying requested data.
+    /// </remarks>
+    public virtual bool ReadUpdate(BinaryReader reader)
+    {
+      UpdateMessage up = new UpdateMessage();
+      if (up.Read(reader))
+      {
+        if ((up.Flags & (ushort)UpdateFlag.UpdateMode) == 0)
+        {
+          // Full update.
+          _data.Attributes = up.Attributes;
+        }
+        else
+        {
+          // Partial update.
+          if ((up.Flags & (short)UpdateFlag.Position) != 0)
+          {
+            _data.Attributes.X = up.Attributes.X;
+            _data.Attributes.Y = up.Attributes.Y;
+            _data.Attributes.Z = up.Attributes.Z;
+          }
+          if ((up.Flags & (short)UpdateFlag.Rotation) != 0)
+          {
+            _data.Attributes.RotationX = up.Attributes.RotationX;
+            _data.Attributes.RotationY = up.Attributes.RotationY;
+            _data.Attributes.RotationZ = up.Attributes.RotationZ;
+            _data.Attributes.RotationW = up.Attributes.RotationW;
+          }
+          if ((up.Flags & (short)UpdateFlag.Scale) != 0)
+          {
+            _data.Attributes.ScaleX = up.Attributes.ScaleX;
+            _data.Attributes.ScaleY = up.Attributes.ScaleY;
+            _data.Attributes.ScaleZ = up.Attributes.ScaleZ;
+          }
+          if ((up.Flags & (short)UpdateFlag.Colour) != 0)
+          {
+            _data.Attributes.Colour = up.Attributes.Colour;
+          }
+        }
+        return true;
+      }
+      return false;
+    }
+
+    /// <summary>
+    /// Read back data written by <see cref="WriteData(PacketBuffer, ref uint)"/>.
+    /// </summary>
+    ///
+    /// <param name="reader">The stream to read message data from.</param>
+    /// <returns><c>true</c> if the message is successfully read.</returns>
+    ///
+    /// <remarks>
+    /// Must be implemented by complex shapes, first reading the <see cref="DataMessage"/>
+    /// then data payload. The base implementation returns <c>false</c> assuming a
+    /// simple shape.
+    /// </remarks>
+    public virtual bool ReadData(BinaryReader reader)
+    {
+      return false;
     }
 
     /// <summary>

@@ -442,7 +442,7 @@ namespace Tes.Handlers.Shape2D
       if (textLength > 0)
       {
         byte[] textBytes = reader.ReadBytes(textLength);
-        text.Text = System.Text.Encoding.Default.GetString(textBytes);
+        text.Text = System.Text.Encoding.UTF8.GetString(textBytes);
       }
 
       if (msg.ObjectID == 0)

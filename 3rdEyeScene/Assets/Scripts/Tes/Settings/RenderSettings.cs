@@ -11,6 +11,13 @@ public class RenderSettings : Settings
     Name = "Render";
   }
 
+  [Browsable(true), SetRange(1, 64), Tooltip("Default point render size (pixels)")]
+  public int DefaultPointSize
+  {
+    get { return PlayerPrefs.GetInt("render.defaultPointSize", 4); }
+    set { PlayerPrefs.SetInt("render.defaultPointSize", value); Notify("DefaultPointSize"); }
+  }
+
   [Browsable(true), Tooltip("Enable Eye-Dome-Lighting shader?")]
   public bool EdlShader
   {
@@ -21,21 +28,21 @@ public class RenderSettings : Settings
   [Browsable(true), SetRange(1, 10), Tooltip("The pixel search radius used in EDL calculations.")]
   public int EdlRadius
   {
-    get { return PlayerPrefs.GetInt("render.edlRadius", 2); }
+    get { return PlayerPrefs.GetInt("render.edlRadius", 1); }
     set { PlayerPrefs.SetInt("render.edlRadius", value); Notify("EdlRadius"); }
   }
 
-  [Browsable(true), SetRange(1, 1000), Tooltip("Exponential scaling for EDL shader.")]
+  [Browsable(true), SetRange(0.1f, 30), Tooltip("Exponential scaling for EDL shader.")]
   public float EdlExponentialScale
   {
-    get { return PlayerPrefs.GetFloat("render.edlExponentialScale", 500); }
+    get { return PlayerPrefs.GetFloat("render.edlExponentialScale", 3); }
     set { PlayerPrefs.SetFloat("render.edlExponentialScale", value); Notify("EdlExponentialScale"); }
   }
 
-  [Browsable(true), SetRange(1, 100), Tooltip("Linear scaling for EDL shader.")]
+  [Browsable(true), SetRange(1, 10), Tooltip("Linear scaling for EDL shader.")]
   public float EdlLinearScale
   {
-    get { return PlayerPrefs.GetFloat("render.edlLinearScale", 10); }
+    get { return PlayerPrefs.GetFloat("render.edlLinearScale", 1); }
     set { PlayerPrefs.SetFloat("render.edlLinearScale", value); Notify("EdlLinearScale"); }
   }
 

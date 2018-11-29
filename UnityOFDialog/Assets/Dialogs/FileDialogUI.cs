@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Text;
+using System;
 
 namespace Dialogs
 {
@@ -36,21 +37,40 @@ namespace Dialogs
     [SerializeField]
     protected Button _cancelButton;
     /// <summary>
-    /// The game object to clone in order to create an icon representation for a drive or file.
+    /// The game objects to clone in order to create icon representations for a drive or file.
+    /// The array caters for different display modes. See <see cref="FileDisplayMode"/>.
     /// </summary>
     [SerializeField]
-    protected GameObject _iconItem;
-    /// <summary>
-    /// The game object to clone in order to create a short list representation for a drive or file.
-    /// </summary>
-    [SerializeField]
-    protected GameObject _listItem;
+    protected GameObject[] _iconItems = new GameObject[Enum.GetNames(typeof(FileDisplayMode)).Length];
     [SerializeField]
     protected ScrollRect _locationView;
     [SerializeField]
     protected ScrollRect _filesView;
     [SerializeField]
     protected FileDialogIcons _iconSet;
+    [SerializeField]
+    protected FileDisplayMode _displayMode = FileDisplayMode.Large;
+    public FileDisplayMode DisplayMode { get { return _displayMode; } set { _displayMode = value; } }
+
+    [SerializeField]
+    protected int[] _iconModeWidths = new int[] { 0, 340, 300 };
+
+    /// <summary>
+    /// Controls the width of the icon item in <see cref="FileDisplayMode.List"/>.
+    /// </summary>
+    public int[] ListModeItemWidths { get { return _iconModeWidths; } }
+    /// <summary>
+    /// Set the display width for icons when using <paramref name="mode"/>.
+    /// </summary>
+    /// <param name="mode">The display mode to set the width for.</param>
+    /// <param name="width">The display width to use.</param>
+    void SetListmodeItemWidth(FileDisplayMode mode, int width) { _iconModeWidths[(int)mode] = width; }
+    /// <summary>
+    /// Get the display width for icons when using <paramref name="mode"/>.
+    /// </summary>
+    /// <param name="mode">The display mode to query the width for.</param>
+    /// <returns>The display width for the selected mode.</returns>
+    int GetListmodeItemWidth(FileDisplayMode mode) { return _iconModeWidths[(int)mode]; }
 
     [SerializeField]
     protected bool _autoGridLayoutSizing = true;
@@ -82,7 +102,7 @@ namespace Dialogs
     private KeyCode[] _extendSelectionKeys = new KeyCode[] { KeyCode.LeftShift, KeyCode.RightShift };
     public KeyCode[] ExtendSelectionKeys { get { return _extendSelectionKeys; } }
 
-    public FileDialogViewObserver Observer { get; set; }
+    public FileDialogViewController Controller { get; set; }
 
     public RectTransform UI { get { return _ui; } }
 
@@ -331,9 +351,9 @@ namespace Dialogs
 
     public void OnLocationInputChanged()
     {
-      if (Observer != null && !SuppressEvents)
+      if (Controller != null && !SuppressEvents)
       {
-        Observer.SetFileDialogLocation(Location);
+        Controller.SetFileDialogLocation(Location);
       }
     }
 
@@ -351,10 +371,10 @@ namespace Dialogs
     public bool OnFilenameInputChanged()
     {
       _selectedFiles.Clear();
-      if (Observer != null && !SuppressEvents)
+      if (Controller != null && !SuppressEvents)
       {
         _pendingSelection = FilenameDisplay;
-        return Observer.SetFileDialogLocation(FilenameDisplay);
+        return Controller.SetFileDialogLocation(FilenameDisplay);
       }
       return false;
     }
@@ -391,18 +411,18 @@ namespace Dialogs
     {
       get
       {
-        if (_cancelButton != null && _cancelButton.GetComponent<GUIText>() != null)
+        if (_cancelButton != null && _cancelButton.GetComponent<Text>() != null)
         {
-          return _cancelButton.GetComponent<GUIText>().text;
+          return _cancelButton.GetComponent<Text>().text;
         }
         return string.Empty;
       }
 
       set
       {
-        if (_cancelButton != null && _cancelButton.GetComponent<GUIText>() != null)
+        if (_cancelButton != null && _cancelButton.GetComponent<Text>() != null)
         {
-          _cancelButton.GetComponent<GUIText>().text = value;
+          _cancelButton.GetComponent<Text>().text = value;
           NotifyChange("CancelButtonText", value);
         }
       }
@@ -427,7 +447,8 @@ namespace Dialogs
     /// <param name="locations">The locations items.</param>
     public void ShowLinks(IEnumerable<FileSystemEntry> locations)
     {
-      int itemCount = PopulateScrollRect(_locationView, _iconItem, locations, _iconSet);
+      int itemCount = PopulateScrollRect(_locationView, _iconItems[(int)FileDisplayMode.Large], locations, _iconSet,
+                                         0, true);
       if (_locationView != null)
       {
         // Bind selection events. Can't be done easily in static code.
@@ -443,7 +464,7 @@ namespace Dialogs
 
       if (itemCount != 0)
       {
-        StartCoroutine(FixSizeAtEndOfFrame(_locationView, _iconItem));
+        StartCoroutine(FixSizeAtEndOfFrame(_locationView, _iconItems[(int)FileDisplayMode.Large], true));
       }
     }
 
@@ -458,7 +479,9 @@ namespace Dialogs
       Location = location.FullName;
       SuppressEvents = false;
       FilenameDisplay = string.Empty;
-      int itemCount = PopulateScrollRect(_filesView, _iconItem, items, _iconSet);
+      bool horizontal = DisplayMode == FileDisplayMode.Large;
+      int itemCount = PopulateScrollRect(_filesView, _iconItems[(int)DisplayMode], items, _iconSet,
+                                         _iconModeWidths[(int)DisplayMode], horizontal);
       if (_filesView != null)
       {
         FileEntryComponent initialSelection = null;
@@ -486,7 +509,7 @@ namespace Dialogs
 
       if (itemCount != 0 && isActiveAndEnabled)
       {
-        StartCoroutine(FixSizeAtEndOfFrame(_filesView, _iconItem));
+        StartCoroutine(FixSizeAtEndOfFrame(_filesView, _iconItems[(int)DisplayMode], horizontal));
       }
 
       _pendingSelection = null;
@@ -509,7 +532,8 @@ namespace Dialogs
       scroll.content.DetachChildren();
     }
 
-    protected int PopulateScrollRect(ScrollRect scroll, GameObject template, IEnumerable<FileSystemEntry> items, FileIconSet icons)
+    protected int PopulateScrollRect(ScrollRect scroll, GameObject template, IEnumerable<FileSystemEntry> items,
+                                     FileIconSet icons, int targetWidth, bool startHorizontal)
     {
       if (scroll == null)
       {
@@ -523,9 +547,31 @@ namespace Dialogs
         return 0;
       }
 
+      // We modify the template width because it's the the simplest way to implement this feature.
+      if (targetWidth > 0)
+      {
+        // Resize the icon.
+        RectTransform rect = template.transform as RectTransform;
+        if (rect != null)
+        {
+          var sd = rect.sizeDelta;
+          sd.x = targetWidth;
+          rect.sizeDelta = sd;
+        }
+      }
+
+      GridLayoutGroup layoutGrid = scroll.content.GetComponent<GridLayoutGroup>();
+      if (layoutGrid != null)
+      {
+        layoutGrid.startAxis = (startHorizontal) ? GridLayoutGroup.Axis.Horizontal : GridLayoutGroup.Axis.Vertical;
+      }
+
+      // Create and position each item.
       int itemCount = 0;
+      // Dodgy way to simulate many items for testing.
       foreach (FileSystemEntry item in items)
       {
+        // Create item
         GameObject itemUI = GameObject.Instantiate(template);
         Text itemText = itemUI.GetComponentInChildren<Text>();
         FileEntryComponent entry = itemUI.GetComponent<FileEntryComponent>();
@@ -543,12 +589,13 @@ namespace Dialogs
         {
           entry = itemUI.AddComponent<FileEntryComponent>();
         }
+
         entry.Entry = item;
 
         // We expect the item to have two images; an icon image and an disabled highlight.
         // We can expect that the highlight is disabled, to hide it for now, and must come
         // first because of Unity uGUI draw order/hierarchy constraints.
-        // For simplicitly, we assume the first image is the highlight, the second image is
+        // For simplicity, we assume the first image is the highlight, the second image is
         // the icon. The icon image is optional.
         foreach (Image image in itemUI.GetComponentsInChildren<Image>())
         {
@@ -593,7 +640,7 @@ namespace Dialogs
     }
 
     /// <summary>
-    /// A couroutine which calls <see cref="FixSize"/> at the end of the current frame.
+    /// A coroutine which calls <see cref="FixSize"/> at the end of the current frame.
     /// </summary>
     /// <remarks>
     /// This addresses layout issues where the size of a scroll view may not have been calculated yet
@@ -604,21 +651,22 @@ namespace Dialogs
     /// </remarks>
     /// <param name="scroll">The scroll view.</param>
     /// <param name="template">The template item used to populate the scroll view.</param>
+    /// <param name="verticalExpanding">Scroll view expands in the vertical axis.</param>
     /// <returns></returns>
-    protected IEnumerator FixSizeAtEndOfFrame(ScrollRect scroll, GameObject template)
+    protected IEnumerator FixSizeAtEndOfFrame(ScrollRect scroll, GameObject template, bool verticalExpanding)
     {
       // Fix up the scrolling sensitivity and spacing grid size (if using a grid).
       RectTransform templateRect = (template) ? template.transform as RectTransform : null;
       if (AutoGridLayoutSizing)
       {
-        CheckLayoutSpacing(scroll, templateRect);
+        CheckLayoutSpacing(scroll, templateRect, verticalExpanding);
       }
       if (AutoScrollSensitivity)
       {
         CheckScrollSensitivity(scroll, templateRect);
       }
       yield return new WaitForEndOfFrame();
-      FixSize(scroll, templateRect);
+      FixSize(scroll, templateRect, verticalExpanding);
     }
 
     /// <summary>
@@ -627,7 +675,7 @@ namespace Dialogs
     /// </summary>
     /// <param name="scroll">The scroll view.</param>
     /// <param name="template">The template item transform used to populate the scroll view.</param>
-    protected void CheckLayoutSpacing(ScrollRect scroll, RectTransform templateRect)
+    protected void CheckLayoutSpacing(ScrollRect scroll, RectTransform templateRect, bool verticalExpanding)
     {
       if (templateRect != null && scroll != null)
       {
@@ -636,7 +684,6 @@ namespace Dialogs
         {
           gridLayout.cellSize = new Vector2(templateRect.rect.width, templateRect.rect.height);
         }
-        scroll.scrollSensitivity = templateRect.rect.height;
       }
     }
 
@@ -664,45 +711,89 @@ namespace Dialogs
     /// set the content width as rows * template height.
     ///  </remarks>
     /// <param name="scroll">The scroll view.</param>
-    /// <param name="template">The template item used to populate the scroll view. Used to determine
+    /// <param name="templateRect">The template item used to populate the scroll view. Used to determine
+    /// <param name="verticalExpanding">Scroll view expands in the vertical axis.</param>
     ///  the per item width/height.</param>
-    protected static void FixSize(ScrollRect scroll, RectTransform templateRect)
+    protected static void FixSize(ScrollRect scroll, RectTransform templateRect, bool verticalExpanding)
     {
       // Change the height to suit the number of items.
       RectTransform contentRect = scroll.content.transform as RectTransform;
-      if (!templateRect || !contentRect)
+      RectTransform scrollRect = scroll.transform as RectTransform;
+      if (!templateRect || !contentRect || !scrollRect)
       {
         return;
       }
 
-      if (templateRect.rect.width == 0)
+      if (verticalExpanding)
       {
-        return;
+        if (templateRect.rect.width <= 0)
+        {
+          return;
+        }
+
+        float scrollWidth = contentRect.rect.width;
+
+        // Account for the vertical scroll bar if hidden.
+        if (scroll.verticalScrollbar != null && !scroll.verticalScrollbar.gameObject.activeSelf)
+        {
+          scrollWidth -= scroll.verticalScrollbar.GetComponent<RectTransform>().rect.width;
+        }
+
+        int columnCount = Mathf.FloorToInt(scrollWidth / templateRect.rect.width);
+        if (columnCount == 0)
+        {
+          columnCount = 1;
+        }
+
+        // Review: This assumes a lot about the content layout.
+        int itemCount = contentRect.childCount;
+        int rowCount = (itemCount + columnCount - 1) / columnCount;
+        Vector2 offset = contentRect.offsetMax;
+        offset.y = 0;
+        contentRect.offsetMax = offset;
+        offset = contentRect.offsetMin;
+        offset.y = -rowCount * templateRect.rect.height;
+        contentRect.offsetMin = offset;
       }
-
-      float scrollWidth = contentRect.rect.width;
-
-      // Account for the vertical scroll bar if hidden.
-      if (scroll.verticalScrollbar != null && !scroll.verticalScrollbar.gameObject.activeSelf)
+      else
       {
-        scrollWidth -= scroll.verticalScrollbar.GetComponent<RectTransform>().rect.width;
-      }
+        if (templateRect.rect.height <= 0)
+        {
+          return;
+        }
 
-      int columnCount = Mathf.FloorToInt(scrollWidth / templateRect.rect.width);
-      if (columnCount == 0)
-      {
-        columnCount = 1;
+        float scrollHeight = scrollRect.rect.height;
+
+        // Account for the vertical scroll bar if hidden.
+        if (scroll.horizontalScrollbar != null && !scroll.horizontalScrollbar.gameObject.activeSelf)
+        {
+          scrollHeight -= scroll.horizontalScrollbar.GetComponent<RectTransform>().rect.height;
+        }
+
+        int rowCount = Mathf.FloorToInt(scrollHeight / templateRect.rect.height);
+        if (rowCount == 0)
+        {
+          rowCount = 1;
+        }
+
+        // Review: This assumes a lot about the content layout.
+        int itemCount = contentRect.childCount;
+        // We take two off columnCount to get the right width. Not sure how this works, but it does.
+        const int columnCountOffset = 2;
+        int columnCount = (itemCount + rowCount - 1) / rowCount - columnCountOffset;
+        if (columnCount < 0)
+        {
+          columnCount = 0;
+        }
+        Vector2 offset = contentRect.offsetMax;
+        offset.x = columnCount * templateRect.rect.width;
+        offset.y = 0;
+        contentRect.offsetMax = offset;
+        offset = contentRect.offsetMin;
+        offset.x = 0;
+        offset.y = -scrollHeight;
+        contentRect.offsetMin = offset;
       }
-      // Review: This assumes a lot about the content layout.
-      int itemCount = contentRect.childCount;
-      int rowCount = itemCount / columnCount + ((itemCount % columnCount != 0) ? 1 : 0);
-      Vector2 offset;
-      offset = contentRect.offsetMax;
-      offset.y = 0;
-      contentRect.offsetMax = offset;
-      offset = contentRect.offsetMin;
-      offset.y = -rowCount * templateRect.rect.height;
-      contentRect.offsetMin = offset;
     }
 
     /// <summary>
@@ -710,9 +801,9 @@ namespace Dialogs
     /// </summary>
     public void GoUp()
     {
-      if (Observer != null)
+      if (Controller != null)
       {
-        Observer.FileDialogNavigate(CurrentLocation, true);
+        Controller.FileDialogNavigate(CurrentLocation, true);
       }
     }
 
@@ -729,8 +820,17 @@ namespace Dialogs
         return;
       }
 
-      // Confirmed selection.
-      NotifyDone(new CancelEventArgs(false));
+      List<string> filenames = new List<string>();
+      foreach (string filename in Filenames)
+      {
+        filenames.Add(filename);
+      }
+
+      if (ValidateFiles(filenames))
+      {
+        // Confirmed selection.
+        NotifyDone(new CancelEventArgs(false));
+      }
     }
 
     /// <summary>
@@ -885,7 +985,16 @@ namespace Dialogs
         if (item.Entry.Type == FileItemType.File)
         {
           // Confirm.
-          NotifyDone(new CancelEventArgs(false));
+          List<string> filenames = new List<string>();
+          foreach (string filename in Filenames)
+          {
+            filenames.Add(filename);
+          }
+
+          if (ValidateFiles(filenames))
+          {
+            NotifyDone(new CancelEventArgs(false));
+          }
         }
         else
         {
@@ -944,17 +1053,27 @@ namespace Dialogs
 
     protected void NotifyChange(string target, object value)
     {
-      if (Observer != null && !SuppressEvents)
+      if (Controller != null && !SuppressEvents)
       {
-        Observer.OnFileDialogChange(new FileDialogViewEventArgs(target, value));
+        Controller.OnFileDialogChange(new FileDialogViewEventArgs(target, value));
       }
+    }
+
+    protected bool ValidateFiles(List<string> filenames)
+    {
+      if (Controller != null && !SuppressEvents)
+      {
+        return Controller.OnValidateFiles(filenames);
+      }
+
+      return true;
     }
 
     protected void NotifyDone(CancelEventArgs args)
     {
-      if (Observer != null && !SuppressEvents)
+      if (Controller != null && !SuppressEvents)
       {
-        Observer.OnFileDialogDone(args);
+        Controller.OnFileDialogDone(args);
       }
     }
 

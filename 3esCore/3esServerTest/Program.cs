@@ -275,7 +275,15 @@ namespace Tes
           new Vector3(0, 0, 0), new Vector3(0, -0.25f, 1), new Vector3(-0.25f, 0, 1),
           new Vector3(0, 0, 0), new Vector3(0.25f, 0, 1), new Vector3(0, -0.25f, 1)
         };
+        UInt32[] colours = new UInt32[]
+        {
+          Colour.Colours[(int)PredefinedColour.Red].Value, Colour.Colours[(int)PredefinedColour.Red].Value, Colour.Colours[(int)PredefinedColour.Red].Value,
+          Colour.Colours[(int)PredefinedColour.Green].Value, Colour.Colours[(int)PredefinedColour.Green].Value, Colour.Colours[(int)PredefinedColour.Green].Value,
+          Colour.Colours[(int)PredefinedColour.Blue].Value, Colour.Colours[(int)PredefinedColour.Blue].Value, Colour.Colours[(int)PredefinedColour.Blue].Value,
+          Colour.Colours[(int)PredefinedColour.White].Value, Colour.Colours[(int)PredefinedColour.White].Value, Colour.Colours[(int)PredefinedColour.White].Value,
+        };
         Shapes.MeshShape triangles = new Shapes.MeshShape(MeshDrawType.Triangles, triangleSet, ids.NextShapeId++);
+        triangles.Colours = colours;
         shapes.Add(triangles);
         // if (!noMove)
         // {
@@ -300,12 +308,22 @@ namespace Tes
       {
         Vector3[] pts = new Vector3[]
         {
-          new Vector3(0, 0, 0), new Vector3(0, 0.25f, 1), new Vector3(0.25f, 0, 1),
-          new Vector3(0, 0, 0), new Vector3(-0.25f, 0, 1), new Vector3(0, 0.25f, 1),
-          new Vector3(0, 0, 0), new Vector3(0, -0.25f, 1), new Vector3(-0.25f, 0, 1),
-          new Vector3(0, 0, 0), new Vector3(0.25f, 0, 1), new Vector3(0, -0.25f, 1)
+          new Vector3(0, 0, 0),
+          new Vector3(0, 0.25f, 1),
+          new Vector3(0.25f, 0, 1),
+          new Vector3(-0.25f, 0, 1),
+          new Vector3(0, -0.25f, 1)
+        };
+        UInt32[] colours = new UInt32[]
+        {
+          Colour.Colours[(int)PredefinedColour.Black].Value,
+          Colour.Colours[(int)PredefinedColour.Red].Value,
+          Colour.Colours[(int)PredefinedColour.Green].Value,
+          Colour.Colours[(int)PredefinedColour.Blue].Value,
+          Colour.Colours[(int)PredefinedColour.White].Value
         };
         Shapes.MeshShape points = new Shapes.MeshShape(MeshDrawType.Points, pts, ids.NextShapeId++);
+        points.Colours = colours;
         shapes.Add(points);
         // if (!noMove)
         // {
@@ -409,7 +427,10 @@ namespace Tes
         return;
       }
 
+      Console.CancelKeyPress += new ConsoleCancelEventHandler(ControlCHandler);
+      
       ServerSettings serverSettings = ServerSettings.Default;
+      serverSettings.PortRange = 10;
       ServerInfoMessage info = ServerInfoMessage.Default;
       info.CoordinateFrame = CoordinateFrame.XYZ;
       if (HaveOption("compress", args))
@@ -441,7 +462,12 @@ namespace Tes
         server.Create(shape);
       }
 
-      server.ConnectionMonitor.Start(ConnectionMonitorMode.Asynchronous);
+      if (!server.ConnectionMonitor.Start(ConnectionMonitorMode.Asynchronous))
+      {
+        Console.WriteLine("Failed to start listen socket.");
+        return;
+      }
+      Console.WriteLine(string.Format("Listening on port {0}", server.ConnectionMonitor.Port));
 
       frameTimer.Start();
       while (!Quit)
@@ -499,6 +525,12 @@ namespace Tes
 
       server.ConnectionMonitor.Stop();
       server.ConnectionMonitor.Join();
+    }
+
+    private static void ControlCHandler(object sender, ConsoleCancelEventArgs args)
+    {
+      Quit = true;
+      args.Cancel = true;
     }
   }
 }
