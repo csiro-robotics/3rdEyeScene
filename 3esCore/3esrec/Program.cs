@@ -382,7 +382,9 @@ This program attempts to connect to and record a Third Eye Scene server.
       {
         switch (e.ErrorCode)
         {
-        case 10061: // WSAECONNREFUSED
+        // case 10061: // WSAECONNREFUSED (Mono)
+        //   break;
+        case 111: // Connection refused (.Net Core)
           break;
         default:
           Console.Error.WriteLine(e);

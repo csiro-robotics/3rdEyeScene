@@ -46,7 +46,7 @@ def marshal_unity_runtime(args):
                 shutil.copy2(src, dst)
 
 if __name__ == "__main__":
-    default_framework = "netstandard2.0"
+    default_framework = "netcoreapp2.2"
     if platform.system() == 'Windows':
         default_framework = 'net461'
 
@@ -57,7 +57,7 @@ if __name__ == "__main__":
                        'project. Various arguments may be used to override the default behaviour, selecting the ' \
                        'directory to marshal from (-d), the .Net framework (-f), the target output directory (-o) ' \
                        'and even the project to marshal (-p). The default framework under Windows is net461, for ' \
-                       'other platforms it is netstandard2.0'
+                       'other platforms it is netcoreapp2.2'
 
     parser = argparse.ArgumentParser(description = help_description)
     parser.add_argument('--framework', '-f', dest='framework', action='store',
