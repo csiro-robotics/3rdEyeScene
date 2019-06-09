@@ -328,7 +328,7 @@ This program attempts to connect to and record a Third Eye Scene server.
           }
         }
 
-        if (packetBuffer.DroppedByteCount != 0)
+        if (packetBuffer != null && packetBuffer.DroppedByteCount != 0)
         {
           Console.Error.WriteLine("Dropped {0} bad bytes", packetBuffer.DroppedByteCount);
           packetBuffer.DroppedByteCount = 0;

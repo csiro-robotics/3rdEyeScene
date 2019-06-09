@@ -42,10 +42,10 @@ Note: instead of using Python to run `unity-marshal.py`, you may instead copy 3e
 
 - Open a command prompt
 - Ensure the `dotnet` command is available on the path by running `dotnet --info`
-- Natigate into the folder containing `3esCore.sln`
+- Navigate into the folder containing `3esCore.sln`
 - Build for development including Unity development
-  - `dotnet build -f netcoreapp2.2 -c Debug`
-  - `dotnet build -f netcoreapp2.2 -c Release`
+  - `dotnet build -c Debug`
+  - `dotnet build -c Release`
 - Building for running utilities (3esinfo, 3esrec)
   - Linux:
     - `dotnet publish -f netcoreapp2.2 -c Release -o $PWD/build/Release`
@@ -53,3 +53,24 @@ Note: instead of using Python to run `unity-marshal.py`, you may instead copy 3e
   - Windows:
     - `dotnet publish -f netcoreapp2.2 -c Release -o %CD%\build\Release`
     - `dotnet publish -f netcoreapp2.2 -c Debug -o %CD%\build\build\Debug`
+
+Note: If you receive an error message like the one quoted below (`MSB4126`), then you may need to change the environment variable `PLATFORM`. Either clear this variable or set it explicitly to `"Any CPU"`.
+
+```
+...\3esCore.sln.metaproj : error MSB4126: The specified solution configuration "Debug|x64" is invalid. Please specify a valid solution configuration using the Configuration and Platform properties (e.g. MSBuild.exe Solution.sln /p:Configuration=Debug /p:Platform="Any CPU") or leave those properties blank to use the default solution configuration. [D:\Users\Kazys\source\3rdEyeScene\3esCore\3esCore.sln]
+    0 Warning(s)
+    1 Error(s)
+```
+
+### Running Utilities ###
+
+The utility programs may be executed using the `dotnet` command followed by the path of the utility DLL. For example, use `dotnet <path>/3esrec.dll` to run 3esrec.
+
+It is possible to build executable programs using the publish commands listed above and specifying the runtime. The examples below show the recommended runtime specifications:
+
+- Windows:
+  - `dotnet publish -f netcoreapp2.2 -c Release -o %CD%\build\Release -r win10-x64`
+- Linux:
+  - `dotnet publish -f netcoreapp2.2 -c Release -o $PWD/build/Release -r linux-x64`
+- MacOS:
+  - `dotnet publish -f netcoreapp2.2 -c Release -o $PWD/build/Release -r osx-x64`
