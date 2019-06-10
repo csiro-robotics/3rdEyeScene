@@ -1,4 +1,4 @@
-# 3esCore Build Instructions
+# 3esCore build instructions
 
 This page describes how to build the 3esCore solution. This solution provides core 3es functionality for .Net projects including for the Unity 3D 3rdEyeScene client.
 
@@ -10,10 +10,10 @@ This page describes how to build the 3esCore solution. This solution provides co
 - [Unity3D](https://unity3d.com/) editor installation.
   - A UnityHub installation is recommended.
     - [Experimental Linux Build](https://forum.unity.com/threads/unity-hub-v-1-3-2-is-now-available.594139/)
-  - At least version 2018.2.x is required to support dotnet core builds.
+  - Minimum version: `2018.4.1f1`
 - [Python 3](https://www.python.org/) recommended for `unity-marshal.py`
 
-# Build Instructions
+# Build instructions
 
 - Ensure the path to your Unity Engine DLL is set in the environmnet variable `UNITY_DLL_PATH` and set as shown below
   - Windows: typically `C:\Program Files\Unity\Hub\Editor\<Unity-version>\Editor\Data\Managed\UnityEngine`
@@ -60,7 +60,7 @@ Note: If you receive an error message like the one quoted below (`MSB4126`), the
     1 Error(s)
 ```
 
-### Running Utilities ###
+### Running utilities ###
 
 The utility programs may be executed using the `dotnet` command followed by the path of the utility DLL. For example, use `dotnet <path>/3esrec.dll` to run 3esrec.
 

@@ -17,8 +17,8 @@ namespace SFB {
         static StandaloneFileBrowser() {
 #if UNITY_STANDALONE_OSX
             _platformWrapper = new StandaloneFileBrowserMac();
-#elif UNITY_STANDALONE_WIN
-            _platformWrapper = new StandaloneFileBrowserWindows();
+// #elif UNITY_STANDALONE_WIN_DEPRECATED
+//             _platformWrapper = new StandaloneFileBrowserWindows();
 #elif UNITY_EDITOR
             _platformWrapper = new StandaloneFileBrowserEditor();
 #endif

@@ -110,7 +110,14 @@ public class TesComponent : Router
     CategoryCheckDelegate catDelegate = categories.IsActive;
     foreach (string loadPath in loadPaths)
     {
-      Handlers.LoadPlugins(loadPath, Plugins, "3esRuntime.dll", new object[] { catDelegate });
+      string[] excludeList = new string[] {
+        "3esCore.dll",
+        "3esRuntime.dll",
+        "host*.dll",
+        "SharpCompress.dll",
+        "System.*.dll"
+      };
+      Handlers.LoadPlugins(loadPath, Plugins, excludeList, new object[] { catDelegate });
     }
 
     InitialiseHandlers();
@@ -129,12 +136,12 @@ public class TesComponent : Router
   void LoadCommandLineFile()
   {
     Options opt = new Options();
-    if (opt.Anonymous.Count > 0)
+    if (opt.Values.ContainsKey("--play"))
     {
       // Load the first anonymous argument.
-      if (!OpenFile(opt.Anonymous[0]))
+      if (!OpenFile(opt.Values["--play"]))
       {
-        Log.Warning("Failed to load command line specified file: {0}", opt.Anonymous[0]);
+        Log.Warning($"Failed to play command line specified file: {opt.Values["--play"]}");
       }
     }
   }

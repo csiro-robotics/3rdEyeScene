@@ -609,12 +609,12 @@ namespace Dialogs
 
       SFB.ExtensionFilter[] extFilter = new SFB.ExtensionFilter[_filters.Count];
 
-#if UNITY_STANDALONE_WINDOWS
+#if UNITY_STANDALONE_WIN_DEPRECATED
       for (int i = 0; i < _filters.Count; ++i)
       {
         extFilter[i] = new SFB.ExtensionFilter(_filters[i].Display, _filters[i].Extension);
       }
-#else  // UNITY_STANDALONE_WINDOWS
+#else  // UNITY_STANDALONE_WIN_DEPRECATED
       int insertIndex = 0;
 
       if (FilterIndex > 0)
@@ -629,7 +629,7 @@ namespace Dialogs
           extFilter[insertIndex++] = new SFB.ExtensionFilter(_filters[i].Display, _filters[i].Extensions);
         }
       }
-#endif // UNITY_STANDALONE_WINDOWS
+#endif // UNITY_STANDALONE_WIN_DEPRECATED
 
       return extFilter;
     }

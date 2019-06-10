@@ -1,18 +1,17 @@
+# 3rd Eye Scene
 
-3rd Eye Scene
-=============
-3rd Eye Scene is a visual debugger and debugging aid in the vein of [rviz](http://wiki.ros.org/rviz) or physics engine viewers such as [Havok Visual Debugger](https://www.havok.com/physics/) or [PhysX Visual Debugger](https://developer.nvidia.com/physx-visual-debugger). Whereas those tools are tightly bound to their respective SDKs, 3rd Eye Scene is a generalised tool, which can be used to remotely visualise and debug any real time or non real time 3D algorithm. Conceptually, it can be thought of as a remote rendering application. A 3es server may be embedded into any program, then 3es render commands are used to instrument the target program. The 3es viewer client application is then used to view, record and playback these commands.
+3rd Eye Scene is a visual debugger and debugging aid in the vein of [rviz](http://wiki.ros.org/rviz) or physics engine viewers such as [Havok Visual Debugger](https://www.havok.com/physics/) or [PhysX Visual Debugger](https://developer.nvidia.com/physx-visual-debugger). Whereas those tools are tightly bound to their respective SDKs, 3rd Eye Scene is a generalised tool and can be used to remotely visualise and debug any real time or non real time 3D algorithm. Conceptually, it can be thought of as a remote rendering application. A 3es server may be embedded into any program, then 3es render commands are used to instrument the target program. The 3es viewer client application is then used to view, record and playback these commands.
 
-Key Features
-------------
+## Key Features
+
 - Remote 3D rendering from any application
 - Record rendered data
 - Playback and step through recorded data
 - Open, extensible protocol
 - Plugin extensible to visualise specialised geometry
 
-Use Cases
----------
+## Use Cases
+
 - Visualising geometric algorithms
   - Mesh operations
   - Geometric intersection tests
@@ -27,8 +26,7 @@ Use Cases
 - QA testing
   - Record test sessions and attach 3es files to bug reports.
 
-Integrating 3rd Eye Scene Server Code
--------------------------------------
+## Integrating 3rd Eye Scene Server Code
 The 3rd Eye Scene core includes code for both a C++ and a C# based server. This section focuses on integrating the C++ code to debug an application. The example presented here is the 3rd-occupancy example included in the TES source code release. The 3es macro interface is presented later.
 
 Before sending TES messages, a `tes::Server` object must be declared and initialised as shown below.
@@ -126,8 +124,8 @@ void releaseTes()
 }
 ```
 
-Using Categories
-----------------
+## Using Categories
+
 Categories may be used to logically group objects in the viewer client. Objects from specific categories can be hidden and shown as a group. Categories are form a hierarchy, with each category having an optional parent. The code below shows an example category initialisation.
 
 ```
@@ -159,8 +157,8 @@ void initCategories()
 }
 ```
 
-Using the Macro Interface
--------------------------
+## Using the Macro Interface
+
 It is also possible to use preprocessor macros to invoke must 3rd Eye Scene API calls. This is to support removing all debugging code via the preprocessor thereby eliminating all associated overhead. The examples above can be rewritten using the macro interface as shown below. The `animateBox2()` function is equivalent to the `animateBox()` function, but uses transient objects instead of updating a single object.
 
 ```

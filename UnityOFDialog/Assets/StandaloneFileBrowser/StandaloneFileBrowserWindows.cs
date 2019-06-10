@@ -1,4 +1,4 @@
-#if UNITY_STANDALONE_WIN
+#if UNITY_STANDALONE_WIN_DEPRECATED
 
 using System;
 using System.IO;

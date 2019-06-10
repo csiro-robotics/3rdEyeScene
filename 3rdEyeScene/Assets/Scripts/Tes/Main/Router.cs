@@ -1059,7 +1059,7 @@ namespace Tes.Main
       // Now wrap the file in a GZip stream to start compression if we are not already doing so.
       if (allowCompression && fileStream as GZipStream == null)
       {
-        writer = new NetworkWriter(new GZipStream(fileStream, CompressionMode.Compress, CompressionLevel.BestCompression));
+        writer = new NetworkWriter(new GZipStream(fileStream, CompressionMode.Compress, SharpCompress.Compressors.Deflate.CompressionLevel.BestCompression));
       }
       else
       {
