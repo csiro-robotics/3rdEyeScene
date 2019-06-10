@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 using SharpCompress.Compressors;
 using SharpCompress.Compressors.Deflate;
 using Tes.IO;
@@ -102,7 +103,16 @@ namespace Tes
 
       if (prog.ArgsOk)
       {
-        prog.Run();
+        FrameDisplay frameDisplay = new FrameDisplay();
+        try
+        {
+          prog.Run(frameDisplay);
+        }
+        finally
+        {
+          // Ensure frameDisplay thread terminates.
+          frameDisplay.Stop();
+        }
       }
       else
       {
@@ -144,7 +154,7 @@ This program attempts to connect to and record a Third Eye Scene server.
   - mz : File level compression. Decode incoming packets and compress at the
          file level.
   - m- : Passthrough. Packets are saved exactly as they come in.
-  The fastest mode is -m- as this performs no additional calculates other than
+  The fastest mode is -m- as this performs no additional calculations other than
   CRC validation. However, this mode requires naked frame packets for accurate
   frame count finalisation.
 
@@ -174,7 +184,7 @@ This program attempts to connect to and record a Third Eye Scene server.
     }
 
 
-    public void Run()
+    public void Run(FrameDisplay frameDisplay)
     {
       int connectionPollTimeSecMs = 250;
       TcpClient socket = null;
@@ -206,6 +216,11 @@ This program attempts to connect to and record a Third Eye Scene server.
             timer.Start();
 #endif // PACKET_TIMING
             TotalFrames = 0u;
+            frameDisplay.Reset();
+            if (!Quiet)
+            {
+              frameDisplay.Start();
+            }
             recordingWriter = CreateOutputWriter();
             if (recordingWriter != null)
             {
@@ -254,10 +269,7 @@ This program attempts to connect to and record a Third Eye Scene server.
                     if (completedPacket.Header.MessageID == (ushort)ControlMessageID.EndFrame)
                     {
                       ++TotalFrames;
-                      if (!Quiet)
-                      {
-                        Console.Write(string.Format("\r{0}", TotalFrames));
-                      }
+                      frameDisplay.IncrementFrame();
 #if PACKET_TIMING
                       if (TotalFrames >= PacketLimit)
                       {
@@ -283,10 +295,7 @@ This program attempts to connect to and record a Third Eye Scene server.
                     if (controlMessageId == (ushort)ControlMessageID.EndFrame)
                     {
                       ++TotalFrames;
-                      if (!Quiet)
-                      {
-                        Console.Write(string.Format("\r{0}", TotalFrames));
-                      }
+                      frameDisplay.IncrementFrame();
 #if PACKET_TIMING
                       if (TotalFrames >= PacketLimit)
                       {
@@ -328,6 +337,8 @@ This program attempts to connect to and record a Third Eye Scene server.
           }
         }
 
+        frameDisplay.Stop();
+
         if (packetBuffer != null && packetBuffer.DroppedByteCount != 0)
         {
           Console.Error.WriteLine("Dropped {0} bad bytes", packetBuffer.DroppedByteCount);
@@ -362,7 +373,7 @@ This program attempts to connect to and record a Third Eye Scene server.
       }
 
 #if PACKET_TIMING
-      Console.WriteLine(string.Format("Processed {0} packets in {1}ms", PacketLimit, timer.ElapsedMilliseconds));
+      Console.WriteLine($"Processed {PacketLimit} packets in {timer.ElapsedMilliseconds}ms");
 #endif // PACKET_TIMING
     }
 
@@ -412,10 +423,10 @@ This program attempts to connect to and record a Third Eye Scene server.
         string filePath = GenerateNewOutputFile();
         if (string.IsNullOrEmpty(filePath))
         {
-          Console.WriteLine(string.Format("Unable to generate a numbered file name using the prefix: {0}. Try cleaning up the output directory.", OutputPrefix));
+          Console.WriteLine($"Unable to generate a numbered file name using the prefix: {OutputPrefix}. Try cleaning up the output directory.");
           return null;
         }
-        Console.WriteLine("Recording to: {0}", filePath);
+        Console.WriteLine($"Recording to: {filePath}");
 
         Stream stream = null;
         FileStream fileStream = new FileStream(filePath, FileMode.Create);
@@ -740,6 +751,7 @@ This program attempts to connect to and record a Third Eye Scene server.
         else if (args[i] == "--quiet" || args[i] == "-q")
         {
           Quiet = true;
+          Console.WriteLine("Setting Quiet");
         }
         else if (args[i] == "--port")
         {
