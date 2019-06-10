@@ -201,7 +201,7 @@ namespace Dialogs
       }
 
       // Can't use DriveInfo as it's not implemented on Windows in Mono 2. Maybe when Unity Mono is upgraded.
-#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN
+#if UNITY_EDITOR_WIN || UNITY_STANDALONE_WIN_DEPRECATED
       for (char driveLetter = 'A'; driveLetter <= 'Z'; ++driveLetter)
       {
         DirectoryInfo dir = new DirectoryInfo(string.Format(@"{0}:\", driveLetter));
