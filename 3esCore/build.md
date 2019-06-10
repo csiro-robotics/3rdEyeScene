@@ -2,7 +2,7 @@
 
 This page describes how to build the 3esCore solution. This solution provides core 3es functionality for .Net projects including for the Unity 3D 3rdEyeScene client.
 
-## Pre-requisites
+# Pre-requisites
 
 - A .Net build system, recommended:
   - [Visual Studio for Windows or Mac](https://visualstudio.microsoft.com/) (not Visual Studio Code) compatible with the .Net 4.61 framework
@@ -13,32 +13,30 @@ This page describes how to build the 3esCore solution. This solution provides co
   - At least version 2018.2.x is required to support dotnet core builds.
 - [Python 3](https://www.python.org/) recommended for `unity-marshal.py`
 
-## Build Instructions
+# Build Instructions
 
 - Ensure the path to your Unity Engine DLL is set in the environmnet variable `UNITY_DLL_PATH` and set as shown below
   - Windows: typically `C:\Program Files\Unity\Hub\Editor\<Unity-version>\Editor\Data\Managed\UnityEngine`
   - MacOS: typically `'/<install-path>/Unity.app/Contents/Managed`
   - Linux: `<Unity-hub-path>/Hub/Editor/<Unity-version>/Editor/Data/Managed`
-- Build using either the Visual Studio or dotnet instructions below
-- Marshal the 3esRuntime DLLs for the 3rdEyeScene Unity 3D project
-  - Open a command prompt and change into the directory containing `unity-marshal.py`
-  - Run the marshalling script (no arguments required)
-    - `python unity-marshal.py`
+- Build using either `dotnet` (recommended) or using Visual Studio (instructions below)
+- Marshal the 3esRuntime DLLs for the 3rdEyeScene Unity 3D project.
+  - Building with `dotnet`, you can use `unity-marshal.py`
+    - Open a command prompt and change into the directory containing `unity-marshal.py`
+    - Run the marshaling script (no arguments required)
+      - `python unity-marshal.py`
+  - Building with Visual Studio
+    - Navigate to `3esRuntime/bin/Release`
+    - Find the 3esRuntime.DLL. This will be under the `net461` directory for Visual Studio builds.
+    - Copy the 3esRuntime.DLL, all other DLLs in the same folder and all .PDB files with the of the same name into the 3rdEyeScene Unity project, under `Assets/plugins`.
 
-
-Note: instead of using Python to run `unity-marshal.py`, you may instead copy 3esRuntime.DLL and support DLLs manually.
-
-- Navigate to `3esRuntime/bin/Release`
-- Find the 3esRuntime.DLL. This will be under the `netcoreapp2.2` directory for `dotnet` builds.
-- Copy the 3esRuntime.DLL, all other DLLs in the same folder and all .PDB files with the of the same name into the 3rdEyeScene Unity project, under `Assets/plugins`.
-
-### Visual Studio
+## Visual Studio
 
 - Open `3esCore.sln`
 - Select the build configuration (e.g., Release, Any CPU)
 - Select Build All in the menus
 
-### dotnet build
+## dotnet build
 
 - Open a command prompt
 - Ensure the `dotnet` command is available on the path by running `dotnet --info`
@@ -47,7 +45,7 @@ Note: instead of using Python to run `unity-marshal.py`, you may instead copy 3e
   - `dotnet build -c Debug`
   - `dotnet build -c Release`
 - Building for running utilities (3esinfo, 3esrec)
-  - Linux:
+  - Linux and MacOS (bash shell):
     - `dotnet publish -f netcoreapp2.2 -c Release -o $PWD/build/Release`
     - `dotnet publish -f netcoreapp2.2 -c Debug -o $PWD/build/Debug`
   - Windows:
@@ -70,7 +68,20 @@ It is possible to build executable programs using the publish commands listed ab
 
 - Windows:
   - `dotnet publish -f netcoreapp2.2 -c Release -o %CD%\build\Release -r win10-x64`
-- Linux:
+- Linux (bash shell):
   - `dotnet publish -f netcoreapp2.2 -c Release -o $PWD/build/Release -r linux-x64`
-- MacOS:
+- MacOS (bash shell):
   - `dotnet publish -f netcoreapp2.2 -c Release -o $PWD/build/Release -r osx-x64`
+
+# Notes on build setup
+
+This section highlights some issues encountered in setting up the build for cross platform development and explains why things are as they are.
+
+- Build setup is targeted at supporting `dotnet` pipeline over Visual Studio. This is for cross platform compatibility.
+- The `.csproj` files support either `dotnet` or Visual Studio builds by adding conditions to `TargetFramework` tags. For Visual Studio, only the `net461` target is selected, for `dotnet` both `netstandard2.0` and `netcoreapp2.2` targets are enabled.
+- Visual Studio only uses `net461` to avoid issues where `dotnet` is not installed.
+- `dotnet` uses both `netstandard2.0` and `netcoreapp2.2` to support Unity import and command line execution.
+  - `netstandard2.0` is supported by Unity, while `netcoreapp2.2` is not currently compatible with Unity.
+    - Only `netstandard2.0` DLLs should be marshaled for Unity
+    - Tested with `Unity 2018.4.1f1`
+  - `netcoreapp2.2` is required for `dotnet publish` commands in order to build runnable utilities including executable files.
