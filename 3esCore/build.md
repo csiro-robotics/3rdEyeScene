@@ -10,7 +10,7 @@ This page describes how to build the 3esCore solution. This solution provides co
 - [Unity3D](https://unity3d.com/) editor installation.
   - A UnityHub installation is recommended.
     - [Experimental Linux Build](https://forum.unity.com/threads/unity-hub-v-1-3-2-is-now-available.594139/)
-  - Minimum version: `2018.4.1f1`
+  - Minimum version: `2018.4`
 - [Python 3](https://www.python.org/) recommended for `unity-marshal.py`
 
 # Build instructions

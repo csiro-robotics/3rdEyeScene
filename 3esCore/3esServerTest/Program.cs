@@ -438,7 +438,7 @@ namespace Tes
         serverSettings.Flags |= ServerFlag.Compress;
       }
 
-      IServer server = new TcpServer(serverSettings);
+      IServer server = new TcpServer(serverSettings, info);
       List<Shapes.Shape> shapes = new List<Shapes.Shape>();
       List<ShapeMover> movers = new List<ShapeMover>();
       List<Resource> resources = new List<Resource>();
