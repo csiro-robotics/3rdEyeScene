@@ -15,10 +15,11 @@ This page describes how to build the 3esCore solution. This solution provides co
 
 # Build instructions
 
-- Ensure the path to your Unity Engine DLL is set in the environmnet variable `UNITY_DLL_PATH` and set as shown below
-  - Windows: typically `C:\Program Files\Unity\Hub\Editor\<Unity-version>\Editor\Data\Managed\UnityEngine`
+- Ensure the path to your Unity Engine DLL is set in the environmeet variable `UNITY_DLL_PATH` and set as shown below
+  - Windows: typically `C:\Program Files\Unity\Hub\Editor\<Unity-version>\Editor\Data\Managed`
   - MacOS: typically `'/<install-path>/Unity.app/Contents/Managed`
   - Linux: `<Unity-hub-path>/Hub/Editor/<Unity-version>/Editor/Data/Managed`
+  - *Note:* Do not set the path to `<Unity-version>\Editor\Data\Managed\UnityEngine` (note the last directory). The UnityEngine.dll is different in that DLL to the one in the parent directory. Using the wrong path will result in unresolved references from `UnityEngine.CoreModule.dll`, `UnityEngine.IMGUIModule.dll` and `UnityEngine.TextRenderingModule.dll`.
 - Build using either `dotnet` (recommended) or using Visual Studio (instructions below)
 - Marshal the 3esRuntime DLLs for the 3rdEyeScene Unity 3D project.
   - Building with `dotnet`, you can use `unity-marshal.py`
@@ -36,7 +37,21 @@ This page describes how to build the 3esCore solution. This solution provides co
 - Select the build configuration (e.g., Release, Any CPU)
 - Select Build All in the menus
 
-## dotnet build
+## Visual Studio Code
+
+A tasks.json file has been provided for building in Visual Studio Code using the `dotnet core`. This includes the following tasks:
+
+- `build Debug` : builds debug assemblies
+  - This is the default build task executed by the VSCode command: `Tasks: Run Build Task`
+- `build Release` : build release assemblies
+- `publish Debug` : generate debug mode executables using `netcoreapp2.2` target.
+  - Output directory: `${workspaceFolder}/build/Debug`
+- `publish Release` : generate release mode executables using `netcoreapp2.2` target.
+  - Output directory: `${workspaceFolder}/build/Release`
+- `marshal Release` : build and marshal the release assemblies for use by the 3rdEyeScene Unity project. Requires a `python` available on the path.
+- `marshal Debug` : build and marshal the debug assemblies for use by the 3rdEyeScene Unity project. Requires a `python` available on the path.
+
+## Command line dotnet build
 
 - Open a command prompt
 - Ensure the `dotnet` command is available on the path by running `dotnet --info`

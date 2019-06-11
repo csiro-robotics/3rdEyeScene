@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFrameworks Condition="'$(MSBuildRuntimeType)'=='Core'">netstandard2.0;netcoreapp2.2</TargetFrameworks>
     <TargetFrameworks Condition="'$(MSBuildRuntimeType)'=='Full'">net461</TargetFrameworks>
@@ -22,22 +21,16 @@
     <!-- <RepositoryUrl>Repo URL</RepositoryUrl> -->
     <!-- <RepositoryType>Repo type</RepositoryType> -->
     <!-- <PackageTags>Tags</PackageTags> -->
+    <UNITY_DLL_PATH Condition="'$(UNITY_DLL_PATH)'==''"></UNITY_DLL_PATH>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\3esCore\3esCore.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="UnityEngine" Condition="!Exists('$(UNITY_DLL_PATH)') And Exists('\\Applications\\Unity\\Unity.app\\Contents\\Managed\\UnityEngine.dll') ">
-      <HintPath>\Applications\Unity\Unity.app\Contents\Managed\UnityEngine.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine" Condition="!Exists('$(UNITY_DLL_PATH)') And Exists('C:\\Program Files\\Unity\\Editor\\Data\\Managed\\UnityEngine.dll') ">
-      <HintPath>C:\Program Files\Unity\Editor\Data\Managed\UnityEngine.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
-    <Reference Include="UnityEngine" Condition=" Exists('$(UNITY_DLL_PATH)') ">
+
+  <ItemGroup Condition="Exists('$(UNITY_DLL_PATH)')">
+    <Reference Include="UnityEngine">
       <HintPath>$(UNITY_DLL_PATH)\UnityEngine.dll</HintPath>
       <Private>False</Private>
     </Reference>
