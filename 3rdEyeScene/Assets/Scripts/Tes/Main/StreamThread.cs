@@ -310,7 +310,7 @@ namespace Tes.Main
           // Not stepping. Check time elapsed.
           _catchingUp = false;
 
-          // Measure elapsed time. Stop and restart the timer to get the elapsed time.
+          // Measure elapsed time. Start and stop the timer to set the elapsed time and continue tracking time.
           stopwatch.Stop();
           stopwatch.Start();
           // Should this have _frameOverrunUs added?
@@ -399,7 +399,7 @@ namespace Tes.Main
                 }
               }
             }
-          }
+          } // lock(this)
         }
 
         // Time has elapsed. Reset and restart the timer.
@@ -464,6 +464,8 @@ namespace Tes.Main
                       lastSeekableFrame = preControlMsgFrame;
                       Log.Diag("Last seekable: {0}", lastSeekableFrame);
                     }
+
+                    bool keyframeRequested = false;
                     // Ended a frame. Check for keyframe. We'll queue the request after the end of
                     // frame message below.
                     if ((lastSeekablePosition - lastKeyframePosition >= _keyframeKiloBytes * 1024 ||
@@ -478,9 +480,10 @@ namespace Tes.Main
                       lastKeyframeFrame = _currentFrame;
                       lastKeyframePosition = lastSeekablePosition;
                       RequestKeyframe(lastKeyframeFrame, lastSeekableFrame, lastSeekablePosition);
+                      keyframeRequested = true;
                     }
                     // Make sure we yield so as to support the later check to avoid flooding the packet queue.
-                    allowYield = true;
+                    allowYield = !_catchingUp || keyframeRequested;
                   }
                 }
                 else if (packet.Header.RoutingID == (ushort)RoutingID.ServerInfo)
@@ -578,7 +581,7 @@ namespace Tes.Main
         byte[] packetData = packet.Data;
         byte[] frameNumberBytes = BitConverter.GetBytes(Endian.ToNetwork((ulong)_currentFrame));
         Array.Copy(frameNumberBytes, 0, packetData, value64Offset, frameNumberBytes.Length);
-        endedFrame = true;
+        endedFrame = !_catchingUp;
       }
       else if (messageId == ControlMessageID.FrameCount)
       {
@@ -639,17 +642,19 @@ namespace Tes.Main
           // Convert the time value to microseconds.
           long frameDeltaUs = (long)(frameDelta * _timeUnit);
           // Increment the current frame delay by the specified time step and the cached overrun.
-          if (_frameOverrunUs <= frameDeltaUs)
+          if (_frameOverrunUs <= frameDeltaUs || _skippedFrameCount >= _maxFrameSkip)
           {
             _frameDelayUs = frameDeltaUs - _frameOverrunUs;
             // Overrun has been applied.
             _frameOverrunUs = 0;
+            _skippedFrameCount = 0;
           }
           else
           {
-            // Haven't handled the overrun.
+            // Haven't handled the overrun. Need to skip multiple frames.
             _frameDelayUs = 0;
             _frameOverrunUs -= frameDeltaUs;
+            ++_skippedFrameCount;
           }
 
           if (_targetFrame != 0)
@@ -664,7 +669,10 @@ namespace Tes.Main
           _totalFrames = _currentFrame;
         }
       }
-      _catchingUp = _currentFrame + 1 < _targetFrame;
+
+      // Catching up if we are targeting a frame ahead of the next frame or we have not processed sufficient time.
+      // The latter case is indicated by _frameOverrunUs being non-zero.
+      _catchingUp = _currentFrame + 1 < _targetFrame || _frameOverrunUs > 0;
     }
 
     #region Keyframes
@@ -1149,6 +1157,16 @@ namespace Tes.Main
     /// Accumulated time after _frameDelayUs elapses.
     /// </summary>
     private long _frameOverrunUs = 0;
+
+    /// <summary>
+    /// Number of frames which have been skipped in trying to maintain the target frame rate.
+    /// </summary>
+    private uint _skippedFrameCount = 0;
+    /// <summary>
+    /// Maximum number of frames which may be skipped to try and catch up.
+    /// </summary>
+    private uint _maxFrameSkip = 100;
+
     /// <summary>
     /// Tracks the default frame time if none is specified in a frame message (from <see cref="ServerInfoMessage.DefaultFrameTime"/>.
     /// </summary>

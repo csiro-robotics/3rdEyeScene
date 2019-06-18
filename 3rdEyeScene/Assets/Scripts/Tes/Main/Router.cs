@@ -564,6 +564,13 @@ namespace Tes.Main
       }
     }
 
+    /// <summary>
+    /// Set a new target frame to skip to. Should be in range [0, <see cref="TotalFrames"/>].
+    /// </summary>
+    /// <param name="targetFrame">The frame to skip to.</param>
+    /// <remarks>
+    /// Setting the target frame will pause current playback.
+    /// </remarks>
     public void SetFrame(uint targetFrame)
     {
       if (_dataThread != null)
@@ -634,11 +641,15 @@ namespace Tes.Main
       Log.AddTarget(new LogAdaptor());
     }
 
+    /// <summary>
+    /// Render frame update function. Pumps the packet queue and routes to registered
+    /// <see cref="Tes.Runtime.MessageHandler"/> objects.
+    /// </summary>
     protected virtual void Update()
     {
       try
       {
-        // FIXME: manage propabating dynamic settings better.
+        // FIXME: manage propagating dynamic settings better.
         Materials.DefaultPointSize = RenderSettings.Instance.DefaultPointSize;
 
         if (_dataThread != null)
@@ -649,17 +660,18 @@ namespace Tes.Main
             _recordOnConnectPath = null;
           }
 
-          bool catchUp = false;
-
-          // Move data packets from the data thread into the local queue.
-          // We are looking for an end frame control message, at which point
-          // we will pass all messages on to the appropriate handles to
-          // enact.
+          // Move data packets from the data thread into the local queue. We are looking for an end frame control
+          // message, at which point we will pass all messages on to the appropriate handlers to enact.
+          //
+          // We also need to handle 'catchUp' situations where the target frame is well in advance of the next frame.
+          // In this case we keep processing the packet queue until catchUp is complete (at target frame).
           PacketBuffer packet = null;
+          bool catchUp = false;
           bool endFrame = false;
           bool processingPackets = true;
           while (!endFrame && processingPackets || catchUp)
           {
+            // Set catchup state on data handlers and check update catch up status.
             catchUp = UpdateCatchup(catchUp);
             if ((processingPackets = _dataThread.PacketQueue.TryDequeue(ref packet)))
             {
@@ -704,10 +716,13 @@ namespace Tes.Main
                     if (message.Read(packetReader) &&
                        (packet.Header.MessageID == (ushort)ControlMessageID.EndFrame ||
                         packet.Header.MessageID == (ushort)ControlMessageID.ForceFrameFlush ||
+                        packet.Header.MessageID == (ushort)ControlMessageID.Keyframe ||
                         packet.Header.MessageID == (ushort)ControlMessageID.Reset))
                     {
+                      // Special message handling.
                       switch ((ControlMessageID)packet.Header.MessageID)
                       {
+                        // Scene reset request
                         case ControlMessageID.Reset:
                           // Drop pending packets.
                           _pendingPackets.Clear();
@@ -719,9 +734,14 @@ namespace Tes.Main
                           EndFrame(message.Value32, catchUp);
                           _previousFrame = previousFrame;
                           break;
+                        // Key frame request message. Need to make sure we force display of everything even when in
+                        // catch up mode.
                         case ControlMessageID.Keyframe:
+                          // Log.Info($"Keyframe: pre-catchup: {catchUp}");
                           catchUp = UpdateCatchup(catchUp, true);
+                          // Log.Info($"Keyframe: post-catchup: {catchUp}");
                           break;
+                        // Frame end or force flush: ensure the scene is rendered.
                         case ControlMessageID.EndFrame:
                         case ControlMessageID.ForceFrameFlush:
                           EndFrame((uint)message.Value64, catchUp, (message.ControlFlags & (ushort)EndFrameFlag.Persist) != 0);
@@ -878,7 +898,7 @@ namespace Tes.Main
     }
 
     /// <summary>
-    /// Manage catchup state changes.
+    /// Manage catchup state changes when skipping more than one fame ahead.
     /// </summary>
     /// <param name="inCatchUp">Currently in catch up mode? Supports looping in the update method.</param>
     /// <param name="forceExitCatchup">Force exit of catchup mode?</param>
