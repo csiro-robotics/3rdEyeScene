@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Tes.IO;
@@ -212,7 +212,7 @@ namespace Tes.Handlers
     /// <item>For complex shapes, call <see cref="Shapes.Shape.WriteData(PacketBuffer, ref uint)"/> as required
     ///       and serialise the packets.</item>
     /// </list>
-    /// 
+    ///
     /// Using the <see cref="Shapes.Shape"/> classes ensures serialisation is consistent with the server code
     /// and reduces the code maintenance to one code path.
     /// </remarks>
@@ -476,7 +476,7 @@ namespace Tes.Handlers
     ///
     /// This behaviour must be overridden to interpret the attributes differently. For example,
     /// the scale members for a cylinder may indicate length and radius, with a redundant Z component.
-    /// 
+    ///
     /// The <paramref name="flags"/> parameter is used to consider the following <see cref="ObjectFlag"/> members:
     /// <list type="bullet">
     /// <item><see cref="UpdateFlag.UpdateMode"/> to indentify that only some transform elements are present.</item>
