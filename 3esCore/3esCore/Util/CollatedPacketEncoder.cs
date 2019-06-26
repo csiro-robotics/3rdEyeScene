@@ -75,7 +75,7 @@ namespace Tes.Util
       CompressionEnabled = compress;
       if (compress)
       {
-        _collationStream = new GZipStream(_dataStream, CompressionMode.Compress, CompressionLevel.BestCompression);
+        _collationStream = new GZipStream(_dataStream, CompressionMode.Compress, CompressionLevel.Default);
       }
     }
 
@@ -120,7 +120,7 @@ namespace Tes.Util
       _dataStream.Seek(_resetPosition, SeekOrigin.Begin);
       if (CompressionEnabled)
       {
-        _collationStream = new GZipStream(_dataStream, CompressionMode.Compress, CompressionLevel.BestCompression);
+        _collationStream = new GZipStream(_dataStream, CompressionMode.Compress, CompressionLevel.Default);
       }
     }
 

@@ -1,4 +1,4 @@
-﻿//#define PACKET_TIMING
+﻿// #define PACKET_TIMING
 
 using System;
 using System.Diagnostics;
@@ -23,8 +23,6 @@ namespace Tes
       FileCompression,
       Uncompressed,
       Passthrough,
-
-      Default = Passthrough
     }
 
 #if PACKET_TIMING
@@ -39,6 +37,7 @@ namespace Tes
     public bool Overwrite { get; private set; }
     public bool Quiet { get; private set; }
 
+    public static Mode DefaultDecodeMode { get { return Mode.Passthrough; } }
     public Mode DecodeMode { get; private set; }
     public uint TotalFrames { get; private set; }
     public IPEndPoint ServerEndPoint { get; private set; }
@@ -88,7 +87,7 @@ namespace Tes
         }
       }
 
-      return Mode.Default;
+      return DefaultDecodeMode;
     }
 
     static void Main(string[] args)
@@ -122,6 +121,7 @@ namespace Tes
 
     Program(string[] args)
     {
+      DecodeMode = DefaultDecodeMode;
       if (args.Length > 0)
       {
         ParseArgs(args);
@@ -179,7 +179,7 @@ This program attempts to connect to and record a Third Eye Scene server.
   formulated as {{prefix###.3es}}, where the number used is the first missing
   file up to 999. At that point the program will complain that there are no
   more available file names.
-", ModeToArg(Mode.Default), DefaultPort)
+", ModeToArg(DefaultDecodeMode), DefaultPort)
       );
     }
 
@@ -458,7 +458,7 @@ This program attempts to connect to and record a Third Eye Scene server.
             stream = new CollationStream(fileStream, false);
             break;
           case Mode.FileCompression:
-            stream = new GZipStream(fileStream, CompressionMode.Compress, CompressionLevel.BestCompression);
+            stream = new GZipStream(fileStream, CompressionMode.Compress, CompressionLevel.Default);
             break;
           case Mode.Uncompressed:
             stream = fileStream;

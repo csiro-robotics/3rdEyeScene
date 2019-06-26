@@ -179,7 +179,7 @@ namespace Tes.IO
         int overhead = (int)_finalisedBuffer.Position;
 
         // Now compress the collated packets.
-        GZipStream compressionStream = new GZipStream(_finalisedBuffer, CompressionMode.Compress, CompressionLevel.BestCompression);
+        GZipStream compressionStream = new GZipStream(_finalisedBuffer, CompressionMode.Compress, CompressionLevel.Default);
         compressionStream.Write(_collationBuffer.GetBuffer(), 0, (int)_collationBuffer.Position);
         compressionStream.Close();
         if (_finalisedBuffer.Position < _collationBuffer.Position + overhead)
