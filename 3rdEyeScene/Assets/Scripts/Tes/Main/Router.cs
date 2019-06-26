@@ -651,6 +651,9 @@ namespace Tes.Main
       {
         // FIXME: manage propagating dynamic settings better.
         Materials.DefaultPointSize = RenderSettings.Instance.DefaultPointSize;
+        var longFrameTimer = new System.Diagnostics.Stopwatch();
+
+        longFrameTimer.Start();
 
         if (_dataThread != null)
         {
@@ -667,9 +670,9 @@ namespace Tes.Main
           // In this case we keep processing the packet queue until catchUp is complete (at target frame).
           PacketBuffer packet = null;
           bool catchUp = false;
-          bool endFrame = false;
+          bool frameFlush = false;
           bool processingPackets = true;
-          while (!endFrame && processingPackets || catchUp)
+          while (!frameFlush && processingPackets || catchUp)
           {
             // Set catchup state on data handlers and check update catch up status.
             catchUp = UpdateCatchup(catchUp);
@@ -749,7 +752,15 @@ namespace Tes.Main
                           {
                             WriteCameraPosition(_recordingWriter, Camera.main, 255);
                           }
-                          endFrame = packet.Header.MessageID == (ushort)ControlMessageID.EndFrame && _dataThread.TargetFrame == 0;
+                          frameFlush = packet.Header.MessageID == (ushort)ControlMessageID.EndFrame &&
+                                      (message.ControlFlags & (uint)EndFrameFlag.Flush) != 0 &&
+                                      _dataThread.TargetFrame == 0;
+
+                          // Also allow a frame flush if we've been looping of a long time. This is to prevent freezing.
+                          if (_dataThread.TargetFrame == 0 && longFrameTimer.ElapsedMilliseconds > 1000)
+                          {
+                            frameFlush = true;
+                          }
                           break;
                         default:
                           break;

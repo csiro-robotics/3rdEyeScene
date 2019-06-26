@@ -1,6 +1,9 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using Tes.IO;
 using Tes.Logging;
 using Tes.Net;
@@ -254,6 +257,19 @@ namespace Tes.Main
                     ushort controlMessageId = completedPacket.Header.MessageID;
                     if (controlMessageId == (ushort)ControlMessageID.EndFrame)
                     {
+                      // Add a frame flush flag to every end frame message to ensure the render thread renders.
+                      // TODO: consider a way to frame skip in a live visualisation link.
+                      byte[] packetData = completedPacket.Data;
+                      int memberOffset = PacketHeader.Size + Marshal.OffsetOf(typeof(ControlMessage), "ControlFlags").ToInt32();
+                      uint controlFlags = BitConverter.ToUInt32(packetData, memberOffset);
+                      controlFlags = Endian.FromNetwork(controlFlags);
+                      // Add the flush flag
+                      controlFlags |= (uint)EndFrameFlag.Flush;
+                      // Convert back to bytes and copy into the packet buffer.
+                      byte[] frameNumberBytes = BitConverter.GetBytes(Endian.ToNetwork(controlFlags));
+                      Array.Copy(frameNumberBytes, 0, packetData, memberOffset, frameNumberBytes.Length);
+
+                      // Update the frame
                       timer.Stop();
                       FrameTime = timer.ElapsedMilliseconds * 1e-3f;
                       timer.Reset();

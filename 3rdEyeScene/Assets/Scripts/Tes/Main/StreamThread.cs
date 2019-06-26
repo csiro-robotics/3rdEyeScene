@@ -2,7 +2,6 @@
 using System.Collections;
 using System.IO;
 using System.Runtime.InteropServices;
-// using Ionic.Zlib;
 using SharpCompress.Compressors;
 using SharpCompress.Compressors.Deflate;
 using UnityEngine;
@@ -557,31 +556,43 @@ namespace Tes.Main
     /// </summary>
     /// <param name="packet">The packet containing the control message.</param>
     /// <param name="messageId">The ID of the control message.</param>
-    /// <returns>True if this ended a frame.</returns>
+    /// <returns>True if this ended a frame and requires a flush. An end frame message may be processed without a
+    /// flush.</returns>
     /// <remarks>
     /// This method may modify the packet data before it is queued for processing. The primary
     /// use case is to write the current frame number into and end of frame message.
     /// </remarks>
     private bool HandleControlMessage(PacketBuffer packet, ControlMessageID messageId)
     {
-      bool endedFrame = false;
+      bool frameFlush = false;
       ControlMessage msg = new ControlMessage();
       if (!msg.Peek(packet))
       {
-        return endedFrame;
+        return frameFlush;
       }
 
       if (messageId == ControlMessageID.EndFrame)
       {
         // Replace the end of frame packet with a new one including the current frame number.
-        // FIXME: modify the target value in the buffer stream instead of replacing the object.
-        OnEndFrame(msg.Value32);
+        bool flush = OnEndFrame(msg.Value32);
         // Overwrite msg.Value64 with the current frame number.
-        int value64Offset = PacketHeader.Size + Marshal.OffsetOf(typeof(ControlMessage), "Value64").ToInt32();
+        int memberOffset = PacketHeader.Size + Marshal.OffsetOf(typeof(ControlMessage), "Value64").ToInt32();
         byte[] packetData = packet.Data;
         byte[] frameNumberBytes = BitConverter.GetBytes(Endian.ToNetwork((ulong)_currentFrame));
-        Array.Copy(frameNumberBytes, 0, packetData, value64Offset, frameNumberBytes.Length);
-        endedFrame = !_catchingUp;
+        Array.Copy(frameNumberBytes, 0, packetData, memberOffset, frameNumberBytes.Length);
+        // Override the flags to include the flush value.
+        if (flush)
+        {
+          memberOffset = PacketHeader.Size + Marshal.OffsetOf(typeof(ControlMessage), "ControlFlags").ToInt32();
+          uint controlFlags = BitConverter.ToUInt32(packetData, memberOffset);
+          controlFlags = Endian.FromNetwork(controlFlags);
+          // Add the flush flag
+          controlFlags |= (uint)EndFrameFlag.Flush;
+          // Convert back to bytes and copy into the packet buffer.
+          frameNumberBytes = BitConverter.GetBytes(Endian.ToNetwork(controlFlags));
+          Array.Copy(frameNumberBytes, 0, packetData, memberOffset, frameNumberBytes.Length);
+        }
+        frameFlush = !_catchingUp && flush;
       }
       else if (messageId == ControlMessageID.FrameCount)
       {
@@ -596,9 +607,13 @@ namespace Tes.Main
           }
         }
       }
-      return endedFrame;
+      return frameFlush;
     }
 
+    /// <summary>
+    /// Decode the <see cref="Tes.Net.ServerInfoMessage" /> packet.
+    /// </summary>
+    /// <param name="packet">The packet containing a <c>ServerInfoMessage</c></param>
     private void HandleServerInfo(PacketBuffer packet)
     {
       NetworkReader packetReader = new NetworkReader(packet.CreateReadStream(true));
@@ -615,10 +630,13 @@ namespace Tes.Main
     /// </summary>
     /// <param name="frameDelta"></param>
     /// <remarks>
-    /// The <see cref="CurrentFrame"/> is updated as well as the time to delay until
-    /// the next frame is processed (<see cref="_frameDelayUs"/>).
+    /// The <see cref="CurrentFrame"/> is updated as well as the time to delay until the next frame is processed
+    /// (<see cref="_frameDelayUs"/>). In some cases, the play time elapsed may still exceed the playback time for this
+    /// completed frame (e.g., on increased playback speed). In this case, the <see cref="_frameOverrunUs" /> will be
+    /// greater than zero. This is indicated by the return value: true if <c>_frameOverrunUs</c> is zero (or less).
     /// </remarks>
-    private void OnEndFrame(uint frameDelta)
+    /// <returns>True if a sufficient time has elapsed and a frame flush should occur.</returns>
+    private bool OnEndFrame(uint frameDelta)
     {
       // Forward playback. Update current frame.
       lock(this)
@@ -672,7 +690,8 @@ namespace Tes.Main
 
       // Catching up if we are targeting a frame ahead of the next frame or we have not processed sufficient time.
       // The latter case is indicated by _frameOverrunUs being non-zero.
-      _catchingUp = _currentFrame + 1 < _targetFrame || _frameOverrunUs > 0;
+      _catchingUp = _currentFrame + 1 < _targetFrame;
+      return _frameOverrunUs <= 0;
     }
 
     #region Keyframes
