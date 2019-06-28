@@ -84,6 +84,15 @@ namespace Tes
         }
         Thread.Sleep(100);
       }
+
+      long finalFrameNumber = Interlocked.Read(ref _frameNumber);
+      if (lastFrame != finalFrameNumber)
+      {
+        // Clear the line
+        Console.Write("\r                    ");
+        // Write last frame.
+        Console.WriteLine($"\r{finalFrameNumber}");
+      }
     }
 
     private long _frameNumber = 0;
