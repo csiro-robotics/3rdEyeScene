@@ -935,30 +935,30 @@ namespace Tes.Handlers
       case MeshTopology.Quads:
         if (haveNormals || generateNormals)
         {
-          meshDetails.Material = LitMaterial;
+          meshDetails.Material = UnityEngine.Object.Instantiate<Material>(LitMaterial);
         }
         else
         {
-          meshDetails.Material = UnlitMaterial;
+          meshDetails.Material = UnityEngine.Object.Instantiate<Material>(UnlitMaterial);
         }
         break;
       case MeshTopology.Points:
         generateNormals = false;
         if (meshDetails.DrawType == (byte)MeshDrawType.Voxels)
         {
-          meshDetails.Material = VoxelsMaterial;
+          meshDetails.Material = UnityEngine.Object.Instantiate<Material>(VoxelsMaterial);
           generateNormals = !haveNormals;
         }
         else
         {
           if (haveNormals)
           {
-            meshDetails.Material = PointsLitMaterial;
+            meshDetails.Material = UnityEngine.Object.Instantiate<Material>(PointsLitMaterial);
             meshDetails.Material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
           }
           else
           {
-            meshDetails.Material = PointsUnlitMaterial;
+            meshDetails.Material = UnityEngine.Object.Instantiate<Material>(PointsUnlitMaterial);
             meshDetails.Material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
           }
 
@@ -978,7 +978,7 @@ namespace Tes.Handlers
       case MeshTopology.Lines:
       case MeshTopology.LineStrip:
         generateNormals = false;
-        meshDetails.Material = UnlitMaterial;
+        meshDetails.Material = UnityEngine.Object.Instantiate<Material>(UnlitMaterial);
         break;
       }
 
