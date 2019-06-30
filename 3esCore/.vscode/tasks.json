@@ -44,7 +44,7 @@
           "publish",
           "-f", "netcoreapp2.2",
           "-c", "Debug",
-          "-o ${workspaceFolder}\\build\\Debug",
+          "-o", "${workspaceFolder}\\build\\Debug",
           "-property:GenerateFullPaths=true",
           "-r", "win10-x64"
         ]
@@ -54,7 +54,7 @@
           "publish",
           "-f", "netcoreapp2.2",
           "-c", "Debug",
-          "-o ${workspaceFolder}/build/Debug",
+          "-o", "${workspaceFolder}/build/Debug",
           "-property:GenerateFullPaths=true",
           "-r", "linux-x64"
         ]
@@ -64,7 +64,7 @@
           "publish",
           "-f", "netcoreapp2.2",
           "-c", "Debug",
-          "-o ${workspaceFolder}/build/Debug",
+          "-o", "${workspaceFolder}/build/Debug",
           "-property:GenerateFullPaths=true",
           "-r", "osx-x64"
         ]
@@ -84,7 +84,7 @@
           "publish",
           "-f", "netcoreapp2.2",
           "-c", "Release",
-          "-o ${workspaceFolder}\\build\\Release",
+          "-o", "${workspaceFolder}\\build\\Release",
           "-property:GenerateFullPaths=true",
           "-r", "win10-x64"
         ]
@@ -94,7 +94,7 @@
           "publish",
           "-f", "netcoreapp2.2",
           "-c", "Release",
-          "-o ${workspaceFolder}/build/Release",
+          "-o", "${workspaceFolder}/build/Release",
           "-property:GenerateFullPaths=true",
           "-r", "linux-x64"
         ]
@@ -104,7 +104,7 @@
           "publish",
           "-f", "netcoreapp2.2",
           "-c", "Release",
-          "-o ${workspaceFolder}/build/Release",
+          "-o", "${workspaceFolder}/build/Release",
           "-property:GenerateFullPaths=true",
           "-r", "osx-x64"
         ]

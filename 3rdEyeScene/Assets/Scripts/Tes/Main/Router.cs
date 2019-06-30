@@ -348,10 +348,10 @@ namespace Tes.Main
       if (playbackSettings != null)
       {
         thread.AllowKeyframes = playbackSettings.AllowKeyframes;
-        thread.KeyframeKiloBytes = playbackSettings.KeyframeEveryKb;
-        thread.KeyframeMinFrames = (uint)Math.Max(0, playbackSettings.KeyframeEveryFrames);
+        thread.KeyframeMiB = playbackSettings.KeyframeEveryMiB;
+        thread.KeyframeMinFrames = (uint)Math.Max(0, playbackSettings.KeyframeFrameSeparation);
         thread.KeyframeSkipForwardFrames = (uint)Math.Max(0, playbackSettings.KeyframeSkipForwardFrames);
-        thread.KeyframeFrames = (uint)Math.Max(0, playbackSettings.KeyframeFrameSeparation);
+        thread.KeyframeFrames = (uint)Math.Max(0, playbackSettings.KeyframeEveryFrames);
         thread.Loop = playbackSettings.Looping;
       }
       thread.PlaybackSpeed = PlaybackSpeed;
@@ -698,10 +698,15 @@ namespace Tes.Main
                   packet.ExportTo(_recordingWriter);
                 }
 
+                // Tracks whether we will push the packet into the _pendingPackets queue. The default beahviour is to
+                // push the packet, however, some control messages are processed immediately.
+                bool pushPacketToPending = true;
                 NetworkReader packetReader;
-                switch (packet.Header.RoutingID)
+                switch ((RoutingID)packet.Header.RoutingID)
                 {
-                  case (ushort)RoutingID.ServerInfo:
+                  case RoutingID.ServerInfo:
+                    // Server info is handled immediately.
+                    pushPacketToPending = false;
                     packetReader = new NetworkReader(packet.CreateReadStream(true));
                     _serverInfo.Read(packetReader);
                     OnServerInfoUpdate();
@@ -713,20 +718,18 @@ namespace Tes.Main
                     }
                     break;
 
-                  case (ushort)RoutingID.Control:
+                  case RoutingID.Control:
                     packetReader = new NetworkReader(packet.CreateReadStream(true));
                     ControlMessage message = new ControlMessage();
-                    if (message.Read(packetReader) &&
-                       (packet.Header.MessageID == (ushort)ControlMessageID.EndFrame ||
-                        packet.Header.MessageID == (ushort)ControlMessageID.ForceFrameFlush ||
-                        packet.Header.MessageID == (ushort)ControlMessageID.Keyframe ||
-                        packet.Header.MessageID == (ushort)ControlMessageID.Reset))
+                    if (message.Read(packetReader))
                     {
                       // Special message handling.
                       switch ((ControlMessageID)packet.Header.MessageID)
                       {
                         // Scene reset request
                         case ControlMessageID.Reset:
+                          // Reset is handled immediately.
+                          pushPacketToPending = false;
                           // Drop pending packets.
                           _pendingPackets.Clear();
                           catchUp = UpdateCatchup(catchUp, true);
@@ -740,13 +743,16 @@ namespace Tes.Main
                         // Key frame request message. Need to make sure we force display of everything even when in
                         // catch up mode.
                         case ControlMessageID.Keyframe:
-                          // Log.Info($"Keyframe: pre-catchup: {catchUp}");
+                          // Redundant statement, however it's here to illustrate that key frame packets should be
+                          // pushed onto the _pendingPacket queue.
+                          pushPacketToPending = true;
                           catchUp = UpdateCatchup(catchUp, true);
-                          // Log.Info($"Keyframe: post-catchup: {catchUp}");
                           break;
                         // Frame end or force flush: ensure the scene is rendered.
                         case ControlMessageID.EndFrame:
                         case ControlMessageID.ForceFrameFlush:
+                          // End frame and flush messages are handled immediately by calling EndFrame().
+                          pushPacketToPending = false;
                           EndFrame((uint)message.Value64, catchUp, (message.ControlFlags & (ushort)EndFrameFlag.Persist) != 0);
                           if (_recordingWriter != null)
                           {
@@ -762,24 +768,27 @@ namespace Tes.Main
                             frameFlush = true;
                           }
                           break;
-                        default:
+
+                        default: // packet.Header.MessageID
+                          // No-op
                           break;
                       }
                     }
-                    else
-                    {
-                      _pendingPackets.Enqueue(packet);
-                    }
                     break;
 
-                  default:
-                    _pendingPackets.Enqueue(packet);
+                  default: // packetHeader.RoutingID
+                    // No-op
                     break;
+                }
+
+                if (pushPacketToPending)
+                {
+                  _pendingPackets.Enqueue(packet);
                 }
               }
               else
               {
-                Log.Error("Dropping bad packet with routing ID: {0}", packet.Header.RoutingID);
+                Log.Error("Dropping bad packet with routing ID: {0}", (ushort)packet.Header.RoutingID);
               }
             }
           }
@@ -884,9 +893,9 @@ namespace Tes.Main
           {
             streamThread.AllowKeyframes = playback.AllowKeyframes;
           }
-          else if (string.Compare(args.PropertyName, "KeyframeEveryKb") == 0)
+          else if (string.Compare(args.PropertyName, "KeyframeEveryMiB") == 0)
           {
-            streamThread.KeyframeKiloBytes = playback.KeyframeEveryKb;
+            streamThread.KeyframeMiB = playback.KeyframeEveryMiB;
           }
           else if (string.Compare(args.PropertyName, "KeyframeEveryFrames") == 0)
           {
@@ -971,6 +980,7 @@ namespace Tes.Main
       PacketBuffer packet = null;
       try
       {
+        // We've staged packets for this frame into _pendingPackets. Process all these packets now.
         while (_pendingPackets.Count > 0)
         {
           packet = _pendingPackets.Dequeue();

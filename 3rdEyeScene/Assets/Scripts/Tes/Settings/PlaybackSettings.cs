@@ -20,21 +20,21 @@ public class PlaybackSettings : Settings
 
   [Browsable(true), SetRange(64, 1024 * 1024),
     Tooltip("Create a keyframe after reading this many kilobytes from the playback stream.")]
-  public int KeyframeEveryKb
+  public int KeyframeEveryMiB
   {
-    get { return PlayerPrefs.GetInt("playback.keyframeKb", 1024); }
-    set { PlayerPrefs.SetInt("playback.keyframeKb", value); Notify("KeyframeEveryKb"); }
+    get { return PlayerPrefs.GetInt("playback.keyframeMiB", 20); }
+    set { PlayerPrefs.SetInt("playback.keyframeMiB", value); Notify("KeyframeEveryMiB"); }
   }
 
   [Browsable(true), SetRange(1, 10000),
     Tooltip("Create a keyframe after this number of frames elapses.")]
   public int KeyframeEveryFrames
   {
-    get { return PlayerPrefs.GetInt("playback.keyframeFrames", 100); }
+    get { return PlayerPrefs.GetInt("playback.keyframeFrames", 5000); }
     set { PlayerPrefs.SetInt("playback.keyframeFrames", value); Notify("KeyframeEveryFrames"); }
   }
 
-  [Browsable(true), SetRange(1, 1000),
+  [Browsable(true), SetRange(1, 10000),
     Tooltip("Try restore keyframe when skipping forwards at least this number of frames.")]
   public int KeyframeSkipForwardFrames
   {

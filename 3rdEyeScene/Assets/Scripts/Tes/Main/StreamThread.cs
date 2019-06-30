@@ -77,12 +77,12 @@ namespace Tes.Main
     /// <summary>
     /// Take a keyframe after this many kilo (technically kibi, but I can't bring myself to call it that) bytes.
     /// </summary>
-    public long KeyframeKiloBytes
+    public long KeyframeMiB
     {
-      get { lock (this) { return _keyframeKiloBytes; } }
-      set { lock (this) { _keyframeKiloBytes = value; } }
+      get { lock (this) { return _keyframeMiB; } }
+      set { lock (this) { _keyframeMiB = value; } }
     }
-    private long _keyframeKiloBytes = 512;
+    private long _keyframeMiB = 20;
 
     /// <summary>
     /// Do not take a keyframe unless at least this many frames have elapsed.
@@ -346,7 +346,7 @@ namespace Tes.Main
               if (AllowKeyframes && !failedKeyframe)
               {
                 Keyframe keyframe;
-                if (TryKeyframe(out keyframe, _targetFrame))
+                if (TryRestoreKeyframe(out keyframe, _targetFrame))
                 {
                   // No failures. Does not meek we have a valid keyframe.
                   if (keyframe != null)
@@ -381,7 +381,7 @@ namespace Tes.Main
               {
                 // Ok to try for a keyframe.
                 Keyframe keyframe;
-                if (TryKeyframe(out keyframe, _targetFrame, _currentFrame))
+                if (TryRestoreKeyframe(out keyframe, _targetFrame, _currentFrame))
                 {
                   // No failure. Check if we have a keyframe.
                   if (keyframe != null)
@@ -467,15 +467,15 @@ namespace Tes.Main
                     bool keyframeRequested = false;
                     // Ended a frame. Check for keyframe. We'll queue the request after the end of
                     // frame message below.
-                    if ((lastSeekablePosition - lastKeyframePosition >= _keyframeKiloBytes * 1024 ||
+                    if ((lastSeekablePosition - lastKeyframePosition >= _keyframeMiB * 1024 * 1024 ||
                         _currentFrame - lastKeyframeFrame >= _keyframeFrames) &&
                         lastKeyframeFrame < _currentFrame &&
                         _currentFrame - lastKeyframeFrame >= _keyframeMinFrames)
                     {
                       // A keyframe is due. However, the stream may not be seekable to the current location.
                       // We may request a keyframe now.
-                      Log.Diag("Request keyframe for frame {0} from frame {1} after {2} KiB",
-                        _currentFrame, lastSeekableFrame, lastSeekablePosition - lastKeyframePosition);
+                      Log.Diag("Request keyframe for frame {0} from frame {1} after {2} MiB",
+                        _currentFrame, lastSeekableFrame, (lastSeekablePosition - lastKeyframePosition) / (1024 * 1024));
                       lastKeyframeFrame = _currentFrame;
                       lastKeyframePosition = lastSeekablePosition;
                       RequestKeyframe(lastKeyframeFrame, lastSeekableFrame, lastSeekablePosition);
@@ -706,7 +706,7 @@ namespace Tes.Main
     /// Calling this change the <see cref="_packetStream"/> position. It is recommended the stream be reset
     /// on failure along with calling <see cref="ResetQueue(uint)"/>.
     /// </remarks>
-    private bool TryKeyframe(out Keyframe keyframe, uint targetFrame, uint currentFrame = 0)
+    private bool TryRestoreKeyframe(out Keyframe keyframe, uint targetFrame, uint currentFrame = 0)
     {
       keyframe = null;
       lock (_keyframes)
