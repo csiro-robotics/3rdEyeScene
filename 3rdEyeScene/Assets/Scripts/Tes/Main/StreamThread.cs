@@ -271,6 +271,14 @@ namespace Tes.Main
       }
     }
 
+    public override bool CanSuspend { get { return Workthread.CanSuspend; } }
+
+    public override bool IsSuspended { get { return _thread != null && _thread.IsSuspended; } }
+
+    public override bool Suspend() { return _thread != null && _thread.Suspend(); }
+
+    public override bool Resume() { return _thread != null && _thread.Resume(); }
+
     public bool Eos { get; private set; }
 
     private IEnumerator Run()

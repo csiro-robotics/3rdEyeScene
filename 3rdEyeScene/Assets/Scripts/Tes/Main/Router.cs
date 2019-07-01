@@ -341,6 +341,7 @@ namespace Tes.Main
       {
         return false;
       }
+      Application.runInBackground = true;
       StreamThread thread = new StreamThread();
       thread.RoutingIDName = RoutingIDName;
       _dataThread = thread;
@@ -365,7 +366,7 @@ namespace Tes.Main
         Application.runInBackground = false;
         return false;
       }
-      Application.runInBackground = true;
+
       return true;
     }
 
@@ -397,7 +398,6 @@ namespace Tes.Main
         Application.runInBackground = false;
         return false;
       }
-      Application.runInBackground = true;
       return true;
     }
 
@@ -510,6 +510,7 @@ namespace Tes.Main
         _dataThread.Paused = true;
         _dataThread.TargetFrame = _currentFrame + 1;
         _previousFrame = _currentFrame;
+        // Temporarily update in background mode until the frame is processed
         Application.runInBackground = true;
       }
     }
@@ -524,6 +525,7 @@ namespace Tes.Main
           _dataThread.TargetFrame = _currentFrame - 1;
           _previousFrame = _currentFrame;
         }
+        // Temporarily update in background mode until the frame is processed
         Application.runInBackground = true;
       }
     }
@@ -535,6 +537,7 @@ namespace Tes.Main
         _dataThread.Paused = true;
         _dataThread.TargetFrame = 1;
         _previousFrame = _currentFrame;
+        // Temporarily update in background mode until the frame is processed
         Application.runInBackground = true;
       }
     }
@@ -546,6 +549,7 @@ namespace Tes.Main
         _dataThread.Paused = true;
         _dataThread.TargetFrame = _dataThread.TotalFrames;
         _previousFrame = _currentFrame;
+        // Temporarily update in background mode until the frame is processed
         Application.runInBackground = true;
       }
     }
@@ -560,6 +564,7 @@ namespace Tes.Main
         _dataThread.Paused = true;
         _dataThread.TargetFrame = _previousFrame;
         _previousFrame = _currentFrame;
+        // Temporarily update in background mode until the frame is processed
         Application.runInBackground = true;
       }
     }
@@ -578,6 +583,7 @@ namespace Tes.Main
         _dataThread.Paused = true;
         _dataThread.TargetFrame = targetFrame;
         _previousFrame = _currentFrame;
+        // Temporarily update in background mode until the frame is processed
         Application.runInBackground = true;
       }
     }
@@ -595,7 +601,7 @@ namespace Tes.Main
       {
         ResetScene();
       }
-      // No longer run in background. Will again if we get a network thread.
+      // No longer run in background. Will again once we have a DataThread
       Application.runInBackground = false;
     }
 
@@ -821,7 +827,34 @@ namespace Tes.Main
           handler.Mode = handler.Mode & ~MessageHandler.ModeFlags.IgnoreTransient;
         }
 
-        Application.runInBackground = _dataThread != null && (!_dataThread.Paused || _dataThread.CatchingUp);
+        Application.runInBackground = _dataThread != null && !_dataThread.Paused && !_dataThread.CatchingUp;
+      }
+    }
+
+    /// <summary>
+    /// Handle changes it the background mode/pause status of the application by managing the data thread.
+    /// </summary>
+    /// <param name="pauseStatus">True when the application now paused/in background mode false on unpause.</param>
+    /// <remarks>
+    /// This ensures the <see cref="DataThread" /> is suspended when in background mode and resumed when in foreground
+    /// mode.
+    /// </remarks>
+    void OnApplicationPause(bool pauseStatus)
+    {
+      // Ensure data thread suspension matches state of Application.runInBackground.
+      if (_dataThread != null)
+      {
+        if (_dataThread.IsSuspended != pauseStatus)
+        {
+          if (_dataThread.IsSuspended)
+          {
+            _dataThread.Resume();
+          }
+          else
+          {
+            _dataThread.Suspend();
+          }
+        }
       }
     }
 

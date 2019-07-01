@@ -181,6 +181,14 @@ namespace Tes.Main
       _quitFlag = true;
     }
 
+    public override bool CanSuspend { get { return Workthread.CanSuspend; } }
+
+    public override bool IsSuspended { get { return _thread != null && _thread.IsSuspended; } }
+
+    public override bool Suspend() { return _thread != null && _thread.Suspend(); }
+
+    public override bool Resume() { return _thread != null && _thread.Resume(); }
+
     private IEnumerator Run()
     {
       // Reconnection attempts so we don't hammer the system on failure.
