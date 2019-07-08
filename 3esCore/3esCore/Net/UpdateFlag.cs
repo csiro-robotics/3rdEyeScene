@@ -11,23 +11,23 @@ namespace Tes.Net
     ///<summary>
     /// Update attributes using only explicitly specified flags from the following.
     /// </summary>
-    UpdateMode = (ObjectFlag.User << 0),
+    UpdateMode = (ObjectFlag.User << 1),
     /// <summary>
     /// Update position data.
     /// </summary>
-    Position = (ObjectFlag.User << 1),
+    Position = (ObjectFlag.User << 2),
     /// <summary>
     /// Update rotation data.
     /// </summary>
-    Rotation = (ObjectFlag.User << 2),
+    Rotation = (ObjectFlag.User << 3),
     /// <summary>
     /// Update scale data.
     /// </summary>
-    Scale = (ObjectFlag.User << 3),
+    Scale = (ObjectFlag.User << 4),
     /// <summary>
     /// Update colour data.
     /// </summary>
-    Colour = (ObjectFlag.User << 4),
+    Colour = (ObjectFlag.User << 5),
     /// <summary>
     /// Spelling alias for colour.
     /// </summary>

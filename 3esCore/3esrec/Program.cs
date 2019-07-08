@@ -355,7 +355,6 @@ This program attempts to connect to and record a Third Eye Scene server.
 
         if (!Quiet)
         {
-          Console.WriteLine();
           Console.WriteLine("Connection closed");
         }
 

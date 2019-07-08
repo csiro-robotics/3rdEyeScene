@@ -33,7 +33,7 @@ namespace Tes.Logging
     }
 
     private static List<ILog> _targets = new List<ILog>();
-    private static Collections.Queue<Entry> _logQueue = new Collections.Queue<Entry>();
+    private static Tes.Collections.Queue<Entry> _logQueue = new Tes.Collections.Queue<Entry>();
 
     /// <summary>
     /// Add a log target.
@@ -44,7 +44,10 @@ namespace Tes.Logging
     /// </remarks>
     public static void AddTarget(ILog log)
     {
-      _targets.Add(log);
+      lock(_targets)
+      {
+        _targets.Add(log);
+      }
     }
 
     /// <summary>
@@ -265,22 +268,25 @@ namespace Tes.Logging
     /// </remarks>
     public static void Flush(int iterationLimit = 1000000)
     {
-      int iterations = 0;
-      Entry entry = new Entry();
-      while ((iterationLimit <= 0 || iterations < iterationLimit) && _logQueue.TryDequeue(ref entry))
+      lock(_targets)
       {
-        for (int i = 0; i < _targets.Count; ++i)
+        int iterations = 0;
+        Entry entry = new Entry();
+        while ((iterationLimit <= 0 || iterations < iterationLimit) && _logQueue.TryDequeue(ref entry))
         {
-          if (entry.Except == null)
+          for (int i = 0; i < _targets.Count; ++i)
           {
-            _targets[i].Log(entry.Level, entry.Category, entry.Message);
+            if (entry.Except == null)
+            {
+              _targets[i].Log(entry.Level, entry.Category, entry.Message);
+            }
+            else
+            {
+              _targets[i].Log(entry.Except);
+            }
           }
-          else
-          {
-            _targets[i].Log(entry.Except);
-          }
+          ++iterations;
         }
-        ++iterations;
       }
     }
   }

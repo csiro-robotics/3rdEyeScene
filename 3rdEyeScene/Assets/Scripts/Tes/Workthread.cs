@@ -17,29 +17,29 @@ namespace Tes
   /// system thread mode uses <see cref="System.Threading.Thread"/>. This allows
   /// platforms not supporting system threads to execute the same code using coroutines
   /// instead.
-  /// 
+  ///
   /// Because of the need to support coroutines, the <see cref="Workthread"/> executes
   /// a function via <see cref="System.Collections.IEnumerator"/>, just like Unity
   /// coroutines. This class simply wraps that enumerator and executes it. As such
   /// the function underpinning the enumerator must periodically yield return or
   /// potentially block the main thread.
-  /// 
+  ///
   /// A <see cref="Workthread"/> also requires a <see cref="QuitDelegate"/> and
   /// an optional <see cref="StopDelegate"/>. The former is called to gracefully when
   /// <see cref="Stop()"/>. The thread function enumerator must terminate on the next update
   /// and may no longer execute or risk blocking the system thread. The <see cref="StopDelegate"/>
   /// is called after the thread has been stopped and joined. Both are called from the
   /// main thread.
-  /// 
+  ///
   /// The thread function is normally called as fast as possible - at the frame rate for
   /// coroutines or at the CPU rate for system threads. If the work thread needs to sleep,
   /// it should yield return a <see cref="CreateWait(float)"/>. This results in a sleep
   /// call for a system thread or a Unity WaitForSeconds for coroutines.
-  /// 
+  ///
   /// Finally the thread supports signalling via <see cref="Wait()"/> and <see cref="Notify()"/>.
   /// On calling <see cref="Wait()"/> a system thread will block until <see cref="Notify()"/>
   /// is called by another thread. Coroutines never block <see cref="Wait()"/>, so the return
-  /// value must be checked.
+  /// value must be checked. The direction of signalling is usage dependent.
   /// </remarks>
   public class Workthread
   {
@@ -118,6 +118,8 @@ namespace Tes
       if (_thread != null)
       {
         _quit = true;
+        // Make sure we aren't suspended.
+        Resume();
         if (_onQuit != null)
         {
           _onQuit();
@@ -153,6 +155,12 @@ namespace Tes
           {
             System.Threading.Thread.Sleep(wait.Milliseconds);
           }
+
+          if (_suspend)
+          {
+            // Suspend requested
+            _suspendEvent.WaitOne();
+          }
         }
       }
     }
@@ -179,13 +187,63 @@ namespace Tes
     }
 
     /// <summary>
+    /// Does this implementation support being suspended? True for true threads.
+    /// </summary>
+    public static bool CanSuspend { get { return true; } }
+
+    /// <summary>
+    /// True when a successful call <see cref="Suspend()" />has been made.
+    /// </summary>
+    public bool IsSuspended { get { return _suspend; } }
+
+    /// <summary>
+    /// Requests the thread suspends execution.
+    /// </summary>
+    /// <returns>True if the suspend request is made.</returns>
+    /// <remarks>
+    /// A suspended thread will no longer call the thread function until <see cref="Resume()" /> is called.
+    /// </remarks>
+    public bool Suspend()
+    {
+      if (!_suspend)
+      {
+        _suspend = true;
+        return true;
+      }
+      return false;
+    }
+
+    /// <summary>
+    /// Requests the thread resumes execution after <see cref="Suspend()" />.
+    /// </summary>
+    /// <returns>True if the resume request is made.</returns>
+    public bool Resume()
+    {
+      if (_suspend)
+      {
+        _suspend = false;
+        _suspendEvent.Set();
+        return true;
+      }
+      return false;
+    }
+
+    /// <summary>
     /// Wait handle.
     /// </summary>
     private EventWaitHandle _sync = new EventWaitHandle(false, EventResetMode.AutoReset);
     /// <summary>
+    /// Suspend handle.
+    /// </summary>
+    private EventWaitHandle _suspendEvent = new EventWaitHandle(false, EventResetMode.AutoReset);
+    /// <summary>
     /// System thread.
     /// </summary>
     private System.Threading.Thread _thread = null;
+    /// <summary>
+    /// Flag indicating the background thread should suspend by waiting on _suspendEvent.
+    /// </summary>
+    private bool _suspend = false;
     /// <summary>
     /// Quit flag. Thread stops looping when set.
     /// </summary>
@@ -312,6 +370,34 @@ namespace Tes
     public void Notify()
     {
       _notifyFlag = true;
+    }
+
+    /// <summary>
+    /// Does this implementation support being suspended? False for coroutine workers.
+    /// </summary>
+    public static bool CanSuspend { get { return false; } }
+
+    /// <summary>
+    /// No implementation for coroutine threads: always false.
+    /// </summary>
+    public bool IsSuspended { get { return false; } }
+
+    /// <summary>
+    /// No implementation for coroutine threads.
+    /// </summary>
+    /// <returns>false</returns>
+    public bool Suspend()
+    {
+      return false;
+    }
+
+    /// <summary>
+    /// No implementation for coroutine threads.
+    /// </summary>
+    /// <returns>false</returns>
+    public bool Resume()
+    {
+      return false;
     }
 
     /// <summary>

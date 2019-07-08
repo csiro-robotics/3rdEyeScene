@@ -89,6 +89,14 @@ namespace Tes.Handlers
     }
 
     /// <summary>
+    /// A cache of the material library.
+    /// </summary>
+    /// <remarks>
+    /// Set in <see cref="Initialise(GameObject, GameObject, MaterialLibrary)"/>.
+    /// </remarks>
+    public MaterialLibrary Materials { get; set; }
+
+    /// <summary>
     /// Wraps a <see cref="MeshDetails"/> object to expose it as a <see cref="MeshResource"/>
     /// for the purposes of serialisation.
     /// </summary>
@@ -260,6 +268,7 @@ namespace Tes.Handlers
     /// <param name="materials"></param>
     public override void Initialise(GameObject root, GameObject serverRoot, MaterialLibrary materials)
     {
+      Materials = materials;
       LitMaterial = materials[MaterialLibrary.VertexColourLit];
       UnlitMaterial = materials[MaterialLibrary.VertexColourUnlit];
       PointsLitMaterial = materials[MaterialLibrary.PointsLit];
@@ -926,29 +935,35 @@ namespace Tes.Handlers
       case MeshTopology.Quads:
         if (haveNormals || generateNormals)
         {
-          meshDetails.Material = LitMaterial;
+          meshDetails.Material = UnityEngine.Object.Instantiate<Material>(LitMaterial);
         }
         else
         {
-          meshDetails.Material = UnlitMaterial;
+          meshDetails.Material = UnityEngine.Object.Instantiate<Material>(UnlitMaterial);
         }
         break;
       case MeshTopology.Points:
         generateNormals = false;
         if (meshDetails.DrawType == (byte)MeshDrawType.Voxels)
         {
-          meshDetails.Material = VoxelsMaterial;
+          meshDetails.Material = UnityEngine.Object.Instantiate<Material>(VoxelsMaterial);
           generateNormals = !haveNormals;
-        }
-        else if (haveNormals)
-        {
-          meshDetails.Material = PointsLitMaterial;
-          meshDetails.Material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
         }
         else
         {
-          meshDetails.Material = PointsUnlitMaterial;
-          meshDetails.Material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
+          if (haveNormals)
+          {
+            meshDetails.Material = UnityEngine.Object.Instantiate<Material>(PointsLitMaterial);
+            meshDetails.Material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
+          }
+          else
+          {
+            meshDetails.Material = UnityEngine.Object.Instantiate<Material>(PointsUnlitMaterial);
+            meshDetails.Material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
+          }
+
+          int pointSize = (Materials != null) ? Materials.DefaultPointSize : 4;
+          meshDetails.Material.SetInt("_PointSize", pointSize);
         }
         //if (entry.VertexColours == null)
         //{
@@ -963,8 +978,14 @@ namespace Tes.Handlers
       case MeshTopology.Lines:
       case MeshTopology.LineStrip:
         generateNormals = false;
-        meshDetails.Material = UnlitMaterial;
+        meshDetails.Material = UnityEngine.Object.Instantiate<Material>(UnlitMaterial);
         break;
+      }
+
+      if (meshDetails.Material != null)
+      {
+        meshDetails.Material.color = meshDetails.Tint;
+        // meshDetails.Material.SetColor("_Tint", pointSize);
       }
 
       // Generate the meshes here.

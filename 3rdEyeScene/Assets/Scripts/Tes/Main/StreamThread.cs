@@ -2,7 +2,6 @@
 using System.Collections;
 using System.IO;
 using System.Runtime.InteropServices;
-// using Ionic.Zlib;
 using SharpCompress.Compressors;
 using SharpCompress.Compressors.Deflate;
 using UnityEngine;
@@ -78,12 +77,12 @@ namespace Tes.Main
     /// <summary>
     /// Take a keyframe after this many kilo (technically kibi, but I can't bring myself to call it that) bytes.
     /// </summary>
-    public long KeyframeKiloBytes
+    public long KeyframeMiB
     {
-      get { lock (this) { return _keyframeKiloBytes; } }
-      set { lock (this) { _keyframeKiloBytes = value; } }
+      get { lock (this) { return _keyframeMiB; } }
+      set { lock (this) { _keyframeMiB = value; } }
     }
-    private long _keyframeKiloBytes = 512;
+    private long _keyframeMiB = 20;
 
     /// <summary>
     /// Do not take a keyframe unless at least this many frames have elapsed.
@@ -272,6 +271,14 @@ namespace Tes.Main
       }
     }
 
+    public override bool CanSuspend { get { return Workthread.CanSuspend; } }
+
+    public override bool IsSuspended { get { return _thread != null && _thread.IsSuspended; } }
+
+    public override bool Suspend() { return _thread != null && _thread.Suspend(); }
+
+    public override bool Resume() { return _thread != null && _thread.Resume(); }
+
     public bool Eos { get; private set; }
 
     private IEnumerator Run()
@@ -310,7 +317,7 @@ namespace Tes.Main
           // Not stepping. Check time elapsed.
           _catchingUp = false;
 
-          // Measure elapsed time. Stop and restart the timer to get the elapsed time.
+          // Measure elapsed time. Start and stop the timer to set the elapsed time and continue tracking time.
           stopwatch.Stop();
           stopwatch.Start();
           // Should this have _frameOverrunUs added?
@@ -347,7 +354,7 @@ namespace Tes.Main
               if (AllowKeyframes && !failedKeyframe)
               {
                 Keyframe keyframe;
-                if (TryKeyframe(out keyframe, _targetFrame))
+                if (TryRestoreKeyframe(out keyframe, _targetFrame))
                 {
                   // No failures. Does not meek we have a valid keyframe.
                   if (keyframe != null)
@@ -382,7 +389,7 @@ namespace Tes.Main
               {
                 // Ok to try for a keyframe.
                 Keyframe keyframe;
-                if (TryKeyframe(out keyframe, _targetFrame, _currentFrame))
+                if (TryRestoreKeyframe(out keyframe, _targetFrame, _currentFrame))
                 {
                   // No failure. Check if we have a keyframe.
                   if (keyframe != null)
@@ -399,7 +406,7 @@ namespace Tes.Main
                 }
               }
             }
-          }
+          } // lock(this)
         }
 
         // Time has elapsed. Reset and restart the timer.
@@ -464,23 +471,26 @@ namespace Tes.Main
                       lastSeekableFrame = preControlMsgFrame;
                       Log.Diag("Last seekable: {0}", lastSeekableFrame);
                     }
+
+                    bool keyframeRequested = false;
                     // Ended a frame. Check for keyframe. We'll queue the request after the end of
                     // frame message below.
-                    if ((lastSeekablePosition - lastKeyframePosition >= _keyframeKiloBytes * 1024 ||
+                    if ((lastSeekablePosition - lastKeyframePosition >= _keyframeMiB * 1024 * 1024 ||
                         _currentFrame - lastKeyframeFrame >= _keyframeFrames) &&
                         lastKeyframeFrame < _currentFrame &&
                         _currentFrame - lastKeyframeFrame >= _keyframeMinFrames)
                     {
                       // A keyframe is due. However, the stream may not be seekable to the current location.
                       // We may request a keyframe now.
-                      Log.Diag("Request keyframe for frame {0} from frame {1} after {2} KiB",
-                        _currentFrame, lastSeekableFrame, lastSeekablePosition - lastKeyframePosition);
+                      Log.Diag("Request keyframe for frame {0} from frame {1} after {2} MiB",
+                        _currentFrame, lastSeekableFrame, (lastSeekablePosition - lastKeyframePosition) / (1024 * 1024));
                       lastKeyframeFrame = _currentFrame;
                       lastKeyframePosition = lastSeekablePosition;
                       RequestKeyframe(lastKeyframeFrame, lastSeekableFrame, lastSeekablePosition);
+                      keyframeRequested = true;
                     }
                     // Make sure we yield so as to support the later check to avoid flooding the packet queue.
-                    allowYield = true;
+                    allowYield = !_catchingUp || keyframeRequested;
                   }
                 }
                 else if (packet.Header.RoutingID == (ushort)RoutingID.ServerInfo)
@@ -554,31 +564,43 @@ namespace Tes.Main
     /// </summary>
     /// <param name="packet">The packet containing the control message.</param>
     /// <param name="messageId">The ID of the control message.</param>
-    /// <returns>True if this ended a frame.</returns>
+    /// <returns>True if this ended a frame and requires a flush. An end frame message may be processed without a
+    /// flush.</returns>
     /// <remarks>
     /// This method may modify the packet data before it is queued for processing. The primary
     /// use case is to write the current frame number into and end of frame message.
     /// </remarks>
     private bool HandleControlMessage(PacketBuffer packet, ControlMessageID messageId)
     {
-      bool endedFrame = false;
+      bool frameFlush = false;
       ControlMessage msg = new ControlMessage();
       if (!msg.Peek(packet))
       {
-        return endedFrame;
+        return frameFlush;
       }
 
       if (messageId == ControlMessageID.EndFrame)
       {
         // Replace the end of frame packet with a new one including the current frame number.
-        // FIXME: modify the target value in the buffer stream instead of replacing the object.
-        OnEndFrame(msg.Value32);
+        bool flush = OnEndFrame(msg.Value32);
         // Overwrite msg.Value64 with the current frame number.
-        int value64Offset = PacketHeader.Size + Marshal.OffsetOf(typeof(ControlMessage), "Value64").ToInt32();
+        int memberOffset = PacketHeader.Size + Marshal.OffsetOf(typeof(ControlMessage), "Value64").ToInt32();
         byte[] packetData = packet.Data;
         byte[] frameNumberBytes = BitConverter.GetBytes(Endian.ToNetwork((ulong)_currentFrame));
-        Array.Copy(frameNumberBytes, 0, packetData, value64Offset, frameNumberBytes.Length);
-        endedFrame = true;
+        Array.Copy(frameNumberBytes, 0, packetData, memberOffset, frameNumberBytes.Length);
+        // Override the flags to include the flush value.
+        if (flush)
+        {
+          memberOffset = PacketHeader.Size + Marshal.OffsetOf(typeof(ControlMessage), "ControlFlags").ToInt32();
+          uint controlFlags = BitConverter.ToUInt32(packetData, memberOffset);
+          controlFlags = Endian.FromNetwork(controlFlags);
+          // Add the flush flag
+          controlFlags |= (uint)EndFrameFlag.Flush;
+          // Convert back to bytes and copy into the packet buffer.
+          frameNumberBytes = BitConverter.GetBytes(Endian.ToNetwork(controlFlags));
+          Array.Copy(frameNumberBytes, 0, packetData, memberOffset, frameNumberBytes.Length);
+        }
+        frameFlush = !_catchingUp && flush;
       }
       else if (messageId == ControlMessageID.FrameCount)
       {
@@ -593,9 +615,13 @@ namespace Tes.Main
           }
         }
       }
-      return endedFrame;
+      return frameFlush;
     }
 
+    /// <summary>
+    /// Decode the <see cref="Tes.Net.ServerInfoMessage" /> packet.
+    /// </summary>
+    /// <param name="packet">The packet containing a <c>ServerInfoMessage</c></param>
     private void HandleServerInfo(PacketBuffer packet)
     {
       NetworkReader packetReader = new NetworkReader(packet.CreateReadStream(true));
@@ -612,10 +638,13 @@ namespace Tes.Main
     /// </summary>
     /// <param name="frameDelta"></param>
     /// <remarks>
-    /// The <see cref="CurrentFrame"/> is updated as well as the time to delay until
-    /// the next frame is processed (<see cref="_frameDelayUs"/>).
+    /// The <see cref="CurrentFrame"/> is updated as well as the time to delay until the next frame is processed
+    /// (<see cref="_frameDelayUs"/>). In some cases, the play time elapsed may still exceed the playback time for this
+    /// completed frame (e.g., on increased playback speed). In this case, the <see cref="_frameOverrunUs" /> will be
+    /// greater than zero. This is indicated by the return value: true if <c>_frameOverrunUs</c> is zero (or less).
     /// </remarks>
-    private void OnEndFrame(uint frameDelta)
+    /// <returns>True if a sufficient time has elapsed and a frame flush should occur.</returns>
+    private bool OnEndFrame(uint frameDelta)
     {
       // Forward playback. Update current frame.
       lock(this)
@@ -639,17 +668,19 @@ namespace Tes.Main
           // Convert the time value to microseconds.
           long frameDeltaUs = (long)(frameDelta * _timeUnit);
           // Increment the current frame delay by the specified time step and the cached overrun.
-          if (_frameOverrunUs <= frameDeltaUs)
+          if (_frameOverrunUs <= frameDeltaUs || _skippedFrameCount >= _maxFrameSkip)
           {
             _frameDelayUs = frameDeltaUs - _frameOverrunUs;
             // Overrun has been applied.
             _frameOverrunUs = 0;
+            _skippedFrameCount = 0;
           }
           else
           {
-            // Haven't handled the overrun.
+            // Haven't handled the overrun. Need to skip multiple frames.
             _frameDelayUs = 0;
             _frameOverrunUs -= frameDeltaUs;
+            ++_skippedFrameCount;
           }
 
           if (_targetFrame != 0)
@@ -664,7 +695,11 @@ namespace Tes.Main
           _totalFrames = _currentFrame;
         }
       }
+
+      // Catching up if we are targeting a frame ahead of the next frame or we have not processed sufficient time.
+      // The latter case is indicated by _frameOverrunUs being non-zero.
       _catchingUp = _currentFrame + 1 < _targetFrame;
+      return _frameOverrunUs <= 0;
     }
 
     #region Keyframes
@@ -679,7 +714,7 @@ namespace Tes.Main
     /// Calling this change the <see cref="_packetStream"/> position. It is recommended the stream be reset
     /// on failure along with calling <see cref="ResetQueue(uint)"/>.
     /// </remarks>
-    private bool TryKeyframe(out Keyframe keyframe, uint targetFrame, uint currentFrame = 0)
+    private bool TryRestoreKeyframe(out Keyframe keyframe, uint targetFrame, uint currentFrame = 0)
     {
       keyframe = null;
       lock (_keyframes)
@@ -1149,6 +1184,16 @@ namespace Tes.Main
     /// Accumulated time after _frameDelayUs elapses.
     /// </summary>
     private long _frameOverrunUs = 0;
+
+    /// <summary>
+    /// Number of frames which have been skipped in trying to maintain the target frame rate.
+    /// </summary>
+    private uint _skippedFrameCount = 0;
+    /// <summary>
+    /// Maximum number of frames which may be skipped to try and catch up.
+    /// </summary>
+    private uint _maxFrameSkip = 100;
+
     /// <summary>
     /// Tracks the default frame time if none is specified in a frame message (from <see cref="ServerInfoMessage.DefaultFrameTime"/>.
     /// </summary>

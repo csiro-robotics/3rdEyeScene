@@ -13,14 +13,14 @@ namespace Tes.Runtime
   /// <remarks>
   /// This class supports taking arbitrarily large meshes and breaking them up into multiple
   /// <c>UnityEngine.Mesh</c> objects, respecting the indexing limits of that mesh class.
-  /// 
+  ///
   /// The class also supports updating mesh data and rebuilding the mesh objects, though it
   /// is not intended for highly dynamic meshes. That is, the update support is intended for
   /// sporadic updates rather than per frame updates of all vertex data.
-  /// 
-  /// The class attempts to discriminately rebuild only components which need it using various
+  ///
+  /// The class attempts to discriminate to rebuild only components which need it using various
   /// dirty flags.
-  /// 
+  ///
   /// Note: it is up to the caller to maintain valid element counts in the various containers.
   /// </remarks>
   public class MeshBuilder
@@ -298,7 +298,7 @@ namespace Tes.Runtime
     /// This supports creating a sub-mesh using <paramref name="indices"/> from the stored
     /// mesh data. The topology may also be changed by specifying a different topology to
     /// that of this builder. The indices are assumed to suit the specified topology.
-    /// 
+    ///
     /// This method never uses cached meshes and is only recommended for small index sets.
     /// </remarks>
     public Mesh[] GetReindexedMeshes(int[] indices, MeshTopology topology)
@@ -348,7 +348,7 @@ namespace Tes.Runtime
           {
             uvs.Add(_uvs[vind]);
           }
-          // TODO: Force white colours when none are specifies? For point clouds.
+          // TODO: Force white colours when none are specified? For point clouds.
           if (colours != null)
           {
             colours.Add(_colours[vind]);
@@ -755,7 +755,7 @@ namespace Tes.Runtime
     }
 
     /// <summary>
-    /// Mark some vertex data as dirty. 
+    /// Mark some vertex data as dirty.
     /// </summary>
     /// <param name="vertexIndex">Identifies the vertex of interest.</param>
     /// <param name="flag">The dirty flag to apply. Should be one of the vertex related values.</param>
@@ -765,7 +765,7 @@ namespace Tes.Runtime
     }
 
     /// <summary>
-    /// Mark a range of vertex data as dirty. 
+    /// Mark a range of vertex data as dirty.
     /// </summary>
     /// <param name="firstVertexIndex">Identifies the first vertex of interest.</param>
     /// <param name="count">The number of vertices to dirty.</param>
@@ -790,7 +790,7 @@ namespace Tes.Runtime
     }
 
     /// <summary>
-    /// Mark an index as dirty. 
+    /// Mark an index as dirty.
     /// </summary>
     /// <param name="indexIndex">Identifies the index of interest.</param>
     protected void DirtyIndex(int indexIndex)
@@ -799,7 +799,7 @@ namespace Tes.Runtime
     }
 
     /// <summary>
-    /// Mark a range of indices as dirty. 
+    /// Mark a range of indices as dirty.
     /// </summary>
     /// <param name="firstIndexIndex">Identifies the first index of interest.</param>
     /// <param name="count">The number of indices to dirty.</param>
@@ -952,7 +952,7 @@ namespace Tes.Runtime
           if (builder._uvs.Count > 0)
           {
             if (sourceIndex < builder._uvs.Count)
-            { 
+            {
               partUVs.Add(builder._uvs[sourceIndex]);
             }
             else

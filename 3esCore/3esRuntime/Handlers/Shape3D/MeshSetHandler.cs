@@ -14,7 +14,7 @@ namespace Tes.Handlers.Shape3D
   /// </summary>
   /// <remarks>
   /// Supports dual creation order: meshes resources then objects or objects then mesh resources.
-  /// 
+  ///
   /// Note: objects from the <see cref="MeshCache"/> can be marked for redefinition. In this case
   /// objects maintain the last valid visuals until a new finalisation message arrives.
   /// </remarks>

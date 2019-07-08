@@ -12,17 +12,17 @@ namespace Tes.Runtime
   /// network connection or from file, and pushing data packets into the
   /// <see cref="PacketQueue"/>. The owner of the <see cref="DataThread"/>
   /// pops the packet queue and processes the results.
-  /// 
+  ///
   /// The owner can request the <see cref="DataThread"/> to perform particular
   /// operations such as:
   /// <list type="bullet">
   /// <item>Set the <see cref="CurrentFrame"/> number</item>
   /// <item>Toggle the paused <see cref="Paused"/></item>
   /// </list>
-  /// 
+  ///
   /// These operations are not supported on live threads and will be ignored
   /// if <see cref="IsLiveStream"/> is true.
-  /// 
+  ///
   /// For recorded streams, it is up to the <see cref="DataThread"/>
   /// implementation to maintain the correct packet timing.
   /// </remarks>
@@ -78,6 +78,28 @@ namespace Tes.Runtime
     /// Request the thread look stop looping.
     /// </summary>
     public abstract void Quit();
+
+    /// <summary>
+    /// Does this implementation support being suspended?
+    /// </summary>
+    public abstract bool CanSuspend { get; }
+
+    /// <summary>
+    /// True when a successful call <see cref="Suspend()" />has been made.
+    /// </summary>
+    public abstract bool IsSuspended { get; }
+
+    /// <summary>
+    /// Requests the thread suspends execution.
+    /// </summary>
+    /// <returns>True if the suspend request is made.</returns>
+    public abstract bool Suspend();
+
+    /// <summary>
+    /// Requests the thread resumes execution after <see cref="Suspend()" />.
+    /// </summary>
+    /// <returns>True if the resume request is made.</returns>
+    public abstract bool Resume();
 
     /// <summary>
     /// Delegate used to convert a routing ID to a meaninful string. Used in logging

@@ -3,7 +3,7 @@
 namespace Tes.Net
 {
   /// <summary>
-  /// Control message IDs for <see cref="ControlMessage"/> 
+  /// Control message IDs for <see cref="ControlMessage"/>
   /// </summary>
   public enum ControlMessageID : ushort
   {
@@ -32,7 +32,7 @@ namespace Tes.Net
     /// </remarks>
     FrameCount,
     /// <summary>
-    /// Forces a frame update without advancing the time. 
+    /// Forces a frame update without advancing the time.
     /// </summary>
     /// <remarks>
     /// This message is primarily used at the start of a recording in order to display the shapes which have
@@ -61,7 +61,6 @@ namespace Tes.Net
     End
   }
 
-
   /// <summary>
   /// Flags for <see cref="ControlMessageID.EndFrame"/> messages.
   /// </summary>
@@ -71,7 +70,17 @@ namespace Tes.Net
     /// <summary>
     /// Indicates transient objects should be maintained and not flushed for this frame.
     /// </summary>
-    Persist = (1 << 0)
+    Persist = (1 << 0),
+    /// <summary>
+    /// Indicates a render flush may occur.
+    /// </summary>
+    /// <remarks>
+    /// Use of this flag assist in playback speeds which exceed the render rate. The flag indicates that the render
+    /// loop should flush on this frame end even if there are additional packets to process in the packet queue.
+    ///
+    /// Only used in playback.
+    /// </remarks>
+    Flush = (1 << 1)
   }
 }
 

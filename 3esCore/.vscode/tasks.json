@@ -5,7 +5,12 @@
   "tasks": [
     {
       "label": "build Debug",
-      "command": "dotnet build -c Debug",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "-c", "Debug",
+        "-property:GenerateFullPaths=true"
+      ],
       "type": "shell",
       "group": {
         "kind": "build",
@@ -18,7 +23,12 @@
     },
     {
       "label": "build Release",
-      "command": "dotnet build -c Release",
+      "command": "dotnet",
+      "args": [
+        "build",
+        "-c", "Release",
+        "-property:GenerateFullPaths=true"
+      ],
       "type": "shell",
       "group": "build",
       "presentation": {
@@ -28,14 +38,36 @@
     },
     {
       "label": "publish Debug",
+      "command": "dotnet",
       "windows": {
-        "command": "dotnet publish -f netcoreapp2.2 -c Debug -o ${workspaceFolder}\\build\\Debug -r win10-x64"
+        "args": [
+          "publish",
+          "-f", "netcoreapp2.2",
+          "-c", "Debug",
+          "-o", "${workspaceFolder}\\build\\Debug",
+          "-property:GenerateFullPaths=true",
+          "-r", "win10-x64"
+        ]
       },
       "linux": {
-        "command": "dotnet publish -f netcoreapp2.2 -c Debug -o ${workspaceFolder}/build/Debug -r linux-x64"
+        "args": [
+          "publish",
+          "-f", "netcoreapp2.2",
+          "-c", "Debug",
+          "-o", "${workspaceFolder}/build/Debug",
+          "-property:GenerateFullPaths=true",
+          "-r", "linux-x64"
+        ]
       },
       "osx": {
-        "command": "dotnet publish -f netcoreapp2.2 -c Debug -o ${workspaceFolder}/build/Debug -r osx-x64"
+        "args": [
+          "publish",
+          "-f", "netcoreapp2.2",
+          "-c", "Debug",
+          "-o", "${workspaceFolder}/build/Debug",
+          "-property:GenerateFullPaths=true",
+          "-r", "osx-x64"
+        ]
       },
       "type": "shell",
       "group": "build",
@@ -46,14 +78,36 @@
     },
     {
       "label": "publish Release",
+      "command": "dotnet",
       "windows": {
-        "command": "dotnet publish -f netcoreapp2.2 -c Release -o ${workspaceFolder}\\build\\Release -r win10-x64"
+        "args": [
+          "publish",
+          "-f", "netcoreapp2.2",
+          "-c", "Release",
+          "-o", "${workspaceFolder}\\build\\Release",
+          "-property:GenerateFullPaths=true",
+          "-r", "win10-x64"
+        ]
       },
       "linux": {
-        "command": "dotnet publish -f netcoreapp2.2 -c Release -o ${workspaceFolder}/build/Release -r linux-x64"
+        "args": [
+          "publish",
+          "-f", "netcoreapp2.2",
+          "-c", "Release",
+          "-o", "${workspaceFolder}/build/Release",
+          "-property:GenerateFullPaths=true",
+          "-r", "linux-x64"
+        ]
       },
       "osx": {
-        "command": "dotnet publish -f netcoreapp2.2 -c Release -o ${workspaceFolder}/build/Release -r osx-x64"
+        "args": [
+          "publish",
+          "-f", "netcoreapp2.2",
+          "-c", "Release",
+          "-o", "${workspaceFolder}/build/Release",
+          "-property:GenerateFullPaths=true",
+          "-r", "osx-x64"
+        ]
       },
       "type": "shell",
       "group": "build",

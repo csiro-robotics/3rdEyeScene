@@ -1,6 +1,9 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
+/// <summary>
+/// Interfaces between playback speed UI components and the playback speed control values.
+/// </summary>
 public class PlaybackSpeed : MonoBehaviour
 {
   [SerializeField]
@@ -17,7 +20,7 @@ public class PlaybackSpeed : MonoBehaviour
   [Range(1.0f, 100.0f)]
   float _maxSpeed = 20.0f;
 
-  [Range(0.0f, 1.0f)]
+  [Range(0.0001f, 1.0f)]
   float _minSpeed = 0.0f;
 
   void Start()
@@ -84,6 +87,10 @@ public class PlaybackSpeed : MonoBehaviour
     }
   }
 
+  /// <summary>
+  /// Update playback speed on the playback controller.
+  /// </summary>
+  /// <param name="speed">The new playback speed multiplier.</param>
   void UpdatePlaybackSpeed(float speed)
   {
     if (_tes != null)

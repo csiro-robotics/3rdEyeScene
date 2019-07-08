@@ -15,7 +15,7 @@ This page describes how to build the 3esCore solution. This solution provides co
 
 # Build instructions
 
-- Ensure the path to your Unity Engine DLL is set in the environmeet variable `UNITY_DLL_PATH` and set as shown below
+- Ensure the path to your Unity Engine DLL is set in the environment variable `UNITY_DLL_PATH` and set as shown below
   - Windows: typically `C:\Program Files\Unity\Hub\Editor\<Unity-version>\Editor\Data\Managed`
   - MacOS: typically `'/<install-path>/Unity.app/Contents/Managed`
   - Linux: `<Unity-hub-path>/Hub/Editor/<Unity-version>/Editor/Data/Managed`
@@ -24,7 +24,7 @@ This page describes how to build the 3esCore solution. This solution provides co
 - Marshal the 3esRuntime DLLs for the 3rdEyeScene Unity 3D project.
   - Building with `dotnet`, you can use `unity-marshal.py`
     - Open a command prompt and change into the directory containing `unity-marshal.py`
-    - Run the marshaling script (no arguments required)
+    - Run the marshalling script (no arguments required)
       - `python unity-marshal.py`
   - Building with Visual Studio
     - Navigate to `3esRuntime/bin/Release`
@@ -97,6 +97,6 @@ This section highlights some issues encountered in setting up the build for cros
 - Visual Studio only uses `net461` to avoid issues where `dotnet` is not installed.
 - `dotnet` uses both `netstandard2.0` and `netcoreapp2.2` to support Unity import and command line execution.
   - `netstandard2.0` is supported by Unity, while `netcoreapp2.2` is not currently compatible with Unity.
-    - Only `netstandard2.0` DLLs should be marshaled for Unity
+    - Only `netstandard2.0` DLLs should be marshalled for Unity
     - Tested with `Unity 2018.4.1f1`
   - `netcoreapp2.2` is required for `dotnet publish` commands in order to build runnable utilities including executable files.

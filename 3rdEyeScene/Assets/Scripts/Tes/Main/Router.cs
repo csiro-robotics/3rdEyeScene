@@ -341,6 +341,7 @@ namespace Tes.Main
       {
         return false;
       }
+      Application.runInBackground = true;
       StreamThread thread = new StreamThread();
       thread.RoutingIDName = RoutingIDName;
       _dataThread = thread;
@@ -348,10 +349,10 @@ namespace Tes.Main
       if (playbackSettings != null)
       {
         thread.AllowKeyframes = playbackSettings.AllowKeyframes;
-        thread.KeyframeKiloBytes = playbackSettings.KeyframeEveryKb;
-        thread.KeyframeMinFrames = (uint)Math.Max(0, playbackSettings.KeyframeEveryFrames);
+        thread.KeyframeMiB = playbackSettings.KeyframeEveryMiB;
+        thread.KeyframeMinFrames = (uint)Math.Max(0, playbackSettings.KeyframeFrameSeparation);
         thread.KeyframeSkipForwardFrames = (uint)Math.Max(0, playbackSettings.KeyframeSkipForwardFrames);
-        thread.KeyframeFrames = (uint)Math.Max(0, playbackSettings.KeyframeFrameSeparation);
+        thread.KeyframeFrames = (uint)Math.Max(0, playbackSettings.KeyframeEveryFrames);
         thread.Loop = playbackSettings.Looping;
       }
       thread.PlaybackSpeed = PlaybackSpeed;
@@ -365,7 +366,7 @@ namespace Tes.Main
         Application.runInBackground = false;
         return false;
       }
-      Application.runInBackground = true;
+
       return true;
     }
 
@@ -397,7 +398,6 @@ namespace Tes.Main
         Application.runInBackground = false;
         return false;
       }
-      Application.runInBackground = true;
       return true;
     }
 
@@ -510,6 +510,7 @@ namespace Tes.Main
         _dataThread.Paused = true;
         _dataThread.TargetFrame = _currentFrame + 1;
         _previousFrame = _currentFrame;
+        // Temporarily update in background mode until the frame is processed
         Application.runInBackground = true;
       }
     }
@@ -524,6 +525,7 @@ namespace Tes.Main
           _dataThread.TargetFrame = _currentFrame - 1;
           _previousFrame = _currentFrame;
         }
+        // Temporarily update in background mode until the frame is processed
         Application.runInBackground = true;
       }
     }
@@ -535,6 +537,7 @@ namespace Tes.Main
         _dataThread.Paused = true;
         _dataThread.TargetFrame = 1;
         _previousFrame = _currentFrame;
+        // Temporarily update in background mode until the frame is processed
         Application.runInBackground = true;
       }
     }
@@ -546,6 +549,7 @@ namespace Tes.Main
         _dataThread.Paused = true;
         _dataThread.TargetFrame = _dataThread.TotalFrames;
         _previousFrame = _currentFrame;
+        // Temporarily update in background mode until the frame is processed
         Application.runInBackground = true;
       }
     }
@@ -560,10 +564,18 @@ namespace Tes.Main
         _dataThread.Paused = true;
         _dataThread.TargetFrame = _previousFrame;
         _previousFrame = _currentFrame;
+        // Temporarily update in background mode until the frame is processed
         Application.runInBackground = true;
       }
     }
 
+    /// <summary>
+    /// Set a new target frame to skip to. Should be in range [0, <see cref="TotalFrames"/>].
+    /// </summary>
+    /// <param name="targetFrame">The frame to skip to.</param>
+    /// <remarks>
+    /// Setting the target frame will pause current playback.
+    /// </remarks>
     public void SetFrame(uint targetFrame)
     {
       if (_dataThread != null)
@@ -571,6 +583,7 @@ namespace Tes.Main
         _dataThread.Paused = true;
         _dataThread.TargetFrame = targetFrame;
         _previousFrame = _currentFrame;
+        // Temporarily update in background mode until the frame is processed
         Application.runInBackground = true;
       }
     }
@@ -588,7 +601,7 @@ namespace Tes.Main
       {
         ResetScene();
       }
-      // No longer run in background. Will again if we get a network thread.
+      // No longer run in background. Will again once we have a DataThread
       Application.runInBackground = false;
     }
 
@@ -634,12 +647,19 @@ namespace Tes.Main
       Log.AddTarget(new LogAdaptor());
     }
 
+    /// <summary>
+    /// Render frame update function. Pumps the packet queue and routes to registered
+    /// <see cref="Tes.Runtime.MessageHandler"/> objects.
+    /// </summary>
     protected virtual void Update()
     {
       try
       {
-        // FIXME: manage propabating dynamic settings better.
+        // FIXME: manage propagating dynamic settings better.
         Materials.DefaultPointSize = RenderSettings.Instance.DefaultPointSize;
+        var longFrameTimer = new System.Diagnostics.Stopwatch();
+
+        longFrameTimer.Start();
 
         if (_dataThread != null)
         {
@@ -649,17 +669,18 @@ namespace Tes.Main
             _recordOnConnectPath = null;
           }
 
-          bool catchUp = false;
-
-          // Move data packets from the data thread into the local queue.
-          // We are looking for an end frame control message, at which point
-          // we will pass all messages on to the appropriate handles to
-          // enact.
+          // Move data packets from the data thread into the local queue. We are looking for an end frame control
+          // message, at which point we will pass all messages on to the appropriate handlers to enact.
+          //
+          // We also need to handle 'catchUp' situations where the target frame is well in advance of the next frame.
+          // In this case we keep processing the packet queue until catchUp is complete (at target frame).
           PacketBuffer packet = null;
-          bool endFrame = false;
+          bool catchUp = false;
+          bool frameFlush = false;
           bool processingPackets = true;
-          while (!endFrame && processingPackets || catchUp)
+          while (!frameFlush && processingPackets || catchUp)
           {
+            // Set catchup state on data handlers and check update catch up status.
             catchUp = UpdateCatchup(catchUp);
             if ((processingPackets = _dataThread.PacketQueue.TryDequeue(ref packet)))
             {
@@ -683,10 +704,15 @@ namespace Tes.Main
                   packet.ExportTo(_recordingWriter);
                 }
 
+                // Tracks whether we will push the packet into the _pendingPackets queue. The default beahviour is to
+                // push the packet, however, some control messages are processed immediately.
+                bool pushPacketToPending = true;
                 NetworkReader packetReader;
-                switch (packet.Header.RoutingID)
+                switch ((RoutingID)packet.Header.RoutingID)
                 {
-                  case (ushort)RoutingID.ServerInfo:
+                  case RoutingID.ServerInfo:
+                    // Server info is handled immediately.
+                    pushPacketToPending = false;
                     packetReader = new NetworkReader(packet.CreateReadStream(true));
                     _serverInfo.Read(packetReader);
                     OnServerInfoUpdate();
@@ -698,17 +724,18 @@ namespace Tes.Main
                     }
                     break;
 
-                  case (ushort)RoutingID.Control:
+                  case RoutingID.Control:
                     packetReader = new NetworkReader(packet.CreateReadStream(true));
                     ControlMessage message = new ControlMessage();
-                    if (message.Read(packetReader) &&
-                       (packet.Header.MessageID == (ushort)ControlMessageID.EndFrame ||
-                        packet.Header.MessageID == (ushort)ControlMessageID.ForceFrameFlush ||
-                        packet.Header.MessageID == (ushort)ControlMessageID.Reset))
+                    if (message.Read(packetReader))
                     {
+                      // Special message handling.
                       switch ((ControlMessageID)packet.Header.MessageID)
                       {
+                        // Scene reset request
                         case ControlMessageID.Reset:
+                          // Reset is handled immediately.
+                          pushPacketToPending = false;
                           // Drop pending packets.
                           _pendingPackets.Clear();
                           catchUp = UpdateCatchup(catchUp, true);
@@ -719,36 +746,55 @@ namespace Tes.Main
                           EndFrame(message.Value32, catchUp);
                           _previousFrame = previousFrame;
                           break;
+                        // Key frame request message. Need to make sure we force display of everything even when in
+                        // catch up mode.
                         case ControlMessageID.Keyframe:
+                          // Redundant statement, however it's here to illustrate that key frame packets should be
+                          // pushed onto the _pendingPacket queue.
+                          pushPacketToPending = true;
                           catchUp = UpdateCatchup(catchUp, true);
                           break;
+                        // Frame end or force flush: ensure the scene is rendered.
                         case ControlMessageID.EndFrame:
                         case ControlMessageID.ForceFrameFlush:
+                          // End frame and flush messages are handled immediately by calling EndFrame().
+                          pushPacketToPending = false;
                           EndFrame((uint)message.Value64, catchUp, (message.ControlFlags & (ushort)EndFrameFlag.Persist) != 0);
                           if (_recordingWriter != null)
                           {
                             WriteCameraPosition(_recordingWriter, Camera.main, 255);
                           }
-                          endFrame = packet.Header.MessageID == (ushort)ControlMessageID.EndFrame && _dataThread.TargetFrame == 0;
+                          frameFlush = packet.Header.MessageID == (ushort)ControlMessageID.EndFrame &&
+                                      (message.ControlFlags & (uint)EndFrameFlag.Flush) != 0 &&
+                                      _dataThread.TargetFrame == 0;
+
+                          // Also allow a frame flush if we've been looping of a long time. This is to prevent freezing.
+                          if (_dataThread.TargetFrame == 0 && longFrameTimer.ElapsedMilliseconds > 1000)
+                          {
+                            frameFlush = true;
+                          }
                           break;
-                        default:
+
+                        default: // packet.Header.MessageID
+                          // No-op
                           break;
                       }
                     }
-                    else
-                    {
-                      _pendingPackets.Enqueue(packet);
-                    }
                     break;
 
-                  default:
-                    _pendingPackets.Enqueue(packet);
+                  default: // packetHeader.RoutingID
+                    // No-op
                     break;
+                }
+
+                if (pushPacketToPending)
+                {
+                  _pendingPackets.Enqueue(packet);
                 }
               }
               else
               {
-                Log.Error("Dropping bad packet with routing ID: {0}", packet.Header.RoutingID);
+                Log.Error("Dropping bad packet with routing ID: {0}", (ushort)packet.Header.RoutingID);
               }
             }
           }
@@ -781,7 +827,34 @@ namespace Tes.Main
           handler.Mode = handler.Mode & ~MessageHandler.ModeFlags.IgnoreTransient;
         }
 
-        Application.runInBackground = _dataThread != null && (!_dataThread.Paused || _dataThread.CatchingUp);
+        Application.runInBackground = _dataThread != null && !_dataThread.Paused && !_dataThread.CatchingUp;
+      }
+    }
+
+    /// <summary>
+    /// Handle changes it the background mode/pause status of the application by managing the data thread.
+    /// </summary>
+    /// <param name="pauseStatus">True when the application now paused/in background mode false on unpause.</param>
+    /// <remarks>
+    /// This ensures the <see cref="DataThread" /> is suspended when in background mode and resumed when in foreground
+    /// mode.
+    /// </remarks>
+    void OnApplicationPause(bool pauseStatus)
+    {
+      // Ensure data thread suspension matches state of Application.runInBackground.
+      if (_dataThread != null)
+      {
+        if (_dataThread.IsSuspended != pauseStatus)
+        {
+          if (_dataThread.IsSuspended)
+          {
+            _dataThread.Resume();
+          }
+          else
+          {
+            _dataThread.Suspend();
+          }
+        }
       }
     }
 
@@ -853,9 +926,9 @@ namespace Tes.Main
           {
             streamThread.AllowKeyframes = playback.AllowKeyframes;
           }
-          else if (string.Compare(args.PropertyName, "KeyframeEveryKb") == 0)
+          else if (string.Compare(args.PropertyName, "KeyframeEveryMiB") == 0)
           {
-            streamThread.KeyframeKiloBytes = playback.KeyframeEveryKb;
+            streamThread.KeyframeMiB = playback.KeyframeEveryMiB;
           }
           else if (string.Compare(args.PropertyName, "KeyframeEveryFrames") == 0)
           {
@@ -878,7 +951,7 @@ namespace Tes.Main
     }
 
     /// <summary>
-    /// Manage catchup state changes.
+    /// Manage catchup state changes when skipping more than one fame ahead.
     /// </summary>
     /// <param name="inCatchUp">Currently in catch up mode? Supports looping in the update method.</param>
     /// <param name="forceExitCatchup">Force exit of catchup mode?</param>
@@ -940,6 +1013,7 @@ namespace Tes.Main
       PacketBuffer packet = null;
       try
       {
+        // We've staged packets for this frame into _pendingPackets. Process all these packets now.
         while (_pendingPackets.Count > 0)
         {
           packet = _pendingPackets.Dequeue();
