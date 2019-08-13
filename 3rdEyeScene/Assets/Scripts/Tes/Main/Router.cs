@@ -827,7 +827,15 @@ namespace Tes.Main
           handler.Mode = handler.Mode & ~MessageHandler.ModeFlags.IgnoreTransient;
         }
 
-        Application.runInBackground = _dataThread != null && !_dataThread.Paused && !_dataThread.CatchingUp;
+        bool runInBackground = false;
+        if (_dataThread != null)
+        {
+          if (_dataThread.IsLiveStream || !_dataThread.Paused || _dataThread.CatchingUp)
+          {
+            runInBackground = true;
+          }
+        }
+        Application.runInBackground = runInBackground;
       }
     }
 

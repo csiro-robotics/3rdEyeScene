@@ -130,19 +130,22 @@ public class TesComponent : Router
       }
     };
 
-    LoadCommandLineFile();
+    HandleCommandLineStart();
   }
 
-  void LoadCommandLineFile()
+  void HandleCommandLineStart()
   {
-    Options opt = new Options();
-    if (opt.Values.ContainsKey("--play"))
+    if (Options.Current.Mode == Options.RunMode.Play)
     {
       // Load the first anonymous argument.
-      if (!OpenFile(opt.Values["--play"]))
+      if (!OpenFile(Options.Current.Values["play"]))
       {
-        Log.Warning($"Failed to play command line specified file: {opt.Values["--play"]}");
+        Log.Warning($"Failed to play command line specified file: {Options.Current.Values["play"]}");
       }
+    }
+    else if (Options.Current.Mode == Options.RunMode.Normal && Options.Current.Connection != null)
+    {
+      Connect(Options.Current.Connection, true);
     }
   }
 

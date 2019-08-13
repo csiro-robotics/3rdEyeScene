@@ -119,7 +119,7 @@ namespace UI
         {
           return port;
         }
-        return 33500;
+        return Tes.Server.ServerSettings.Default.ListenPort;
       }
 
       set
@@ -145,7 +145,7 @@ namespace UI
         {
           return new IPEndPoint(IPAddress.Parse(host), port);
         }
-        return new IPEndPoint(IPAddress.Loopback, 33500);
+        return new IPEndPoint(IPAddress.Loopback, Tes.Server.ServerSettings.Default.ListenPort);
       }
 
       set
