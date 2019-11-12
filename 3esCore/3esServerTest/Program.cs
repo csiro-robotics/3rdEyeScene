@@ -296,7 +296,8 @@ namespace Tes
         Shapes.MeshResource mesRes = CreateTestMesh(ids);
         resources.Add(mesRes);
         Shapes.MeshSet mesh = new Shapes.MeshSet(ids.NextShapeId++);
-        mesh.AddPart(mesRes);
+        mesh.AddPart(mesRes, Matrix4.Identity, Colour.Colours[(int)PredefinedColour.YellowGreen]);
+        mesh.AddPart(mesRes, Matrix4.TranslationMatrix(new Vector3(0, 0, 1.5f)), Colour.Colours[(int)PredefinedColour.SkyBlue]);
         shapes.Add(mesh);
         // if (!noMove)
         // {
@@ -428,7 +429,7 @@ namespace Tes
       }
 
       Console.CancelKeyPress += new ConsoleCancelEventHandler(ControlCHandler);
-      
+
       ServerSettings serverSettings = ServerSettings.Default;
       serverSettings.PortRange = 10;
       ServerInfoMessage info = ServerInfoMessage.Default;

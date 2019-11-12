@@ -35,9 +35,9 @@ namespace Tes.Shapes
     {
       get
       {
-        foreach (MeshResource res in _parts)
+        foreach (Part part in _parts)
         {
-          yield return res;
+          yield return part.Resource;
         }
       }
     }
@@ -51,14 +51,21 @@ namespace Tes.Shapes
     /// </summary>
     /// <param name="index">The part index.</param>
     /// <returns>The requested part.</returns>
-    public MeshResource PartAt(int index) { return _parts[index]; }
+    public MeshResource PartResource(int index) { return _parts[index].Resource; }
 
     /// <summary>
     /// Request the transformation for a part.
     /// </summary>
     /// <param name="index">The part index.</param>
     /// <returns>The requested part transformation matrix.</returns>
-    public Matrix4 PartTransformAt(int index) { return _transforms[index]; }
+    public Matrix4 PartTransformAt(int index) { return _parts[index].Transform; }
+
+    /// <summary>
+    /// Request the colour for a part.
+    /// </summary>
+    /// <param name="index">The part index.</param>
+    /// <returns>The requested part colour tint.</returns>
+    public Colour PartColourAt(int index) { return _parts[index].Colour; }
 
     /// <summary>
     /// Add a part to the mesh set.
@@ -68,16 +75,33 @@ namespace Tes.Shapes
     /// <returns>This</returns>
     public MeshSet AddPart(MeshResource part, Matrix4 transform)
     {
-      _parts.Add(part);
-      _transforms.Add(transform);
+      return AddPart(part, transform, new Colour(255, 255, 255));
+    }
+
+    /// <summary>
+    /// Add a part to the mesh set with colour tint.
+    /// </summary>
+    /// <param name="part">The mesh resource to add.</param>
+    /// <param name="transform">The local transform for <paramref name="part"/>.</param>
+    /// <param name="colour">The part colour tint for <paramref name="part"/>.</param>
+    /// <returns>This</returns>
+    public MeshSet AddPart(MeshResource part, Matrix4 transform, Colour colour)
+    {
+      _parts.Add(new Part
+      {
+        Resource = part,
+        Transform = transform,
+        Colour = colour
+      });
       return this;
     }
+
     /// <summary>
     /// Add a part to the mesh set with an identity local transformation.
     /// </summary>
     /// <param name="part">The mesh resource to add.</param>
     /// <returns>This</returns>
-    public MeshSet AddPart(MeshResource part) { return AddPart(part, Matrix4.Identity); }
+    public MeshSet AddPart(MeshResource part) { return AddPart(part, Matrix4.Identity, new Colour(255, 255, 255)); }
 
     /// <summary>
     /// Override to write part details.
@@ -96,13 +120,12 @@ namespace Tes.Shapes
       ObjectAttributes partAttributes = new ObjectAttributes();
       for (int i = 0; i < _parts.Count; ++i)
       {
-        MeshResource part = _parts[i];
-        Matrix4 transform = _transforms[i];
+        uint partId = (_parts[i].Resource != null) ? (uint)_parts[i].Resource.ID : 0;
 
-        partAttributes.SetFromTransform(transform);
-        partAttributes.Color = 0xffffffffu;
+        partAttributes.SetFromTransform(_parts[i].Transform);
+        partAttributes.Color = _parts[i].Colour.Value;
 
-        packet.WriteBytes(BitConverter.GetBytes((uint)part.ID), true);
+        packet.WriteBytes(BitConverter.GetBytes(partId), true);
         partAttributes.Write(packet);
       }
 
@@ -129,13 +152,11 @@ namespace Tes.Shapes
       // Note: we can only create placeholder meshes here for referencing resource IDs elsewhere.
       int partCount = reader.ReadUInt16();
       _parts.Clear();
-      _transforms.Clear();
 
       if (partCount > 0)
       {
         uint meshId;
         ObjectAttributes partAttributes = new ObjectAttributes();
-        Matrix4 m;
 
         for (int i = 0; i < partCount; ++i)
         {
@@ -146,10 +167,12 @@ namespace Tes.Shapes
             return false;
           }
 
-          _parts.Add(new PlaceholderMesh(meshId));
-
-          m = partAttributes.GetTransform();
-          _transforms.Add(m);
+          _parts.Add(new Part
+          {
+            Resource = new PlaceholderMesh(meshId),
+            Transform = partAttributes.GetTransform(),
+            Colour = new Colour(partAttributes.Colour)
+          });
         }
       }
 
@@ -174,27 +197,25 @@ namespace Tes.Shapes
     protected void OnClone(MeshSet copy)
     {
       base.OnClone(copy);
-      copy._parts = new List<MeshResource>(_parts.Count);
-      copy._transforms = new List<Matrix4>(_transforms.Count);
+
+      copy._parts = new List<Part>(_parts.Count);
 
       for (int i = 0; i < _parts.Count; ++i)
       {
         copy._parts.Add(_parts[i]);
       }
-
-      for (int i = 0; i < _transforms.Count; ++i)
-      {
-        copy._transforms.Add(_transforms[i]);
-      }
     }
+
+    protected struct Part
+    {
+      public MeshResource Resource;
+      public Matrix4 Transform;
+      public Colour Colour;
+    };
 
     /// <summary>
     /// List of parts.
     /// </summary>
-    protected List<MeshResource> _parts = new List<MeshResource>();
-    /// <summary>
-    /// Transforms corresponding to <see cref="_parts"/>.
-    /// </summary>
-    protected List<Matrix4> _transforms = new List<Matrix4>();
+    protected List<Part> _parts = new List<Part>();
   }
 }
