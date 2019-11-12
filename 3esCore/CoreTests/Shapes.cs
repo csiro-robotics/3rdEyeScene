@@ -403,6 +403,9 @@ namespace Tes.CoreTests
         attrRef.SetFromTransform(reference.PartTransformAt(i));
         attrMesh.SetFromTransform(shape.PartTransformAt(i));
 
+        attrRef.Colour = reference.PartColourAt(i).Value;
+        attrMesh.Colour = shape.PartColourAt(i).Value;
+
         AssertExt.Near(attrRef.X, attrMesh.X, 1e-3f);
         AssertExt.Near(attrRef.Y, attrMesh.Y, 1e-3f);
         AssertExt.Near(attrRef.Z, attrMesh.Z, 1e-3f);
@@ -416,9 +419,11 @@ namespace Tes.CoreTests
         AssertExt.Near(attrRef.ScaleY, attrMesh.ScaleY, 1e-3f);
         AssertExt.Near(attrRef.ScaleZ, attrMesh.ScaleZ, 1e-3f);
 
+        Assert.Equal(attrRef.Colour, attrMesh.Colour);
+
         // Shape will only have a placeholder resource. Lookup in resources.
-        MeshResource mesh = (MeshResource)resources[shape.PartAt(i).UniqueKey()];
-        ValidateMesh(mesh, reference.PartAt(i));
+        MeshResource mesh = (MeshResource)resources[shape.PartResource(i).UniqueKey()];
+        ValidateMesh(mesh, reference.PartResource(i));
       }
     }
 
@@ -558,7 +563,7 @@ namespace Tes.CoreTests
       {
         indexedSubSet[i] = i;
       }
-      
+
       ShapeTestFramework.TestShape(new PointCloudShape(cloud, 41, 1, 8).SetIndices(indexedSubSet), create, ValidatePointCloudShape);
     }
   }
