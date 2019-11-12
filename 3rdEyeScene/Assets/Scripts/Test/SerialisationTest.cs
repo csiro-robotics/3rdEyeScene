@@ -105,8 +105,7 @@ public class SerialisationTest : MonoBehaviour
   /// </summary>
   void Done(bool success = false)
   {
-    Options opt = new Options();
-    if (!success || !opt.Opt.Contains("persist"))
+    if (!success || !Options.Current.Persist)
     {
       Application.Quit();
     }
