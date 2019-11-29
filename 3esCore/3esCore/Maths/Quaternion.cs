@@ -9,7 +9,7 @@ namespace Tes.Maths
   /// See <a href="https://en.wikipedia.org/wiki/Quaternion">Wikipedia</a> or
   /// <a href="http://mathworld.wolfram.com/Quaternion.html">Wolfram MathWorld</a> for
   /// technical details on quaternions.
-  /// 
+  ///
   /// Note that all angles expressed by this class are in radians.
   /// </remarks>
   public struct Quaternion
@@ -86,9 +86,9 @@ namespace Tes.Maths
         case 1: return Y;
         case 2: return Z;
         case 3: return W;
-        default: break;
+        default:
+          throw new IndexOutOfRangeException();
         }
-        throw new IndexOutOfRangeException();
       }
 
       set
@@ -99,9 +99,9 @@ namespace Tes.Maths
         case 1: Y = value; break;
         case 2: Z = value; break;
         case 3: W = value; break;
-        default: break;
+        default:
+          throw new IndexOutOfRangeException();
         }
-        throw new IndexOutOfRangeException();
       }
     }
 
@@ -368,7 +368,7 @@ namespace Tes.Maths
     /// <remarks>
     /// This results in a quaternion which rotates partway between <paramref name="from"/>
     /// and <paramref name="to"/>.
-    /// 
+    ///
     /// This is an ambiguity in rotation when <paramref name="from"/> and <paramref name="to"/>
     /// are exactly opposed and the resulting quaternion is not well defined.
     /// </remarks>

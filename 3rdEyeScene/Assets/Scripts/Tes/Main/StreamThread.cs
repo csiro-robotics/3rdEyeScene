@@ -796,10 +796,11 @@ namespace Tes.Main
         return false;
       }
 
+      Stream snapStream = null;
       try
       {
         // Ensure stream has been reset.
-        Stream snapStream = new FileStream(keyframe.TemporaryFilePath, FileMode.Open, FileAccess.Read);
+        snapStream = new FileStream(keyframe.TemporaryFilePath, FileMode.Open, FileAccess.Read);
         System.Collections.Generic.List<PacketBuffer> decodedPackets = new System.Collections.Generic.List<PacketBuffer>();
         _packetStream.Seek(keyframe.StreamOffset, SeekOrigin.Begin);
         long streamPos = _packetStream.Position;
@@ -861,6 +862,11 @@ namespace Tes.Main
       }
       catch (Exception e)
       {
+        if (snapStream != null)
+        {
+          // Explicitly close the stream to make sure we aren't hanging on to handles we shouldn't.
+          snapStream.Close();
+        }
         Log.Exception(e);
       }
 
@@ -887,17 +893,18 @@ namespace Tes.Main
       PacketHeader header = new PacketHeader();
       byte[] headerBuffer = new byte[PacketHeader.Size];
       uint queuedPacketCount = 0;
+      Stream dataStream = snapStream;
 
       try
       {
         do
         {
-          if (allowCompression && GZipUtil.IsGZipStream(snapStream))
+          if (allowCompression && GZipUtil.IsGZipStream(dataStream))
           {
             allowCompression = false;
-            snapStream = new GZipStream(snapStream, CompressionMode.Decompress);
+            dataStream = new GZipStream(dataStream, CompressionMode.Decompress);
           }
-          bytesRead = snapStream.Read(headerBuffer, 0, headerBuffer.Length);
+          bytesRead = dataStream.Read(headerBuffer, 0, headerBuffer.Length);
 
           // ok = false if done, true when we read something.
           ok = bytesRead == 0;
@@ -941,6 +948,13 @@ namespace Tes.Main
       {
         ok = false;
         Log.Exception(e);
+      }
+
+      // Ensure the decompression stream is properly closed.
+      if (dataStream != snapStream)
+      {
+        dataStream.Flush();
+        dataStream.Close();
       }
 
       return ok;
