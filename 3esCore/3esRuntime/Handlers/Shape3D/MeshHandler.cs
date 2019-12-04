@@ -597,6 +597,8 @@ namespace Tes.Handlers.Shape3D
           }
           if (meshData.DrawType == MeshDrawType.Points)
           {
+            int pointSize = (Materials != null) ? Materials.DefaultPointSize : 4;
+            render.material.SetInt("_PointSize", pointSize);
             render.material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
           }
           partMesh.subMeshCount = 1;

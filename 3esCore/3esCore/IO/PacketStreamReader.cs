@@ -197,6 +197,12 @@ namespace Tes.IO
     /// value is only adjusted when data are read from the stream, not when a packet is extracted from the
     /// collation buffer.
     /// </remarks>
+    /// <exception cref="MarkerNotFoundException">Thrown when the <see cref="PacketHeader.PacketMarker" /> bytes cannot
+    /// be found.</exception>
+    /// <exception cref="DecodeException">Thrown when decoding the packet header fails.</exception>
+    /// <exception cref="InsufficientDataException">Thrown when the stream does not contain sufficient bytes to
+    /// complete a packet once the header has been read or when there are insufficient bytes to read a packet header.
+    /// </exception>
     public PacketBuffer NextPacket(ref long processedBytes)
     {
       PacketBuffer packet = null;
@@ -243,16 +249,23 @@ namespace Tes.IO
         {
           // Failed.
           EndOfStream = true;
-          return null;
+          throw new MarkerNotFoundException("Packet marker not found in stream");
         }
 
         bytesRead += _activeStream.Read(_headerStream.GetBuffer(), markerSize, PacketHeader.Size - markerSize);
       }
 
+      if (bytesRead == 0 && (_decoder == null || !_decoder.Decoding))
+      {
+        // Nothing more read and fully up to date.
+        EndOfStream = true;
+        return null;
+      }
+
       if (bytesRead < PacketHeader.Size)
       {
         EndOfStream = true;
-        return null;
+        throw new InsufficientDataException("Insufficient data in stream to complete packet");
       }
 
       _headerStream.SetLength(bytesRead);
@@ -262,7 +275,7 @@ namespace Tes.IO
       {
         // TODO: Throw exception
         _searchForHeader = true;
-        return null;
+        throw new DecodeException("Packet header decoding failure");
       }
 
       // Extract packet.
@@ -274,7 +287,7 @@ namespace Tes.IO
       {
         // TODO: throw exception
         _searchForHeader = true;
-        return packet;
+        throw new InsufficientDataException("Incomplete packet");
       }
 
       // Decoder packet.
