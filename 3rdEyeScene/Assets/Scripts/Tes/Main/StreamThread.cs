@@ -725,7 +725,7 @@ namespace Tes.Main
           // at the target frame and includes transient objects.
           // See Keyframe class remarks.
           if (snap.Valid &&
-             (snap.FrameNumber < targetFrame || snap.IncludesTransient && snap.FrameNumber == targetFrame))
+             (snap.FrameNumber <= targetFrame || snap.IncludesTransient && snap.FrameNumber == targetFrame))
           {
             if (snap.FrameNumber > currentFrame)
             {
@@ -827,7 +827,10 @@ namespace Tes.Main
           uint currentFrame = keyframe.OffsetFrameNumber;
           uint droppedPacketCount = 0;
 
-          // Now consume messages from the stream until we are at the requested frame.
+          // The stream seek position may not exactly match the frame end marker such as when it appears within a
+          // collated packet. We must therefore continue to read messages from the main file stream (after seeking)
+          // until we are at the keyframe number. We can ignore all these messages as the keyframe includes their
+          // side effects.
           while (currentFrame < keyframe.FrameNumber)
           {
             long bytesRead = 0;
@@ -856,21 +859,21 @@ namespace Tes.Main
               Log.Error("Failed to process extra keyframe packets");
               return false;
             }
-
-            // Migrate to the packet queue.
-            ResetQueue(currentFrame);
-            _packetQueue.Enqueue(decodedPackets);
-            _currentFrame = currentFrame;
-
-            Log.Diag("Dropped {0} additional packets to catch up to frame {1}.", droppedPacketCount, _currentFrame);
-            Log.Info("Restored frame: {0} -> {1}", _currentFrame, _targetFrame);
-            if (_targetFrame == _currentFrame)
-            {
-              _targetFrame = 0;
-            }
-            return true;
           }
-          Log.Error("Failed to decode keyframe for frame {0}", keyframe.FrameNumber);
+
+          // We are now up to where we should be. Send reset and migrate the loaded packets into the packet queue for
+          // processing.
+          ResetQueue(currentFrame);
+          _packetQueue.Enqueue(decodedPackets);
+          _currentFrame = currentFrame;
+
+          Log.Diag("Dropped {0} additional packets to catch up to frame {1}.", droppedPacketCount, _currentFrame);
+          Log.Info("Restored frame: {0} -> {1}", _currentFrame, _targetFrame);
+          if (_targetFrame == _currentFrame)
+          {
+            _targetFrame = 0;
+          }
+          return true;
         }
       }
       catch (Exception e)
@@ -884,6 +887,7 @@ namespace Tes.Main
         Log.Exception(e);
       }
 
+      Log.Error("Failed to decode keyframe for frame {0}", keyframe.FrameNumber);
       return false;
     }
 
