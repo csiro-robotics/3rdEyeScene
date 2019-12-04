@@ -52,6 +52,12 @@ namespace Dialogs
     protected FileDisplayMode _displayMode = FileDisplayMode.Large;
     public FileDisplayMode DisplayMode { get { return _displayMode; } set { _displayMode = value; } }
 
+    /// <summary>
+    /// Does the file view expand horizontally? True for <see cref="DisplayMode.Small" />.
+    /// </summary>
+    /// <value></value>
+    public bool HorizontalExpandingFileView { get { return DisplayMode == FileDisplayMode.Small; } }
+
     [SerializeField]
     protected int[] _iconModeWidths = new int[] { 0, 340, 300 };
 
@@ -479,9 +485,8 @@ namespace Dialogs
       Location = location.FullName;
       SuppressEvents = false;
       FilenameDisplay = string.Empty;
-      bool horizontal = DisplayMode == FileDisplayMode.Large;
       int itemCount = PopulateScrollRect(_filesView, _iconItems[(int)DisplayMode], items, _iconSet,
-                                         _iconModeWidths[(int)DisplayMode], horizontal);
+                                         _iconModeWidths[(int)DisplayMode], !HorizontalExpandingFileView);
       if (_filesView != null)
       {
         FileEntryComponent initialSelection = null;
@@ -509,7 +514,8 @@ namespace Dialogs
 
       if (itemCount != 0 && isActiveAndEnabled)
       {
-        StartCoroutine(FixSizeAtEndOfFrame(_filesView, _iconItems[(int)DisplayMode], horizontal));
+        // Performed delayed fixup of the scroll view sizing. We have to wait in order to get the item sizes right.
+        StartCoroutine(FixSizeAtEndOfFrame(_filesView, _iconItems[(int)DisplayMode], !HorizontalExpandingFileView));
       }
 
       _pendingSelection = null;
@@ -519,6 +525,9 @@ namespace Dialogs
     {
       if (_filenameInput != null)
       {
+        // We only allow vertical scrolling in list view. Horizontal scrolling is the other way around.
+        _filesView.vertical = !HorizontalExpandingFileView;
+        _filesView.horizontal = HorizontalExpandingFileView;
         EventSystem.current.SetSelectedGameObject(_filenameInput.gameObject);
       }
     }
@@ -533,7 +542,7 @@ namespace Dialogs
     }
 
     protected int PopulateScrollRect(ScrollRect scroll, GameObject template, IEnumerable<FileSystemEntry> items,
-                                     FileIconSet icons, int targetWidth, bool startHorizontal)
+                                     FileIconSet icons, int targetWidth, bool fillHorizontal)
     {
       if (scroll == null)
       {
@@ -563,7 +572,7 @@ namespace Dialogs
       GridLayoutGroup layoutGrid = scroll.content.GetComponent<GridLayoutGroup>();
       if (layoutGrid != null)
       {
-        layoutGrid.startAxis = (startHorizontal) ? GridLayoutGroup.Axis.Horizontal : GridLayoutGroup.Axis.Vertical;
+        layoutGrid.startAxis = (fillHorizontal) ? GridLayoutGroup.Axis.Horizontal : GridLayoutGroup.Axis.Vertical;
       }
 
       // Create and position each item.
@@ -663,7 +672,7 @@ namespace Dialogs
       }
       if (AutoScrollSensitivity)
       {
-        CheckScrollSensitivity(scroll, templateRect);
+        CheckScrollSensitivity(scroll, templateRect, verticalExpanding);
       }
       yield return new WaitForEndOfFrame();
       FixSize(scroll, templateRect, verticalExpanding);
@@ -693,11 +702,20 @@ namespace Dialogs
     /// </summary>
     /// <param name="scroll">The scroll view.</param>
     /// <param name="template">The template item transform used to populate the scroll view.</param>
-    protected void CheckScrollSensitivity(ScrollRect scroll, RectTransform templateRect)
+    /// <param name="vertical">True to address vertical scrolling, false for horizontal.</param>
+    protected void CheckScrollSensitivity(ScrollRect scroll, RectTransform templateRect, bool vertical)
     {
       if (templateRect != null && scroll != null)
       {
-        scroll.scrollSensitivity = templateRect.rect.height;
+        if (vertical)
+        {
+          scroll.scrollSensitivity = templateRect.rect.height;
+        }
+        else
+        {
+          // Horizontal scrolling needs to be negative to get the direction right on the mouse wheel.
+          scroll.scrollSensitivity = -templateRect.rect.width;
+        }
       }
     }
 

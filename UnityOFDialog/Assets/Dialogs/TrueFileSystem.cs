@@ -16,6 +16,42 @@ namespace Dialogs
   public class TrueFileSystem : FileSystemModel
   {
     /// <summary>
+    /// Comparison object used for sorting <see cref="FileSystemEntry" /> lists. Supports case insensitive comparison.
+    /// </summary>
+    /// <remarks>
+    /// Comparison of two <see cref="FileSystemEntry" /> objects relies solely on the <c>Name</c> fields of the objects
+    /// using <c>System.String</c> comparison, optionallying case ignoring case.
+    /// </remarks>
+    public class FileSystemEntryCompare : IComparer<FileSystemEntry>
+    {
+      /// <summary>
+      /// Ignore file name case when sorting?
+      /// </summary>
+      public bool IgnoreCase = false;
+
+      /// <summary>
+      /// Constructor; does not ignore case.
+      /// </summary>
+      public FileSystemEntryCompare() {}
+
+      /// <summary>
+      /// Constructor specifying whether or not to ignore case.
+      /// </summary>
+      public FileSystemEntryCompare(bool ignoreCase) { IgnoreCase = ignoreCase; }
+
+      /// <summary>
+      /// Comparison function.
+      /// </summary>
+      /// <param name="a">First object to compare.</param>
+      /// <param name="b">Second object to compare.</param>
+      /// <returns>Comparison results; -1 if <c>a &lt; b<c>, 0 if <c>a = b</c>, 1 if  <c>a &gt; b<c>.</returns>
+      public int Compare(FileSystemEntry a, FileSystemEntry b)
+      {
+        return String.Compare(a.Name, b.Name, IgnoreCase);
+      }
+    }
+
+    /// <summary>
     /// Include hidden files and directories in the listed items?
     /// </summary>
     public bool ShowHiddenFiles { get; set; }
@@ -262,8 +298,10 @@ namespace Dialogs
       {
         DirectoryInfo[] subDirs = directory.GetDirectories();
         FileInfo[] files = directory.GetFiles();
+        FileSystemEntryCompare sorter = new FileSystemEntryCompare(true);
 
         List<FileSystemEntry> children = new List<FileSystemEntry>(subDirs.Length + files.Length);
+        // Add directories first.
         for (int i = 0; i < subDirs.Length; ++i)
         {
           DirectoryInfo dir = subDirs[i];
@@ -273,6 +311,10 @@ namespace Dialogs
           }
         }
 
+        // Sort the added children in alphabetic order, ignoring case.
+        children.Sort(sorter);
+        int dirCount = children.Count;
+
         for (int i = 0; i < files.Length; ++i)
         {
           FileInfo file = files[i];
@@ -281,6 +323,12 @@ namespace Dialogs
           {
             children.Add(CreateEntry(file));
           }
+        }
+
+        // Sort the file item children in alphabetic order, ignoring case, after the directories.
+        if (children.Count > dirCount)
+        {
+          children.Sort(dirCount, children.Count - dirCount, sorter);
         }
 
         return children.ToArray();
