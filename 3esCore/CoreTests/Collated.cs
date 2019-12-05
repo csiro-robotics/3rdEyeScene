@@ -41,7 +41,7 @@ namespace Tes.CoreTests
       Assert.True(encoder.FinaliseEncoding());
 
       // Allocate a reader. Contains a CollatedPacketDecoder.
-      System.IO.MemoryStream memoryStream = new System.IO.MemoryStream(encoder.Buffer);
+      System.IO.MemoryStream memoryStream = new System.IO.MemoryStream(encoder.Buffer, 0, encoder.Count);
       PacketStreamReader decoder = new PacketStreamReader(memoryStream);
 
       PacketBuffer packet;
