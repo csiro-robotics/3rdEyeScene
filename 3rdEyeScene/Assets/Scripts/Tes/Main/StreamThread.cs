@@ -725,7 +725,7 @@ namespace Tes.Main
           // at the target frame and includes transient objects.
           // See Keyframe class remarks.
           if (snap.Valid &&
-             (snap.FrameNumber < targetFrame || snap.IncludesTransient && snap.FrameNumber == targetFrame))
+             (snap.FrameNumber <= targetFrame || snap.IncludesTransient && snap.FrameNumber == targetFrame))
           {
             if (snap.FrameNumber > currentFrame)
             {
@@ -796,11 +796,12 @@ namespace Tes.Main
         return false;
       }
 
-      Stream snapStream = null;
+      PacketStreamReader keyframeStream = null;
       try
       {
         // Ensure stream has been reset.
-        snapStream = new FileStream(keyframe.TemporaryFilePath, FileMode.Open, FileAccess.Read);
+        keyframeStream = new PacketStreamReader(
+                                new FileStream(keyframe.TemporaryFilePath, FileMode.Open, FileAccess.Read));
         System.Collections.Generic.List<PacketBuffer> decodedPackets = new System.Collections.Generic.List<PacketBuffer>();
         _packetStream.Seek(keyframe.StreamOffset, SeekOrigin.Begin);
         long streamPos = _packetStream.Position;
@@ -808,156 +809,86 @@ namespace Tes.Main
         // Decode the keyframe data.
         if (streamPos == keyframe.StreamOffset)
         {
-          if (DecodeKeyframeStream(snapStream, decodedPackets))
+          long processedBytes = 0;
+          PacketBuffer packet = null;
+          try
           {
-            uint currentFrame = keyframe.OffsetFrameNumber;
-            uint droppedPacketCount = 0;
-
-            // Now consume messages from the stream until we are at the requested frame.
-            while (currentFrame < keyframe.FrameNumber)
+            while ((packet = keyframeStream.NextPacket(ref processedBytes)) != null)
             {
-              long bytesRead = 0;
-              PacketBuffer packet = _packetStream.NextPacket(ref bytesRead);
-              if (packet != null)
+              decodedPackets.Add(packet);
+            }
+          }
+          catch (TesIOException e)
+          {
+            Log.Exception(e);
+            return false;
+          }
+
+          uint currentFrame = keyframe.OffsetFrameNumber;
+          uint droppedPacketCount = 0;
+
+          // The stream seek position may not exactly match the frame end marker such as when it appears within a
+          // collated packet. We must therefore continue to read messages from the main file stream (after seeking)
+          // until we are at the keyframe number. We can ignore all these messages as the keyframe includes their
+          // side effects.
+          while (currentFrame < keyframe.FrameNumber)
+          {
+            long bytesRead = 0;
+            packet = _packetStream.NextPacket(ref bytesRead);
+            if (packet != null)
+            {
+              if (packet.Status == PacketBufferStatus.Complete)
               {
-                if (packet.Status == PacketBufferStatus.Complete)
+                ++droppedPacketCount;
+                if (packet.Header.RoutingID == (ushort)RoutingID.Control &&
+                    packet.Header.MessageID == (ushort)ControlMessageID.EndFrame)
                 {
-                  ++droppedPacketCount;
-                  if (packet.Header.RoutingID == (ushort)RoutingID.Control &&
-                      packet.Header.MessageID == (ushort)ControlMessageID.EndFrame)
-                  {
-                    ++currentFrame;
-                  }
-                }
-                else
-                {
-                  // Failed.
-                  Log.Error("Incomplete packet during processing of extra keyframe packets");
-                  return false;
+                  ++currentFrame;
                 }
               }
               else
               {
                 // Failed.
-                Log.Error("Failed to process extra keyframe packets");
+                Log.Error("Incomplete packet during processing of extra keyframe packets");
                 return false;
               }
             }
-
-            // Migrate to the packet queue.
-            ResetQueue(currentFrame);
-            _packetQueue.Enqueue(decodedPackets);
-            _currentFrame = currentFrame;
-
-            Log.Diag("Dropped {0} additional packets to catch up to frame {1}.", droppedPacketCount, _currentFrame);
-            Log.Info("Restored frame: {0} -> {1}", _currentFrame, _targetFrame);
-            if (_targetFrame == _currentFrame)
+            else
             {
-              _targetFrame = 0;
+              // Failed.
+              Log.Error("Failed to process extra keyframe packets");
+              return false;
             }
-            return true;
           }
-          Log.Error("Failed to decode keyframe for frame {0}", keyframe.FrameNumber);
+
+          // We are now up to where we should be. Send reset and migrate the loaded packets into the packet queue for
+          // processing.
+          ResetQueue(currentFrame);
+          _packetQueue.Enqueue(decodedPackets);
+          _currentFrame = currentFrame;
+
+          Log.Diag("Dropped {0} additional packets to catch up to frame {1}.", droppedPacketCount, _currentFrame);
+          Log.Info("Restored frame: {0} -> {1}", _currentFrame, _targetFrame);
+          if (_targetFrame == _currentFrame)
+          {
+            _targetFrame = 0;
+          }
+          return true;
         }
       }
       catch (Exception e)
       {
-        if (snapStream != null)
+        if (keyframeStream != null)
         {
           // Explicitly close the stream to make sure we aren't hanging on to handles we shouldn't.
-          snapStream.Close();
+          keyframeStream.Close();
+          keyframeStream = null;
         }
         Log.Exception(e);
       }
 
+      Log.Error("Failed to decode keyframe for frame {0}", keyframe.FrameNumber);
       return false;
-    }
-
-    /// <summary>
-    /// Decode the contents of the <paramref name="keyframeStream"/> and add packets to
-    /// <paramref name="packets"/>.
-    /// </summary>
-    /// <param name="snapStream">The keyframe stream to decode</param>
-    /// <param name="packets">The packet list to add to.</param>
-    /// <returns></returns>
-    private bool DecodeKeyframeStream(Stream snapStream, System.Collections.Generic.List<PacketBuffer> packets)
-    {
-      if (snapStream == null)
-      {
-        return false;
-      }
-
-      bool ok = true;
-      bool allowCompression = true;
-      int bytesRead = 0;
-      PacketHeader header = new PacketHeader();
-      byte[] headerBuffer = new byte[PacketHeader.Size];
-      uint queuedPacketCount = 0;
-      Stream dataStream = snapStream;
-
-      try
-      {
-        do
-        {
-          if (allowCompression && GZipUtil.IsGZipStream(dataStream))
-          {
-            allowCompression = false;
-            dataStream = new GZipStream(dataStream, CompressionMode.Decompress);
-          }
-          bytesRead = dataStream.Read(headerBuffer, 0, headerBuffer.Length);
-
-          // ok = false if done, true when we read something.
-          ok = bytesRead == 0;
-          if (bytesRead == headerBuffer.Length)
-          {
-            if (header.Read(new NetworkReader(new MemoryStream(headerBuffer, false))))
-            {
-              // Read the header. Determine the expected size and read that much more data.
-              int crcSize = ((header.Flags & (byte)PacketFlag.NoCrc) == 0) ? Crc16.CrcSize : 0;
-              PacketBuffer packet = new PacketBuffer(header.PacketSize + crcSize);
-              packet.Emplace(headerBuffer, bytesRead);
-              packet.Emplace(snapStream, header.PacketSize + crcSize - bytesRead);
-              if (packet.Status == PacketBufferStatus.Complete)
-              {
-                // Check for end of frame messages to yield on.
-                packets.Add(packet);
-                ok = true;
-                ++queuedPacketCount;
-              }
-              else
-              {
-                switch (packet.Status)
-                {
-                case PacketBufferStatus.CrcError:
-                  Log.Error("Failed to decode packet CRC.");
-                  break;
-                case PacketBufferStatus.Collating:
-                  Log.Error("Insufficient data for packet.");
-                  break;
-                default:
-                  break;
-                }
-              }
-            }
-          }
-        } while (ok && bytesRead != 0);
-
-        Log.Diag("Decoded {0} packets from keyframe", queuedPacketCount);
-      }
-      catch (Exception e)
-      {
-        ok = false;
-        Log.Exception(e);
-      }
-
-      // Ensure the decompression stream is properly closed.
-      if (dataStream != snapStream)
-      {
-        dataStream.Flush();
-        dataStream.Close();
-      }
-
-      return ok;
     }
 
     /// <summary>
@@ -1009,7 +940,7 @@ namespace Tes.Main
             keyframe = _keyframes[i];
             //keyframe.TemporaryFilePath = Path.GetFullPath(Path.Combine("temp", Path.GetRandomFileName()));
             keyframe.TemporaryFilePath = Path.GetFullPath(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()));
-            Log.Diag("Keyframe path {0}", keyframe.TemporaryFilePath);
+            Log.Info("Keyframe path {0}", keyframe.TemporaryFilePath);
             try
             {
               keyframe.OpenStream = new FileStream(keyframe.TemporaryFilePath, FileMode.Create);

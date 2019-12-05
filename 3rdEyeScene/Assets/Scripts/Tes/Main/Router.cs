@@ -468,9 +468,7 @@ namespace Tes.Main
         _totalFrames = 0;
 
         bool ok;
-        // TODO: re-enable compression. The GZipStream we use seems to generate incomplete streams on larger streams
-        // possibly due to usage issues here.
-        BinaryWriter writer = SerialiseScene(fileStream, false, out ok);
+        BinaryWriter writer = SerialiseScene(fileStream, true, out ok);
         // Write the initial camera position.
         WriteCameraPosition(writer, Camera.main, 255);
         WriteFrameFlush(writer);
@@ -1038,7 +1036,14 @@ namespace Tes.Main
             MessageHandler handler = GetHandler(packet.Header.RoutingID);
             if (handler != null)
             {
-              handler.ReadMessage(packet, packetReader);
+              Tes.Runtime.Error errorCode = handler.ReadMessage(packet, packetReader);
+              if (errorCode.Failed)
+              {
+                string errorCodeString = errorCode.Code < (int)ErrorCode.User ?
+                  ((ErrorCode)errorCode.Code).ToString() : errorCode.Code.ToString();
+                Log.Error($"Message handling error : {errorCodeString} : {errorCode.Value}, " +
+                          $"RoutingID: {RoutingIDName(packet.Header.RoutingID)} , MessageID: {packet.Header.MessageID}");
+              }
             }
             else
             {
@@ -1196,10 +1201,8 @@ namespace Tes.Main
       {
         if (PlaybackSettings.Instance.AllowKeyframes && keyframeStream != null)
         {
-          // TODO: re-enable compression. The GZipStream we use seems to generate incomplete streams on larger streams
-          // possibly due to usage issues here.
-          // BinaryWriter writer = SerialiseScene(keyframeStream, PlaybackSettings.Instance.KeyframeCompression, out success);
-          BinaryWriter writer = SerialiseScene(keyframeStream, false, out success);
+          BinaryWriter writer = SerialiseScene(keyframeStream, PlaybackSettings.Instance.KeyframeCompression,
+                                               out success);
           WriteFrameFlush(writer);
           writer.Flush();
           // Must be closed to ensure the compression stream finalises correctly.

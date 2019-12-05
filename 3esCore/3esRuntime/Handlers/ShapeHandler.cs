@@ -823,7 +823,8 @@ namespace Tes.Handlers
       GameObject obj = RemoveObject(msg.ObjectID);
       if (obj == null)
       {
-        return new Error(ErrorCode.InvalidObjectID, msg.ObjectID);
+        // Does not exist. Not an error as we allow delete messages where the object has yet to be created.
+        return new Error();
       }
 
       Error err = PostHandleMessage(obj, msg, packet, reader);
