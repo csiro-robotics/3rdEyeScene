@@ -88,9 +88,8 @@ namespace Tes.Maths
         case 0: X = value; break;
         case 1: Y = value; break;
         case 2: Z = value; break;
-        default: break;
+        default: throw new IndexOutOfRangeException();
         }
-        throw new IndexOutOfRangeException();
       }
     }
 
