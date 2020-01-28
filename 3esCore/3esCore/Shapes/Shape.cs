@@ -94,6 +94,14 @@ namespace Tes.Shapes
     }
 
     /// <summary>
+    /// Direct creation for non-complex shapes.
+    /// </summary>
+    private Shape(CreateMessage data)
+    {
+      _data = data;
+    }
+
+    /// <summary>
     /// Access to the routing ID for this shape.
     /// </summary>
     public ushort RoutingID { get; protected set; }
@@ -291,7 +299,7 @@ namespace Tes.Shapes
     /// Used in maintaining cached copies of shapes. The shapes should
     /// already represent the same object.
     ///
-    /// Not all attributes need to be updated. Only attributes which may be updated 
+    /// Not all attributes need to be updated. Only attributes which may be updated
     /// via an <see cref="UpdateMessage"/> for this shape need be copied.
     ///
     /// The default implementation copies only the <see cref="ObjectAttributes"/>.

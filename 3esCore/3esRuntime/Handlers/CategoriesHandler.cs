@@ -14,7 +14,7 @@ namespace Tes.Handlers
   /// <remarks>
   /// Camera objects represent predetermined views into the scene. A camera object is
   /// really just a reference transform which the scene camera may optionally follow.
-  /// 
+  ///
   /// Camera objects are implicitly created when a message with a new camera ID arrives.
   /// A camera object is never destroyed and may only be updated with a new message.
   /// </remarks>
@@ -187,7 +187,7 @@ namespace Tes.Handlers
     /// <remarks>
     /// This invokes the <see cref="OnActivationChange"/> event when <paramref name="active"/>
     /// does not match the category state.
-    /// 
+    ///
     /// Unknown <paramref name="id"/> values are ignored.
     /// </remarks>
     public void SetActive(ushort id, bool active)
@@ -250,10 +250,8 @@ namespace Tes.Handlers
     /// Initialise the shape handler by initialising the shape scene root and
     /// fetching the default materials.
     /// </summary>
-    /// <param name="root">The 3rd Eye Scene root object.</param>
-    /// <param name="serverRoot">The server scene root (transformed into the server reference frame).</param>
     /// <param name="materials">Material library from which to resolve materials.</param>
-    public override void Initialise(GameObject root, GameObject serverRoot, MaterialLibrary materials)
+    public override void Initialise(MaterialLibrary materials)
     {
       // FIXME: localisation.
       AddCategory(0, 0, "Default", true);

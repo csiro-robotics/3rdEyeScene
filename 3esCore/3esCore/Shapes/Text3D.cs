@@ -108,13 +108,13 @@ namespace Tes.Shapes
     {
       get
       {
-        return (_data.Flags & (ushort)Tes.Net.Text3DFlag.SceenFacing) != 0;
+        return (_data.Flags & (ushort)Tes.Net.Text3DFlag.ScreenFacing) != 0;
       }
 
       set
       {
-        _data.Flags &= (ushort)~Tes.Net.Text3DFlag.SceenFacing;
-        _data.Flags |= (ushort)((value) ? Tes.Net.Text3DFlag.SceenFacing : 0);
+        _data.Flags &= (ushort)~Tes.Net.Text3DFlag.ScreenFacing;
+        _data.Flags |= (ushort)((value) ? Tes.Net.Text3DFlag.ScreenFacing : 0);
       }
     }
 

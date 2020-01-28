@@ -145,9 +145,12 @@ namespace Tes.Runtime
     public virtual void EndFrame(uint frameNumber) { }
 
     /// <summary>
-    /// Called a little prior to actually rendering a frame. This is independent of <see cref="EndFrame(uint)"/>.
+    /// Render the current objects frame.
     /// </summary>
-    public virtual void PreRender() { }
+    /// <remarks>
+    /// Called between <see cref="BeginFrame(uint, bool)"/> and <see cref="EndFrame(uint)"/>.
+    /// </remarks>
+    public virtual void Render() { }
 
     /// <summary>
     /// Called when a message arrives with a message routing ID matching

@@ -39,16 +39,9 @@ namespace Tes.Handlers
     public ShapeHandler(CategoryCheckDelegate categoryCheck)
       : base(categoryCheck)
     {
-      _transientCache = new TransientShapeCache();
+      _transientCache = new ShapeCache();
       _shapeCache = new ShapeCache();
-      _root = new GameObject();
     }
-
-    /// <summary>
-    /// Defines the scene root for all objects of this shape type.
-    /// </summary>
-    /// <value>The root for objects of this shape.</value>
-    public GameObject Root { get { return _root; } }
 
     /// <summary>
     /// A cache of the material library.
@@ -62,12 +55,12 @@ namespace Tes.Handlers
     /// Defines the mesh object to use for solid instances of this shape.
     /// </summary>
     /// <returns>The solid mesh for this shape.</returns>
-    public abstract Mesh SolidMesh { get; }
+    public Mesh SolidMesh { get; protected set; }
     /// <summary>
     /// Defines the mesh object to use for wire frame instances of this shape.
     /// </summary>
     /// <returns>The wire frame mesh for this shape.</returns>
-    public abstract Mesh WireframeMesh { get; }
+    public Mesh WireframeMesh { get; protected set; }
 
     /// <summary>
     /// Initialise the shape handler by initialising the shape scene root and
@@ -79,7 +72,6 @@ namespace Tes.Handlers
     public override void Initialise(GameObject root, GameObject serverRoot, MaterialLibrary materials)
     {
       Materials = materials;
-      _root.transform.SetParent(serverRoot.transform, false);
     }
 
     /// <summary>
@@ -87,7 +79,7 @@ namespace Tes.Handlers
     /// </summary>
     public override void Reset()
     {
-      _transientCache.Reset(true);
+      _transientCache.Reset();
       _shapeCache.Reset();
     }
 
@@ -101,6 +93,57 @@ namespace Tes.Handlers
       if (!maintainTransient)
       {
         _transientCache.Reset();
+      }
+    }
+
+    /// <summary>
+    /// Render all the current objects.
+    /// </summary>
+    public override void Render(ulong categoryMask, Matrix4x4 primaryCameraTransform)
+    {
+      // TODO: (KS) Handle categories beyond the 64 which fit into categoryMask.
+      // TODO: (KS) Find a better way to split solid, transparent and wireframe rendering. Also need to respect the
+      // TwoSided flag.
+      // TODO: (KS) Restore colour/tint support from ObjectAttributes to rendering.
+      int itemCount = 0;
+      _solidTransforms.Clear();
+      _transparentTransforms.Clear();
+      _wireframeTransforms.Clear();
+       _transientCache.CollectTransforms(_solidTransforms, _transparentTransforms, _wireframeTransforms, categoryMask);
+      if (_solidTransforms.Count > 0)
+      {
+        Graphics.DrawMeshInstanced(SolidMesh, 0, Materials[MaterialLibrary.VertexColourUnlit],
+                                   _solidTransforms, itemCount);
+      }
+      if (_transparentTransforms.Count > 0)
+      {
+        Graphics.DrawMeshInstanced(SolidMesh, 0, Materials[MaterialLibrary.VertexColourTransparent],
+                                   _transparentTransforms, itemCount);
+      }
+      if (_wireframeTransforms.Count > 0)
+      {
+        Graphics.DrawMeshInstanced(WireframeMesh, 0, Materials[MaterialLibrary.WireframeTriangles],
+                                   _wireframeTransforms, itemCount);
+      }
+
+      _solidTransforms.Clear();
+      _transparentTransforms.Clear();
+      _wireframeTransforms.Clear();
+       _shapeCache.CollectTransforms(_solidTransforms, _transparentTransforms, _wireframeTransforms, categoryMask);
+      if (_solidTransforms.Count > 0)
+      {
+        Graphics.DrawMeshInstanced(SolidMesh, 0, Materials[MaterialLibrary.VertexColourUnlit],
+                                   _solidTransforms, itemCount);
+      }
+      if (_transparentTransforms.Count > 0)
+      {
+        Graphics.DrawMeshInstanced(SolidMesh, 0, Materials[MaterialLibrary.VertexColourTransparent],
+                                   _transparentTransforms, itemCount);
+      }
+      if (_wireframeTransforms.Count > 0)
+      {
+        Graphics.DrawMeshInstanced(WireframeMesh, 0, Materials[MaterialLibrary.WireframeTriangles],
+                                   _wireframeTransforms, itemCount);
       }
     }
 
@@ -127,13 +170,13 @@ namespace Tes.Handlers
     public override Error Serialise(BinaryWriter writer, ref SerialiseInfo info)
     {
       info.TransientCount = info.PersistentCount = 0u;
-      Error err = SerialiseObjects(writer, _transientCache.Objects.GetEnumerator(), ref info.TransientCount);
+      Error err = SerialiseObjects(writer, _transientCache, ref info.TransientCount);
       if (err.Failed)
       {
         return err;
       }
 
-      err = SerialiseObjects(writer, _shapeCache.Objects.GetEnumerator(), ref info.PersistentCount);
+      err = SerialiseObjects(writer, _shapeCache, ref info.PersistentCount);
       return err;
     }
 
@@ -147,52 +190,42 @@ namespace Tes.Handlers
     /// </remarks>
     public override void OnCategoryChange(ushort categoryId, bool active)
     {
-      foreach (GameObject obj in _transientCache.Objects)
-      {
-        ShapeComponent shape = obj.GetComponent<ShapeComponent>();
-        if (shape != null && shape.Category == categoryId)
-        {
-          obj.SetActive(active);
-        }
-      }
+      // foreach (GameObject obj in _transientCache.Objects)
+      // {
+      //   ShapeComponent shape = obj.GetComponent<ShapeComponent>();
+      //   if (shape != null && shape.Category == categoryId)
+      //   {
+      //     obj.SetActive(active);
+      //   }
+      // }
 
-      foreach (GameObject obj in _shapeCache.Objects)
-      {
-        ShapeComponent shape = obj.GetComponent<ShapeComponent>();
-        if (shape != null && shape.Category == categoryId)
-        {
-          obj.SetActive(active);
-        }
-      }
+      // foreach (GameObject obj in _shapeCache.Objects)
+      // {
+      //   ShapeComponent shape = obj.GetComponent<ShapeComponent>();
+      //   if (shape != null && shape.Category == categoryId)
+      //   {
+      //     obj.SetActive(active);
+      //   }
+      // }
     }
 
     /// <summary>
     /// Create a dummy shape object used to generate serialisation messages.
     /// </summary>
-    /// <param name="shapeComponent">The component to create a shape for.</param>
+    /// <param name="cache">The cache in which the shape data reside</param>
+    /// <param name="shapeIndex">The index of the shape in <paramref name="cache"/>.
+    /// <param name="shape">Creation message for the shape.</param>
     /// <returns>A shape instance suitable for configuring to generate serialisation messages.</returns>
     /// <remarks>
     /// Base classes should implement this method to return an instance of the appropriate
     /// <see cref="Shapes.Shape"/> derivation. For example, the <see cref="Shape3D.SphereHandler"/>
     /// should return a <see cref="Shapes.Sphere"/> object. See
-    /// <see cref="SerialiseObjects(BinaryWriter, IEnumerator&lt;GameObject&gt;, ref uint)"/> for further
+    /// <see cref="SerialiseObjects(BinaryWriter, ShapeCache, ref uint)"/> for further
     /// details.
     /// </remarks>
-    protected abstract Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent);
-
-    /// <summary>
-    /// A helper functio to configure the TES <paramref name="shape"/> to match the Unity object <paramref name="shapeComponent"/>.
-    /// </summary>
-    /// <param name="shape">The shape object to configure to match the Unity representation.</param>
-    /// <param name="shapeComponent">The Unity shape representation.</param>
-    protected void ConfigureShape(Shapes.Shape shape, ShapeComponent shapeComponent)
+    protected virtual Shapes.Shape CreateSerialisationShape(ShapeCache cache, int shapeIndex, CreateMessage shape)
     {
-      ObjectAttributes attr = new ObjectAttributes();
-      shape.ID = shapeComponent.ObjectID;
-      shape.Category = shapeComponent.Category;
-      shape.Flags = shapeComponent.ObjectFlags;
-      EncodeAttributes(ref attr, shapeComponent.gameObject, shapeComponent);
-      shape.SetAttributes(attr);
+      return new Shapes.Shape(shape);
     }
 
     /// <summary>
@@ -205,7 +238,7 @@ namespace Tes.Handlers
     /// <remarks>
     /// Default serialisation uses the following logic on each object:
     /// <list type="bullet">
-    /// <item>Call <see cref="CreateSerialisationShape(ShapeComponent)"/> to
+    /// <item>Call <see cref="CreateSerialisationShape(ShapeCache, int, CreateMessage)"/> to
     ///       create a temporary shape to match the unity object</item>
     /// <item>Call <see cref="Shapes.Shape.WriteCreate(PacketBuffer)"/> to generate the creation message
     ///       and serialise the packet.</item>
@@ -216,7 +249,7 @@ namespace Tes.Handlers
     /// Using the <see cref="Shapes.Shape"/> classes ensures serialisation is consistent with the server code
     /// and reduces the code maintenance to one code path.
     /// </remarks>
-    protected virtual Error SerialiseObjects(BinaryWriter writer, IEnumerator<GameObject> objects, ref uint processedCount)
+    protected virtual Error SerialiseObjects(BinaryWriter writer, ShapeCache cache, ref uint processedCount)
     {
       // Serialise transient objects.
       PacketBuffer packet = new PacketBuffer();
@@ -228,11 +261,11 @@ namespace Tes.Handlers
       Debug.Assert(tempShape != null && tempShape.RoutingID == RoutingID);
 
       processedCount = 0;
-      while (objects.MoveNext())
+      foreach (int shapeIndex in cache.ShapeIndices)
       {
         ++processedCount;
-        GameObject obj = objects.Current;
-        tempShape = CreateSerialisationShape(obj.GetComponent<ShapeComponent>());
+        CreateMessage shapeData = cache.GetShapeDataByIndex<CreateMessage>(shapeIndex);
+        tempShape = CreateSerialisationShape(cache, shapeIndex, shapeData);
         if (tempShape != null)
         {
           tempShape.WriteCreate(packet);
@@ -256,7 +289,7 @@ namespace Tes.Handlers
             }
 
             // Post serialisation extensions.
-            err = PostSerialiseCreateObject(packet, writer, obj.GetComponent<ShapeComponent>());
+            err = PostSerialiseCreateObject(packet, writer, cache, shapeIndex);
             if (err.Failed)
             {
               return err;
@@ -278,9 +311,11 @@ namespace Tes.Handlers
     /// </summary>
     /// <param name="packet"></param>
     /// <param name="writer"></param>
-    /// <param name="shape"></param>
+    /// <param name="cache"></param>
+    /// <param name="shapeIndex"></param>
     /// <returns></returns>
-    protected virtual Error PostSerialiseCreateObject(PacketBuffer packet, BinaryWriter writer, ShapeComponent shape)
+    protected virtual Error PostSerialiseCreateObject(PacketBuffer packet, BinaryWriter writer, ShapeCache cache,
+                                                      int shapeIndex)
     {
       return new Error();
     }
@@ -383,6 +418,7 @@ namespace Tes.Handlers
       // Don't ignore destroy messages. Ever.
       if (messageID != (ushort)ObjectMessageID.Destroy)
       {
+        // Filter transient messages if required.
         if (objectID == 0 && (Mode & ModeFlags.IgnoreTransient) != 0)
         {
           return false;
@@ -393,70 +429,16 @@ namespace Tes.Handlers
     }
 
     /// <summary>
-    /// Instantiates a transient object from the <see cref="TransientShapeCache"/>
-    /// </summary>
-    /// <returns>The instantiated object or null on failure.</returns>
-    protected virtual GameObject CreateTransient()
-    {
-      GameObject obj = _transientCache.Fetch();
-      if (!obj)
-      {
-        obj = CreateObject();
-        obj.name = string.Format("{0}{1:D3}", Name, _transientCache.Count);
-        _transientCache.Add(obj);
-      }
-      else
-      {
-        obj.SetActive(true);
-      }
-      return obj;
-    }
-
-    /// <summary>
     /// Instantiates a persistent object from the <see cref="ShapeCache"/>.
     /// The new object is assigned the given <paramref name="id"/>
     /// </summary>
     /// <param name="id">The ID of the new object. Must non be zero (for persistent objects).</param>
-    /// <returns>The instantiated object or null on failure.</returns>
-    protected virtual GameObject CreateObject(uint id)
+    /// <returns>The instantiated object or -1 on failure.</returns>
+    protected virtual int CreateShape(ShapeCache cache, CreateMessage shape)
     {
-      GameObject obj = CreateObject();
-      obj.name = string.Format("{0}{1:D3}", Name, id);
-      ShapeComponent shape = obj.GetComponent<ShapeComponent>();
-      shape.ObjectID = id;
-      if (_shapeCache.Add(id, obj))
-      {
-        return obj;
-      }
-      // Creation failed.
-      GameObject.Destroy(obj);
-      return null;
-    }
-
-    /// <summary>
-    /// Instantiate a persistent or transient object for this shape.
-    /// </summary>
-    /// <returns>An object suitable for use by this shape handler.</returns>
-    /// <remarks>
-    /// Objects created by this method must implement the <see cref="ShapeComponent"/>
-    /// component in order to be correctly tracked by the shape cache.
-    /// The default implementation ensures the following components are present:
-    /// <list type="bullet">
-    /// <item><see cref="MeshFilter"/></item>
-    /// <item><see cref="MeshRenderer"/></item>
-    /// <item><see cref="ShapeComponent"/></item>
-    /// </list>
-    ///
-    /// This method is used to create both and persistent objects. The object is
-    /// then added to the appropriate cache.
-    /// </remarks>
-    protected virtual GameObject CreateObject()
-    {
-      GameObject obj = new GameObject();
-      /*MeshFilter meshFilter = */obj.AddComponent<MeshFilter>();
-      obj.AddComponent<MeshRenderer>();
-      obj.AddComponent<ShapeComponent>();
-      return obj;
+      Matrix4x4 transform = Matrix4x4.identity;
+      DecodeTransform(shape.Attributes, out transform);
+      return cache.CreateShape(shape, transform);
     }
 
     /// <summary>
@@ -464,8 +446,6 @@ namespace Tes.Handlers
     /// </summary>
     /// <param name="attributes">The message attributes to decode.</param>
     /// <param name="transform">The transform object to decode into.</param>
-    /// <param name="flags">The flags associated with the object message. The method considers those related to updating
-    /// specific parts of the object transformation.</param>
     /// <remarks>
     /// The default implementations makes the following assumptions about <paramref name="attributes"/>:
     /// <list type="bullet">
@@ -474,66 +454,22 @@ namespace Tes.Handlers
     /// <item>The ScaleX, ScaleY, ScaleZ define a scaling in each axis.</item>
     /// </list>
     ///
-    /// This behaviour must be overridden to interpret the attributes differently. For example,
+    /// This behaviour may be overridden to interpret the attributes differently. For example,
     /// the scale members for a cylinder may indicate length and radius, with a redundant Z component.
-    ///
-    /// The <paramref name="flags"/> parameter is used to consider the following <see cref="ObjectFlag"/> members:
-    /// <list type="bullet">
-    /// <item><see cref="UpdateFlag.UpdateMode"/> to indentify that only some transform elements are present.</item>
-    /// <item><see cref="UpdateFlag.Position"/></item>
-    /// <item><see cref="UpdateFlag.Rotation"/></item>
-    /// <item><see cref="UpdateFlag.Scale"/></item>
-    /// </list>
     /// </remarks>
-    protected virtual void DecodeTransform(ObjectAttributes attributes, Transform transform, ushort flags = (ushort)ObjectFlag.None)
+    protected virtual void DecodeTransform(ObjectAttributes attributes, out Matrix4x4 transform)
     {
-      if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Position) != 0)
-      {
-        transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
-      }
-      if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Rotation) != 0)
-      {
-        transform.localRotation = new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW);
-      }
-      if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Scale) != 0)
-      {
-        transform.localScale = new Vector3(attributes.ScaleX, attributes.ScaleY, attributes.ScaleZ);
-      }
+      transform = Matrix4x4.identity;
+
+      Vector3 scale = new Vector3(attributes.ScaleX, attributes.ScaleY, attributes.ScaleZ);
+      transform.SetColumn(3, new Vector4(attributes.X, attributes.Y, attributes.Z, 1.0f));
+      var pureRotation = Matrix4x4.Rotate(new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW));
+      transform.SetColumn(0, pureRotation.GetColumn(0) * scale.x);
+      transform.SetColumn(1, pureRotation.GetColumn(1) * scale.y);
+      transform.SetColumn(2, pureRotation.GetColumn(2) * scale.z);
     }
 
-    /// <summary>
-    /// Called to extract the current object attributes from an existing object.
-    /// </summary>
-    /// <param name="attr">Modified to reflect the current state of <paramref name="obj"/></param>
-    /// <param name="obj">The object to encode attributes for.</param>
-    /// <param name="comp">The <see cref="ShapeComponent"/> of <paramref name="obj"/></param>
-    /// <remarks>
-    /// This extracts colour and performs the inverse operation of <see cref="DecodeTransform"/>
-    /// This method must be overridden whenever <see cref="DecodeTransform"/> is overridden.
-    /// </remarks>
-    protected virtual void EncodeAttributes(ref ObjectAttributes attr, GameObject obj, ShapeComponent comp)
-    {
-      Transform transform = obj.transform;
-      attr.X = transform.localPosition.x;
-      attr.Y = transform.localPosition.y;
-      attr.Z = transform.localPosition.z;
-      attr.RotationX = transform.localRotation.x;
-      attr.RotationY = transform.localRotation.y;
-      attr.RotationZ = transform.localRotation.z;
-      attr.RotationW = transform.localRotation.w;
-      attr.ScaleX = transform.localScale.x;
-      attr.ScaleY = transform.localScale.y;
-      attr.ScaleZ = transform.localScale.z;
-      if (comp != null)
-      {
-        attr.Colour = ShapeComponent.ConvertColour(comp.Colour);
-      }
-      else
-      {
-        attr.Colour = 0xffffffu;
-      }
-    }
-
+    #if OLD
     /// <summary>
     /// Lookup a material for the given <paramref name="shape"/> created by this handler.
     /// </summary>
@@ -697,6 +633,7 @@ namespace Tes.Handlers
         }
       }
     }
+    #endif // OLD
 
     /// <summary>
     /// Message handler for <see cref="CreateMessage"/>
@@ -712,50 +649,33 @@ namespace Tes.Handlers
     /// </remarks>
     protected virtual Error HandleMessage(CreateMessage msg, PacketBuffer packet, BinaryReader reader)
     {
-      GameObject obj = null;
-      if (msg.ObjectID == 0)
+      int shapeIndex = -1;
+      ShapeCache cache = (msg.ObjectID == 0) ? _transientCache : _shapeCache;
+
+      try
       {
-        // Transient object.
-        obj = CreateTransient();
+        shapeIndex = CreateShape(cache, msg);
       }
-      else
+      catch (Tes.Exception.DuplicateIDException )
       {
-        obj = CreateObject(msg.ObjectID);
-        if (!obj)
-        {
-          // Object already exists.
-          return new Error(ErrorCode.DuplicateShape, msg.ObjectID);
-        }
+        return new Error(ErrorCode.DuplicateShape, msg.ObjectID);
       }
 
-      ShapeComponent shapeComp = obj.GetComponent<ShapeComponent>();
-      shapeComp.Category = msg.Category;
-      shapeComp.ObjectFlags = msg.Flags;
-      shapeComp.Colour = ShapeComponent.ConvertColour(msg.Attributes.Colour);
-
-      obj.transform.SetParent(_root.transform, false);
-      DecodeTransform(msg.Attributes, obj.transform);
-
-      InitialiseVisual(shapeComp, ShapeComponent.ConvertColour(msg.Attributes.Colour));
-
-      return PostHandleMessage(obj, msg, packet, reader);
+      return PostHandleMessage(msg, packet, reader, cache, shapeIndex);
     }
 
     /// <summary>
     /// Called at end of <see cref="HandleMessage(CreateMessage, PacketBuffer, BinaryReader)"/>, only on success.
     /// </summary>
-    /// <param name="obj">The newly created message.</param>
     /// <param name="msg">The incoming message.</param>
     /// <param name="packet">The buffer containing the message.</param>
     /// <param name="reader">The reader from which the message came.</param>
+    /// <param name="cache">Cache from which the shape was created.</param>
+    /// <param name="shapeIndex">Index of the shape in <paramref name="cache"/>.</param>
     /// <returns>An error code on failure.</returns>
-    protected virtual Error PostHandleMessage(GameObject obj, CreateMessage msg, PacketBuffer packet, BinaryReader reader)
+    protected virtual Error PostHandleMessage(CreateMessage msg, PacketBuffer packet, BinaryReader reader,
+                                              ShapeCache cache, int shapeIndex)
     {
-      ShapeComponent shape = obj.GetComponent<ShapeComponent>();
-      if (shape != null && !CategoryCheck(shape.Category))
-      {
-        obj.SetActive(false);
-      }
       return new Error();
     }
 
@@ -772,38 +692,78 @@ namespace Tes.Handlers
     /// </remarks>
     protected virtual Error HandleMessage(UpdateMessage msg, PacketBuffer packet, BinaryReader reader)
     {
-      GameObject obj = FindObject(msg.ObjectID);
-      if (obj == null)
+      ushort flags = msg.Flags;
+
+      if (msg.ObjectID == 0)
       {
+        // Cannot update transient objects.
         return new Error(ErrorCode.InvalidObjectID, msg.ObjectID);
       }
 
-      ushort flags = msg.Flags;
-      DecodeTransform(msg.Attributes, obj.transform, flags);
+      CreateMessage shape = _shapeCache.GetShapeDataByIndex<CreateMessage>(shapeIndex);
+      int shapeIndex = _shapeCache.GetShapeIndex(msg.ObjectID);
+      bool updateTransform = false;
 
-      if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Colour) != 0)
+      if ((flags & (ushort)UpdateFlag.UpdateMode) == 0)
       {
-        ShapeComponent shapeComp = obj.GetComponent<ShapeComponent>();
-        if (shapeComp != null)
+        shape.Attributes = msg.Attributes;
+        updateTransform = true;
+      }
+      else
         {
-          shapeComp.Colour = ShapeComponent.ConvertColour(msg.Attributes.Colour);
+        if ((flags & (ushort)UpdateFlag.Position) != 0)
+        {
+          shape.Attributes.X = msg.Attributes.X;
+          shape.Attributes.Y = msg.Attributes.Y;
+          shape.Attributes.Z = msg.Attributes.Z;
+          updateTransform = true;
         }
 
-        SetColour(obj, ShapeComponent.ConvertColour(msg.Attributes.Colour));
+        if ((flags & (ushort)UpdateFlag.Rotation) != 0)
+        {
+          shape.Attributes.RotationX = msg.Attributes.RotationX;
+          shape.Attributes.RotationY = msg.Attributes.RotationY;
+          shape.Attributes.RotationZ = msg.Attributes.RotationZ;
+          shape.Attributes.RotationW = msg.Attributes.RotationW;
+          updateTransform = true;
+        }
+
+        if ((flags & (ushort)UpdateFlag.Scale) != 0)
+        {
+          shape.Attributes.ScaleX = msg.Attributes.ScaleX;
+          shape.Attributes.ScaleY = msg.Attributes.ScaleY;
+          shape.Attributes.ScaleZ = msg.Attributes.ScaleZ;
+          updateTransform = true;
+        }
+
+        if ((flags & (ushort)UpdateFlag.Colour) != 0)
+        {
+          shape.Attributes.Colour = msg.Attributes.Colour;
+        }
       }
 
-      return new Error();
+      _shapeCache.SetShapeDataByIndex(shapeIndex, shape);
+
+      if (updateTransform)
+      {
+        Matrix4x4 transform = Matrix4x4.identity;
+        DecodeTransform(shape.Attributes, out transform);
+        _shapeCache.SetShapeDataByIndex(shapeIndex, transform);
+      }
+
+      return PostHandleMessage(msg, packet, reader, _shapeCache, shapeIndex);
     }
 
     /// <summary>
     /// Called at end of <see cref="HandleMessage(UpdateMessage, PacketBuffer, BinaryReader)"/>, only on success.
     /// </summary>
-    /// <param name="obj">The object being updated.</param>
+    /// <param name="shapeIndex">Index of the shape in the _shapeCache which is being updated.</param>
     /// <param name="msg">The incoming message.</param>
     /// <param name="packet">The buffer containing the message.</param>
     /// <param name="reader">The reader from which the message came.</param>
     /// <returns>An error code on failure.</returns>
-    protected virtual Error PostHandleMessage(GameObject obj, UpdateMessage msg, PacketBuffer packet, BinaryReader reader)
+    protected virtual Error PostHandleMessage(UpdateMessage msg, PacketBuffer packet, BinaryReader reader,
+                                              ShapeCache cache, int shapeIndex)
     {
       return new Error();
     }
@@ -820,28 +780,21 @@ namespace Tes.Handlers
     /// </remarks>
     protected virtual Error HandleMessage(DestroyMessage msg, PacketBuffer packet, BinaryReader reader)
     {
-      GameObject obj = RemoveObject(msg.ObjectID);
-      if (obj == null)
-      {
-        // Does not exist. Not an error as we allow delete messages where the object has yet to be created.
-        return new Error();
-      }
-
-      Error err = PostHandleMessage(obj, msg, packet, reader);
-      UnityEngine.Object.Destroy(obj);
-      return err;
+      // Do not check for existence. Not an error as we allow delete messages where the object has yet to be created.
+      int shapeIndex = DestroyObject(msg.ObjectID);
+      return PostHandleMessage(msg, packet, reader, _shapeCache, shapeIndex);
     }
 
     /// <summary>
     /// Called at end of <see cref="HandleMessage(DestroyMessage, PacketBuffer, BinaryReader)"/>
     /// just prior to destroying the object. The object will still be destroyed.
     /// </summary>
-    /// <param name="obj">The object being destroyed.</param>
     /// <param name="msg">The incoming message.</param>
     /// <param name="packet">The buffer containing the message.</param>
     /// <param name="reader">The reader from which the message came.</param>
     /// <returns>An error code on failure.</returns>
-    protected virtual Error PostHandleMessage(GameObject obj, DestroyMessage msg, PacketBuffer packet, BinaryReader reader)
+    protected virtual Error PostHandleMessage(DestroyMessage msg, PacketBuffer packet, BinaryReader reader,
+                                              ShapeCache cache, int shapeIndex)
     {
       return new Error();
     }
@@ -863,37 +816,26 @@ namespace Tes.Handlers
     }
 
     /// <summary>
-    /// Find the persistent object matching the given <paramref name="id"/>
-    /// </summary>
-    /// <param name="id">ID of the object to find.</param>
-    /// <returns>A matching object or null on failure.</returns>
-    protected GameObject FindObject(uint id)
-    {
-      return _shapeCache.Fetch(id);
-    }
-
-    /// <summary>
     /// Removes the persistent object matching <paramref name="id"/> from the shape cache
     /// without destroying it.
     /// </summary>
     /// <param name="id">ID of the object to find.</param>
     /// <returns>A matching object or null on failure.</returns>
-    protected GameObject RemoveObject(uint id)
+    protected int DestroyObject(uint id)
     {
-      return _shapeCache.Remove(id);
+      return _shapeCache.DestroyShape(id);
     }
 
     /// <summary>
-    /// Scene root object for objects of this shape.
-    /// </summary>
-    private GameObject _root = null;
-    /// <summary>
     /// Cache for transient objects.
     /// </summary>
-    protected TransientShapeCache _transientCache = null;
+    protected ShapeCache _transientCache = null;
     /// <summary>
     /// Cache for persistent objects.
     /// </summary>
     protected ShapeCache _shapeCache = null;
+    protected List<Matrix4x4> _solidTransforms = new List<Matrix4x4>();
+    protected List<Matrix4x4> _transparentTransforms = new List<Matrix4x4>();
+    protected List<Matrix4x4> _wireframeTransforms = new List<Matrix4x4>();
   }
 }

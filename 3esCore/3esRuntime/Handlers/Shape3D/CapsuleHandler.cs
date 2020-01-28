@@ -17,10 +17,9 @@ namespace Tes.Handlers.Shape3D
     {
       _solidMeshes = Tessellate.Capsule.Solid();
       _wireframeMeshes = Tessellate.Capsule.Wireframe();
-      if (Root != null)
-      {
-        Root.name = Name;
-      }
+      // The following two lines aren't really needed, but ensure we don't have null mesh properties.
+      SolidMesh = _solidMeshes[0];
+      WireframeMesh = _wireframeMeshes[0];
     }
 
     /// <summary>
@@ -33,157 +32,118 @@ namespace Tes.Handlers.Shape3D
     /// </summary>
     public override ushort RoutingID { get { return (ushort)ShapeID.Capsule; } }
 
-    /// <summary>
-    /// Solid mesh representation.
-    /// </summary>
-    public override Mesh SolidMesh { get { return _solidMeshes[Tes.Tessellate.Capsule.CylinderIndex]; } }
-    /// <summary>
-    /// Wireframe mesh representation.
-    /// </summary>
-    public override Mesh WireframeMesh { get { return _wireframeMeshes[Tes.Tessellate.Capsule.CylinderIndex]; } }
-
-    /// <summary>
-    /// Override to create an object per capsule part: top, bottom and cylinder.
-    /// </summary>
-    /// <returns>The capsule object.</returns>
-    protected override GameObject CreateObject()
+    public override void Render(ulong categoryMask, Matrix4x4 primaryCameraTransform)
     {
-      GameObject obj = new GameObject();
-      obj.AddComponent<ShapeComponent>();
+      // TODO: (KS) Reduce duplication with base ShapeHandler.Render(ulong) method.
+      // TODO: (KS) Address the same issues as ShapeHandler.Render(ulong).
+      // TODO: (KS) the scaling applied to
+      int itemCount = 0;
+      _solidTransforms.Clear();
+      _transparentTransforms.Clear();
+      _wireframeTransforms.Clear();
+      _transientCache.CollectTransforms(_solidTransforms, _transparentTransforms, _wireframeTransforms, categoryMask);
+      if (_solidTransforms.Count > 0)
+      {
+        Render(_solidMeshes, Materials[MaterialLibrary.VertexColourUnlit], _solidTransforms, itemCount);
+      }
+      if (_transparentTransforms.Count > 0)
+      {
+        Render(_solidMeshes, Materials[MaterialLibrary.VertexColourTransparent], _transparentTransforms, itemCount);
+      }
+      if (_wireframeTransforms.Count > 0)
+      {
+        Render(_wireframeMeshes, Materials[MaterialLibrary.WireframeTriangles], _instanceTransforms, itemCount);
+      }
 
-      // Top must be first to line up with mesh indexing.
-      GameObject part = new GameObject();
-      part.name = "top";
-      part.AddComponent<MeshFilter>();
-      part.AddComponent<MeshRenderer>();
-      part.transform.SetParent(obj.transform, false);
-
-      // Bottom must be second to line up with mesh indexing.
-      part = new GameObject();
-      part.name = "bottom";
-      part.AddComponent<MeshFilter>();
-      part.AddComponent<MeshRenderer>();
-      part.transform.SetParent(obj.transform, false);
-
-      // Walls must be third to line up with mesh indexing.
-      part = new GameObject();
-      part.name = "cylinder";
-      part.AddComponent<MeshFilter>();
-      part.AddComponent<MeshRenderer>();
-      part.transform.SetParent(obj.transform, false);
-      return obj;
+      _solidTransforms.Clear();
+      _transparentTransforms.Clear();
+      _wireframeTransforms.Clear();
+       _shapeCache.CollectTransforms(_solidTransforms, _transparentTransforms, _wireframeTransforms, categoryMask);
+      if (_solidTransforms.Count > 0)
+      {
+        Render(_solidMeshes, Materials[MaterialLibrary.VertexColourUnlit], _solidTransforms, itemCount);
+      }
+      if (_transparentTransforms.Count > 0)
+      {
+        Render(_solidMeshes, Materials[MaterialLibrary.VertexColourTransparent], _transparentTransforms, itemCount);
+      }
+      if (_wireframeTransforms.Count > 0)
+      {
+        Render(_wireframeMeshes, Materials[MaterialLibrary.WireframeTriangles], _instanceTransforms, itemCount);
+      }
     }
 
-    /// <summary>
-    /// Initialise the visual components (e.g., meshes) for <paramref name="obj"/>.
-    /// </summary>
-    /// <param name="obj">The object to initialise visuals for.</param>
-    /// <param name="colour">Primary rendering colour.</param>
-    /// <remarks>
-    /// Requires special handling as the capsule is made up of several components.
-    /// </remarks>
-    protected override void InitialiseVisual(ShapeComponent obj, Color colour)
+    protected void Render(Mesh[] meshes, Matrial material, List<Matrix4x4> transforms, int itemCount)
     {
-      Mesh[] meshes = (!obj.Wireframe) ? _solidMeshes : _wireframeMeshes;
-      InitialiseMesh(obj, meshes, colour);
+      // Note: scaling must change while rendering. The cylinder must be scaled by radius (XY) and length (Z) while the
+      // sphere end caps are only scale by radius applied as a uniform scale.
+      // Axes XY will already share the radius scale so we only update Z scale.
+
+      // Render with full scaling for the cylinder part.
+      Graphics.DrawMeshInstanced(meshes[Tessellate.Capsule.CylinderIndex], 0, material, transforms, itemCount);
+
+      _modifiedTransforms.Clear();
+      if (_modifiedTransforms.Capacity < transforms.Capacity)
+      {
+        _modifiedTransforms.Capacity = transforms.Capacity();
+      }
+
+      // Convert to uniform scaling and modify the position for the bottom cap.
+      for (int i = 0; i < itemCount; ++i)
+      {
+        Matrix4x4 transform = transforms[i];
+        float radius = transform.GetColumn(0).magnitude;
+        Vector4 zAxis = transform.GetColumn(2);
+        float length = zAxis.magnitude;
+        zAxis *= 1.0f / (length != 0 ? length : 1.0f);
+        transform.SetColumn(2, zAxis * radius);
+        // Adjust position.
+        Vector4 tAxis = transform.GetColumn(3);
+        tAxis += -0.5f * length * zAxis;
+        transform.SetColumn(3, tAxis);
+        _modifiedTransforms.Add(transform);
+      }
+
+      Graphics.DrawMeshInstanced(meshes[Tessellate.Capsule.BottomIndex], 0, material, _modifiedTransforms, itemCount);
+
+      // Convert to uniform scaling and modify the position for the top cap.
+      for (int i = 0; i < itemCount; ++i)
+      {
+        // Modify the bottom cap transform.
+        Matrix4x4 transform = _modifiedTransforms[i];
+        // Read the original zAxis for direction and length.
+        Vector4 zAxis = transforms[i].GetColumn(2);
+        // Adjust position.
+        Vector4 tAxis = transform.GetColumn(3);
+        tAxis += zAxis;
+        transform.SetColumn(3, tAxis);
+        _modifiedTransforms[i] = transform;
+      }
+
+      Graphics.DrawMeshInstanced(meshes[Tessellate.Capsule.TopIndex], 0, material, _modifiedTransforms, itemCount);
     }
 
     /// <summary>
     /// Override to decode ScaleX as radius and ScaleZ as length.
     /// </summary>
-    protected override void DecodeTransform(ObjectAttributes attributes, Transform transform, ushort flags)
+    protected override void DecodeTransform(ObjectAttributes attributes, out Matrix4x4 transform)
     {
       float radius = attributes.ScaleX;
       float length = attributes.ScaleZ;
       float cylinderLength = Mathf.Max(0.0f, length - 2.0f * radius);
-      if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Position) != 0)
-      {
-        transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
-      }
-      if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Rotation) != 0)
-      {
-        transform.localRotation = new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW);
-      }
 
-      // Apply radius and length to sub components. Also move sphere caps to match the length.
-      Transform child;
-      child = transform.GetChild(Tes.Tessellate.Capsule.TopIndex);
-      if (child != null)
-      {
-        if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Position) != 0)
-        {
-          child.localPosition = cylinderLength * 0.5f * Tessellate.Capsule.PrimaryAxis;
-        }
-        if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Scale) != 0)
-        {
-          child.localScale = new Vector3(radius, radius, radius);
-        }
-      }
-      child = transform.GetChild(Tes.Tessellate.Capsule.BottomIndex);
-      if (child != null)
-      {
-        if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Position) != 0)
-        {
-          child.localPosition = cylinderLength * -0.5f * Tessellate.Capsule.PrimaryAxis;
-        }
-        if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Scale) != 0)
-        {
-          child.localScale = new Vector3(radius, radius, radius);
-        }
-      }
-      child = transform.GetChild(Tes.Tessellate.Capsule.CylinderIndex);
-      if (child != null)
-      {
-        if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Scale) != 0)
-        {
-          child.localScale = new Vector3(radius, radius, cylinderLength);
-        }
-      }
-    }
+      transform = Matrix4x4.identity;
 
-    /// <summary>
-    /// Overridden to handle component pieces.
-    /// </summary>
-    protected override void EncodeAttributes(ref ObjectAttributes attr, GameObject obj, ShapeComponent comp)
-    {
-      Transform transform = obj.transform;
-      attr.X = transform.localPosition.x;
-      attr.Y = transform.localPosition.y;
-      attr.Z = transform.localPosition.z;
-      attr.RotationX = transform.localRotation.x;
-      attr.RotationY = transform.localRotation.y;
-      attr.RotationZ = transform.localRotation.z;
-      attr.RotationW = transform.localRotation.w;
-      Transform child;
-      child = transform.GetChild(Tes.Tessellate.Capsule.CylinderIndex);
-      if (child)
-      {
-        attr.ScaleX = attr.ScaleY = child.localScale.x;
-        attr.ScaleZ = child.localScale.y;
-      }
-      if (comp != null)
-      {
-        attr.Colour = ShapeComponent.ConvertColour(comp.Colour);
-      }
-      else
-      {
-        attr.Colour = 0xffffffu;
-      }
-    }
-
-    /// <summary>
-    /// Creates an capsule shape for serialisation.
-    /// </summary>
-    /// <param name="shapeComponent">The component to create a shape for.</param>
-    /// <returns>A shape instance suitable for configuring to generate serialisation messages.</returns>
-    protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
-    {
-      Shapes.Shape shape = new Shapes.Capsule();
-      ConfigureShape(shape, shapeComponent);
-      return shape;
+      Vector3 scale = new Vector3(radius, radius, cylinderLength);
+      transform.SetColumn(3, new Vector4(attributes.X, attributes.Y, attributes.Z, 1.0f));
+      var pureRotation = Matrix4x4.Rotate(new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW));
+      transform.SetColumn(0, pureRotation.GetColumn(0) * radius);
+      transform.SetColumn(1, pureRotation.GetColumn(1) * radius);
+      transform.SetColumn(2, pureRotation.GetColumn(2) * cylinderLength);
     }
 
     private Mesh[] _solidMeshes;
     private Mesh[] _wireframeMeshes;
+    private List<Matrix4x4> _modifiedTransforms = new List<Matrix4x4>();
   }
 }

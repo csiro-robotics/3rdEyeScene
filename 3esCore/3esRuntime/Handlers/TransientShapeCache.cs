@@ -6,6 +6,12 @@ using UnityEngine;
 
 namespace Tes.Handlers
 {
+  struct ShapeTransformPair
+  {
+    public Matrix4x4 Transform;
+    public ObjectAttributes Shape;
+  }
+
   /// <summary>
   /// A cache for transient shape objects.
   /// </summary>
@@ -41,14 +47,14 @@ namespace Tes.Handlers
     public TransientShapeCache(int initialCapacity)
     {
       _initialCapacity = initialCapacity;
-      _cache = new GameObject[_initialCapacity];
+      _cache = new ShapeTransformPair[_initialCapacity];
     }
 
     /// <summary>
     /// Access the activated transient object.
     /// </summary>
     /// <returns></returns>
-    public GameObject LastObject
+    public ShapeTransformPair LastObject
     {
       get
       {
@@ -59,7 +65,7 @@ namespace Tes.Handlers
     /// <summary>
     /// Iterate the active objects (active only).
     /// </summary>
-    public IEnumerable<GameObject> Objects
+    public IEnumerable<ShapeTransformPair> Objects
     {
       get
       {
@@ -73,32 +79,19 @@ namespace Tes.Handlers
     /// <summary>
     /// Add a transient object to the cache.
     /// </summary>
-    /// <param name="obj">The new transient object.</param>
-    public void Add(GameObject obj)
+    /// <param name="shape">The new transient shape.</param>
+    /// <return>The index of the added shape.</remarks>
+    public int Add(ShapeTransformPair shape, Matrix4x4 transform)
     {
       if (_cachedCount == _cache.Length)
       {
         Array.Resize(ref _cache, _cache.Length * 2);
       }
 
-      _cache[_cachedCount++] = obj;
-      _lastObject = obj;
+      _lastObjectIndex = _cachedCount;
+      _cache[_cachedCount] = new ShapeTransformPair { Shape = shape, Transform = transform };
       ++_activeCount;
-    }
-
-
-    /// <summary>
-    /// Fetch and reuse an existing transient object from the cache.
-    /// </summary>
-    /// <returns>A new transient object</returns>
-    public GameObject Fetch()
-    {
-      if (_activeCount < _cachedCount)
-      {
-        return (_lastObject = _cache[_activeCount++]);
-      }
-
-      return null;
+      return _cachedCount++;
     }
 
     /// <summary>
@@ -106,46 +99,11 @@ namespace Tes.Handlers
     /// </summary>
     public void Reset()
     {
-      // De-activate objects.
-      for (int i = 0; i < _activeCount; ++i)
-      {
-        _cache[i].SetActive(false);
-      }
       _activeCount = 0;
-      _lastObject = null;
     }
 
-    /// <summary>
-    /// Reset the cache to have no active objects, optinally deleting the objects.
-    /// </summary>
-    /// <param name="deleteObjects">True to delete the objects.</param>
-    public void Reset(bool deleteObjects)
-    {
-      if (!deleteObjects)
-      {
-        Reset();
-        return;
-      }
-
-      // Delete the game objects and reset the array.
-      for (int i = 0; i < _cachedCount; ++i)
-      {
-        GameObject obj = _cache[i];
-        _cache[i] = null;
-        UnityEngine.Object.Destroy(obj);
-      }
-      _cachedCount = 0;
-
-      //if (_cache.Length != _initialCapacity)
-      //{
-      //  _cache = new GameObject[_initialCapacity];
-      //}
-      _activeCount = 0;
-      _lastObject = null;
-    }
-
-
-    private GameObject[] _cache;
+    private ShapeTransformPair[] _shapes;
+    private Matrix4x4[] _transforms;
     /// <summary>
     ///  Number of valid cached pointers in _cache.
     /// </summary>
@@ -158,6 +116,6 @@ namespace Tes.Handlers
     /// <summary>
     /// The last object created by the cache.
     /// </summary>
-    private GameObject _lastObject = null;
+    private int _lastObjectIndex = -1;
   }
 }

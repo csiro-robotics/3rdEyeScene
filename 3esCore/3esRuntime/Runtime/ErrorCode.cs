@@ -70,7 +70,7 @@ namespace Tes.Runtime
     // Serialisation codes
 
     /// <summary>
-    /// The spified file name is invalid for the current operation. Includes permission failures.
+    /// The specified file name is invalid for the current operation. Includes permission failures.
     /// </summary>
     InvalidFileName,
 

@@ -18,7 +18,7 @@ namespace Tes.Tessellate
     /// <summary>
     /// Index of the top hemisphere mesh component.
     /// </summary>
-    public static int TopIndex { get { return 0; } }
+    public static int TopIndex { get { return 2; } }
     /// <summary>
     /// Index of the bottom hemisphere mesh component.
     /// </summary>
@@ -26,12 +26,12 @@ namespace Tes.Tessellate
     /// <summary>
     /// Index of the cylindrical mesh component.
     /// </summary>
-    public static int CylinderIndex { get { return 2; } }
+    public static int CylinderIndex { get { return 0; } }
     /// <summary>
     /// The default primary axis used in construction (0, 0, 1).
     /// </summary>
     public static Vector3 PrimaryAxis { get { return new Vector3(0, 0, 1); } }
-    
+
     /// <summary>
     /// The number of ring layers used in constructing the hemisphere sections.
     /// </summary>
@@ -83,7 +83,7 @@ namespace Tes.Tessellate
       23, 31, 32, 23, 32, 24,
       24, 32, 25, 24, 25, 17
     };
-    
+
     /// <summary>
     /// Mesh triangle indices for the cylindrical part.
     /// </summary>
@@ -104,7 +104,7 @@ namespace Tes.Tessellate
     /// </summary>
     /// <returns></returns>
     /// <remarks>
-    /// This returns an array of three meshes so that each piece may be positioned and scaled 
+    /// This returns an array of three meshes so that each piece may be positioned and scaled
     /// independently. Use <see cref="TopIndex"/>, <see cref="BottomIndex"/> and
     /// <see cref="CylinderIndex"/> to address the top and bottom hemispheres and the
     /// cylindrical part respectively. The hemispheres are positioned such that their
@@ -167,7 +167,7 @@ namespace Tes.Tessellate
 
       meshes[TopIndex] = new Mesh();
       meshes[TopIndex].subMeshCount = 2;
-      
+
       meshes[BottomIndex] = new Mesh();
       meshes[BottomIndex].subMeshCount = 2;
 
@@ -203,11 +203,11 @@ namespace Tes.Tessellate
         vertices[i].z *= -1.0f;
       }
       meshes[BottomIndex].vertices = vertices;
-      
+
       // Set indices for top and bottom. Y plane ring.
       meshes[TopIndex].SetIndices(indices, MeshTopology.LineStrip, 0);
       meshes[BottomIndex].SetIndices(indices, MeshTopology.LineStrip, 0);
-      
+
       // Create the second mesh part indices. Just offset by semiCircleVertCount.
       for (int i = 0; i < semiCircleVertCount; ++i)
       {
@@ -215,7 +215,7 @@ namespace Tes.Tessellate
       }
       meshes[TopIndex].SetIndices(indices, MeshTopology.LineStrip, 1);
       meshes[BottomIndex].SetIndices(indices, MeshTopology.LineStrip, 1);
-      
+
       // Finally create the joining 'cylinder' mesh.
       vertices = new Vector3[8];
       vertices[0] = new Vector3(1.0f, 0, 0.5f);
@@ -226,18 +226,18 @@ namespace Tes.Tessellate
       vertices[5] = new Vector3(0, 1.0f, -0.5f);
       vertices[6] = new Vector3(0, -1.0f, 0.5f);
       vertices[7] = new Vector3(0, -1.0f, -0.5f);
-      
+
       indices = new int[8];
       for (int i = 0; i < indices.Length; ++i)
       {
         indices[i] = i;
       }
-      
+
       meshes[CylinderIndex] = new Mesh();
       meshes[CylinderIndex].subMeshCount = 1;
       meshes[CylinderIndex].vertices = vertices;
       meshes[CylinderIndex].SetIndices(indices, MeshTopology.Lines, 0);
-      
+
       return meshes;
     }
   }

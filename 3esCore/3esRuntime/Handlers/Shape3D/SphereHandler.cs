@@ -15,12 +15,8 @@ namespace Tes.Handlers.Shape3D
     public SphereHandler(Runtime.CategoryCheckDelegate categoryCheck)
       : base(categoryCheck)
     {
-      _solidMesh = Tes.Tessellate.Sphere.Solid();
-      _wireframeMesh = Tes.Tessellate.Sphere.Wireframe();
-      if (Root != null)
-      {
-        Root.name = Name;
-      }
+      SolidMesh = Tes.Tessellate.Sphere.Solid();
+      WireframeMesh = Tes.Tessellate.Sphere.Wireframe();
     }
 
     /// <summary>
@@ -34,46 +30,18 @@ namespace Tes.Handlers.Shape3D
     public override ushort RoutingID { get { return (ushort)Tes.Net.ShapeID.Sphere; } }
 
     /// <summary>
-    /// Solid mesh representation.
-    /// </summary>
-    public override Mesh SolidMesh { get { return _solidMesh; } }
-    /// <summary>
-    /// Wireframe mesh representation.
-    /// </summary>
-    public override Mesh WireframeMesh { get { return _wireframeMesh; } }
-
-    /// <summary>
     /// Override to ensure uniform scaling.
     /// </summary>
-    protected override void DecodeTransform(ObjectAttributes attributes, Transform transform, ushort flags)
+    protected override void DecodeTransform(ObjectAttributes attributes, out Matrix4x4 transform)
     {
-      if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Position) != 0)
-      {
-        transform.localPosition = new Vector3(attributes.X, attributes.Y, attributes.Z);
-      }
-      if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Rotation) != 0)
-      {
-        transform.localRotation = Quaternion.identity; // Irrelevant for spheres.
-      }
-      if ((flags & (ushort)UpdateFlag.UpdateMode) == 0 || (flags & (ushort)UpdateFlag.Scale) != 0)
-      {
-        transform.localScale = new Vector3(attributes.ScaleX, attributes.ScaleY, attributes.ScaleZ);
-      }
-    }
+      transform = Matrix4x4.identity;
 
-    /// <summary>
-    /// Creates a sphere shape for serialisation.
-    /// </summary>
-    /// <param name="shapeComponent">The component to create a shape for.</param>
-    /// <returns>A shape instance suitable for configuring to generate serialisation messages.</returns>
-    protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
-    {
-      Shapes.Shape shape = new Shapes.Sphere();
-      ConfigureShape(shape, shapeComponent);
-      return shape;
+      float radius = attributes.ScaleX;
+      transform.SetColumn(3, new Vector4(attributes.X, attributes.Y, attributes.Z, 1.0f));
+      var pureRotation = Matrix4x4.Rotate(new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW));
+      transform.SetColumn(0, pureRotation.GetColumn(0) * radius);
+      transform.SetColumn(1, pureRotation.GetColumn(1) * radius);
+      transform.SetColumn(2, pureRotation.GetColumn(2) * radius);
     }
-
-    private Mesh _solidMesh;
-    private Mesh _wireframeMesh;
   }
 }
