@@ -32,19 +32,9 @@ namespace Tes.Handlers
       /// Mesh resource ID.
       /// </summary>
       public uint ID { get; internal set; }
-      /// <summary>
-      /// Target vertex count.
-      /// </summary>
-      public int VertexCount { get; internal set; }
-      /// <summary>
-      /// Target index count
-      /// </summary>
-      public int IndexCount { get; internal set; }
 
-      /// <summary>
-      /// Access the object being used to construct the Unity mesh objects.
-      /// </summary>
-      public MeshBuilder Builder { get { return _builder; } }
+      public RenderMesh Mesh { get; internal set; }
+
       /// <summary>
       /// Mesh local transform position.
       /// </summary>
@@ -66,26 +56,12 @@ namespace Tes.Handlers
       /// </summary>
       public Material Material { get; internal set; }
       /// <summary>
-      /// Defines the mesh topology.
-      /// </summary>
-      public byte DrawType { get; internal set; }
-      /// <summary>
-      /// Alias <see cref="DrawType"/> to the equivalent Unity <c>Topology</c>.
-      /// </summary>
-      public MeshTopology Topology { get { return Builder.Topology; } }
-      /// <summary>
-      /// Array of finalised mesh parts. Valid when <see cref="Finalised"/>.
-      /// </summary>
-      public Mesh[] FinalMeshes { get { return Builder.GetMeshes(); } }
-      /// <summary>
       /// True when finalised.
       /// </summary>
       /// <remarks>
       /// May become false on a redefine message.
       /// </remarks>
       public bool Finalised { get; internal set; }
-
-      private MeshBuilder _builder = new MeshBuilder();
     }
 
     /// <summary>
@@ -284,6 +260,10 @@ namespace Tes.Handlers
     /// </remarks>
     public override void Reset()
     {
+      foreach (var entry in _meshes.Values)
+      {
+        entry.Mesh.ReleaseBuffers();
+      }
       _meshes.Clear();
     }
 
@@ -294,9 +274,9 @@ namespace Tes.Handlers
     /// <returns>The mesh details, or null when <paramref name="meshId"/> is unknown.</returns>
     public MeshDetails GetEntry(uint meshId)
     {
-      MeshDetails meshDetails = null;
-      _meshes.TryGetValue(meshId, out meshDetails);
-      return meshDetails;
+      MeshDetails meshEntry = null;
+      _meshes.TryGetValue(meshId, out meshEntry);
+      return meshEntry;
     }
 
     /// <summary>
@@ -520,14 +500,14 @@ namespace Tes.Handlers
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
 
-      MeshDetails meshDetails = _meshes[msg.MeshID];
+      MeshDetails meshEntry = _meshes[msg.MeshID];
 
-      NotifyMeshRemoved(meshDetails);
+      NotifyMeshRemoved(meshEntry);
 
       _meshes.Remove(msg.MeshID);
-      if (meshDetails.FinalMeshes != null)
+      if (meshEntry.FinalMeshes != null)
       {
-        foreach (Mesh mesh in meshDetails.FinalMeshes)
+        foreach (Mesh mesh in meshEntry.FinalMeshes)
         {
           Mesh.Destroy(mesh);
         }
@@ -559,37 +539,24 @@ namespace Tes.Handlers
         return new Error(ErrorCode.DuplicateShape, msg.MeshID);
       }
 
-      MeshDetails meshDetails = new MeshDetails();
-
-      meshDetails.VertexCount = (int)msg.VertexCount;
-      meshDetails.IndexCount = (int)msg.IndexCount;
-      meshDetails.DrawType = msg.DrawType;
-      switch (msg.DrawType)
+      if (msg.DrawType < 0 || msg.DrawType > Enum.GetValues(typeof(MeshDrawType).Length))
       {
-      case (byte)MeshDrawType.Points:
-        // No break.
-      case (byte)MeshDrawType.Voxels:
-          meshDetails.Builder.Topology = MeshTopology.Points;
-        break;
-      case (byte)MeshDrawType.Lines:
-          meshDetails.Builder.Topology = MeshTopology.Lines;
-        break;
-      case (byte)MeshDrawType.Triangles:
-          meshDetails.Builder.Topology = MeshTopology.Triangles;
-        break;
-      default:
         return new Error(ErrorCode.UnsupportedFeature, msg.DrawType);
       }
 
-      meshDetails.ID = msg.MeshID;
-      meshDetails.LocalPosition = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
-      meshDetails.LocalRotation = new Quaternion(msg.Attributes.RotationX, msg.Attributes.RotationY, msg.Attributes.RotationZ, msg.Attributes.RotationW);
-      meshDetails.LocalScale = new Vector3(msg.Attributes.ScaleX, msg.Attributes.ScaleY, msg.Attributes.ScaleZ);
-      meshDetails.Tint = ShapeComponent.ConvertColour(msg.Attributes.Colour);
-      meshDetails.Finalised = false;
-      _meshes.Add(meshDetails.ID, meshDetails);
+      MeshDetails meshEntry = new MeshDetails();
+      RenderMesh renderMesh = new RenderMesh((MeshDrawType)msg.DrawType, (int)msg.VertexCount, (int)msg.IndexCount);
+      meshEntry.Mesh = renderMesh;
 
-      NotifyMeshAdded(meshDetails);
+      meshEntry.ID = msg.MeshID;
+      meshEntry.LocalPosition = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
+      meshEntry.LocalRotation = new Quaternion(msg.Attributes.RotationX, msg.Attributes.RotationY, msg.Attributes.RotationZ, msg.Attributes.RotationW);
+      meshEntry.LocalScale = new Vector3(msg.Attributes.ScaleX, msg.Attributes.ScaleY, msg.Attributes.ScaleZ);
+      meshEntry.Tint = ShapeComponent.ConvertColour(msg.Attributes.Colour);
+      meshEntry.Finalised = false;
+      _meshes.Add(meshEntry.ID, meshEntry);
+
+      NotifyMeshAdded(meshEntry);
 
       return new Error();
     }
@@ -609,8 +576,8 @@ namespace Tes.Handlers
         return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.Vertex);
       }
 
-      MeshDetails meshDetails;
-      if (!_meshes.TryGetValue(msg.MeshID, out meshDetails))
+      MeshDetails meshEntry;
+      if (!_meshes.TryGetValue(msg.MeshID, out meshEntry))
       {
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
@@ -622,7 +589,7 @@ namespace Tes.Handlers
 
       int voffset = (int)msg.Offset;
       // Bounds check.
-      int vertexCount = (int)meshDetails.VertexCount;
+      int vertexCount = meshEntry.Mesh.VertexCount;
       if (voffset >= vertexCount || voffset + msg.Count > vertexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Vertex);
@@ -631,13 +598,45 @@ namespace Tes.Handlers
       // Check for settings initial bounds.
       bool ok = true;
       Vector3 v = Vector3.zero;
+      _v3Buffer.Clear();
+      Vector3 minBounds = Vector3.zero;
+      Vector3 maxBounds = Vector3.zero;
       for (int vInd = 0; ok && vInd < msg.Count; ++vInd)
       {
         v.x = reader.ReadSingle();
         v.y = reader.ReadSingle();
         v.z = reader.ReadSingle();
-        meshDetails.Builder.UpdateVertex(vInd + voffset, v);
+        if (vInd > 0)
+        {
+          minBounds.x = MathF.Min(minBounds.x, v.x);
+          minBounds.y = MathF.Min(minBounds.y, v.z);
+          minBounds.z = MathF.Min(minBounds.z, v.y);
+          maxBounds.x = MathF.Max(maxBounds.x, v.x);
+          maxBounds.y = MathF.Max(maxBounds.y, v.z);
+          maxBounds.z = MathF.Max(maxBounds.z, v.y);
+        }
+        else
+        {
+          minBounds = maxBounds = v;
+        }
+        _v3Buffer.Add(v);
       }
+      meshEntry.Mesh.SetVertices(_v3Buffer, 0, voffset, _v3Buffer.Count);
+      _v3Buffer.Clear();
+
+      // Update bounds.
+      if (meshEntry.Mesh.BoundsSet)
+      {
+        minBounds.x = MathF.Min(minBounds.x, meshEntry.Mesh.MinBounds.x);
+        minBounds.y = MathF.Min(minBounds.y, meshEntry.Mesh.MinBounds.z);
+        minBounds.z = MathF.Min(minBounds.z, meshEntry.Mesh.MinBounds.y);
+        maxBounds.x = MathF.Max(maxBounds.x, meshEntry.Mesh.MaxBounds.x);
+        maxBounds.y = MathF.Max(maxBounds.y, meshEntry.Mesh.MaxBounds.z);
+        maxBounds.z = MathF.Max(maxBounds.z, meshEntry.Mesh.MaxBounds.y);
+      }
+
+      meshEntry.Mesh.MinBounds = minBounds;
+      meshEntry.Mesh.MaxBounds = maxBounds;
 
       if (!ok)
       {
@@ -662,8 +661,8 @@ namespace Tes.Handlers
         return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.VertexColour);
       }
 
-      MeshDetails meshDetails;
-      if (!_meshes.TryGetValue(msg.MeshID, out meshDetails))
+      MeshDetails meshEntry;
+      if (!_meshes.TryGetValue(msg.MeshID, out meshEntry))
       {
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
@@ -675,7 +674,7 @@ namespace Tes.Handlers
 
       int voffset = (int)msg.Offset;
       // Bounds check.
-      int vertexCount = (int)meshDetails.VertexCount;
+      int vertexCount = (int)meshEntry.VertexCount;
       if (voffset >= vertexCount || voffset + msg.Count > vertexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.VertexColour);
@@ -684,11 +683,14 @@ namespace Tes.Handlers
       // Check for settings initial bounds.
       bool ok = true;
       uint colour;
+      _uintBuffer.Clear();
       for (int vInd = 0; ok && vInd < msg.Count; ++vInd)
       {
         colour = reader.ReadUInt32();
-        meshDetails.Builder.UpdateColour(vInd + voffset, ShapeComponent.ConvertColour(colour));
+        _uintBuffer.Add(colour);
       }
+      meshEntry.Mesh.SetColors(_uintBuffer, 0, voffset, _uintBuffer.Count);
+      _uintBuffer.Clear();
 
       if (!ok)
       {
@@ -713,8 +715,8 @@ namespace Tes.Handlers
         return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.Index);
       }
 
-      MeshDetails meshDetails;
-      if (!_meshes.TryGetValue(msg.MeshID, out meshDetails))
+      MeshDetails meshEntry;
+      if (!_meshes.TryGetValue(msg.MeshID, out meshEntry))
       {
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
@@ -726,7 +728,7 @@ namespace Tes.Handlers
 
       int ioffset = (int)msg.Offset;
       // Bounds check.
-      int indexCount = (int)meshDetails.IndexCount;
+      int indexCount = (int)meshEntry.IndexCount;
       if (ioffset >= indexCount || ioffset + msg.Count > indexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Index);
@@ -735,11 +737,14 @@ namespace Tes.Handlers
       // Check for settings initial bounds.
       bool ok = true;
       int index;
+      _intBuffer.Clear();
       for (int iInd = 0; ok && iInd < msg.Count; ++iInd)
       {
         index = reader.ReadInt32();
-        meshDetails.Builder.UpdateIndex(iInd + ioffset, index);
+        _intBuffer.Add(index);
       }
+      meshEntry.Mesh.SetIndices(_intBuffer, 0, ioffset, _intBuffer.Count);
+      _intBuffer.Clear();
 
       if (!ok)
       {
@@ -764,8 +769,8 @@ namespace Tes.Handlers
         return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.Normal);
       }
 
-      MeshDetails meshDetails;
-      if (!_meshes.TryGetValue(msg.MeshID, out meshDetails))
+      MeshDetails meshEntry;
+      if (!_meshes.TryGetValue(msg.MeshID, out meshEntry))
       {
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
@@ -777,7 +782,7 @@ namespace Tes.Handlers
 
       int voffset = (int)msg.Offset;
       // Bounds check.
-      int vertexCount = (int)meshDetails.VertexCount;
+      int vertexCount = (int)meshEntry.VertexCount;
       if (voffset >= vertexCount || voffset + msg.Count > vertexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Normal);
@@ -786,15 +791,29 @@ namespace Tes.Handlers
       // Check for settings initial bounds.
       bool ok = true;
       Vector3 n = Vector3.zero;
+      _v3Buffer.Clear();
+      Vector3 boundsPadding = Vector3.zero;
       for (int vInd = 0; ok && vInd < (int)msg.Count; ++vInd)
       {
         n.x = reader.ReadSingle();
         n.y = reader.ReadSingle();
         n.z = reader.ReadSingle();
-        meshDetails.Builder.UpdateNormal(vInd + voffset, n);
-        meshDetails.Builder.BoundsPadding.x = Mathf.Max(meshDetails.Builder.BoundsPadding.x, Mathf.Abs(n.x));
-        meshDetails.Builder.BoundsPadding.y = Mathf.Max(meshDetails.Builder.BoundsPadding.y, Mathf.Abs(n.y));
-        meshDetails.Builder.BoundsPadding.z = Mathf.Max(meshDetails.Builder.BoundsPadding.z, Mathf.Abs(n.z));
+        _v3Buffer.Add(n);
+        // Bounds padding used to cater for voxel rendering.
+        boundsPadding.x = Mathf.Max(boundsPadding.x, Mathf.Abs(n.x));
+        boundsPadding.y = Mathf.Max(boundsPadding.y, Mathf.Abs(n.y));
+        boundsPadding.z = Mathf.Max(boundsPadding.z, Mathf.Abs(n.z));
+      }
+      meshEntry.Mesh.SetNormals(_v3Buffer, 0, voffset, _v3Buffer.Count);
+      _v3Buffer.Clear();
+
+      // Pad the bounds by largest the normal for voxels.
+      if (meshEntry.Mesh.DrawType == MeshDrawType.Voxels)
+      {
+        boundsPadding.x = Mathf.Max(boundsPadding.x, Mathf.Abs(meshEntry.Mesh.BoundsPadding.x));
+        boundsPadding.y = Mathf.Max(boundsPadding.y, Mathf.Abs(meshEntry.Mesh.BoundsPadding.y));
+        boundsPadding.z = Mathf.Max(boundsPadding.z, Mathf.Abs(meshEntry.Mesh.BoundsPadding.z));
+        meshEntry.BoundsPadding = boundsPadding;
       }
 
       if (!ok)
@@ -820,8 +839,8 @@ namespace Tes.Handlers
         return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.UV);
       }
 
-      MeshDetails meshDetails;
-      if (!_meshes.TryGetValue(msg.MeshID, out meshDetails))
+      MeshDetails meshEntry;
+      if (!_meshes.TryGetValue(msg.MeshID, out meshEntry))
       {
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
@@ -833,7 +852,8 @@ namespace Tes.Handlers
 
       int voffset = (int)msg.Offset;
       // Bounds check.
-      int vertexCount = (int)meshDetails.VertexCount;
+      int vertexCount = (int)meshEntry.VertexCount;
+      _v2Buffer.Clear();
       if (voffset >= vertexCount || voffset + msg.Count > vertexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.UV);
@@ -846,8 +866,10 @@ namespace Tes.Handlers
       {
         uv.x = reader.ReadSingle();
         uv.y = reader.ReadSingle();
-        meshDetails.Builder.UpdateUV(vInd + voffset, uv);
+        _v2Buffer.Add(uv);
       }
+      meshEntry.Mesh.SetUVs(_v2Buffer, 0, voffset, _v2Buffer.Count);
+      _v2Buffer.Clear();
 
       if (!ok)
       {
@@ -874,27 +896,27 @@ namespace Tes.Handlers
         return new Error(ErrorCode.MalformedMessage, MeshRedefineMessage.MessageID);
       }
 
-      MeshDetails meshDetails;
-      if (!_meshes.TryGetValue(msg.MeshID, out meshDetails))
+      MeshDetails meshEntry;
+      if (!_meshes.TryGetValue(msg.MeshID, out meshEntry))
       {
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
 
-      meshDetails.Finalised = false;
-      if (msg.VertexCount != meshDetails.VertexCount)
+      meshEntry.Finalised = false;
+      if (msg.VertexCount != meshEntry.VertexCount)
       {
-        meshDetails.VertexCount = (int)msg.VertexCount;
+        meshEntry.SetVertexCount((int)msg.VertexCount);
       }
       if (msg.IndexCount != 0)
       {
-        meshDetails.IndexCount = (int)msg.IndexCount;
+        meshEntry.SetIndexCount((int)msg.IndexCount);
       }
 
-      meshDetails.ID = msg.MeshID;
-      meshDetails.LocalPosition = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
-      meshDetails.LocalRotation = new Quaternion(msg.Attributes.RotationX, msg.Attributes.RotationY, msg.Attributes.RotationZ, msg.Attributes.RotationW);
-      meshDetails.LocalScale = new Vector3(msg.Attributes.ScaleX, msg.Attributes.ScaleY, msg.Attributes.ScaleZ);
-      meshDetails.Tint = ShapeComponent.ConvertColour(msg.Attributes.Colour);
+      meshEntry.ID = msg.MeshID;
+      meshEntry.LocalPosition = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
+      meshEntry.LocalRotation = new Quaternion(msg.Attributes.RotationX, msg.Attributes.RotationY, msg.Attributes.RotationZ, msg.Attributes.RotationW);
+      meshEntry.LocalScale = new Vector3(msg.Attributes.ScaleX, msg.Attributes.ScaleY, msg.Attributes.ScaleZ);
+      meshEntry.Tint = ShapeComponent.ConvertColour(msg.Attributes.Colour);
 
       return new Error();
     }
@@ -916,54 +938,61 @@ namespace Tes.Handlers
         return new Error(ErrorCode.MalformedMessage, MeshFinaliseMessage.MessageID);
       }
 
-      MeshDetails meshDetails;
-      if (!_meshes.TryGetValue(msg.MeshID, out meshDetails))
+      MeshDetails meshEntry;
+      if (!_meshes.TryGetValue(msg.MeshID, out meshEntry))
       {
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
 
-      if (meshDetails.Finalised)
+      if (meshEntry.Finalised)
       {
-        return new Error(ErrorCode.MeshAlreadyFinalised, meshDetails.ID);
+        return new Error(ErrorCode.MeshAlreadyFinalised, meshEntry.ID);
       }
 
       bool generateNormals = (msg.Flags & (uint)MeshBuildFlags.CalculateNormals) != 0;
-      bool haveNormals = meshDetails.Builder.Normals.Length > 0;
-      switch (meshDetails.Topology)
+
+      if (generateNormals)
+      {
+        GenerateNormals(meshEntry.Mesh);
+      }
+
+
+      bool haveNormals = meshEntry.Builder.Normals.Length > 0;
+      switch (meshEntry.Mesh.Topology)
       {
       case MeshTopology.Triangles:
       case MeshTopology.Quads:
         if (haveNormals || generateNormals)
         {
-          meshDetails.Material = UnityEngine.Object.Instantiate<Material>(LitMaterial);
+          meshEntry.Material = UnityEngine.Object.Instantiate<Material>(LitMaterial);
         }
         else
         {
-          meshDetails.Material = UnityEngine.Object.Instantiate<Material>(UnlitMaterial);
+          meshEntry.Material = UnityEngine.Object.Instantiate<Material>(UnlitMaterial);
         }
         break;
       case MeshTopology.Points:
         generateNormals = false;
-        if (meshDetails.DrawType == (byte)MeshDrawType.Voxels)
+        if (meshEntry.DrawType == (byte)MeshDrawType.Voxels)
         {
-          meshDetails.Material = UnityEngine.Object.Instantiate<Material>(VoxelsMaterial);
+          meshEntry.Material = UnityEngine.Object.Instantiate<Material>(VoxelsMaterial);
           generateNormals = !haveNormals;
         }
         else
         {
           if (haveNormals)
           {
-            meshDetails.Material = UnityEngine.Object.Instantiate<Material>(PointsLitMaterial);
-            meshDetails.Material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
+            meshEntry.Material = UnityEngine.Object.Instantiate<Material>(PointsLitMaterial);
+            meshEntry.Material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
           }
           else
           {
-            meshDetails.Material = UnityEngine.Object.Instantiate<Material>(PointsUnlitMaterial);
-            meshDetails.Material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
+            meshEntry.Material = UnityEngine.Object.Instantiate<Material>(PointsUnlitMaterial);
+            meshEntry.Material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
           }
 
           int pointSize = (Materials != null) ? Materials.DefaultPointSize : 4;
-          meshDetails.Material.SetInt("_PointSize", pointSize);
+          meshEntry.Material.SetInt("_PointSize", pointSize);
         }
         //if (entry.VertexColours == null)
         //{
@@ -978,25 +1007,20 @@ namespace Tes.Handlers
       case MeshTopology.Lines:
       case MeshTopology.LineStrip:
         generateNormals = false;
-        meshDetails.Material = UnityEngine.Object.Instantiate<Material>(UnlitMaterial);
+        meshEntry.Material = UnityEngine.Object.Instantiate<Material>(UnlitMaterial);
         break;
       }
 
-      if (meshDetails.Material != null)
+      if (meshEntry.Material != null)
       {
-        meshDetails.Material.color = meshDetails.Tint;
-        // meshDetails.Material.SetColor("_Tint", pointSize);
+        meshEntry.Material.color = meshEntry.Tint;
+        // meshEntry.Material.SetColor("_Tint", pointSize);
       }
 
       // Generate the meshes here.
-      Error err = new Error();
-      meshDetails.Builder.CalculateNormals = generateNormals;
-      meshDetails.Builder.GetMeshes();
-
-      meshDetails.Finalised = true;
-      NotifyMeshFinalised(meshDetails);
-
-      return err;
+      meshEntry.Finalised = true;
+      NotifyMeshFinalised(meshEntry);
+      return new Error();
     }
 
     /// <summary>
@@ -1033,15 +1057,61 @@ namespace Tes.Handlers
       return 1;
     }
 
+    private void GenerateNormals(RenderMesh mesh)
+    {
+      if (mesh.DrawType == MeshDrawType.Triangles || mesh.DrawType == MeshDrawType.Quads)
+      {
+        if (_vertexArray.Length < mesh.VertexCount)
+        {
+          _vertexArray = new Vector3[mesh.VertexCount];
+        }
+        if (_normalsArray.Length < mesh.VertexCount)
+        {
+          _normalsArray = new Vector3[mesh.VertexCount];
+        }
+        if (_indexArray.Length < mesh.IndexCount)
+        {
+          _indexArray = new int[mesh.IndexCount];
+        }
+        mesh.GetVertices(_vertexArray);
+        mesh.GetIndices(_indexArray);
+
+        // Accumulate per face normals in the vertices.
+        int faceStride = mesh.DrawType == MeshDrawType.Quads ? 4 : 3;
+        Vector3 edgeA = Vector3.zero;
+        Vector3 edgeB = Vector3.zero;
+        Vector3 partNormal = Vector3.zero;
+        for (int i = 0; i < _indexArray.Length; i += faceStride)
+        {
+          // Generate a normal for the current face.
+          edgeA = _vertexArray[_indexArray[i + 1]] - _vertexArray[_indexArray[i + 0]];
+          edgeB = _vertexArray[_indexArray[i + 2]] - _vertexArray[_indexArray[i + 1]];
+          partNormal = Vector3.Cross(edgeB, edgeA);
+          for (int v = 0; v < faceStride; ++v)
+          {
+            _normalsArray[_indexArray[i + v]] += partNormal;
+          }
+        }
+
+        // Normalise all the part normals.
+        for (int i = 0; i < _normalsArray.Length; ++i)
+        {
+          _normalsArray[i] = _normalsArray[i].normalized;
+        }
+
+        mesh.SetNormals(_normalsArray);
+      }
+    }
+
     /// <summary>
     /// Invoke <see cref="OnMeshAdded"/>
     /// </summary>
-    /// <param name="meshDetails"></param>
-    protected void NotifyMeshAdded(MeshDetails meshDetails)
+    /// <param name="meshEntry"></param>
+    protected void NotifyMeshAdded(MeshDetails meshEntry)
     {
       if (OnMeshAdded != null)
       {
-        OnMeshAdded(meshDetails);
+        OnMeshAdded(meshEntry);
       }
     }
 
@@ -1049,12 +1119,12 @@ namespace Tes.Handlers
     /// <summary>
     /// Invoke <see cref="OnMeshRemoved"/>
     /// </summary>
-    /// <param name="meshDetails"></param>
-    protected void NotifyMeshRemoved(MeshDetails meshDetails)
+    /// <param name="meshEntry"></param>
+    protected void NotifyMeshRemoved(MeshDetails meshEntry)
     {
       if (OnMeshRemoved != null)
       {
-        OnMeshRemoved(meshDetails);
+        OnMeshRemoved(meshEntry);
       }
     }
 
@@ -1062,16 +1132,23 @@ namespace Tes.Handlers
     /// <summary>
     /// Invoke <see cref="OnMeshFinalised"/>
     /// </summary>
-    /// <param name="meshDetails"></param>
-    protected void NotifyMeshFinalised(MeshDetails meshDetails)
+    /// <param name="meshEntry"></param>
+    protected void NotifyMeshFinalised(MeshDetails meshEntry)
     {
       if (OnMeshFinalised != null)
       {
-        OnMeshFinalised(meshDetails);
+        OnMeshFinalised(meshEntry);
       }
     }
 
 
     private Dictionary<uint, MeshDetails> _meshes = new Dictionary<uint, MeshDetails>();
+    private List<Vector3> _v3Buffer = new List<Vector3>();
+    private Vector3[] _vertexArray = new Vector3[0];
+    private Vector3[] _normalsArray = new Vector3[0];
+    private int[] _indexArray = new int[0];
+    private List<Vector2> _v2Buffer = new List<Vector2>();
+    private List<uint> _uintBuffer = new List<uint>();
+    private List<int> _intBuffer = new List<int>();
   }
 }
