@@ -47,6 +47,9 @@ namespace Tes.Handlers
       /// Mesh local transform scale.
       /// </summary>
       public Vector3 LocalScale { get; internal set; }
+
+      public Matrix4x4 LocalTransform { get; }
+
       /// <summary>
       /// A tint colour for primitives in this mesh.
       /// </summary>
@@ -162,22 +165,27 @@ namespace Tes.Handlers
     /// </summary>
     public override ushort RoutingID { get { return (ushort)Net.RoutingID.Mesh; } }
 
-    /// <summary>
-    /// Material for rendering lit polygons.
-    /// </summary>
-    public Material LitMaterial { get; protected set; }
-    /// <summary>
-    /// Material for rendering unlit polygons.
-    /// </summary>
-    public Material UnlitMaterial { get; protected set; }
-    /// <summary>
-    /// Material for rendering lit points.
-    /// </summary>
-    public Material PointsLitMaterial { get; protected set; }
-    /// <summary>
-    /// Material for rendering unlit points.
-    /// </summary>
-    public Material PointsUnlitMaterial { get; protected set; }
+    public Material SingleSidedMaterial { get; protected set; }
+    public Material DoubleSidedSidedMaterial { get; protected set; }
+    public Material TransparentMaterial { get; protected set; }
+    public Material PointsMaterial { get; protected set; }
+
+    // /// <summary>
+    // /// Material for rendering lit polygons.
+    // /// </summary>
+    // public Material LitMaterial { get; protected set; }
+    // /// <summary>
+    // /// Material for rendering unlit polygons.
+    // /// </summary>
+    // public Material UnlitMaterial { get; protected set; }
+    // /// <summary>
+    // /// Material for rendering lit points.
+    // /// </summary>
+    // public Material PointsLitMaterial { get; protected set; }
+    // /// <summary>
+    // /// Material for rendering unlit points.
+    // /// </summary>
+    // public Material PointsUnlitMaterial { get; protected set; }
 
     /// <summary>
     /// Material for rendering geometry shader based voxels. Vertices mark the centre, normals the half extents.

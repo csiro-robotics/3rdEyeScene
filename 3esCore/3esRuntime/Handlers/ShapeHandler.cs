@@ -651,6 +651,7 @@ namespace Tes.Handlers
     {
       int shapeIndex = -1;
       ShapeCache cache = (msg.ObjectID == 0) ? _transientCache : _shapeCache;
+      _lastTransientIndex = -1;
 
       try
       {
@@ -659,6 +660,11 @@ namespace Tes.Handlers
       catch (Tes.Exception.DuplicateIDException )
       {
         return new Error(ErrorCode.DuplicateShape, msg.ObjectID);
+      }
+
+      if (msg.ObjectID == 0)
+      {
+        _lastTransientIndex = shapeIndex;
       }
 
       return PostHandleMessage(msg, packet, reader, cache, shapeIndex);
@@ -780,6 +786,11 @@ namespace Tes.Handlers
     /// </remarks>
     protected virtual Error HandleMessage(DestroyMessage msg, PacketBuffer packet, BinaryReader reader)
     {
+      if (msg.ObjectID == 0)
+      {
+        return new Error();
+      }
+
       // Do not check for existence. Not an error as we allow delete messages where the object has yet to be created.
       int shapeIndex = DestroyObject(msg.ObjectID);
       return PostHandleMessage(msg, packet, reader, _shapeCache, shapeIndex);
@@ -837,5 +848,10 @@ namespace Tes.Handlers
     protected List<Matrix4x4> _solidTransforms = new List<Matrix4x4>();
     protected List<Matrix4x4> _transparentTransforms = new List<Matrix4x4>();
     protected List<Matrix4x4> _wireframeTransforms = new List<Matrix4x4>();
+    /// <summary>
+    /// Index of the last item added to the _transientCache. Intended for handling DataMessage packets for transient
+    /// shapes.
+    /// </summary>
+    protected int _lastTransientIndex = -1;
   }
 }

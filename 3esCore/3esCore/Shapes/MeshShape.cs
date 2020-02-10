@@ -13,10 +13,10 @@ namespace Tes.Shapes
   /// <remarks>
   /// This equates to so called "immediate mode" rendering and should only be used for
   /// small data sets.
-  /// 
+  ///
   /// The shape can be used to render triangles, lines or points. The vertex and/or index data
   /// must match the topology. That is, there must be three indices or vertices per triangle.
-  /// 
+  ///
   /// The shape does support splitting large data sets.
   /// </remarks>
   public class MeshShape : Shape
@@ -63,7 +63,7 @@ namespace Tes.Shapes
     /// uses this interface to prevent read overruns using <see cref="Count"/> and set individual elements via
     /// <see cref="Set(int, T)"/>. For normals and clours, the <see cref="Count"/> property will also be set to ensure
     /// correct array sizing.
-    /// 
+    ///
     /// The adaptor may be used reading into a non-array container or to perform data conversion.
     /// </remarks>
     public interface ComponentAdaptor<T>
@@ -907,6 +907,120 @@ namespace Tes.Shapes
 
           endReadCount = ReadElements(offset, itemCount, (uint)colours.Count,
                                       (uint index) => { colours.Set((int)index, new Colour(reader.ReadUInt32())); });
+          ok = ok && endReadCount != ~0u;
+          break;
+        default:
+          // Unknown data type.
+          ok = false;
+          break;
+      }
+
+      int returnValue = -1;
+
+      if (ok)
+      {
+        returnValue = dataType;
+        if (complete)
+        {
+          returnValue |= (int)SendDataType.End;
+        }
+      }
+
+      return returnValue;
+    }
+
+    public delegate uint ComponentBlockReader(SendDataType dataType, BinaryReader reader, uint offset, uint count);
+
+    /// <summary>
+    /// A utility function for reading the payload of a <see cref="DataMessage"/> for a <c>MeshShape</c>.
+    /// </summary>
+    /// <param name="reader"></param>
+    /// <param name="vertices"></param>
+    /// <param name="indices"></param>
+    /// <param name="normals"></param>
+    /// <param name="colours"></param>
+    /// <returns>Returns the updated component <see cref="SendDataType"/>. The <see cref="SendDataType.End"/>
+    /// flag is also set, or alone when done. Returns -1 on failure.</returns>
+    /// <remarks>
+    /// This may be called immediately after reading the <see cref="DataMessage"/> for a
+    /// <c>MeshShape</c> to decode the payload content. The method uses a set of
+    /// <see cref="ComponentAdaptor{T}"/> interfaces to resolve data adaption to the required type or
+    /// container. Each call will only interface with the adaptor relevant to the message payload
+    /// calling <see cref="ComponentAdaptor{T}.Set(int, T)"/> for the incoming data. Vertices and
+    /// indices must be correctly pre-sized, while other components may have the
+    /// <see cref="ComponentAdaptor{T}.Count"/> property set to ensure the correct size (matching
+    /// the vertex count, or 1 for uniform normals).
+    /// </remarks>
+    public static int ReadDataComponent(BinaryReader reader,
+                                        ComponentBlockReader vertexReader,
+                                        ComponentBlockReader indexReader,
+                                        ComponentBlockReader normalsReader,
+                                        ComponentBlockReader coloursReader)
+    {
+      UInt32 offset;
+      UInt32 itemCount;
+      SendDataType dataType;
+
+      dataType = (SendDataType)reader.ReadUInt16();
+      offset = reader.ReadUInt32();
+      itemCount = reader.ReadUInt32();
+
+      // Record and mask out end flags.
+      UInt16 endFlags = (ushort)(dataType & ((int)SendDataType.ExpectEnd | (int)SendDataType.End));
+      dataType = (ushort)(dataType & ~endFlags);
+
+      bool ok = true;
+      bool complete = false;
+      uint endReadCount = 0;
+      switch (dataType)
+      {
+        case SendDataType.Vertices:
+          endReadCount = vertexReader(dataType, reader, offset, itemCount);
+          ok = ok && endReadCount != ~0u;
+
+          // Expect end marker.
+          if ((endFlags & (int)SendDataType.End) != 0)
+          {
+            // Done.
+            complete = true;
+          }
+
+          // Check for completion.
+          if ((endFlags & (int)SendDataType.ExpectEnd) == 0)
+          {
+            complete = endReadCount == vertices.Count;
+          }
+          break;
+
+        case SendDataType.Indices:
+          endReadCount = indexReader(dataType, reader, offset, itemCount);
+          ok = ok && endReadCount != ~0u;
+          break;
+
+        // Normals handled together.
+        case SendDataType.Normals:
+        case SendDataType.UniformNormal:
+          if (normalsReader == null)
+          {
+            return -1;
+          }
+
+          endReadCount = normalsReader(dataType, reader, offset, itemCount);
+          ok = ok && endReadCount != ~0u;
+          break;
+
+        case SendDataType.Colours:
+          if (colours == null)
+          {
+            return -1;
+          }
+
+          if (colours.Count != vertices.Count)
+          {
+            colours.Count = vertices.Count;
+          }
+
+          endReadCount = coloursReader(dataType, reader, offset, itemCount);
           ok = ok && endReadCount != ~0u;
           break;
         default:

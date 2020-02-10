@@ -7,8 +7,29 @@ namespace Tes.Runtime
   /// The <see cref="MaterialLibrary"/> provides a way to register and
   /// access Unity materials by name.
   /// </summary>
+  /// <remarks>
+  /// Material requirements:
+  /// - Must support rendering from a compute buffer containing float3 vertices.
+  /// - Keyword blocks (preprocessor style blocks):
+  ///   - WITH_COLOURS to support a per vertex uint32 colour stream.
+  ///   - WITH_NORMALS to support a per vertex float3 normal stream. This enables lighting.
+  ///   - WITH_UVS to support a per vertex float2 UV stream. This feature is not used yet.
+  /// - Material properties:
+  ///   - [_Color] global colour to apply
+  ///   - [_Tint] additional global colour tint to apply. Multiplied by _Color.
+  ///   - [_BackColor] global back face colour if rendering double sided.
+  ///   - [_PointSize] point size for point cloud materials.
+  ///   - [_PointHighlighting] point highlight factor.
+  ///   - [_LeftHanded] 0/1 marks whether the server coordinate frame is left handled (1) or right handled (0).
+  /// <remarks>
   public class MaterialLibrary
   {
+    public static string Opaque { get { return "opaque"; } }
+    public static string OpaqueTwoSided { get { return "opaqueTwoSided"; } }
+    public static string Transparent { get { return "transparent"; } }
+    public static string Wireframe { get { return "wireframe"; } }
+    public static string Points { get { return "points"; } }
+
     /// <summary>
     /// The name of a default material, supporting per vertex colour and lighting.
     /// </summary>
@@ -37,6 +58,7 @@ namespace Tes.Runtime
     /// The name of a default material for rendering unlit points. per vertex colour with no lighting.
     /// </summary>
     public static string PointsLit { get { return "pointsLit"; } }
+    public static string Points { get { return "points"; } }
     /// <summary>
     /// The name of a default material for rendering unlit points.
     /// </summary>

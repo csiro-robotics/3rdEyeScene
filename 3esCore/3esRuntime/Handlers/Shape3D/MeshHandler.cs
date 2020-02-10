@@ -17,130 +17,12 @@ namespace Tes.Handlers.Shape3D
   /// </remarks>
   public class MeshHandler : ShapeHandler
   {
-    /// <summary>
-    /// Tracks support data for mesh shapes.
-    /// </summary>
-    public class MeshDataComponent : MonoBehaviour
+    public struct MeshEntry
     {
-      /// <summary>
-      /// Mesh vertices.
-      /// </summary>
-      public Vector3[] Vertices;
-      /// <summary>
-      /// Mesh normals.
-      /// </summary>
-      public Vector3[] Normals;
-      /// <summary>
-      /// Optional mesh colours.
-      /// </summary>
-      public Color32[] Colours;
-      /// <summary>
-      /// Mesh indices. Sequential indices into <see cref="Vertices"/> when no explicit
-      /// Indices are provided.
-      /// </summary>
-      public int[] Indices;
-      /// <summary>
-      /// Defines how to draw <see cref="Vertices"/> using <see cref="Indices"/>.
-      /// </summary>
-      public MeshDrawType DrawType;
-      /// <summary>
-      /// Do we need to calculate normals?
-      /// </summary>
-      /// <remarks>
-      /// Requires <see cref="MeshDrawType.Triangles"/> and <see cref="MeshShapeFlag.CalculateNormals"/>.
-      /// </remarks>
+      public RenderMesh Mesh;
+      public Material Material;
       public bool CalculateNormals;
     }
-
-    #region Data read adaptors
-    /// <summary>
-    /// An array adaptor to read <see cref="Maths.Vector3"/> and store as <c>UnityEngine.Vector3</c>.
-    /// </summary>
-    class Vector3ComponentAdaptor : MeshShape.ComponentAdaptor<Maths.Vector3>
-    {
-      /// <summary>
-      /// Accesses the underlying array.
-      /// </summary>
-      /// <value>The array.</value>
-      public Vector3[] Array { get; protected set; }
-
-      /// <summary>
-      /// Create a wrapper around <paramref name="array."/>.
-      /// </summary>
-      /// <param name="array">Array.</param>
-      public Vector3ComponentAdaptor(Vector3[] array)
-      {
-        Array = array;
-      }
-
-      /// <summary>
-      /// Retrieve the array length or resize the array (data lost).
-      /// </summary>
-      public int Count
-      {
-        get { return (Array != null) ? Array.Length : 0; }
-        set { if (Count != value) { Array = new Vector3[value]; } }
-      }
-
-      /// <summary>
-      /// Set the element at index <paramref name="at"/>.
-      /// </summary>
-      /// <param name="at">The index to set a value at.</param>
-      /// <param name="val">The value to set.</param>
-      public void Set(int at, Maths.Vector3 val) { Array[at] = Maths.Vector3Ext.ToUnity(val); }
-
-      /// <summary>
-      /// Retrieve the value at index <paramref name="at"/>.
-      /// </summary>
-      /// <param name="at">The index to retrieve a value at.</param>
-      /// <returns>The requested value.</returns>
-      public Maths.Vector3 Get(int at) { return Maths.Vector3Ext.FromUnity(Array[at]); }
-    }
-
-    /// <summary>
-    /// An array adaptor to read <see cref="Maths.Colour"/> and store as <c>UnityEngine.Colour32</c>.
-    /// </summary>
-    public class ColoursAdaptor : MeshShape.ComponentAdaptor<Maths.Colour>
-    {
-      /// <summary>
-      /// Accesses the underlying array.
-      /// </summary>
-      /// <value>The array.</value>
-      public Color32[] Array { get; protected set; }
-
-      /// <summary>
-      /// Create a wrapper around <paramref name="array"/>.
-      /// </summary>
-      /// <param name="array">Array.</param>
-      public ColoursAdaptor(Color32[] array)
-      {
-        Array = array;
-      }
-
-      /// <summary>
-      /// Retrieve the array length or resize the array (data lost).
-      /// </summary>
-      public int Count
-      {
-        get { return (Array != null) ? Array.Length : 0; }
-        set { if (Count != value) { Array = new Color32[value]; } }
-      }
-
-      /// <summary>
-      /// Set the element at index <paramref name="at"/>.
-      /// </summary>
-      /// <param name="at">The index to set a value at.</param>
-      /// <param name="val">The value to set.</param>
-      public void Set(int at, Maths.Colour val) { Array[at] = Maths.ColourExt.ToUnity32(val); }
-
-      /// <summary>
-      /// Retrieve the value at index <paramref name="at"/>.
-      /// </summary>
-      /// <param name="at">The index to retrieve a value at.</param>
-      /// <returns>The requested value.</returns>
-      public Maths.Colour Get(int at) { return Maths.ColourExt.FromUnity(Array[at]); }
-    }
-    #endregion
 
     /// <summary>
     /// Create the shape handler.
@@ -149,10 +31,12 @@ namespace Tes.Handlers.Shape3D
     public MeshHandler(Runtime.CategoryCheckDelegate categoryCheck)
       : base(categoryCheck)
     {
-      if (Root != null)
-      {
-        Root.name = Name;
-      }
+      // if (Root != null)
+      // {
+      //   Root.name = Name;
+      // }
+      _shapeCache.AddExtensionType<MeshEntry>();
+      _transientCache.AddExtensionType<MeshEntry>();
     }
 
     /// <summary>
@@ -183,6 +67,9 @@ namespace Tes.Handlers.Shape3D
     public override void Initialise(GameObject root, GameObject serverRoot, MaterialLibrary materials)
     {
       base.Initialise(root, serverRoot, materials);
+
+      // Add a render mesh component to the shapes.
+
     }
 
     /// <summary>
@@ -191,17 +78,16 @@ namespace Tes.Handlers.Shape3D
     public override void Reset()
     {
       // Clear out all the mesh data in our objects.
-      foreach (GameObject obj in _transientCache.Objects)
+      foreach (int shapeIndex in _transientCache.ShapeIndices)
       {
-        ResetObject(obj);
+        ResetObject(_transientCache, shapeIndex);
       }
 
-      foreach (GameObject obj in _shapeCache.Objects)
+      foreach (int shapeIndex in _shapeCache.ShapeIndices)
       {
-        ResetObject(obj);
+        ResetObject(_shapeCache, shapeIndex);
       }
 
-      _awaitingFinalisation.Clear();
       base.Reset();
     }
 
@@ -211,18 +97,27 @@ namespace Tes.Handlers.Shape3D
     public override void PreRender()
     {
       base.PreRender();
-      MeshDataComponent meshData;
-      ShapeComponent shape;
-      Material mat;
-      for (int i = 0; i < _awaitingFinalisation.Count; ++i)
+
+      for (int i = 0; i < _toCalculateNormals.Count; ++i)
       {
-        meshData = _awaitingFinalisation[i];
-        shape = meshData.GetComponent<ShapeComponent>();
-        mat = SelectMaterial(shape, meshData);
-        FinaliseMesh(meshData.gameObject, shape, meshData, mat, shape.Colour);
+        _toCalculateNormals[i].CalculateNormals();
       }
 
-      _awaitingFinalisation.Clear();
+      _toCalculateNormals.Clear();
+    }
+
+    public override void Render(ulong categoryMask, Matrix4x4 primaryCameraTransform)
+    {
+      // TODO: (KS) Resolve categories.
+      foreach (int shapeIndex in _transientCache.ShapeIndices)
+      {
+        RenderObject(_transientCache, shapeIndex);
+      }
+
+      foreach (int shapeIndex in _shapeCache.ShapeIndices)
+      {
+        RenderObject(_shapeCache, shapeIndex);
+      }
     }
 
     /// <summary>
@@ -234,23 +129,38 @@ namespace Tes.Handlers.Shape3D
     {
       if (!maintainTransient)
       {
-        foreach (GameObject obj in _transientCache.Objects)
+        foreach (int shapeIndex in _transientCache.ShapeIndices)
         {
-          ResetObject(obj);
+          ResetObject(_transientCache, shapeIndex);
         }
       }
       base.BeginFrame(frameNumber, maintainTransient);
     }
 
-    /// <summary>
-    /// Overridden to add <see cref="MeshDataComponent"/>.
-    /// </summary>
-    /// <returns>A new object supporting the mesh shape.</returns>
-    protected override GameObject CreateObject()
+    protected void RenderObject(ShapeCache cache, int shapeIndex)
     {
-      GameObject obj = base.CreateObject();
-      obj.AddComponent<MeshDataComponent>();
-      return obj;
+      MeshEntry meshEntry = cache.GetShapeDataByIndex<MeshEntry>(shapeIndex);
+      Matrix4x4 transform = cache.GetShapeDataByIndex<Matrix4x4>(shapeIndex);
+
+      // Set buffers.
+      GL.PushMatrix();
+      GL.MultMatrix(transform);
+
+      meshEntry.Mesh.Render();
+
+      // material.SetPass(0);
+      // // material.EnableKeyword("WITH_COLOUR");
+
+      // if (_indexBuffer != null)
+      // {
+      //   Graphics.DrawProceduralNow(Topology, _indexBuffer, VertexCount, 1);
+      // }
+      // else
+      // {
+      //   Graphics.DrawProceduralNow(Topology, VertexCount, 1);
+      // }
+
+      GL.PopMatrix();
     }
 
     /// <summary>
@@ -294,20 +204,28 @@ namespace Tes.Handlers.Shape3D
     /// <param name="packet"></param>
     /// <param name="reader"></param>
     /// <returns></returns>
-    protected override Error PostHandleMessage(GameObject obj, CreateMessage msg, PacketBuffer packet, BinaryReader reader)
+    protected override Error PostHandleMessage(CreateMessage msg, PacketBuffer packet, BinaryReader reader,
+                                               ShapeCache cache, int shapeIndex)
     {
       uint vertexCount = reader.ReadUInt32();
       uint indexCount = reader.ReadUInt32();
+      MeshDrawType drawType = (MeshDrawType)reader.ReadByte();
 
-      MeshDataComponent meshData = obj.GetComponent<MeshDataComponent>();
+      RenderMesh mesh = new RenderMesh(drawType, vertexCount, indexCount);
+      MeshEntry meshEntry = new MeshEntry
+      {
+        Mesh = mesh,
+        CalculateNormals = (msg.Flags & (ushort)MeshShapeFlag.CalculateNormals) != 0
+      };
 
-      meshData.Vertices = new Vector3[vertexCount];
-      meshData.Indices = new int[indexCount];
-      meshData.Normals = null;
-      meshData.DrawType = (MeshDrawType)reader.ReadByte();
-      meshData.CalculateNormals = meshData.DrawType == MeshDrawType.Triangles &&
-                                  (msg.Flags & (ushort)MeshShapeFlag.CalculateNormals) != 0;
+      meshEntry.Material = CreateMaterial(msg, meshEntry);
 
+      cache.SetShapeDataByIndex(shapeIndex, meshEntry);
+
+      if (meshEntry.CalculateNormals)
+      {
+        _toCalculateNormals.Add(mesh);
+      }
       return base.PostHandleMessage(obj, msg, packet, reader);
     }
 
@@ -320,67 +238,154 @@ namespace Tes.Handlers.Shape3D
     /// <returns></returns>
     protected override Error HandleMessage(DataMessage msg, PacketBuffer packet, BinaryReader reader)
     {
-      GameObject obj = null;
-      if (msg.ObjectID == 0)
+      ShapeCache cache = (msg.ObjectID == 0) ? _transientCache : _shapeCache;
+      int shapeIndex = (msg.ObjectID == 0) ? _lastTransientIndex : cache.GetShapeIndex(msg.ObjectID);
+
+      if (shapeIndex < 0)
       {
-        // Transient object.
-        obj = _transientCache.LastObject;
-        if (!obj)
-        {
-          return new Error(ErrorCode.InvalidObjectID, 0);
-        }
-      }
-      else
-      {
-        obj = FindObject(msg.ObjectID);
-        if (!obj)
-        {
-          // Object already exists.
-          return new Error(ErrorCode.InvalidObjectID, msg.ObjectID);
-        }
+        return new Error(ErrorCode.InvalidObjectID, msg.ObjectID);
       }
 
       // Naive support for multiple packets. Assume:
       // - In order.
-      // - Under the overall Unity mesh indexing limit.
-      MeshDataComponent meshData = obj.GetComponent<MeshDataComponent>();
+      MeshEntry meshEntry = cache.GetShapeDataByIndex<MeshEntry>(shapeIndex);
 
-      Vector3ComponentAdaptor normalsAdaptor = new Vector3ComponentAdaptor(meshData.Normals);
-      ColoursAdaptor coloursAdaptor = new ColoursAdaptor(meshData.Colours);
       int readComponent = MeshShape.ReadDataComponent(reader,
-                                          new Vector3ComponentAdaptor(meshData.Vertices),
-                                          new MeshShape.ArrayComponentAdaptor<int>(meshData.Indices),
-                                          normalsAdaptor,
-                                          coloursAdaptor
-                                         );
+        (SendDataType dataType, BinaryReader reader, uint offset, uint count) =>
+        {
+          return ReadMeshVector3Data(reader, offset, count, (Vector3[] buffer, int count) =>
+          {
+            meshEntry.Mesh.SetVertices(buffer, 0, meshDstOffset, dstIndex);
+          });
+        },
+        (SendDataType dataType, BinaryReader reader, uint offset, uint count) =>
+        {
+          return ReadIndexComponent(reader, offset, count, meshEntry.Mesh);
+        },
+        (SendDataType dataType, BinaryReader reader, uint offset, uint count) =>
+        {
+          return ReadMeshVector3Data(reader, offset, count, (Vector3[] buffer, int count) =>
+          {
+            if (dataType == SendDataType.UniformNormals)
+            {
+              // Only one normal for the whole mesh.
+              // Fill the buffer and write in chunks.
+              for (int i = 1; i < buffer.Length; ++i)
+              {
+                buffer[i] = buffer[0];
+              }
+              int offset = 0;
+              for (int i = 0; i < meshEntry.Mesh.VertexCount; i += buffer.Length)
+              {
+                int count = Math.Min(buffer.Length, meshEntry.Mesh.VertexCount - offset);
+                meshEntry.Mesh.SetNormals(buffer, 0, offset, count);
+                offset += count;
+              }
+            }
+            else
+            {
+              meshEntry.Mesh.SetNormals(buffer, 0, meshDstOffset, dstIndex);
+            }
+          });
+        },
+        (SendDataType dataType, BinaryReader reader, uint offset, uint count) =>
+        {
+          return ReadColourComponent(reader, offset, count, meshEntry.Mesh);
+        }
+      );
 
       if (readComponent == -1)
       {
         return new Error(ErrorCode.MalformedMessage, DataMessage.MessageID);
       }
 
-      // Normals and colours may have been (re)allocated. Store the results.
-      switch (readComponent & ~(int)(MeshShape.SendDataType.End | MeshShape.SendDataType.ExpectEnd))
-      {
-        case (int)MeshShape.SendDataType.Normals:
-        case (int)MeshShape.SendDataType.UniformNormal:
-          // Normals array may have been (re)allocated.
-          meshData.Normals = normalsAdaptor.Array;
-          break;
-
-        case (int)MeshShape.SendDataType.Colours:
-          // Colours array may have been (re)allocated.
-          meshData.Colours = coloursAdaptor.Array;
-          break;
-      }
-
-      // Check for finalisation.
-      if ((readComponent & (int)MeshShape.SendDataType.End) != 0)
-      {
-        _awaitingFinalisation.Add(meshData);
-      }
-
       return new Error();
+    }
+
+    delegate void WriteToMesh(Vector3[] buffer, int count);
+    private uint ReadMeshVector3Data(BinaryReader reader, uint offset, uint count, WriteToMesh writer)
+    {
+      int dstIndex = 0;
+      int meshDstOffset = (int)offset;
+      Vector3 v3 = Vector3.zero;
+      for (uint srcIndex = 0; srcIndex < count; ++srcIndex)
+      {
+        v3.x = reader.ReadSingle();
+        v3.y = reader.ReadSingle();
+        v3.z = reader.ReadSingle();
+        _v3Buffer[dstIndex++] = v3;
+        if (dstIndex == _v3Buffer.Length)
+        {
+          // Flush buffer.
+          writer(_v3Buffer, dstIndex);
+          meshDstOffset += dstIndex;
+          dstIndex = 0;
+        }
+      }
+
+      if (dstIndex > 0)
+      {
+        // Flush buffer.
+        writer(_v3Buffer, dstIndex);
+        meshDstOffset += dstIndex;
+        dstIndex = 0;
+      }
+
+      return (uint)meshDstOffset;
+    }
+
+    private uint ReadIndexComponent(BinaryReader reader, uint offset, uint count, RenderMesh mesh)
+    {
+      int dstIndex = 0;
+      int meshDstOffset = (int)offset;
+      for (uint srcIndex = 0; srcIndex < count; ++srcIndex)
+      {
+        _intBuffer[dstIndex++] = reader.ReadInt32();
+        if (dstIndex == _intBuffer.Length)
+        {
+          // Flush buffer.
+          mesh.SetIndices(_intBuffer, 0, meshDstOffset, dstIndex);
+          meshDstOffset += dstIndex;
+          dstIndex = 0;
+        }
+      }
+
+      if (dstIndex > 0)
+      {
+        // Flush buffer.
+        mesh.SetIndices(_intBuffer, 0, meshDstOffset, dstIndex);
+        meshDstOffset += dstIndex;
+        dstIndex = 0;
+      }
+
+      return (uint)meshDstOffset;
+    }
+
+    private uint ReadColourComponent(BinaryReader reader, uint offset, uint count, RenderMesh mesh)
+    {
+      int dstIndex = 0;
+      int meshDstOffset = (int)offset;
+      for (uint srcIndex = 0; srcIndex < count; ++srcIndex)
+      {
+        _uintBuffer[dstIndex++] = reader.ReadUInt32();
+        if (dstIndex == _uintBuffer.Length)
+        {
+          // Flush buffer.
+          mesh.SetIndices(_uintBuffer, 0, meshDstOffset, dstIndex);
+          meshDstOffset += dstIndex;
+          dstIndex = 0;
+        }
+      }
+
+      if (dstIndex > 0)
+      {
+        // Flush buffer.
+        mesh.SetIndices(_uintBuffer, 0, meshDstOffset, dstIndex);
+        meshDstOffset += dstIndex;
+        dstIndex = 0;
+      }
+
+      return (uint)meshDstOffset;
     }
 
     /// <summary>
@@ -391,9 +396,10 @@ namespace Tes.Handlers.Shape3D
     /// <param name="packet"></param>
     /// <param name="reader"></param>
     /// <returns></returns>
-    protected override Error PostHandleMessage(GameObject obj, DestroyMessage msg, PacketBuffer packet, BinaryReader reader)
+    protected override Error PostHandleMessage(DestroyMessage msg, PacketBuffer packet, BinaryReader reader,
+                                               ShapeCache cache, int shapeIndex)
     {
-      ResetObject(obj);
+      ResetObject(cache, shapeIndex);
       return new Error();
     }
 
@@ -408,47 +414,59 @@ namespace Tes.Handlers.Shape3D
     /// <param name="shape">The shape object to select a material for.</param>
     /// <param name="meshData">Details of the mesh shape we are selecting a material for.</param>
     /// <returns>The appropriate material for rendering <paramref name="meshData"/>.</returns>
-    Material SelectMaterial(ShapeComponent shape, MeshDataComponent meshData)
+    Material CreateMaterial(CreateMessage shape, MeshEntry meshEntry)
     {
       Material mat;
-      switch (meshData.DrawType)
+      switch (meshEntry.Mesh.DrawType)
       {
       case MeshDrawType.Points:
-        mat = Materials[MaterialLibrary.PointsUnlit];
+        mat = new Material(Materials[MaterialLibrary.PointsUnlit]);
+        int pointSize = (Materials != null) ? Materials.DefaultPointSize : 4;
+        mat.SetInt("_PointSize", pointSize);
+        mat.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
         break;
       case MeshDrawType.Voxels:
-        mat = Materials[MaterialLibrary.Voxels];
+        mat = new Material(Materials[MaterialLibrary.Voxels]);
         break;
       default:
       case MeshDrawType.Lines:
-        mat = Materials[MaterialLibrary.VertexColourUnlit];
+        mat = new Material(Materials[MaterialLibrary.VertexColourUnlit]);
         break;
       case MeshDrawType.Triangles:
         // Check wire frame.
-        if (shape != null && shape.Wireframe)
+        if ((shape.Flags & (uint)ObjectFlag.Wireframe) != 0u)
         {
-          mat = Materials[MaterialLibrary.WireframeTriangles];
+          mat = new Material(Materials[MaterialLibrary.WireframeTriangles]);
         }
-        else if (shape != null && shape.TwoSided)
+        else if ((shape.Flags & (uint)shape.TwoSided) != 0u)
         {
           if (meshData.CalculateNormals)
           {
-            mat = Materials[MaterialLibrary.VertexColourLitTwoSided];
+            mat = new Material(Materials[MaterialLibrary.VertexColourLitTwoSided]);
           }
           else
           {
-            mat = Materials[MaterialLibrary.VertexColourUnlitTwoSided];
+            mat = new Material(Materials[MaterialLibrary.VertexColourUnlitTwoSided]);
+          }
+          if (mat.HasProperty("_BackColour"))
+          {
+            mat.SetColor("_BackColour", new Maths.Colour(shape.ObjectAttributes.Colour).ToUnity32());
           }
         }
         else if (meshData.CalculateNormals)
         {
-          mat = Materials[MaterialLibrary.VertexColourLit];
+          mat = new Material(Materials[MaterialLibrary.VertexColourLit]);
         }
         else
         {
-          mat = Materials[MaterialLibrary.VertexColourUnlit];
+          mat = new Material(Materials[MaterialLibrary.VertexColourUnlit]);
         }
         break;
+      }
+
+      if (mat.HasProperty("_Colour"))
+      {
+        mat.SetColor("_Color", new Maths.Colour(shape.ObjectAttributes.Colour).ToUnity32());
       }
 
       return mat;
@@ -458,193 +476,20 @@ namespace Tes.Handlers.Shape3D
     /// Release the mesh resources of <paramref name="obj"/>.
     /// </summary>
     /// <param name="obj"></param>
-    void ResetObject(GameObject obj)
+    void ResetObject(ShapeCache cache, int shapeIndex)
     {
-      MeshFilter meshFilter = obj.GetComponent<MeshFilter>();
-      if (meshFilter != null)
-      {
-        meshFilter.mesh = null;
-      }
-      MeshDataComponent meshData = obj.GetComponent<MeshDataComponent>();
-      meshData.Vertices = null;
-      meshData.Indices = null;
-
-      // Destroy children.
-      for (int i = obj.transform.childCount - 1; i >= 0; --i)
-      {
-        GameObject.Destroy(obj.transform.GetChild(i).gameObject);
-      }
-
-      _awaitingFinalisation.RemoveAll((MeshDataComponent cmp) => { return cmp == meshData; });
+      MeshEntry meshEntry = cache.GetShapeDataByIndex<MeshEntry>(shapeIndex);
+      meshEntry.Mesh.ReleaseBuffers();
     }
 
     /// <summary>
-    /// Finalises the mesh object an child objects.
+    /// Buffer chuck size when reading mesh components before migrating into compute buffers.
     /// </summary>
-    /// <param name="obj">Game object to set the mesh on or create children on.</param>
-    /// <param name="shape">The <see cref="ShapeComponent"/> belonging to <paramref name="obj"/>.</param>
-    /// <param name="meshData">Mesh vertex and index data.</param>
-    /// <param name="material">Material to render with. Chosen based on topology.</param>
-    /// <param name="colour">The mesh render colour.</param>
-    protected void FinaliseMesh(GameObject obj, ShapeComponent shape, MeshDataComponent meshData, Material material, Color32 colour)
-    {
-      MeshFilter meshFilter = obj.GetComponent<MeshFilter>();
-      MeshTopology topology = MeshCache.DrawTypeToTopology(meshData.DrawType);
-      bool haveNormals = meshData.Normals != null && meshData.Vertices != null &&
-                         meshData.Normals.Length == meshData.Vertices.Length;
-      bool haveColours = meshData.Colours != null && meshData.Vertices != null &&
-                         meshData.Colours.Length == meshData.Vertices.Length;
-      if (meshData.Vertices.Length < 65000)
-      {
-        if (meshFilter == null)
-        {
-          meshFilter = obj.AddComponent<MeshFilter>();
-        }
-        // Can do it with one object.
-        Mesh mesh = new Mesh();
-        obj.GetComponent<MeshFilter>().mesh = mesh;
-        mesh.subMeshCount = 1;
-        mesh.vertices = meshData.Vertices;
-        if (haveNormals)
-        {
-          mesh.normals = meshData.Normals;
-        }
-        else
-        {
-          mesh.normals = null;
-        }
-
-        if (haveColours)
-        {
-          mesh.colors32 = meshData.Colours;
-        }
-
-        if (meshData.Indices.Length > 0)
-        {
-          mesh.SetIndices(meshData.Indices, topology, 0);
-        }
-        else
-        {
-          // No explicit indices. Set sequential indexing.
-          int[] indices = new int[meshData.Vertices.Length];
-          for (int i = 0; i < indices.Length; ++i)
-          {
-            indices[i] = i;
-          }
-          mesh.SetIndices(indices, topology, 0);
-        }
-
-        MeshRenderer render = obj.GetComponent<MeshRenderer>();
-        render.material = material;
-        render.material.color = colour;
-        if (shape.TwoSided && render.material.HasProperty("_BackColour"))
-        {
-          render.material.SetColor("_BackColour", colour);
-        }
-        if (meshData.DrawType == MeshDrawType.Points)
-        {
-          int pointSize = (Materials != null) ? Materials.DefaultPointSize : 4;
-          render.material.SetInt("_PointSize", pointSize);
-          render.material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
-        }
-
-        mesh.RecalculateBounds();
-        if (meshData.CalculateNormals && !haveNormals)
-        {
-          //mesh.RecalculateNormals();
-        }
-      }
-      else
-      {
-        // Need multiple objects.
-        // Destroy the current mesh filter.
-        if (meshFilter != null)
-        {
-          GameObject.Destroy(meshFilter);
-        }
-
-        // Create children.
-        int elementIndices = MeshCache.TopologyIndexStep(MeshCache.DrawTypeToTopology(meshData.DrawType));
-        // Calculate the number of vertices per mesh by truncation.
-        int itemsPerMesh = (65000 / elementIndices) * elementIndices;
-        int[] indices = meshData.Indices;
-
-        if (indices.Length == 0)
-        {
-          // No explicit indices. Set sequential indexing.
-          indices = new int[meshData.Vertices.Length];
-          for (int i = 0; i < indices.Length; ++i)
-          {
-            indices[i] = i;
-          }
-        }
-
-        // For now just duplicate vertex data.
-        int indexOffset = 0;
-        int partCount = 0;
-        int elementCount;
-        while (indexOffset < indices.Length)
-        {
-          ++partCount;
-          GameObject part = new GameObject(string.Format("{0}{1:D2}", topology.ToString(), partCount));
-          Mesh partMesh = part.AddComponent<MeshFilter>().mesh;
-          MeshRenderer render = part.AddComponent<MeshRenderer>();
-          render.material = material;
-          render.material.color = colour;
-          if (shape.TwoSided)
-          {
-            render.material.SetColor("_BackColour", colour);
-          }
-          if (meshData.DrawType == MeshDrawType.Points)
-          {
-            int pointSize = (Materials != null) ? Materials.DefaultPointSize : 4;
-            render.material.SetInt("_PointSize", pointSize);
-            render.material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
-          }
-          partMesh.subMeshCount = 1;
-          elementCount = Math.Min(itemsPerMesh, indices.Length - indexOffset);
-
-          Vector3[] partVerts = new Vector3[elementCount];
-          Vector3[] partNorms = (haveNormals) ? new Vector3[elementCount] : null;
-          Color32[] partColours = (haveColours) ? new Color32[elementCount] : null;
-          int[] partInds = new int[elementCount];
-
-          for (int i = 0; i < elementCount; ++i)
-          {
-            partVerts[i] = meshData.Vertices[indices[i + indexOffset]];
-            if (partNorms != null)
-            {
-              partNorms[i] = meshData.Normals[indices[i + indexOffset]];
-            }
-            if (partColours != null)
-            {
-              partColours[i] = meshData.Colours[indices[i + indexOffset]];
-            }
-            partInds[i] = i;
-          }
-
-          part.transform.SetParent(obj.transform, false);
-          partMesh.vertices = partVerts;
-          if (partNorms != null)
-          {
-            partMesh.normals = partNorms;
-          }
-          if (partColours != null)
-          {
-            partMesh.colors32 = partColours;
-          }
-          partMesh.SetIndices(partInds, topology, 0);
-          partMesh.RecalculateBounds();
-          if (meshData.CalculateNormals && !haveNormals)
-          {
-            //partMesh.RecalculateNormals();
-          }
-
-          indexOffset += elementCount;
-        }
-      }
-    }
-
-    private List<MeshDataComponent> _awaitingFinalisation = new List<MeshDataComponent>();
+    private static readonly int s_bufferChuckSize = 0xffff;
+    private Tes.Math.Vector3[] _v3Buffer = new Tes.Math.Vector3[s_bufferChuckSize];
+    private Tes.Math.Vector2[] _v2Buffer = new Tes.Math.Vector2[s_bufferChuckSize];
+    private int[] _intBuffer = new int[s_bufferChuckSize];
+    private uint[] _uintBuffer = new uint[s_bufferChuckSize];
+    private List<RenderMesh> _toCalculateNormals = new List<RenderMesh>();
   }
 }

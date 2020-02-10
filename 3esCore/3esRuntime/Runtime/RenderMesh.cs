@@ -6,6 +6,9 @@ using UnityEngine;
 
 namespace Tes.Runtime
 {
+  /// <summary>
+  /// A collection of compute and graphics buffers representing a renderable mesh
+  /// </summary>
   public class RenderMesh
   {
     public MeshDrawType DrawType
@@ -37,6 +40,20 @@ namespace Tes.Runtime
         // Programmatic error if this happens.
         throw new Exception("Unsupported draw type");
       }
+    }
+
+    private Matrix4x4 _localTransform = Matrix4x4.identity;
+    Matrix4x4 LocalTransform
+    {
+      get { return _localTransform; }
+      set { _localTransform = value; }
+    }
+
+    private Tes.Maths.Colour _tint = new Tes.Maths.Colour(255, 255, 255);
+    private Tes.Maths.Colour Tint
+    {
+      get { return _tint; }
+      set { _tint = value; }
     }
 
     public Bounds Bounds
@@ -101,6 +118,25 @@ namespace Tes.Runtime
     public bool HasColours { get { return _coloursBuffer != null; } }
     public bool HasUVs { get { return _uvsBuffer != null; } }
 
+    public GraphicsBuffer IndexBuffer { get { return _indexBuffer; } }
+    public ComputeBuffer VertexBuffer { get { return _vertexBuffer; } }
+    public ComputeBuffer NormalsBuffer { get { return _normalsBuffer; } }
+    public ComputeBuffer ColoursBuffer { get { return _coloursBuffer; } }
+    public ComputeBuffer UvsBuffer { get { return _uvsBuffer; } }
+
+    private Material _material = null;
+    public Material Material
+    {
+      get { return _material; }
+      set { _material = value; _materialDirty = true; }
+    }
+
+    private bool _materialDirty = false;
+    public bool MaterialDirty
+    {
+      get { return _materialDirty; }
+    }
+
     public RenderMesh() {}
 
     public RenderMesh(MeshDrawType drawType, int vertexCount, int indexCount = 0)
@@ -141,6 +177,34 @@ namespace Tes.Runtime
       {
         _uvsBuffer.Release();
         _uvsBuffer = null;
+      }
+    }
+
+    public void UpdateMaterial()
+    {
+      if (_material != null)
+      {
+        if (HasColours)
+        {
+          _material.EnableKeyword("WITH_COLOURS");
+        }
+
+        if (HasNormals)
+        {
+          _material.EnableKeyword("WITH_NORMALS");
+        }
+
+        if (HasUvs)
+        {
+          _material.EnableKeyword("WITH_UVS");
+        }
+
+        if (_material.HasProperty("_Tint"))
+        {
+          _material.SetColor("_Tint", Tint.ToUnity32());
+        }
+
+        _materialDirty = false;
       }
     }
 
@@ -420,6 +484,79 @@ namespace Tes.Runtime
       _uvsBuffer.GetData(uvs, listStartIndex, bufferStartIndex, count);
     }
 
+    public void CalculateNormals()
+    {
+      if (mesh.DrawType == MeshDrawType.Triangles || mesh.DrawType == MeshDrawType.Quads)
+      {
+        Vector3[] vertexArray = new Vector3[VertexCount];
+        Vector3[] normalsArray = new Vector3[VertexCount];
+        // Handle explicit and implied indexing.
+        int[] indexArray = (IndexCount > 0) ? new int[IndexCount] : new int[VertexCount];
+
+        mesh.GetVertices(vertexArray);
+        if (IndexCount > 0)
+        {
+          mesh.GetIndices(indexArray);
+        }
+        else
+        {
+          for (int i = 0; i < indexArray.Length; ++i)
+          {
+            indexArray[i] = i;
+          }
+        }
+
+        // Accumulate per face normals in the vertices.
+        int faceStride = DrawType == MeshDrawType.Quads ? 4 : 3;
+        Vector3 edgeA = Vector3.zero;
+        Vector3 edgeB = Vector3.zero;
+        Vector3 partNormal = Vector3.zero;
+        for (int i = 0; i < indexArray.Length; i += faceStride)
+        {
+          // Generate a normal for the current face.
+          edgeA = vertexArray[indexArray[i + 1]] - vertexArray[indexArray[i + 0]];
+          edgeB = vertexArray[indexArray[i + 2]] - vertexArray[indexArray[i + 1]];
+          partNormal = Vector3.Cross(edgeB, edgeA);
+          for (int v = 0; v < faceStride; ++v)
+          {
+            normalsArray[indexArray[i + v]] += partNormal;
+          }
+        }
+
+        // Normalise all the part normals.
+        for (int i = 0; i < normalsArray.Length; ++i)
+        {
+          normalsArray[i] = normalsArray[i].normalized;
+        }
+
+        SetNormals(normalsArray);
+      }
+    }
+
+    /// <summary>
+    /// To be called prior to rendering to ensure the correct material state.
+    /// </summary>
+    public void PreRender()
+    {
+      if (_materialDirty && _materialDirty != null)
+      {
+        if (HasColours)
+        {
+          _material.EnableKeyword("WITH_COLOUR");
+        }
+        if (HasNormals)
+        {
+          _material.EnableKeyword("WITH_NORMALS");
+        }
+        if (HasUVs)
+        {
+          _material.EnableKeyword("WITH_UVS");
+        }
+
+        _materialDirty = true;
+      }
+    }
+
     public void Render(string vertexStreamName = "vertices", string normalsStreamName = "normals",
                        string coloursStreamName = "colours")
     {
@@ -447,7 +584,7 @@ namespace Tes.Runtime
 
       if (_indexBuffer != null)
       {
-        Graphics.DrawProceduralNow(Topology, _indexBuffer, VertexCount, 1);
+        Graphics.DrawProceduralNow(Topology, _indexBuffer, IndexCount, 1);
       }
       else
       {
@@ -468,16 +605,19 @@ namespace Tes.Runtime
 
     protected void CreateNormalsBuffer()
     {
+      _materialDirty = _normalsBuffer == null;
       EnsureBufferSize<Vector3>(ref _normalsBuffer, _vertexCount);
     }
 
     protected void CreateColoursBuffer()
     {
+      _materialDirty = _normalsBuffer == null;
       EnsureBufferSize<uint>(ref _coloursBuffer, _vertexCount);
     }
 
     protected void CreateUVsBuffer()
     {
+      _materialDirty = _normalsBuffer == null;
       EnsureBufferSize<Vector2>(ref _uvsBuffer, _vertexCount);
     }
 
