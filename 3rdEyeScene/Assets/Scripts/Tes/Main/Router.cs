@@ -16,7 +16,7 @@ using Tes.Runtime;
 namespace Tes.Main
 {
   /// <summary>
-  /// Active mode options for the <see cref="Rounter"/>.
+  /// Active mode options for the <see cref="Router"/>.
   /// </summary>
   public enum RouterMode
   {

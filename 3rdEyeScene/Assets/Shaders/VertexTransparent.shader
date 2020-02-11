@@ -1,6 +1,4 @@
-﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
-
-Shader "VertexColour/VertexTransparent"
+﻿Shader "VertexColour/VertexTransparent"
 {
   Properties
   {
@@ -27,13 +25,10 @@ Shader "VertexColour/VertexTransparent"
 
       uniform float4 _Color;
       uniform float4 _Tint;
-
-      // Note: we do lighting in the vertex shader because it is uniform across the point quad.
-      struct VertexInput
-      {
-        float4 vertex : POSITION;
-        float4 colour : COLOR;
-      };
+      StructuredBuffer<float3> _Vertices;
+      #ifdef WITH_COLOURS
+      StructuredBuffer<float4> _Colours;
+      #endif // WITH_COLOURS
 
       struct FragmentInput
       {
@@ -41,18 +36,21 @@ Shader "VertexColour/VertexTransparent"
         float4 colour : COLOR;
       };
 
-      FragmentInput vert(VertexInput v)
+      FragmentInput vert(uint vid : SV_VertexID)
       {
         FragmentInput o;
-        o.vertex = UnityObjectToClipPos(v.vertex);
-        o.colour = _Color * _Tint * v.colour;
+        o.vertex = UnityObjectToClipPos(_Vertices[vid]);
+        o.colour = _Color * _Tint
+            #ifdef WITH_COLOURS
+            * v.colour
+            #endif // WITH_COLOURS
+          ;
         return o;
       }
 
       float4 frag(FragmentInput i) : COLOR
       {
         return i.colour;
-        //return float4(0, 1, 1, 0.5f);
       }
       ENDCG
     }

@@ -58,7 +58,6 @@ namespace Tes.Runtime
     /// The name of a default material for rendering unlit points. per vertex colour with no lighting.
     /// </summary>
     public static string PointsLit { get { return "pointsLit"; } }
-    public static string Points { get { return "points"; } }
     /// <summary>
     /// The name of a default material for rendering unlit points.
     /// </summary>

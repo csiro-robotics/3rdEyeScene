@@ -1,7 +1,6 @@
 ﻿﻿using System;
 using System.IO;
-using SharpCompress.Compressors;
-using SharpCompress.Compressors.Deflate;
+using System.IO.Compression;
 using Tes.Net;
 using Tes.Shapes;
 
@@ -179,7 +178,7 @@ namespace Tes.IO
         int overhead = (int)_finalisedBuffer.Position;
 
         // Now compress the collated packets.
-        GZipStream compressionStream = new GZipStream(_finalisedBuffer, CompressionMode.Compress, CompressionLevel.Default);
+        GZipStream compressionStream = new GZipStream(_finalisedBuffer, CompressionLevel.Fastest);
         compressionStream.Write(_collationBuffer.GetBuffer(), 0, (int)_collationBuffer.Position);
         compressionStream.Close();
         if (_finalisedBuffer.Position < _collationBuffer.Position + overhead)

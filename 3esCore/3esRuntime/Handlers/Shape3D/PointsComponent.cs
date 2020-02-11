@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 namespace Tes.Handlers.Shape3D
@@ -30,7 +31,7 @@ namespace Tes.Handlers.Shape3D
 
     public Material Material { get; set; }
 
-    private Color32 _colour = Colour32.white;
+    private Color32 _colour = new Color32(255, 255, 255, 255);
     public Color32 Colour { get { return _colour; } set { _colour = value; } }
 
     ~PointsComponent()
@@ -57,7 +58,7 @@ namespace Tes.Handlers.Shape3D
     /// The mesh component once resolved from the mesh cache.
     /// </summary>
     /// <value></value>
-    public MeshCache. MeshEntry Mesh { get; set; }
+    public MeshCache.MeshDetails Mesh { get; set; }
     /// <summary>
     /// Number of indices used as a window into the mesh.
     /// </summary>
@@ -100,7 +101,7 @@ namespace Tes.Handlers.Shape3D
     {
       if (_indexBuffer == null)
       {
-        _indexBuffer = new ComputeBuffer(value, Marshal.Sizeof(typeof(int)));
+        _indexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Index, (int)IndexCount, Marshal.SizeOf(typeof(int)));
       }
       _indexBuffer.SetData(_indices);
       IndicesDirty = false;
@@ -114,7 +115,7 @@ namespace Tes.Handlers.Shape3D
     /// May be null, in which case all vertices are used.
     /// </remarks>
     public int[] Indices { get { return _indices; } }
-    public ComputeBuffer IndexBuffer { get { return _indexBuffer; } }
+    public GraphicsBuffer IndexBuffer { get { return _indexBuffer; } }
     /// <summary>
     /// Point render size override. Zero to use the default.
     /// </summary>
@@ -129,6 +130,6 @@ namespace Tes.Handlers.Shape3D
     private int _pointSize;
 
     private int[] _indices = null;
-    private ComputeBuffer _indexBuffer = null;
+    private GraphicsBuffer _indexBuffer = null;
   }
 }

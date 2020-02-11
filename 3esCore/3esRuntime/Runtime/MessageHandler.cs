@@ -150,7 +150,7 @@ namespace Tes.Runtime
     /// <remarks>
     /// Called between <see cref="BeginFrame(uint, bool)"/> and <see cref="EndFrame(uint)"/>.
     /// </remarks>
-    public virtual void Render() { }
+    public virtual void Render(ulong categoryMask, Matrix4x4 primaryCameraTransform) { }
 
     /// <summary>
     /// Called when a message arrives with a message routing ID matching

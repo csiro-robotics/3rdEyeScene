@@ -5,6 +5,7 @@ using Tes.IO;
 using Tes.Logging;
 using Tes.Net;
 using Tes.Runtime;
+using Tes.Maths;
 using UnityEngine;
 
 namespace Tes.Handlers.Shape3D
@@ -41,25 +42,21 @@ namespace Tes.Handlers.Shape3D
     public MeshSetHandler(Runtime.CategoryCheckDelegate categoryCheck, MeshCache meshCache)
       : base(categoryCheck)
     {
-      if (Root != null)
-      {
-        Root.name = Name;
-      }
       MeshCache = meshCache;
       _shapeCache.AddExtensionType<PartSet>();
       _transientCache.AddExtensionType<PartSet>();
     }
 
-    /// <summary>
-    /// Override.
-    /// </summary>
-    /// <param name="root"></param>
-    /// <param name="serverRoot"></param>
-    /// <param name="materials"></param>
-    public override void Initialise(GameObject root, GameObject serverRoot, MaterialLibrary materials)
-    {
-      Root.transform.SetParent(serverRoot.transform, false);
-    }
+    // /// <summary>
+    // /// Override.
+    // /// </summary>
+    // /// <param name="root"></param>
+    // /// <param name="serverRoot"></param>
+    // /// <param name="materials"></param>
+    // public override void Initialise(GameObject root, GameObject serverRoot, MaterialLibrary materials)
+    // {
+    //   Root.transform.SetParent(serverRoot.transform, false);
+    // }
 
     /// <summary>
     /// Clear all current objects and mesh references.
@@ -67,7 +64,7 @@ namespace Tes.Handlers.Shape3D
     public override void Reset()
     {
       base.Reset();
-      foreach (List<ShapeComponent> list in _registeredParts.Values)
+      foreach (List<PartSet> list in _registeredParts.Values)
       {
         list.Clear();
       }
@@ -78,124 +75,117 @@ namespace Tes.Handlers.Shape3D
     /// </summary>
     public override void Render(ulong categoryMask, Matrix4x4 primaryCameraTransform)
     {
-      var renderMeshesFunc = (ShapeCache cache, int shapeIndex) =>
-      {
-        CreateMessage shape = cache.GetShapeDataByIndex<CreateMessage>(shapeIndex);
-        Matrix4x4 transform = cache.GetShapeDataByIndex<Matrix4x4>(shapeIndex);
-        PartSet parts = cache.GetShapeDataByIndex<PartSet>(shapeIndex);
-
-        if (parts == null)
-        {
-          // No mesh.
-          Debug.LogWarning($"Point cloud shape {shape.ObjectID} missing mesh with ID {points.MeshID}");
-          continue;
-        }
-
-        GL.PushMatrix();
-
-        try
-        {
-          // Add shape transform.
-          GL.MultMatrix(transform);
-
-          for (int i = 0; i < parts.Meshes.Length; ++i)
-          {
-            MeshCache.MeshDetails mesh = parts.Meshes[i];
-
-            if (mesh == null)
-            {
-              continue;
-            }
-
-            if (mesh.MaterialDirty)
-            {
-              mesh.UpdateMaterial();
-            }
-
-            Material material =
-              (parts.MaterialOverrides != null && parts.MaterialOverrides.Length > 0 && parts.MaterialOverrides[i]) ?
-                parts.MaterialOverrides[i] : mesh.Material;
-
-            if (material == null)
-            {
-              continue;
-            }
-
-            GL.PushMatrix();
-
-            try
-            {
-              // Push the part transform.
-              GL.MultMatrix(parts.Transforms[i]);
-
-              // Push any transform associated with the part's mesh.
-              GL.MultMatrix(mesh.LocalTransform);
-
-              // Activate material and bind available buffers.
-              material.SetPass(0);
-
-              if (mesh.HasColours)
-              {
-                material.SetBuffer("colours", mesh.ColoursBuffer);
-              }
-
-              if (mesh.HasNormals)
-              {
-                material.SetBuffer("normals", mesh.NormalsBuffer);
-              }
-
-              // if (mesh.HasUVs)
-              // {
-              //   material.SetBuffer("uvs", mesh.UvsBuffer);
-              // }
-
-              if (material.HasProperty("_Color"))
-              {
-                material.SetColor("_Color", new Maths.Colour(shape.Attributes.Colour).ToUnity32());
-              }
-
-              if (material.HasProperty("_Tint"))
-              {
-                material.SetColor("_Tint", new Maths.Colour(shape.Attributes.Colour).ToUnity32());
-              }
-
-              if (material.HasProperty("_BackColour"))
-              {
-                material.SetColor("_BackColour", mesh.Tint.ToUnity32());
-              }
-
-              // Bind vertices and draw.
-              material.SetBuffer("vertices", mesh.VertexBuffer);
-
-              if (mesh.IndexBuffer != null)
-              {
-                Graphics.DrawProceduralNow(mesh.Topology, mesh.IndexBuffer, mesh.IndexCount, 1);
-              }
-              else
-              {
-                Graphics.DrawProceduralNow(mesh.Topology, mesh.VertexCount, 1);
-              }
-            }
-            finally
-            {
-              GL.PopMatrix();
-            }
-          }
-        }
-        finally
-        {
-          GL.PopMatrix();
-        }
-      };
-
       // TODO: (KS) category handling.
       foreach (int index in _transientCache.ShapeIndices)
       {
-        renderMeshesFunc(_transientCache, index);
+        RenderMeshes(_transientCache, index);
       }
       foreach (int index in _shapeCache.ShapeIndices)
       {
-        renderMeshesFunc(_shapeCache, index);
+        RenderMeshes(_shapeCache, index);
+      }
+    }
+
+    private void RenderMeshes(ShapeCache cache, int shapeIndex)
+    {
+      CreateMessage shape = cache.GetShapeDataByIndex<CreateMessage>(shapeIndex);
+      Matrix4x4 transform = cache.GetShapeDataByIndex<Matrix4x4>(shapeIndex);
+      PartSet parts = cache.GetShapeDataByIndex<PartSet>(shapeIndex);
+
+      GL.PushMatrix();
+
+      try
+      {
+        // Add shape transform.
+        GL.MultMatrix(transform);
+
+        for (int i = 0; i < parts.Meshes.Length; ++i)
+        {
+          RenderMesh mesh = (parts.Meshes[i] != null) ? parts.Meshes[i].Mesh : null;
+
+          if (mesh == null)
+          {
+            continue;
+          }
+
+          if (mesh.MaterialDirty)
+          {
+            mesh.UpdateMaterial();
+          }
+
+          Material material =
+            (parts.MaterialOverrides != null && parts.MaterialOverrides.Length > 0 && parts.MaterialOverrides[i]) ?
+              parts.MaterialOverrides[i] : mesh.Material;
+
+          if (material == null)
+          {
+            continue;
+          }
+
+          GL.PushMatrix();
+
+          try
+          {
+            // Push the part transform.
+            GL.MultMatrix(parts.Transforms[i]);
+
+            // Push any transform associated with the part's mesh.
+            GL.MultMatrix(mesh.LocalTransform);
+
+            // Activate material and bind available buffers.
+            material.SetPass(0);
+
+            if (mesh.HasColours)
+            {
+              material.SetBuffer("_Colours", mesh.ColoursBuffer);
+            }
+
+            if (mesh.HasNormals)
+            {
+              material.SetBuffer("_Normals", mesh.NormalsBuffer);
+            }
+
+            // if (mesh.HasUVs)
+            // {
+            //   material.SetBuffer("uvs", mesh.UvsBuffer);
+            // }
+
+            if (material.HasProperty("_Color"))
+            {
+              material.SetColor("_Color", new Maths.Colour(shape.Attributes.Colour).ToUnity32());
+            }
+
+            if (material.HasProperty("_Tint"))
+            {
+              material.SetColor("_Tint", new Maths.Colour(shape.Attributes.Colour).ToUnity32());
+            }
+
+            if (material.HasProperty("_BackColour"))
+            {
+              material.SetColor("_BackColour", mesh.Tint.ToUnity32());
+            }
+
+            // Bind vertices and draw.
+            material.SetBuffer("_Vertices", mesh.VertexBuffer);
+
+            if (mesh.IndexBuffer != null)
+            {
+              Graphics.DrawProceduralNow(mesh.Topology, mesh.IndexBuffer, mesh.IndexCount, 1);
+            }
+            else
+            {
+              Graphics.DrawProceduralNow(mesh.Topology, mesh.VertexCount, 1);
+            }
+          }
+          finally
+          {
+            GL.PopMatrix();
+          }
+        }
+      }
+      finally
+      {
+        GL.PopMatrix();
       }
     }
 
@@ -208,15 +198,6 @@ namespace Tes.Handlers.Shape3D
     /// <see cref="ShapeID.MeshSet"/>
     /// </summary>
     public override ushort RoutingID { get { return (ushort)Tes.Net.ShapeID.MeshSet; } }
-
-    /// <summary>
-    /// Irrelevant. Each object has its own geometry.
-    /// </summary>
-    public override Mesh SolidMesh { get { return null; } }
-    /// <summary>
-    /// Irrelevant. Each object has its own geometry.
-    /// </summary>
-    public override Mesh WireframeMesh { get { return null; } }
 
     /// <summary>
     /// Access the <see cref="MeshCache"/> from which mesh resources are resolved.
@@ -250,11 +231,11 @@ namespace Tes.Handlers.Shape3D
       // Start by building the resource list.
       PartSet partSet = cache.GetShapeDataByIndex<PartSet>(shapeIndex);
       Shapes.MeshSet meshSet = new Shapes.MeshSet(shapeData.ObjectID, shapeData.Category);
-      meshSet.SetAttributes(shapeData);
+      meshSet.SetAttributes(shapeData.Attributes);
       for (int i = 0; i < partSet.MeshIDs.Length; ++i)
       {
         MeshResourcePlaceholder part = new MeshResourcePlaceholder(partSet.MeshIDs[i]);
-        meshSet.AddPart(part, partSet.Transforms[i]);
+        meshSet.AddPart(part, Tes.Maths.Matrix4Ext.FromUnity(partSet.Transforms[i]));
       }
       return meshSet;
     }
@@ -439,17 +420,17 @@ namespace Tes.Handlers.Shape3D
       {
         material = Materials[MaterialLibrary.WireframeTriangles];
       }
-      else if ((partSet.Transparent & ObjectFlag.Transparent) == ObjectFlag.Transparent)
+      else if ((partSet.ObjectFlags & ObjectFlag.Transparent) == ObjectFlag.Transparent)
       {
         material = Materials[MaterialLibrary.Transparent];
       }
-      else if ((partSet.TwoSided & ObjectFlag.TwoSided) == ObjectFlag.TwoSided)
+      else if ((partSet.ObjectFlags & ObjectFlag.TwoSided) == ObjectFlag.TwoSided)
       {
         material = Materials[MaterialLibrary.OpaqueTwoSided];
       }
       // else no override.
 
-      if (material && partSet.Meshes[partIndex])
+      if (material != null && partSet.Meshes[partIndex] != null)
       {
         // Have an override material. Validate the topology. Only supported for triangles and quads.
         RenderMesh mesh = partSet.Meshes[partIndex].Mesh;

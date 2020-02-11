@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using Test.Net;
+using Tes.Net;
 using UnityEngine;
 
 namespace Tes.Runtime
@@ -26,31 +26,28 @@ namespace Tes.Runtime
         case MeshDrawType.Points:
           // No break.
         case MeshDrawType.Voxels:
-            return MeshTopology.Points;
-          break;
+          return MeshTopology.Points;
         case MeshDrawType.Lines:
-            return MeshTopology.Lines;
-          break;
+          return MeshTopology.Lines;
         case MeshDrawType.Triangles:
-            return MeshTopology.Triangles;
-          break;
+          return MeshTopology.Triangles;
         default:
           break;
         }
         // Programmatic error if this happens.
-        throw new Exception("Unsupported draw type");
+        throw new System.Exception("Unsupported draw type");
       }
     }
 
     private Matrix4x4 _localTransform = Matrix4x4.identity;
-    Matrix4x4 LocalTransform
+    public Matrix4x4 LocalTransform
     {
       get { return _localTransform; }
       set { _localTransform = value; }
     }
 
     private Tes.Maths.Colour _tint = new Tes.Maths.Colour(255, 255, 255);
-    private Tes.Maths.Colour Tint
+    public Tes.Maths.Colour Tint
     {
       get { return _tint; }
       set { _tint = value; }
@@ -98,7 +95,7 @@ namespace Tes.Runtime
       set { _boundsPadding = value; }
     }
 
-    public boo BoundsSet
+    public bool BoundsSet
     {
       get { return _boundsSet; }
       set { _boundsSet = value; }
@@ -158,6 +155,7 @@ namespace Tes.Runtime
         _indexBuffer.Release();
         _indexBuffer = null;
       }
+      _indices = null;
       if (_vertexBuffer != null)
       {
         _vertexBuffer.Release();
@@ -194,14 +192,14 @@ namespace Tes.Runtime
           _material.EnableKeyword("WITH_NORMALS");
         }
 
-        if (HasUvs)
+        if (HasUVs)
         {
           _material.EnableKeyword("WITH_UVS");
         }
 
         if (_material.HasProperty("_Tint"))
         {
-          _material.SetColor("_Tint", Tint.ToUnity32());
+          _material.SetColor("_Tint", Maths.ColourExt.ToUnity(Tint));
         }
 
         _materialDirty = false;
@@ -234,50 +232,60 @@ namespace Tes.Runtime
 
     public void SetIndices(List<int> indices)
     {
-      Debug.Assert(indices.Count <= IndexCount);
-      _indexBuffer.SetData(indices);
+      Debug.Assert(_indices != null && indices.Count <= _indices.Length);
+      for (int i = 0; i < indices.Count; ++i)
+      {
+        _indices[i] = indices[i];
+      }
+      _indexBuffer.SetData(_indices);
     }
 
     public void SetIndices(int[] indices)
     {
-      Debug.Assert(indices.Length <= IndexCount);
+      Debug.Assert(_indices != null && indices.Length <= _indices.Length);
+      Array.Copy(indices, 0, _indices, 0, indices.Length);
       _indexBuffer.SetData(indices);
     }
 
     public void SetIndices(List<int> indices, int listStartIndex, int bufferStartIndex, int count)
     {
-      Debug.Assert(count >= 0 &&
+      Debug.Assert(count >= 0 && _indices != null &&
                    0 <= listStartIndex && listStartIndex < indices.Count &&
                    listStartIndex + count <= indices.Count &&
                    0 <= bufferStartIndex && bufferStartIndex < IndexCount &&
                    bufferStartIndex + count < bufferStartIndex);
-      _indexBuffer.SetData(indices, listStartIndex, bufferStartIndex, count);
+      for (int i = 0; i < count; ++i)
+      {
+        _indices[bufferStartIndex + i] = indices[listStartIndex + i];
+      }
+      _indexBuffer.SetData(_indices, bufferStartIndex, bufferStartIndex, count);
     }
 
     public void SetIndices(int[] indices, int listStartIndex, int bufferStartIndex, int count)
     {
-      Debug.Assert(count >= 0 &&
+      Debug.Assert(count >= 0 && _indices != null &&
                    0 <= listStartIndex && listStartIndex < indices.Length &&
                    listStartIndex + count <= indices.Length &&
                    0 <= bufferStartIndex && bufferStartIndex < IndexCount &&
                    bufferStartIndex + count < bufferStartIndex);
-      _indexBuffer.SetData(indices, listStartIndex, bufferStartIndex, count);
+      Array.Copy(indices, listStartIndex, _indices, bufferStartIndex, count);
+      _indexBuffer.SetData(_indices, bufferStartIndex, bufferStartIndex, count);
     }
 
     public void GetIndices(int[] indices)
     {
-      Debug.Assert(indices.Length <= IndexCount);
-      _indexBuffer.GetData(indices);
+      Debug.Assert(_indices != null && indices.Length <= IndexCount);
+      Array.Copy(_indices, 0, indices, 0, indices.Length);
     }
 
     public void GetIndices(int[] indices, int listStartIndex, int bufferStartIndex, int count)
     {
-      Debug.Assert(count >= 0 &&
+      Debug.Assert(count >= 0 && _indices != null &&
                    0 <= listStartIndex && listStartIndex < indices.Length &&
                    listStartIndex + count <= indices.Length &&
                    0 <= bufferStartIndex && bufferStartIndex < IndexCount &&
                    bufferStartIndex + count < bufferStartIndex);
-      _indexBuffer.GetData(indices, listStartIndex, bufferStartIndex, count);
+      Array.Copy(_indices, bufferStartIndex, indices, listStartIndex, count);
     }
 
     public void SetVertices(List<Vector3> vertices)
@@ -486,28 +494,27 @@ namespace Tes.Runtime
 
     public void CalculateNormals()
     {
-      if (mesh.DrawType == MeshDrawType.Triangles || mesh.DrawType == MeshDrawType.Quads)
+      if (DrawType == MeshDrawType.Triangles)
       {
         Vector3[] vertexArray = new Vector3[VertexCount];
         Vector3[] normalsArray = new Vector3[VertexCount];
         // Handle explicit and implied indexing.
-        int[] indexArray = (IndexCount > 0) ? new int[IndexCount] : new int[VertexCount];
+        int[] indexArray = _indices;
 
-        mesh.GetVertices(vertexArray);
-        if (IndexCount > 0)
+        if (IndexCount == 0)
         {
-          mesh.GetIndices(indexArray);
-        }
-        else
-        {
+          // Implicit indexing.
+          indexArray = new int[VertexCount];
           for (int i = 0; i < indexArray.Length; ++i)
           {
             indexArray[i] = i;
           }
         }
 
+        GetVertices(vertexArray);
+
         // Accumulate per face normals in the vertices.
-        int faceStride = DrawType == MeshDrawType.Quads ? 4 : 3;
+        int faceStride = 3;
         Vector3 edgeA = Vector3.zero;
         Vector3 edgeB = Vector3.zero;
         Vector3 partNormal = Vector3.zero;
@@ -538,7 +545,7 @@ namespace Tes.Runtime
     /// </summary>
     public void PreRender()
     {
-      if (_materialDirty && _materialDirty != null)
+      if (_materialDirty && _material != null)
       {
         if (HasColours)
         {
@@ -557,45 +564,54 @@ namespace Tes.Runtime
       }
     }
 
-    public void Render(string vertexStreamName = "vertices", string normalsStreamName = "normals",
-                       string coloursStreamName = "colours")
-    {
-      // Set buffers.
-      // GL.PushMatrix();
-      // GL.MultMatrix(cloud.Matrix4);
+    // public void Render(string vertexStreamName = "_Vertices", string normalsStreamName = "_Normals",
+    //                    string coloursStreamName = "_Colours")
+    // {
+    //   // Set buffers.
+    //   // GL.PushMatrix();
+    //   // GL.MultMatrix(cloud.Matrix4);
 
-      // material.SetPass(0);
-      // material.SetColor("_Color", Color.white);
-      // material.SetColor("_Tint", Color.white);
-      // // material.SetFloat("_PointSize", 8);
-      // materialmaterial.SetInt("_PointHighlighting", 0);
-      // material.SetInt("_LeftHanded", 1);
-      // // material.EnableKeyword("WITH_COLOUR");
+    //   _material.SetPass(0);
+    //   // material.SetColor("_Color", Color.white);
+    //   // material.SetColor("_Tint", Color.white);
+    //   // // material.SetFloat("_PointSize", 8);
+    //   // materialmaterial.SetInt("_PointHighlighting", 0);
+    //   // material.SetInt("_LeftHanded", 1);
+    //   // // material.EnableKeyword("WITH_COLOUR");
 
-      material.SetBuffer(vertexStreamName, _vertexBuffer);
-      if (_normalsBuffer != null)
-      {
-        material.SetBuffer(normalsStreamName, _normalsBuffer);
-      }
-      if (_normalsBuffer != null)
-      {
-        material.SetBuffer(coloursStreamName, _vertexBuffer);
-      }
+    //   _material.SetBuffer(vertexStreamName, _vertexBuffer);
+    //   if (_normalsBuffer != null)
+    //   {
+    //     _material.SetBuffer(normalsStreamName, _normalsBuffer);
+    //   }
+    //   if (_normalsBuffer != null)
+    //   {
+    //     _material.SetBuffer(coloursStreamName, _vertexBuffer);
+    //   }
 
-      if (_indexBuffer != null)
-      {
-        Graphics.DrawProceduralNow(Topology, _indexBuffer, IndexCount, 1);
-      }
-      else
-      {
-        Graphics.DrawProceduralNow(Topology, VertexCount, 1);
-      }
-      // GL.PopMatrix();
-    }
+    //   if (_indexBuffer != null)
+    //   {
+    //     Graphics.DrawProceduralNow(Topology, _indexBuffer, IndexCount, 1);
+    //   }
+    //   else
+    //   {
+    //     Graphics.DrawProceduralNow(Topology, VertexCount, 1);
+    //   }
+    //   // GL.PopMatrix();
+    // }
 
     protected void CreateIndexBuffer()
     {
-      EnsureBufferSize<int>(ref _indexBuffer, _indexBuffer);
+      if (_indices == null || _indices.Length != IndexCount)
+      {
+        _indices = new int[IndexCount];
+        if (_indexBuffer != null)
+        {
+          _indexBuffer.Release();
+          _indexBuffer = null;
+        }
+        _indexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Index, IndexCount, Marshal.SizeOf(typeof(int)));
+      }
     }
 
     protected void CreateVertexBuffer()
@@ -623,7 +639,7 @@ namespace Tes.Runtime
 
     protected void EnsureBufferSize<T>(ref ComputeBuffer buffer, int count)
     {
-      int stride = Marshal.Sizeof(typeof(T));
+      int stride = Marshal.SizeOf(typeof(T));
       T[] copyFrom = null;
       if (buffer != null)
       {
@@ -662,6 +678,8 @@ namespace Tes.Runtime
 
 
     private GraphicsBuffer _indexBuffer = null;
+    // Can't read indices back from the GraphicsBuffer, so we have to have a cache here.
+    private int[] _indices = null;
     private ComputeBuffer _vertexBuffer = null;
     private ComputeBuffer _normalsBuffer = null;
     private ComputeBuffer _coloursBuffer = null;

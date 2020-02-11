@@ -132,17 +132,17 @@ namespace Tes.Net
     /// AxisIndex with <paramref name="axis"/> set to 1 is a query for the Forward axis of the given
     /// <paramref name="frame"/>. This will return a value in the range [0, 2] mapping to XYZ respectively.
     /// </remarks>
-    public int AxisIndex(CoordinateFrame frame, int axis)
+    public static int AxisIndex(CoordinateFrame frame, int axis)
     {
       return _axisIndices[(int)frame, axis];
     }
 
-    public bool FlippedUpAxis(CoordinateFrame frame)
-    {
+    // public static bool FlippedUpAxis(CoordinateFrame frame)
+    // {
 
-    }
+    // }
 
-    public bool LeftHanded(CoordinateFrame frame)
+    public static bool LeftHanded(CoordinateFrame frame)
     {
       return (int)frame >= (int)CoordinateFrame.LeftHanded;
     }

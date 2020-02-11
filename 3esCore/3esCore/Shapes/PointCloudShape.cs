@@ -14,7 +14,7 @@ namespace Tes.Shapes
   /// and may be shared between <see cref="PointCloudShape"/> shapes. The mesh resource should
   /// have a <see cref="MeshResource.DrawType"/> of <see cref="Tes.Net.MeshDrawType.Points"/>,
   /// or the behaviour may be undefined.
-  /// 
+  ///
   /// The <see cref="PointCloudShape"/> shape supports the view into the <see cref="MeshResource"/>
   /// by having its own set of indices (see <see cref="SetIndices(uint[])"/>).
   /// </remarks>
@@ -72,6 +72,22 @@ namespace Tes.Shapes
     /// the displayed points are limited to those referenced in the given array.
     /// </remarks>
     public PointCloudShape SetIndices(uint[] indices) { _indices = indices; return this; }
+    public PointCloudShape SetIndices(int[] indices)
+    {
+      if (indices == null)
+      {
+        _indices = null;
+        return this;
+      }
+
+      if (_indices == null || _indices.Length != indices.Length)
+      {
+        _indices = new uint[indices.Length];
+      }
+
+      Array.Copy(indices, _indices, indices.Length);
+      return this;
+    }
 
     /// <summary>
     /// Enumerate the shape's resources.
@@ -81,7 +97,7 @@ namespace Tes.Shapes
       get
       {
         if (PointCloud != null)
-        { 
+        {
           yield return PointCloud;
         }
       }
@@ -182,7 +198,7 @@ namespace Tes.Shapes
     /// <returns>True on success.</returns>
     /// <remarks>
     /// Reads additional index data if required.
-    /// 
+    ///
     /// Fails if the <see cref="DataMessage.ObjectID"/> does not match <see cref="Shape.ID"/>.
     /// </remarks>
     public override bool ReadData(BinaryReader reader)

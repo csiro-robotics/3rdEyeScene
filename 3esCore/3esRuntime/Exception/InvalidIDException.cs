@@ -1,11 +1,9 @@
-using System;
-
 namespace Tes.Exception
 {
   /// <summary>
   /// Thrown when an invalid object ID is given.
   /// </summary>
-  public class InvalidIDException : Exception
+  public class InvalidIDException : System.Exception
   {
     /// <summary>
     /// Default constructor.
@@ -21,6 +19,6 @@ namespace Tes.Exception
     /// </summary>
     /// <param name="message">The exception message to display.</param>
     /// <param name="innerException">The inner exception to wrap.</param>
-    public InvalidIDException(string message, Exception innerException) : base(message, innerException) {}
+    public InvalidIDException(string message, System.Exception innerException) : base(message, innerException) {}
   }
 }

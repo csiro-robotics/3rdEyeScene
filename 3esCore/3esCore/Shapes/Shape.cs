@@ -96,7 +96,7 @@ namespace Tes.Shapes
     /// <summary>
     /// Direct creation for non-complex shapes.
     /// </summary>
-    private Shape(CreateMessage data)
+    public Shape(CreateMessage data)
     {
       _data = data;
     }

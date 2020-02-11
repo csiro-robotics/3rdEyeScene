@@ -50,15 +50,6 @@ namespace Tes.Handlers.Shape3D
     public override ushort RoutingID { get { return (ushort)Tes.Net.ShapeID.Mesh; } }
 
     /// <summary>
-    /// Irrelevant. Each object has its own geometry.
-    /// </summary>
-    public override Mesh SolidMesh { get { return null; } }
-    /// <summary>
-    /// Irrelevant. Each object has its own geometry.
-    /// </summary>
-    public override Mesh WireframeMesh { get { return null; } }
-
-    /// <summary>
     /// Initialise, caching the <see cref="MaterialLibrary"/>.
     /// </summary>
     /// <param name="root"></param>

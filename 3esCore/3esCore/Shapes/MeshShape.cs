@@ -951,7 +951,7 @@ namespace Tes.Shapes
     /// <see cref="ComponentAdaptor{T}.Count"/> property set to ensure the correct size (matching
     /// the vertex count, or 1 for uniform normals).
     /// </remarks>
-    public static int ReadDataComponent(BinaryReader reader,
+    public static int ReadDataComponent(BinaryReader reader, uint vertexCount, uint indexCount,
                                         ComponentBlockReader vertexReader,
                                         ComponentBlockReader indexReader,
                                         ComponentBlockReader normalsReader,
@@ -966,8 +966,8 @@ namespace Tes.Shapes
       itemCount = reader.ReadUInt32();
 
       // Record and mask out end flags.
-      UInt16 endFlags = (ushort)(dataType & ((int)SendDataType.ExpectEnd | (int)SendDataType.End));
-      dataType = (ushort)(dataType & ~endFlags);
+      SendDataType endFlags = dataType & (SendDataType.ExpectEnd | SendDataType.End);
+      dataType = dataType & ~endFlags;
 
       bool ok = true;
       bool complete = false;
@@ -979,16 +979,16 @@ namespace Tes.Shapes
           ok = ok && endReadCount != ~0u;
 
           // Expect end marker.
-          if ((endFlags & (int)SendDataType.End) != 0)
+          if ((endFlags & SendDataType.End) != 0)
           {
             // Done.
             complete = true;
           }
 
           // Check for completion.
-          if ((endFlags & (int)SendDataType.ExpectEnd) == 0)
+          if ((endFlags & SendDataType.ExpectEnd) == 0)
           {
-            complete = endReadCount == vertices.Count;
+            complete = endReadCount == vertexCount;
           }
           break;
 
@@ -1010,14 +1010,9 @@ namespace Tes.Shapes
           break;
 
         case SendDataType.Colours:
-          if (colours == null)
+          if (coloursReader == null)
           {
             return -1;
-          }
-
-          if (colours.Count != vertices.Count)
-          {
-            colours.Count = vertices.Count;
           }
 
           endReadCount = coloursReader(dataType, reader, offset, itemCount);
@@ -1033,7 +1028,7 @@ namespace Tes.Shapes
 
       if (ok)
       {
-        returnValue = dataType;
+        returnValue = (int)dataType;
         if (complete)
         {
           returnValue |= (int)SendDataType.End;

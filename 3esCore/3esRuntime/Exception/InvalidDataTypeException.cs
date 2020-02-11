@@ -1,11 +1,9 @@
-using System;
-
 namespace Tes.Exception
 {
   /// <summary>
   /// Thrown when an invalid data type is requested.
   /// </summary>
-  public class InvalidDataTypeException : Exception
+  public class InvalidDataTypeException : System.Exception
   {
     /// <summary>
     /// Default constructor.
@@ -21,6 +19,6 @@ namespace Tes.Exception
     /// </summary>
     /// <param name="message">The exception message to display.</param>
     /// <param name="innerException">The inner exception to wrap.</param>
-    public InvalidDataTypeException(string message, Exception innerException) : base(message, innerException) {}
+    public InvalidDataTypeException(string message, System.Exception innerException) : base(message, innerException) {}
   }
 }

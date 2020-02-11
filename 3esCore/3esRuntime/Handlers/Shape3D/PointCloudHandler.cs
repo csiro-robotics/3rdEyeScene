@@ -29,10 +29,10 @@ namespace Tes.Handlers.Shape3D
     public PointCloudHandler(Runtime.CategoryCheckDelegate categoryCheck, MeshCache meshCache)
       : base(categoryCheck)
     {
-      if (Root != null)
-      {
-        Root.name = Name;
-      }
+      // if (Root != null)
+      // {
+      //   Root.name = Name;
+      // }
       _shapeCache.AddExtensionType<PointsComponent>();
       _transientCache.AddExtensionType<PointsComponent>();
       MeshCache = meshCache;
@@ -46,7 +46,7 @@ namespace Tes.Handlers.Shape3D
     /// <param name="materials"></param>
     public override void Initialise(GameObject root, GameObject serverRoot, MaterialLibrary materials)
     {
-      Root.transform.SetParent(serverRoot.transform, false);
+      // Root.transform.SetParent(serverRoot.transform, false);
       _pointsMaterial = materials[MaterialLibrary.Points];
     }
 
@@ -71,93 +71,93 @@ namespace Tes.Handlers.Shape3D
     /// </summary>
     public override void Render(ulong categoryMask, Matrix4x4 primaryCameraTransform)
     {
-      var renderPointsFunc = (ShapeCache cache, int shapeIndex) =>
-      {
-        CreateMessage shape = cache.GetShapeDataByIndex<CreateMessage>(shapeIndex);
-        Matrix4x4 transform = cache.GetShapeDataByIndex<Matrix4x4>(shapeIndex);
-        PointsComponent points = cache.GetShapeDataByIndex<PointsComponent>(shapeIndex);
-        RenderMesh mesh = points.Mesh != null ? points.Mesh.Mesh : null;
-
-        if (mesh == null)
-        {
-          // No mesh.
-          Debug.LogWarning($"Point cloud shape {shape.ObjectID} missing mesh with ID {points.MeshID}");
-          continue;
-        }
-
-        if (points.Material == null)
-        {
-          // No mesh.
-          Debug.LogWarning($"Point cloud shape {shape.ObjectID} missing material");
-          continue;
-        }
-
-        GL.PushMatrix();
-
-        try
-        {
-          // Bind the material
-          points.Material.SetPass(0);
-
-          // Add shape transform.
-          GL.MultMatrix(transform);
-          // Add mesh local transform.
-          GL.MultMatrix(points.Mesh.LocalTransform);
-
-          // Check rendering with index buffer?
-          GraphicsBuffer indexBuffer = null;
-          int indexCount = 0;
-          if (mesh.IndexCount > 0 || points.IndexCount > 0)
-          {
-            if (points.IndexCount)
-            {
-              indexBuffer = points.IndexBuffer;
-              indexCount = points.IndexCount;
-            }
-            // We only use the mesh index buffer if the mesh has points topology.
-            // Otherwise we convert to points using vertices as is.
-            else if (mesh.Topology == MeshTopology.Points)
-            {
-              indexBuffer = mesh.IndexBuffer;
-              indexCount = mesh.IndexCount;
-            }
-          }
-
-          if (mesh.HasColours)
-          {
-            points.Material.SetBuffer("colours", mesh.ColoursBuffer);
-          }
-
-          if (mesh.HasNormals)
-          {
-            points.Material.SetBuffer("normals", mesh.NormalsBuffer);
-          }
-
-          points.Material.SetBuffer("vertices", mesh.VertexBuffer);
-
-          if (indexBuffer != null)
-          {
-            Graphics.DrawProceduralNow(mesh.Topology, indexBuffer, indexCount, 1);
-          }
-          else
-          {
-            Graphics.DrawProceduralNow(mesh.Topology, mesh.VertexCount, 1);
-          }
-        }
-        finally
-        {
-          GL.PopMatrix();
-        }
-      };
-
       // TODO: (KS) category handling.
       foreach (int index in _transientCache.ShapeIndices)
       {
-        renderPointsFunc(_transientCache, index);
+        RenderPoints(_transientCache, index);
       }
       foreach (int index in _shapeCache.ShapeIndices)
       {
-        renderPointsFunc(_shapeCache, index);
+        RenderPoints(_shapeCache, index);
+      }
+    }
+
+    void RenderPoints(ShapeCache cache, int shapeIndex)
+    {
+      CreateMessage shape = cache.GetShapeDataByIndex<CreateMessage>(shapeIndex);
+      Matrix4x4 transform = cache.GetShapeDataByIndex<Matrix4x4>(shapeIndex);
+      PointsComponent points = cache.GetShapeDataByIndex<PointsComponent>(shapeIndex);
+      RenderMesh mesh = points.Mesh != null ? points.Mesh.Mesh : null;
+
+      if (mesh == null)
+      {
+        // No mesh.
+        Debug.LogWarning($"Point cloud shape {shape.ObjectID} missing mesh with ID {points.MeshID}");
+        return;
+      }
+
+      if (points.Material == null)
+      {
+        // No mesh.
+        Debug.LogWarning($"Point cloud shape {shape.ObjectID} missing material");
+        return;
+      }
+
+      GL.PushMatrix();
+
+      try
+      {
+        // Bind the material
+        points.Material.SetPass(0);
+
+        // Add shape transform.
+        GL.MultMatrix(transform);
+        // Add mesh local transform.
+        GL.MultMatrix(points.Mesh.LocalTransform);
+
+        // Check rendering with index buffer?
+        GraphicsBuffer indexBuffer = null;
+        int indexCount = 0;
+        if (mesh.IndexCount > 0 || points.IndexCount > 0)
+        {
+          if ((int)points.IndexCount > 0)
+          {
+            indexBuffer = points.IndexBuffer;
+            indexCount = (int)points.IndexCount;
+          }
+          // We only use the mesh index buffer if the mesh has points topology.
+          // Otherwise we convert to points using vertices as is.
+          else if (mesh.Topology == MeshTopology.Points)
+          {
+            indexBuffer = mesh.IndexBuffer;
+            indexCount = mesh.IndexCount;
+          }
+        }
+
+        if (mesh.HasColours)
+        {
+          points.Material.SetBuffer("_Colours", mesh.ColoursBuffer);
+        }
+
+        if (mesh.HasNormals)
+        {
+          points.Material.SetBuffer("_Normals", mesh.NormalsBuffer);
+        }
+
+        points.Material.SetBuffer("_Vertices", mesh.VertexBuffer);
+
+        if (indexBuffer != null)
+        {
+          Graphics.DrawProceduralNow(mesh.Topology, indexBuffer, indexCount, 1);
+        }
+        else
+        {
+          Graphics.DrawProceduralNow(mesh.Topology, mesh.VertexCount, 1);
+        }
+      }
+      finally
+      {
+        GL.PopMatrix();
       }
     }
 
@@ -170,15 +170,6 @@ namespace Tes.Handlers.Shape3D
     /// <see cref="ShapeID.PointCloud"/>
     /// </summary>
     public override ushort RoutingID { get { return (ushort)Tes.Net.ShapeID.PointCloud; } }
-
-    /// <summary>
-    /// Irrelevant. Each object has its own geometry.
-    /// </summary>
-    public override Mesh SolidMesh { get { return null; } }
-    /// <summary>
-    /// Irrelevant. Each object has its own geometry.
-    /// </summary>
-    public override Mesh WireframeMesh { get { return null; } }
 
     /// <summary>
     /// Access the <see cref="MeshCache"/> from which mesh resources are resolved.
@@ -211,10 +202,10 @@ namespace Tes.Handlers.Shape3D
     {
       PointsComponent pointsComp = cache.GetShapeDataByIndex<PointsComponent>(shapeIndex);
       Shapes.PointCloudShape points = new Shapes.PointCloudShape(new MeshResourcePlaceholder(pointsComp.MeshID),
-                                                                 shapeComponent.ObjectID,
+                                                                 shapeData.ObjectID,
                                                                  shapeData.Category,
                                                                  (byte)pointsComp.PointSize);
-      points.SetAttributes(shapeData);
+      points.SetAttributes(shapeData.Attributes);
       if (pointsComp.IndexCount > 0)
       {
         points.SetIndices(pointsComp.Indices);
@@ -310,7 +301,7 @@ namespace Tes.Handlers.Shape3D
       {
         // Remove from the registered mesh list.
         List<PointsComponent> parts;
-        if (_registeredParts.TryGetValue(meshDetails.ID, out parts))
+        if (_registeredParts.TryGetValue(pointsComp.MeshID, out parts))
         {
           // Remove from the list.
           parts.RemoveAll((PointsComponent cmp) => { return cmp == pointsComp; });

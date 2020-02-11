@@ -39,8 +39,8 @@ namespace Tes.Handlers
     public ShapeHandler(CategoryCheckDelegate categoryCheck)
       : base(categoryCheck)
     {
-      _transientCache = new ShapeCache();
-      _shapeCache = new ShapeCache();
+      _transientCache = new ShapeCache(128, true);
+      _shapeCache = new ShapeCache(128, false);
     }
 
     /// <summary>
@@ -113,17 +113,17 @@ namespace Tes.Handlers
       if (_solidTransforms.Count > 0)
       {
         Graphics.DrawMeshInstanced(SolidMesh, 0, Materials[MaterialLibrary.VertexColourUnlit],
-                                   _solidTransforms, itemCount);
+                                   _solidTransforms.ToArray(), itemCount);
       }
       if (_transparentTransforms.Count > 0)
       {
         Graphics.DrawMeshInstanced(SolidMesh, 0, Materials[MaterialLibrary.VertexColourTransparent],
-                                   _transparentTransforms, itemCount);
+                                   _transparentTransforms.ToArray(), itemCount);
       }
       if (_wireframeTransforms.Count > 0)
       {
         Graphics.DrawMeshInstanced(WireframeMesh, 0, Materials[MaterialLibrary.WireframeTriangles],
-                                   _wireframeTransforms, itemCount);
+                                   _wireframeTransforms.ToArray(), itemCount);
       }
 
       _solidTransforms.Clear();
@@ -133,17 +133,17 @@ namespace Tes.Handlers
       if (_solidTransforms.Count > 0)
       {
         Graphics.DrawMeshInstanced(SolidMesh, 0, Materials[MaterialLibrary.VertexColourUnlit],
-                                   _solidTransforms, itemCount);
+                                   _solidTransforms.ToArray(), itemCount);
       }
       if (_transparentTransforms.Count > 0)
       {
         Graphics.DrawMeshInstanced(SolidMesh, 0, Materials[MaterialLibrary.VertexColourTransparent],
-                                   _transparentTransforms, itemCount);
+                                   _transparentTransforms.ToArray(), itemCount);
       }
       if (_wireframeTransforms.Count > 0)
       {
         Graphics.DrawMeshInstanced(WireframeMesh, 0, Materials[MaterialLibrary.WireframeTriangles],
-                                   _wireframeTransforms, itemCount);
+                                   _wireframeTransforms.ToArray(), itemCount);
       }
     }
 
@@ -706,8 +706,8 @@ namespace Tes.Handlers
         return new Error(ErrorCode.InvalidObjectID, msg.ObjectID);
       }
 
-      CreateMessage shape = _shapeCache.GetShapeDataByIndex<CreateMessage>(shapeIndex);
       int shapeIndex = _shapeCache.GetShapeIndex(msg.ObjectID);
+      CreateMessage shape = _shapeCache.GetShapeDataByIndex<CreateMessage>(shapeIndex);
       bool updateTransform = false;
 
       if ((flags & (ushort)UpdateFlag.UpdateMode) == 0)

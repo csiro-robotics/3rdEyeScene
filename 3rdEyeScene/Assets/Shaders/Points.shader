@@ -1,6 +1,6 @@
 ﻿// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
 
-Shader "Points/PointsLit"
+Shader "Points/Points"
 {
   Properties
   {
@@ -18,18 +18,15 @@ Shader "Points/PointsLit"
   // **************************************************************
   // Data structures                        *
   // **************************************************************
-  struct VertexInput
-  {
-    float4 vertex : POSITION;
-    float4 normal : NORMAL;
-    float4 colour : COLOR;
-  };
-
   struct GeometryInput
   {
     float4 pos : POSITION;
+    #ifdef WITH_NORMALS
     float3 normal : NORMAL;
+    #endif // WITH_NORMALS
+    #ifdef WITH_COLOURS
     float4 colour : COLOR;
+    #endif // WITH_COLOURS
   };
 
   struct FragmentInput
@@ -45,18 +42,29 @@ Shader "Points/PointsLit"
   uniform float4 _Tint;
   uniform int _PointHighlighting;
   uniform int _LeftHanded;
+  StructuredBuffer<float3> _Vertices;
+  #ifdef WITH_NORMALS
+  StructuredBuffer<float3> _Normals;
+  #endif // WITH_NORMALS
+  #ifdef WITH_COLOURS
+  StructuredBuffer<float4> _Colours;
+  #endif // WITH_COLOURS
 
   // **************************************************************
   // Shader Programs                        *
   // **************************************************************
 
   // Vertex Shader ------------------------------------------------
-  GeometryInput vert(VertexInput v)
+  GeometryInput vert(uint vid : SV_VertexID)
   {
     GeometryInput o;
-    o.pos = mul(unity_ObjectToWorld, v.vertex);
-    o.normal = mul(UNITY_MATRIX_MV, v.normal);
-    o.colour = v.colour;
+    o.pos = mul(unity_ObjectToWorld, _Vertices[vid]);
+    #ifdef WITH_NORMALS
+    o.normal = mul(UNITY_MATRIX_MV, _Normals[vid]);
+    #endif // WITH_NORMALS
+    #ifdef WITH_COLOURS
+    o.colour = _Colours[vid];
+    #endif // WITH_COLOURS
     return o;
   }
 
@@ -81,7 +89,9 @@ Shader "Points/PointsLit"
     const float3 up = mul(UNITY_MATRIX_VP, UNITY_MATRIX_V[1].xyz * size);
 
     fin.pos = ppos - float4((right + up), 0);
+    #if WITH_COLOURS
     fin.colour = p[0].colour;
+    #endif // WITH_COLOURS
     fin.tex0 = float2(0, 0);
     triStream.Append(fin);
 
@@ -114,7 +124,11 @@ Shader "Points/PointsLit"
     // The max radius is 0.5, which yields a division by 0.25, which is the same
     // as a multiplication by 4. uvdist2 is already pow(pixel radius, 2)
     const float scale = (_PointHighlighting) ? 1.0f - uvdist2 * 4.0f : 1.0f;
-    return scale * _Color * _Tint * input.colour;
+    return scale * _Color * _Tint
+      #ifdef WITH_COLOURS
+        * input.colour
+      #endif // WITH_COLOURS
+    ;
   }
 
   ENDCG

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
-using SharpCompress.Compressors;
-using SharpCompress.Compressors.Deflate;
+using System.IO.Compression;
 
 namespace Tes.IO
 {

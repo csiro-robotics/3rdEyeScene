@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Tes.Exception;
+using Tes.Net;
 using UnityEngine;
 
 namespace Tes.Handlers
@@ -114,7 +113,7 @@ namespace Tes.Handlers
     /// transient.</exception>
     public int CreateShape(CreateMessage shape, Matrix4x4 transform)
     {
-      int shapeIndex = AssignNewShapeIndex(shape.ID);
+      int shapeIndex = AssignNewShapeIndex(shape.ObjectID);
 
       _shapes[shapeIndex] = shape;
       _transforms[shapeIndex] = transform;
@@ -155,7 +154,7 @@ namespace Tes.Handlers
       if (IsTransientCache)
       {
         // Irrelevant for transient caches.
-        return;
+        return -1;
       }
 
       int index;
@@ -203,19 +202,19 @@ namespace Tes.Handlers
     /// <typeparam name="T">Type of the data to set for the shape</typeparam>
     /// <exception cref="InvalidDataTypeException">Thrown when the type <c>T</c> does is not valid in this case.</exception>
     ///
-    public T GetShapeDataByIndex<T>(int index)
+    public T GetShapeDataByIndex<T>(int index) where T : class
     {
       if (typeof(T) == typeof(CreateMessage))
       {
-        return _shapes[index];
+        return (T)_shapes[index];
       }
       if (typeof(T) == typeof(ObjectAttributes))
       {
-        return _shapes[index].Attributes;
+        return (T)_shapes[index].Attributes;
       }
       if (typeof(T) == typeof(Matrix4x4))
       {
-        return _transforms[index];
+        return (T)_transforms[index];
       }
 
       for (int i = 0; i < _dataExtensions.Count; ++i)
@@ -303,7 +302,7 @@ namespace Tes.Handlers
         CreateMessage shape = _shapes[i];
         // Check ID and category. A transient cache has all IDs set to zero. A non-transient cache has all valid IDs
         // as non-zero.
-        if ((transientCache || shape.ObjectID) != 0 && (shape.Category == 0 || ((1ul << shape.Category) & categoryMask) != 0))
+        if ((transientCache || shape.ObjectID != 0) && (shape.Category == 0 || ((1ul << shape.Category) & categoryMask) != 0))
         {
           // Check add transform to either solid or wireframe lists.
           if ((shape.Flags & (ushort)Tes.Net.ObjectFlag.Wireframe) == 0)
@@ -387,12 +386,14 @@ namespace Tes.Handlers
     {
       // Grow by powers of 2.
       _capacity = Maths.IntUtil.NextPowerOf2(_capacity);
-      Array.Resize(_shapes, _capacity);
-      Array.Resize(_transforms, _capacity);
+      Array.Resize(ref _shapes, _capacity);
+      Array.Resize(ref _transforms, _capacity);
 
       for (int i = 0; i < _dataExtensions.Count; ++i)
       {
-        Array.Resize(_dataExtensions[i].Elements, _capacity);
+        Array elements = _dataExtensions[i].Elements;
+        Array.Resize(ref elements, _capacity);
+        _dataExtensions[i].Elements = elements;
       }
     }
 

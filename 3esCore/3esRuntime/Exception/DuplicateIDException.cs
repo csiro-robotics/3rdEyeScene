@@ -1,11 +1,9 @@
-using System;
-
 namespace Tes.Exception
 {
   /// <summary>
   /// Thrown when a duplicate ID is used.
   /// </summary>
-  public class DuplicateIDException : Exception
+  public class DuplicateIDException : System.Exception
   {
     /// <summary>
     /// Default constructor.
@@ -21,6 +19,6 @@ namespace Tes.Exception
     /// </summary>
     /// <param name="message">The exception message to display.</param>
     /// <param name="innerException">The inner exception to wrap.</param>
-    public DuplicateIDException(string message, Exception innerException) : base(message, innerException) {}
+    public DuplicateIDException(string message, System.Exception innerException) : base(message, innerException) {}
   }
 }
