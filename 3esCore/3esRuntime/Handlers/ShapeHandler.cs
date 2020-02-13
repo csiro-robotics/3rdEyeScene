@@ -264,7 +264,7 @@ namespace Tes.Handlers
       foreach (int shapeIndex in cache.ShapeIndices)
       {
         ++processedCount;
-        CreateMessage shapeData = cache.GetShapeDataByIndex<CreateMessage>(shapeIndex);
+        CreateMessage shapeData = cache.GetShapeByIndex(shapeIndex);
         tempShape = CreateSerialisationShape(cache, shapeIndex, shapeData);
         if (tempShape != null)
         {
@@ -707,7 +707,7 @@ namespace Tes.Handlers
       }
 
       int shapeIndex = _shapeCache.GetShapeIndex(msg.ObjectID);
-      CreateMessage shape = _shapeCache.GetShapeDataByIndex<CreateMessage>(shapeIndex);
+      CreateMessage shape = _shapeCache.GetShapeByIndex(shapeIndex);
       bool updateTransform = false;
 
       if ((flags & (ushort)UpdateFlag.UpdateMode) == 0)
@@ -748,13 +748,13 @@ namespace Tes.Handlers
         }
       }
 
-      _shapeCache.SetShapeDataByIndex(shapeIndex, shape);
+      _shapeCache.SetShapeByIndex(shapeIndex, shape);
 
       if (updateTransform)
       {
         Matrix4x4 transform = Matrix4x4.identity;
         DecodeTransform(shape.Attributes, out transform);
-        _shapeCache.SetShapeDataByIndex(shapeIndex, transform);
+        _shapeCache.SetShapeTransformByIndex(shapeIndex, transform);
       }
 
       return PostHandleMessage(msg, packet, reader, _shapeCache, shapeIndex);

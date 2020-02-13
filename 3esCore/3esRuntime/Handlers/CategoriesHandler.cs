@@ -251,7 +251,7 @@ namespace Tes.Handlers
     /// fetching the default materials.
     /// </summary>
     /// <param name="materials">Material library from which to resolve materials.</param>
-    public override void Initialise(MaterialLibrary materials)
+    public override void Initialise(GameObject root, GameObject serverRoot, MaterialLibrary materials)
     {
       // FIXME: localisation.
       AddCategory(0, 0, "Default", true);

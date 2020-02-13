@@ -11,9 +11,9 @@ namespace Tes.Handlers.Shape3D
   /// <summary>
   /// Handles 3D text shapes.
   /// </summary>
-  public class Text3DHandler : ShapeHandler
+  public class Text3DHandler : ShapeHandler, IShapeData
   {
-    public struct TextShapeData
+    public struct TextShapeData : IShapeData
     {
       public TextMesh Mesh;
       public string Text;
@@ -27,8 +27,8 @@ namespace Tes.Handlers.Shape3D
     public Text3DHandler(Runtime.CategoryCheckDelegate categoryCheck)
       : base(categoryCheck)
     {
-      _shapeCache.AddExtensionType<TextShapeData>();
-      _transientCache.AddExtensionType<TextShapeData>();
+      _shapeCache.AddShapeDataType<TextShapeData>();
+      _transientCache.AddShapeDataType<TextShapeData>();
     }
 
     /// <summary>
@@ -50,13 +50,13 @@ namespace Tes.Handlers.Shape3D
     protected void Render(ShapeCache shapeCache, ulong categoryMask, Matrix4x4 primaryCameraTransform)
     {
       // TODO: (KS) verify material setup.
-      Materials material = Materials[MaterialLibrary.VertexColourUnlit];
+      Material material = Materials[MaterialLibrary.Opaque];
       Vector3 cameraPosition = (Vector3)primaryCameraTransform.GetColumn(3);
       int sideAxis = CoordinateFrameUtil.AxisIndex(ServerInfo.CoordinateFrame, 0);
       int forwardAxis = CoordinateFrameUtil.AxisIndex(ServerInfo.CoordinateFrame, 1);
       int upAxis = CoordinateFrameUtil.AxisIndex(ServerInfo.CoordinateFrame, 2);
       // Set flipAxis if up axis is negative. We will negate again for right handed base systems.
-      bool flipAxis = CoordinateFrameUtil.AxisIndex(ServerInfo.CoordinateFrame);
+      bool flipAxis = !CoordinateFrameUtil.LeftHanded(ServerInfo.CoordinateFrame);
 
       // TODO: (KS) May have the negation the wrong way around for getting into Unity's left handed frame.
       if (CoordinateFrameUtil.LeftHanded(ServerInfo.CoordinateFrame))
@@ -71,7 +71,7 @@ namespace Tes.Handlers.Shape3D
         // if (shapeCache.GetShapeDataByIndex<CreateMessage>(shapeIndex).Category)
 
         // Get transform and text data.
-        Matrix4x4 transform = shapeCache.GetShapeDataByIndex<Matrix4x4>(shapeIndex);
+        Matrix4x4 transform = shapeCache.GetShapeTransformByIndex(shapeIndex);
         TextShapeData textData = shapeCache.GetShapeDataByIndex<TextShapeData>(shapeIndex);
 
         if (textData.ScreenFacing)
@@ -86,7 +86,7 @@ namespace Tes.Handlers.Shape3D
             toCamera = toCamera.normalized;
             Vector3 up = Vector3.zero;
             up[upAxis] = 1.0f;
-            Vector3 side = Vector3.Cross(toCamere, up);
+            Vector3 side = Vector3.Cross(toCamera, up);
             // Build new rotation axes using toCamera for forward and a new Up axis.
             transform.SetColumn(sideAxis, new Vector4(side.x, side.y, side.z));
             transform.SetColumn(forwardAxis, new Vector4(toCamera.x, toCamera.y, toCamera.z));
@@ -94,13 +94,14 @@ namespace Tes.Handlers.Shape3D
             transform.SetColumn(4, new Vector4(textPosition.x, textPosition.y, textPosition.z, 1.0f));
 
             // Write the transform back to the shape cache. This maintains consistency close to the camera.
-            shapeCache.SetShapeDataByIndex(shapeIndex, transform);
+            shapeCache.SetShapeTransformByIndex(shapeIndex, transform);
           }
           // else too close to the camera to build a rotation.
         }
 
+        // TODO: (KS) resolve procedural rendering without a game object. Consider TextMeshPro.
         // TODO: (KS) select opaque layer.
-        Graphics.DrawMesh(textData.Mesh, transform, material, 0);
+        // Graphics.DrawMesh(textData.Mesh, transform, material, 0);
       }
     }
 
@@ -118,9 +119,6 @@ namespace Tes.Handlers.Shape3D
     {
       if (shapeIndex >= 0)
       {
-        // Convert position to Unity position.
-        obj.transform.localPosition = FrameTransform.RemoteToUnity(obj.transform.localPosition, ServerInfo.CoordinateFrame);
-
         // Read the text in the buffer.
         TextShapeData textData = new TextShapeData();
         int textLength = reader.ReadUInt16();
@@ -135,7 +133,7 @@ namespace Tes.Handlers.Shape3D
         textData.Mesh = new TextMesh();
         textData.Mesh.text = textData.Text;
         textData.Mesh.fontSize = (int)msg.Attributes.ScaleZ;
-        textData.Mesh.color = new Tes.Maths.Colour(msg.Attributes.Colour).ToUnity32();
+        textData.Mesh.color = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
 
         if ((msg.Flags & (ushort)Text3DFlag.ScreenFacing) != 0)
         {
@@ -163,7 +161,7 @@ namespace Tes.Handlers.Shape3D
       TextShapeData textData = cache.GetShapeDataByIndex<TextShapeData>(shapeIndex);
 
       textData.Mesh.fontSize = (int)msg.Attributes.ScaleZ;
-      textData.Mesh.color = new Tes.Maths.Colour(msg.Attributes.Colour).ToUnity32();
+      textData.Mesh.color = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
       textData.ScreenFacing = (msg.Flags & (ushort)Text3DFlag.ScreenFacing) != 0;
 
       cache.SetShapeDataByIndex(shapeIndex, textData);
@@ -180,7 +178,7 @@ namespace Tes.Handlers.Shape3D
     {
       TextShapeData textData = cache.GetShapeDataByIndex<TextShapeData>(shapeIndex);
       // Note: initialise position to zero. SetAttributes() below will overwrite this.
-      var textShape = new Shapes.Text3D(textData.Text, shape.ObjectID, shape.Category, Vector3.zero);
+      var textShape = new Shapes.Text3D(textData.Text, shape.ObjectID, shape.Category, Maths.Vector3.Zero);
       textShape.SetAttributes(shape.Attributes);
       return textShape;
     }

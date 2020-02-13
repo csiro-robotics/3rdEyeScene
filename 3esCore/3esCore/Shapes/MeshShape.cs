@@ -951,7 +951,7 @@ namespace Tes.Shapes
     /// <see cref="ComponentAdaptor{T}.Count"/> property set to ensure the correct size (matching
     /// the vertex count, or 1 for uniform normals).
     /// </remarks>
-    public static int ReadDataComponent(BinaryReader reader, uint vertexCount, uint indexCount,
+    public static int ReadDataComponentDeferred(BinaryReader reader, uint vertexCount, uint indexCount,
                                         ComponentBlockReader vertexReader,
                                         ComponentBlockReader indexReader,
                                         ComponentBlockReader normalsReader,

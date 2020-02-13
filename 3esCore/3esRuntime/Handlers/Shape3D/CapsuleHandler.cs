@@ -1,4 +1,6 @@
-﻿using Tes.Net;
+﻿using System.Collections.Generic;
+using Tes.Net;
+using Tes.Runtime;
 using UnityEngine;
 
 namespace Tes.Handlers.Shape3D
@@ -44,15 +46,15 @@ namespace Tes.Handlers.Shape3D
       _transientCache.CollectTransforms(_solidTransforms, _transparentTransforms, _wireframeTransforms, categoryMask);
       if (_solidTransforms.Count > 0)
       {
-        Render(_solidMeshes, Materials[MaterialLibrary.VertexColourUnlit], _solidTransforms, itemCount);
+        Render(_solidMeshes, Materials[MaterialLibrary.Opaque], _solidTransforms, itemCount);
       }
       if (_transparentTransforms.Count > 0)
       {
-        Render(_solidMeshes, Materials[MaterialLibrary.VertexColourTransparent], _transparentTransforms, itemCount);
+        Render(_solidMeshes, Materials[MaterialLibrary.Transparent], _transparentTransforms, itemCount);
       }
       if (_wireframeTransforms.Count > 0)
       {
-        Render(_wireframeMeshes, Materials[MaterialLibrary.WireframeTriangles], _instanceTransforms, itemCount);
+        Render(_wireframeMeshes, Materials[MaterialLibrary.Wireframe], _wireframeTransforms, itemCount);
       }
 
       _solidTransforms.Clear();
@@ -61,31 +63,31 @@ namespace Tes.Handlers.Shape3D
        _shapeCache.CollectTransforms(_solidTransforms, _transparentTransforms, _wireframeTransforms, categoryMask);
       if (_solidTransforms.Count > 0)
       {
-        Render(_solidMeshes, Materials[MaterialLibrary.VertexColourUnlit], _solidTransforms, itemCount);
+        Render(_solidMeshes, Materials[MaterialLibrary.Opaque], _solidTransforms, itemCount);
       }
       if (_transparentTransforms.Count > 0)
       {
-        Render(_solidMeshes, Materials[MaterialLibrary.VertexColourTransparent], _transparentTransforms, itemCount);
+        Render(_solidMeshes, Materials[MaterialLibrary.Transparent], _transparentTransforms, itemCount);
       }
       if (_wireframeTransforms.Count > 0)
       {
-        Render(_wireframeMeshes, Materials[MaterialLibrary.WireframeTriangles], _instanceTransforms, itemCount);
+        Render(_wireframeMeshes, Materials[MaterialLibrary.Wireframe], _wireframeTransforms, itemCount);
       }
     }
 
-    protected void Render(Mesh[] meshes, Matrial material, List<Matrix4x4> transforms, int itemCount)
+    protected void Render(Mesh[] meshes, Material material, List<Matrix4x4> transforms, int itemCount)
     {
       // Note: scaling must change while rendering. The cylinder must be scaled by radius (XY) and length (Z) while the
       // sphere end caps are only scale by radius applied as a uniform scale.
       // Axes XY will already share the radius scale so we only update Z scale.
 
       // Render with full scaling for the cylinder part.
-      Graphics.DrawMeshInstanced(meshes[Tessellate.Capsule.CylinderIndex], 0, material, transforms, itemCount);
+      Graphics.DrawMeshInstanced(meshes[Tessellate.Capsule.CylinderIndex], 0, material, transforms.ToArray(), itemCount);
 
       _modifiedTransforms.Clear();
       if (_modifiedTransforms.Capacity < transforms.Capacity)
       {
-        _modifiedTransforms.Capacity = transforms.Capacity();
+        _modifiedTransforms.Capacity = transforms.Capacity;
       }
 
       // Convert to uniform scaling and modify the position for the bottom cap.
@@ -104,7 +106,8 @@ namespace Tes.Handlers.Shape3D
         _modifiedTransforms.Add(transform);
       }
 
-      Graphics.DrawMeshInstanced(meshes[Tessellate.Capsule.BottomIndex], 0, material, _modifiedTransforms, itemCount);
+      Graphics.DrawMeshInstanced(meshes[Tessellate.Capsule.BottomIndex], 0, material, _modifiedTransforms.ToArray(),
+                                 itemCount);
 
       // Convert to uniform scaling and modify the position for the top cap.
       for (int i = 0; i < itemCount; ++i)
@@ -120,7 +123,8 @@ namespace Tes.Handlers.Shape3D
         _modifiedTransforms[i] = transform;
       }
 
-      Graphics.DrawMeshInstanced(meshes[Tessellate.Capsule.TopIndex], 0, material, _modifiedTransforms, itemCount);
+      Graphics.DrawMeshInstanced(meshes[Tessellate.Capsule.TopIndex], 0, material, _modifiedTransforms.ToArray(),
+                                 itemCount);
     }
 
     /// <summary>

@@ -90,12 +90,12 @@ namespace Tes.Handlers
     /// Add additional data to store for each shape in this cache.
     /// </summary>
     /// <typeparam name="T">The data type to store.</typeparam>
-    public void AddExtensionType<T>()
+    public void AddShapeDataType<T>() where T: IShapeData
     {
       _dataExtensions.Add(new DataExtension
       {
         DataType = typeof(T),
-        Elements = new T[_capacity]
+        Elements = new IShapeData[_capacity]
       });
     }
 
@@ -173,6 +173,70 @@ namespace Tes.Handlers
       return -1;
     }
 
+    public CreateMessage GetShape(uint objectID)
+    {
+      if (IsTransientCache)
+      {
+        throw new InvalidIDException("Access by ObjectID not supported on a transient shape cache.");
+      }
+      return _shapes[_idMap[objectID]];
+    }
+
+    public CreateMessage GetShapeByIndex(int index)
+    {
+      return _shapes[index];
+    }
+
+    public void SetShape(uint objectID, CreateMessage shape)
+    {
+      if (IsTransientCache)
+      {
+        throw new InvalidIDException("Access by ObjectID not supported on a transient shape cache.");
+      }
+      SetShapeByIndex(_idMap[objectID], shape);
+    }
+
+    public void SetShapeByIndex(int index, CreateMessage shape)
+    {
+      if (IsTransientCache)
+      {
+        throw new InvalidIDException("Access by ObjectID not supported on a transient shape cache.");
+      }
+      _shapes[index] = shape;
+    }
+
+    public Matrix4x4 GetShapeTransform(uint objectID)
+    {
+      if (IsTransientCache)
+      {
+        throw new InvalidIDException("Access by ObjectID not supported on a transient shape cache.");
+      }
+      return _transforms[_idMap[objectID]];
+    }
+
+    public Matrix4x4 GetShapeTransformByIndex(int index)
+    {
+      return _transforms[index];
+    }
+
+    public void SetShapeTransform(uint objectID, Matrix4x4 transform)
+    {
+      if (IsTransientCache)
+      {
+        throw new InvalidIDException("Access by ObjectID not supported on a transient shape cache.");
+      }
+      SetShapeTransformByIndex(_idMap[objectID], transform);
+    }
+
+    public void SetShapeTransformByIndex(int index, Matrix4x4 transform)
+    {
+      if (IsTransientCache)
+      {
+        throw new InvalidIDException("Access by ObjectID not supported on a transient shape cache.");
+      }
+      _transforms[index] = transform;
+    }
+
     /// <summary>
     /// Request data for a shape instance.
     /// </summary>
@@ -184,7 +248,7 @@ namespace Tes.Handlers
     /// <exception cref="InvalidIDException">Thrown when <paramref name="objectID"/> is non-zero and the case is non
     /// transient.</exception>
     /// <exception cref="InvalidDataTypeException">Thrown when the type <c>T</c> does is not valid in this case.</exception>
-    public T GetShapeData<T>(uint objectID)
+    public T GetShapeData<T>(uint objectID) where T: IShapeData
     {
       if (IsTransientCache)
       {
@@ -202,26 +266,13 @@ namespace Tes.Handlers
     /// <typeparam name="T">Type of the data to set for the shape</typeparam>
     /// <exception cref="InvalidDataTypeException">Thrown when the type <c>T</c> does is not valid in this case.</exception>
     ///
-    public T GetShapeDataByIndex<T>(int index) where T : class
+    public T GetShapeDataByIndex<T>(int index) where T: IShapeData
     {
-      if (typeof(T) == typeof(CreateMessage))
-      {
-        return (T)_shapes[index];
-      }
-      if (typeof(T) == typeof(ObjectAttributes))
-      {
-        return (T)_shapes[index].Attributes;
-      }
-      if (typeof(T) == typeof(Matrix4x4))
-      {
-        return (T)_transforms[index];
-      }
-
       for (int i = 0; i < _dataExtensions.Count; ++i)
       {
         if (typeof(T) == _dataExtensions[i].DataType)
         {
-          return ((T[])_dataExtensions[i])[index];
+          return (T)_dataExtensions[i].Elements[index];
         }
       }
 
@@ -238,7 +289,7 @@ namespace Tes.Handlers
     /// <exception cref="InvalidIDException">Thrown when <paramref name="objectID"/> is non-zero and the case is non
     /// transient.</exception>
     /// <exception cref="InvalidDataTypeException">Thrown when the type <c>T</c> does is not valid in this case.</exception>
-    public void SetShapeData<T>(uint objectID, T data)
+    public void SetShapeData<T>(uint objectID, T data) where T: IShapeData
     {
       if (IsTransientCache)
       {
@@ -254,26 +305,13 @@ namespace Tes.Handlers
     /// <param name="data">Set new data value to set</param>
     /// <typeparam name="T">Type of the data to set for the shape</typeparam>
     /// <exception cref="InvalidDataTypeException">Thrown when the type <c>T</c> does is not valid in this case.</exception>
-    public void SetShapeDataByIndex<T>(int index, T data)
+    public void SetShapeDataByIndex<T>(int index, T data) where T: IShapeData
     {
-      if (typeof(T) == typeof(CreateMessage))
-      {
-        _shapes[index] = data;
-      }
-      if (typeof(T) == typeof(ObjectAttributes))
-      {
-        _shapes[index].Attributes = data;;
-      }
-      if (typeof(T) == typeof(Matrix4x4))
-      {
-        _transforms[index] = data;
-      }
-
       for (int i = 0; i < _dataExtensions.Count; ++i)
       {
         if (typeof(T) == _dataExtensions[i].DataType)
         {
-          ((T[])_dataExtensions[i])[index] = data;
+          _dataExtensions[i].Elements[index] = data;
         }
       }
 
@@ -391,9 +429,9 @@ namespace Tes.Handlers
 
       for (int i = 0; i < _dataExtensions.Count; ++i)
       {
-        Array elements = _dataExtensions[i].Elements;
-        Array.Resize(ref elements, _capacity);
-        _dataExtensions[i].Elements = elements;
+        DataExtension dataExtension = _dataExtensions[i];
+        Array.Resize(ref dataExtension.Elements, _capacity);
+        _dataExtensions[i] = dataExtension;
       }
     }
 
@@ -409,7 +447,7 @@ namespace Tes.Handlers
       /// <summary>
       /// Data array.
       /// </summary>
-      public Array Elements;
+      public IShapeData[] Elements;
     }
 
     /// <summary>

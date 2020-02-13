@@ -17,7 +17,7 @@ namespace Tes.Handlers.Shape3D
   /// </remarks>
   public class MeshHandler : ShapeHandler
   {
-    public struct MeshEntry
+    public struct MeshEntry : IShapeData
     {
       public RenderMesh Mesh;
       public Material Material;
@@ -35,8 +35,8 @@ namespace Tes.Handlers.Shape3D
       // {
       //   Root.name = Name;
       // }
-      _shapeCache.AddExtensionType<MeshEntry>();
-      _transientCache.AddExtensionType<MeshEntry>();
+      _shapeCache.AddShapeDataType<MeshEntry>();
+      _transientCache.AddShapeDataType<MeshEntry>();
     }
 
     /// <summary>
@@ -83,11 +83,17 @@ namespace Tes.Handlers.Shape3D
     }
 
     /// <summary>
-    /// Finalises Unity mesh objects.
+    /// Finalises mesh objects.
     /// </summary>
-    public override void PreRender()
+    public override void BeginFrame(uint frameNumber, bool maintainTransient)
     {
-      base.PreRender();
+      if (!maintainTransient)
+      {
+        foreach (int shapeIndex in _transientCache.ShapeIndices)
+        {
+          ResetObject(_transientCache, shapeIndex);
+        }
+      }
 
       for (int i = 0; i < _toCalculateNormals.Count; ++i)
       {
@@ -95,6 +101,8 @@ namespace Tes.Handlers.Shape3D
       }
 
       _toCalculateNormals.Clear();
+
+      base.BeginFrame(frameNumber, maintainTransient);
     }
 
     public override void Render(ulong categoryMask, Matrix4x4 primaryCameraTransform)
@@ -111,47 +119,80 @@ namespace Tes.Handlers.Shape3D
       }
     }
 
-    /// <summary>
-    /// Overridden to release mesh resources.
-    /// </summary>
-    /// <param name="frameNumber"></param>
-    /// <param name="maintainTransient"></param>
-    public override void BeginFrame(uint frameNumber, bool maintainTransient)
-    {
-      if (!maintainTransient)
-      {
-        foreach (int shapeIndex in _transientCache.ShapeIndices)
-        {
-          ResetObject(_transientCache, shapeIndex);
-        }
-      }
-      base.BeginFrame(frameNumber, maintainTransient);
-    }
-
     protected void RenderObject(ShapeCache cache, int shapeIndex)
     {
+      CreateMessage shape = cache.GetShapeByIndex(shapeIndex);
       MeshEntry meshEntry = cache.GetShapeDataByIndex<MeshEntry>(shapeIndex);
-      Matrix4x4 transform = cache.GetShapeDataByIndex<Matrix4x4>(shapeIndex);
+      Matrix4x4 transform = cache.GetShapeTransformByIndex(shapeIndex);
 
       // Set buffers.
       GL.PushMatrix();
       GL.MultMatrix(transform);
 
-      meshEntry.Mesh.Render();
+      try
+      {
+        Material material = meshEntry.Material;
+        RenderMesh mesh = meshEntry.Mesh;
 
-      // material.SetPass(0);
-      // // material.EnableKeyword("WITH_COLOUR");
+        material.SetPass(0);
 
-      // if (_indexBuffer != null)
-      // {
-      //   Graphics.DrawProceduralNow(Topology, _indexBuffer, VertexCount, 1);
-      // }
-      // else
-      // {
-      //   Graphics.DrawProceduralNow(Topology, VertexCount, 1);
-      // }
+        if (mesh.HasColours)
+        {
+          material.SetBuffer("_Colours", mesh.ColoursBuffer);
+        }
 
-      GL.PopMatrix();
+        if (mesh.HasNormals)
+        {
+          material.SetBuffer("_Normals", mesh.NormalsBuffer);
+        }
+
+        // if (mesh.HasUVs)
+        // {
+        //   material.SetBuffer("uvs", mesh.UvsBuffer);
+        // }
+
+        if (material.HasProperty("_Color"))
+        {
+          material.SetColor("_Color", Maths.ColourExt.ToUnity(new Maths.Colour(shape.Attributes.Colour)));
+        }
+
+        if (material.HasProperty("_Tint"))
+        {
+          material.SetColor("_Tint", Maths.ColourExt.ToUnity(mesh.Tint));
+        }
+
+        if (material.HasProperty("_BackColour"))
+        {
+          material.SetColor("_Color", Maths.ColourExt.ToUnity(new Maths.Colour(shape.Attributes.Colour)));
+        }
+
+        // Bind vertices and draw.
+        material.SetBuffer("_Vertices", mesh.VertexBuffer);
+
+        if (mesh.IndexBuffer != null)
+        {
+          Graphics.DrawProceduralNow(mesh.Topology, mesh.IndexBuffer, mesh.IndexCount, 1);
+        }
+        else
+        {
+          Graphics.DrawProceduralNow(mesh.Topology, mesh.VertexCount, 1);
+        }
+        // material.SetPass(0);
+        // // material.EnableKeyword("WITH_COLOUR");
+
+        // if (_indexBuffer != null)
+        // {
+        //   Graphics.DrawProceduralNow(Topology, _indexBuffer, VertexCount, 1);
+        // }
+        // else
+        // {
+        //   Graphics.DrawProceduralNow(Topology, VertexCount, 1);
+        // }
+      }
+      finally
+      {
+        GL.PopMatrix();
+      }
     }
 
     /// <summary>
@@ -159,32 +200,26 @@ namespace Tes.Handlers.Shape3D
     /// </summary>
     /// <param name="shapeComponent">The component to create a shape for.</param>
     /// <returns>A shape instance suitable for configuring to generate serialisation messages.</returns>
-    protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
+    protected override Shapes.Shape CreateSerialisationShape(ShapeCache cache, int shapeIndex, CreateMessage shapeData)
     {
-      MeshDataComponent meshData = shapeComponent.GetComponent<MeshDataComponent>();
-      if (meshData != null)
+      MeshEntry meshEntry = cache.GetShapeDataByIndex<MeshEntry>(shapeIndex);
+      RenderMesh mesh = meshEntry.Mesh;
+
+      Vector3[] vertices = new Vector3[mesh.VertexCount];
+      int[] indices = (mesh.IndexCount > 0) ? new int[mesh.IndexCount] : null;
+
+      mesh.GetVertices(vertices);
+      if (indices != null)
       {
-        ObjectAttributes attr = new ObjectAttributes();
-        EncodeAttributes(ref attr, shapeComponent.gameObject, shapeComponent);
-
-        Shapes.MeshShape mesh = new Shapes.MeshShape(meshData.DrawType,
-                                                     Maths.Vector3Ext.FromUnity(meshData.Vertices),
-                                                     meshData.Indices,
-                                                     shapeComponent.ObjectID,
-                                                     shapeComponent.Category,
-                                                     Maths.Vector3.Zero,
-                                                     Maths.Quaternion.Identity,
-                                                     Maths.Vector3.One);
-        mesh.SetAttributes(attr);
-        mesh.CalculateNormals = meshData.CalculateNormals;
-        if (!meshData.CalculateNormals && meshData.Normals != null && meshData.Normals.Length > 0)
-        {
-          mesh.Normals = Maths.Vector3Ext.FromUnity(meshData.Normals);
-        }
-
-        return mesh;
+        mesh.GetIndices(indices);
       }
-      return null;
+
+      Shapes.MeshShape meshShape = new Shapes.MeshShape(meshEntry.Mesh.DrawType,
+                                                        Maths.Vector3Ext.FromUnity(vertices),
+                                                        indices,
+                                                        shapeData.ObjectID, shapeData.Category);
+      meshShape.SetAttributes(shapeData.Attributes);
+      return meshShape;
     }
 
     /// <summary>
@@ -198,8 +233,8 @@ namespace Tes.Handlers.Shape3D
     protected override Error PostHandleMessage(CreateMessage msg, PacketBuffer packet, BinaryReader reader,
                                                ShapeCache cache, int shapeIndex)
     {
-      uint vertexCount = reader.ReadUInt32();
-      uint indexCount = reader.ReadUInt32();
+      int vertexCount = reader.ReadInt32();
+      int indexCount = reader.ReadInt32();
       MeshDrawType drawType = (MeshDrawType)reader.ReadByte();
 
       RenderMesh mesh = new RenderMesh(drawType, vertexCount, indexCount);
@@ -217,7 +252,7 @@ namespace Tes.Handlers.Shape3D
       {
         _toCalculateNormals.Add(mesh);
       }
-      return base.PostHandleMessage(obj, msg, packet, reader);
+      return base.PostHandleMessage(msg, packet, reader, cache, shapeIndex);
     }
 
     /// <summary>
@@ -241,23 +276,28 @@ namespace Tes.Handlers.Shape3D
       // - In order.
       MeshEntry meshEntry = cache.GetShapeDataByIndex<MeshEntry>(shapeIndex);
 
-      int readComponent = MeshShape.ReadDataComponent(reader,
-        (SendDataType dataType, BinaryReader reader, uint offset, uint count) =>
+      // Well, this is confusing indirection...
+      int readComponent = MeshShape.ReadDataComponentDeferred(
+        reader, (uint)meshEntry.Mesh.VertexCount, (uint)meshEntry.Mesh.IndexCount,
+        // Vertex handler.
+        new MeshShape.ComponentBlockReader((MeshShape.SendDataType dataType, BinaryReader reader2, uint offset, uint count) =>
         {
-          return ReadMeshVector3Data(reader, offset, count, (Vector3[] buffer, int count) =>
+          return ReadMeshVector3Data(reader2, offset, count, (Vector3[] buffer, int writeOffset, int writeCount) =>
           {
-            meshEntry.Mesh.SetVertices(buffer, 0, meshDstOffset, dstIndex);
+            meshEntry.Mesh.SetVertices(buffer, 0, writeOffset, writeOffset);
           });
-        },
-        (SendDataType dataType, BinaryReader reader, uint offset, uint count) =>
+        }),
+        // Index handler
+        new MeshShape.ComponentBlockReader((MeshShape.SendDataType dataType, BinaryReader reader2, uint offset, uint count) =>
         {
-          return ReadIndexComponent(reader, offset, count, meshEntry.Mesh);
-        },
-        (SendDataType dataType, BinaryReader reader, uint offset, uint count) =>
+          return ReadIndexComponent(reader2, offset, count, meshEntry.Mesh);
+        }),
+        // Normals handler.
+        new MeshShape.ComponentBlockReader((MeshShape.SendDataType dataType, BinaryReader reader2, uint offset, uint count) =>
         {
-          return ReadMeshVector3Data(reader, offset, count, (Vector3[] buffer, int count) =>
+          return ReadMeshVector3Data(reader2, offset, count, (Vector3[] buffer, int writeOffset, int writeCount) =>
           {
-            if (dataType == SendDataType.UniformNormals)
+            if (dataType == MeshShape.SendDataType.UniformNormal)
             {
               // Only one normal for the whole mesh.
               // Fill the buffer and write in chunks.
@@ -265,24 +305,25 @@ namespace Tes.Handlers.Shape3D
               {
                 buffer[i] = buffer[0];
               }
-              int offset = 0;
+              int localOffset = 0;
               for (int i = 0; i < meshEntry.Mesh.VertexCount; i += buffer.Length)
               {
-                int count = Math.Min(buffer.Length, meshEntry.Mesh.VertexCount - offset);
-                meshEntry.Mesh.SetNormals(buffer, 0, offset, count);
-                offset += count;
+                int blockCount = Math.Min(buffer.Length, meshEntry.Mesh.VertexCount - localOffset);
+                meshEntry.Mesh.SetNormals(buffer, 0, localOffset, blockCount);
+                writeOffset += blockCount;
               }
             }
             else
             {
-              meshEntry.Mesh.SetNormals(buffer, 0, meshDstOffset, dstIndex);
+              meshEntry.Mesh.SetNormals(buffer, 0, writeOffset, writeCount);
             }
           });
-        },
-        (SendDataType dataType, BinaryReader reader, uint offset, uint count) =>
+        }),
+        // Colours handler.
+        new MeshShape.ComponentBlockReader((MeshShape.SendDataType dataType, BinaryReader reader2, uint offset, uint count) =>
         {
-          return ReadColourComponent(reader, offset, count, meshEntry.Mesh);
-        }
+          return ReadColourComponent(reader2, offset, count, meshEntry.Mesh);
+        })
       );
 
       if (readComponent == -1)
@@ -293,7 +334,7 @@ namespace Tes.Handlers.Shape3D
       return new Error();
     }
 
-    delegate void WriteToMesh(Vector3[] buffer, int count);
+    delegate void WriteToMesh(Vector3[] buffer, int writeOffset, int count);
     private uint ReadMeshVector3Data(BinaryReader reader, uint offset, uint count, WriteToMesh writer)
     {
       int dstIndex = 0;
@@ -308,7 +349,7 @@ namespace Tes.Handlers.Shape3D
         if (dstIndex == _v3Buffer.Length)
         {
           // Flush buffer.
-          writer(_v3Buffer, dstIndex);
+          writer(_v3Buffer, meshDstOffset, dstIndex);
           meshDstOffset += dstIndex;
           dstIndex = 0;
         }
@@ -317,7 +358,7 @@ namespace Tes.Handlers.Shape3D
       if (dstIndex > 0)
       {
         // Flush buffer.
-        writer(_v3Buffer, dstIndex);
+        writer(_v3Buffer, meshDstOffset, dstIndex);
         meshDstOffset += dstIndex;
         dstIndex = 0;
       }
@@ -362,7 +403,7 @@ namespace Tes.Handlers.Shape3D
         if (dstIndex == _uintBuffer.Length)
         {
           // Flush buffer.
-          mesh.SetIndices(_uintBuffer, 0, meshDstOffset, dstIndex);
+          mesh.SetColours(_uintBuffer, 0, meshDstOffset, dstIndex);
           meshDstOffset += dstIndex;
           dstIndex = 0;
         }
@@ -371,7 +412,7 @@ namespace Tes.Handlers.Shape3D
       if (dstIndex > 0)
       {
         // Flush buffer.
-        mesh.SetIndices(_uintBuffer, 0, meshDstOffset, dstIndex);
+        mesh.SetColours(_uintBuffer, 0, meshDstOffset, dstIndex);
         meshDstOffset += dstIndex;
         dstIndex = 0;
       }
@@ -411,53 +452,55 @@ namespace Tes.Handlers.Shape3D
       switch (meshEntry.Mesh.DrawType)
       {
       case MeshDrawType.Points:
-        mat = new Material(Materials[MaterialLibrary.PointsUnlit]);
+        mat = new Material(Materials[MaterialLibrary.Points]);
+        MaterialLibrary.SetupMaterial(mat, meshEntry.Mesh);
         int pointSize = (Materials != null) ? Materials.DefaultPointSize : 4;
         mat.SetInt("_PointSize", pointSize);
         mat.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
         break;
       case MeshDrawType.Voxels:
         mat = new Material(Materials[MaterialLibrary.Voxels]);
+        MaterialLibrary.SetupMaterial(mat, meshEntry.Mesh);
+        mat.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
         break;
       default:
       case MeshDrawType.Lines:
-        mat = new Material(Materials[MaterialLibrary.VertexColourUnlit]);
+        mat = new Material(Materials[MaterialLibrary.Opaque]);
+        if (meshEntry.Mesh.HasColours)
+        {
+          mat.EnableKeyword("WITH_COLOURS");
+        }
         break;
       case MeshDrawType.Triangles:
         // Check wire frame.
         if ((shape.Flags & (uint)ObjectFlag.Wireframe) != 0u)
         {
-          mat = new Material(Materials[MaterialLibrary.WireframeTriangles]);
+          mat = new Material(Materials[MaterialLibrary.Wireframe]);
         }
-        else if ((shape.Flags & (uint)shape.TwoSided) != 0u)
+        else if ((shape.Flags & (uint)ObjectFlag.Transparent) != 0u)
         {
-          if (meshData.CalculateNormals)
-          {
-            mat = new Material(Materials[MaterialLibrary.VertexColourLitTwoSided]);
-          }
-          else
-          {
-            mat = new Material(Materials[MaterialLibrary.VertexColourUnlitTwoSided]);
-          }
-          if (mat.HasProperty("_BackColour"))
-          {
-            mat.SetColor("_BackColour", new Maths.Colour(shape.ObjectAttributes.Colour).ToUnity32());
-          }
+          mat = new Material(Materials[MaterialLibrary.Transparent]);
         }
-        else if (meshData.CalculateNormals)
+        else if ((shape.Flags & (uint)ObjectFlag.TwoSided) != 0u)
         {
-          mat = new Material(Materials[MaterialLibrary.VertexColourLit]);
+          mat = new Material(Materials[MaterialLibrary.OpaqueTwoSided]);
         }
         else
         {
-          mat = new Material(Materials[MaterialLibrary.VertexColourUnlit]);
+          mat = new Material(Materials[MaterialLibrary.Opaque]);
         }
+        MaterialLibrary.SetupMaterial(mat, meshEntry.Mesh);
         break;
       }
 
       if (mat.HasProperty("_Colour"))
       {
-        mat.SetColor("_Color", new Maths.Colour(shape.ObjectAttributes.Colour).ToUnity32());
+        mat.SetColor("_Color", Maths.ColourExt.ToUnity(new Maths.Colour(shape.Attributes.Colour)));
+      }
+
+      if (mat.HasProperty("_BackColour"))
+      {
+        mat.SetColor("_BackColour", Maths.ColourExt.ToUnity(new Maths.Colour(shape.Attributes.Colour)));
       }
 
       return mat;
@@ -477,8 +520,8 @@ namespace Tes.Handlers.Shape3D
     /// Buffer chuck size when reading mesh components before migrating into compute buffers.
     /// </summary>
     private static readonly int s_bufferChuckSize = 0xffff;
-    private Tes.Math.Vector3[] _v3Buffer = new Tes.Math.Vector3[s_bufferChuckSize];
-    private Tes.Math.Vector2[] _v2Buffer = new Tes.Math.Vector2[s_bufferChuckSize];
+    private Vector3[] _v3Buffer = new Vector3[s_bufferChuckSize];
+    private Vector2[] _v2Buffer = new Vector2[s_bufferChuckSize];
     private int[] _intBuffer = new int[s_bufferChuckSize];
     private uint[] _uintBuffer = new uint[s_bufferChuckSize];
     private List<RenderMesh> _toCalculateNormals = new List<RenderMesh>();

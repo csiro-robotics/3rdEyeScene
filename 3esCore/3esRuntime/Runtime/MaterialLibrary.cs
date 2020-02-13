@@ -122,6 +122,29 @@ namespace Tes.Runtime
     }
 
     /// <summary>
+    /// Setup <paramref name="material"/> to render the given <paramref name="mesh"/>.
+    /// </summary>
+    /// <param name="material"></param>
+    /// <param name="mesh"></param>
+    public static void SetupMaterial(Material material, RenderMesh mesh)
+    {
+      if (mesh.HasNormals)
+      {
+        material.EnableKeyword("WITH_NORMALS");
+      }
+
+      // if (mesh.HasUVs)
+      // {
+      //   material.EnableKeyword("WITH_UVS");
+      // }
+
+      if (mesh.HasColours)
+      {
+        material.EnableKeyword("WITH_COLOURS");
+      }
+    }
+
+    /// <summary>
     /// The material map.
     /// </summary>
     protected Dictionary<string, Material> _map = new Dictionary<string, Material>();

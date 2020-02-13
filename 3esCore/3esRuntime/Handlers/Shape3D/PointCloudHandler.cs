@@ -33,8 +33,8 @@ namespace Tes.Handlers.Shape3D
       // {
       //   Root.name = Name;
       // }
-      _shapeCache.AddExtensionType<PointsComponent>();
-      _transientCache.AddExtensionType<PointsComponent>();
+      _shapeCache.AddShapeDataType<PointsComponent>();
+      _transientCache.AddShapeDataType<PointsComponent>();
       MeshCache = meshCache;
     }
 
@@ -84,8 +84,8 @@ namespace Tes.Handlers.Shape3D
 
     void RenderPoints(ShapeCache cache, int shapeIndex)
     {
-      CreateMessage shape = cache.GetShapeDataByIndex<CreateMessage>(shapeIndex);
-      Matrix4x4 transform = cache.GetShapeDataByIndex<Matrix4x4>(shapeIndex);
+      CreateMessage shape = cache.GetShapeByIndex(shapeIndex);
+      Matrix4x4 transform = cache.GetShapeTransformByIndex(shapeIndex);
       PointsComponent points = cache.GetShapeDataByIndex<PointsComponent>(shapeIndex);
       RenderMesh mesh = points.Mesh != null ? points.Mesh.Mesh : null;
 

@@ -96,6 +96,7 @@ namespace Tes.Handlers
       public MeshSerialiser(MeshDetails details)
       {
         Details = details;
+        RenderMesh mesh = details.Mesh;
 
         // Migrate data fields.
         ID = details.ID;
@@ -104,22 +105,40 @@ namespace Tes.Handlers
         transform.ApplyScaling(Maths.Vector3Ext.FromUnity(details.LocalScale));
         Transform = transform;
         Tint = Maths.ColourExt.FromUnity(details.Tint).Value;
-        DrawType = Details.DrawType;
-        CalculateNormals = Details.Builder.CalculateNormals;
+        DrawType = (byte)mesh.DrawType;
+        // TODO: (KS) track this flag. Mind you, the normals will have been calculated by now...
+        CalculateNormals = false;//Details.Builder.CalculateNormals;
 
         MeshComponentFlag components = 0;
 
         // Copy arrays into the correct format.
-        _vertices = Maths.Vector3Ext.FromUnity(details.Builder.Vertices);
-        _normals = Maths.Vector3Ext.FromUnity(details.Builder.Normals);
-        _uvs = Maths.Vector2Ext.FromUnity(details.Builder.UVs);
-        _colours = Maths.ColourExt.FromUnityUInts(details.Builder.Colours);
+        _vertices = new Maths.Vector3[mesh.VertexCount];
+        mesh.VertexBuffer.GetData(_vertices);
 
-        if (details.VertexCount > 0) { components |= MeshComponentFlag.Vertex; }
-        if (details.Builder.ExplicitIndices) { components |= MeshComponentFlag.Index; }
-        if (_colours != null && _colours.Length > 0) { components |= MeshComponentFlag.Colour; }
-        if (_normals != null && _normals.Length > 0) { components |= MeshComponentFlag.Normal; }
-        if (_uvs != null && _uvs.Length > 0) { components |= MeshComponentFlag.UV; }
+        _indices = new int[mesh.IndexCount];
+        mesh.GetIndices(_indices);
+
+        if (mesh.HasNormals)
+        {
+          _normals = new Maths.Vector3[mesh.VertexCount];
+          mesh.NormalsBuffer.GetData(_normals);
+        }
+        if (mesh.HasUVs)
+        {
+          _uvs = new Maths.Vector2[mesh.VertexCount];
+          mesh.UvsBuffer.GetData(_uvs);
+        }
+        if (mesh.HasColours)
+        {
+          _colours = new uint[mesh.VertexCount];
+          mesh.GetColours(_colours);
+        }
+
+        if (mesh.VertexCount > 0) { components |= MeshComponentFlag.Vertex; }
+        if (mesh.IndexCount > 0) { components |= MeshComponentFlag.Index; }
+        if (_normals != null) { components |= MeshComponentFlag.Normal; }
+        if (_uvs != null) { components |= MeshComponentFlag.UV; }
+        if (_colours != null) { components |= MeshComponentFlag.Colour; }
         Components = components;
       }
 
@@ -135,13 +154,13 @@ namespace Tes.Handlers
       public override uint IndexCount(int stream = 0)
       {
         // Return how many we have so far, not the expected amount.
-        return (uint)Details.Builder.Indices.Length;
+        return (uint)Details.Mesh.IndexCount;
       }
 
       public override Tes.Maths.Vector3[] Vertices(int stream = 0) { return _vertices; }
 
 
-      public override int[] Indices4(int stream = 0) { return Details.Builder.Indices; }
+      public override int[] Indices4(int stream = 0) { return _indices; }
 
       public override Tes.Maths.Vector3[] Normals(int stream = 0) { return _normals; }
 
@@ -151,6 +170,7 @@ namespace Tes.Handlers
       #endregion
 
       private Maths.Vector3[] _vertices;
+      private int[] _indices;
       private Maths.Vector3[] _normals;
       private Maths.Vector2[] _uvs;
       private uint[] _colours;
@@ -253,10 +273,11 @@ namespace Tes.Handlers
     public override void Initialise(GameObject root, GameObject serverRoot, MaterialLibrary materials)
     {
       Materials = materials;
-      LitMaterial = materials[MaterialLibrary.VertexColourLit];
-      UnlitMaterial = materials[MaterialLibrary.VertexColourUnlit];
-      PointsLitMaterial = materials[MaterialLibrary.PointsLit];
-      PointsUnlitMaterial = materials[MaterialLibrary.PointsUnlit];
+      SingleSidedMaterial = materials[MaterialLibrary.Opaque];
+      DoubleSidedSidedMaterial = materials[MaterialLibrary.OpaqueTwoSided];
+      TransparentMaterial = materials[MaterialLibrary.Transparent];
+      // PointsMaterial = materials[MaterialLibrary.Wireframe];
+      PointsMaterial = materials[MaterialLibrary.Points];
       VoxelsMaterial = materials[MaterialLibrary.Voxels];
     }
 
@@ -393,9 +414,9 @@ namespace Tes.Handlers
       packet.Reset((ushort)RoutingID, (ushort)MeshCreateMessage.MessageID);
 
       msg.MeshID = mesh.ID;
-      msg.VertexCount = (uint)mesh.Builder.VertexCount;
-      msg.IndexCount = (uint)(mesh.Builder.ExplicitIndices ? mesh.Builder.IndexCount : 0);
-      msg.DrawType = mesh.DrawType;
+      msg.VertexCount = (uint)mesh.Mesh.VertexCount;
+      msg.IndexCount = (uint)mesh.Mesh.IndexCount;
+      msg.DrawType = (byte)mesh.Mesh.DrawType;
 
       msg.Attributes.X = mesh.LocalPosition.x;
       msg.Attributes.Y = mesh.LocalPosition.y;
@@ -410,7 +431,7 @@ namespace Tes.Handlers
       msg.Attributes.ScaleY = mesh.LocalScale.y;
       msg.Attributes.ScaleZ = mesh.LocalScale.z;
 
-      msg.Attributes.Colour = ShapeComponent.ConvertColour(mesh.Tint);
+      msg.Attributes.Colour = Maths.ColourExt.FromUnity(mesh.Tint).Value;
 
       msg.Write(packet);
       if (!packet.FinalisePacket())
@@ -513,12 +534,9 @@ namespace Tes.Handlers
       NotifyMeshRemoved(meshEntry);
 
       _meshes.Remove(msg.MeshID);
-      if (meshEntry.FinalMeshes != null)
+      if (meshEntry.Mesh != null)
       {
-        foreach (Mesh mesh in meshEntry.FinalMeshes)
-        {
-          Mesh.Destroy(mesh);
-        }
+        meshEntry.Mesh.ReleaseBuffers();
       }
 
       return new Error();
@@ -547,7 +565,7 @@ namespace Tes.Handlers
         return new Error(ErrorCode.DuplicateShape, msg.MeshID);
       }
 
-      if (msg.DrawType < 0 || msg.DrawType > Enum.GetValues(typeof(MeshDrawType).Length))
+      if (msg.DrawType < 0 || msg.DrawType > Enum.GetValues(typeof(MeshDrawType)).Length)
       {
         return new Error(ErrorCode.UnsupportedFeature, msg.DrawType);
       }
@@ -560,7 +578,7 @@ namespace Tes.Handlers
       meshEntry.LocalPosition = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
       meshEntry.LocalRotation = new Quaternion(msg.Attributes.RotationX, msg.Attributes.RotationY, msg.Attributes.RotationZ, msg.Attributes.RotationW);
       meshEntry.LocalScale = new Vector3(msg.Attributes.ScaleX, msg.Attributes.ScaleY, msg.Attributes.ScaleZ);
-      meshEntry.Tint = ShapeComponent.ConvertColour(msg.Attributes.Colour);
+      meshEntry.Tint = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
       meshEntry.Finalised = false;
       _meshes.Add(meshEntry.ID, meshEntry);
 
@@ -616,12 +634,12 @@ namespace Tes.Handlers
         v.z = reader.ReadSingle();
         if (vInd > 0)
         {
-          minBounds.x = MathF.Min(minBounds.x, v.x);
-          minBounds.y = MathF.Min(minBounds.y, v.z);
-          minBounds.z = MathF.Min(minBounds.z, v.y);
-          maxBounds.x = MathF.Max(maxBounds.x, v.x);
-          maxBounds.y = MathF.Max(maxBounds.y, v.z);
-          maxBounds.z = MathF.Max(maxBounds.z, v.y);
+          minBounds.x = Mathf.Min(minBounds.x, v.x);
+          minBounds.y = Mathf.Min(minBounds.y, v.z);
+          minBounds.z = Mathf.Min(minBounds.z, v.y);
+          maxBounds.x = Mathf.Max(maxBounds.x, v.x);
+          maxBounds.y = Mathf.Max(maxBounds.y, v.z);
+          maxBounds.z = Mathf.Max(maxBounds.z, v.y);
         }
         else
         {
@@ -635,12 +653,12 @@ namespace Tes.Handlers
       // Update bounds.
       if (meshEntry.Mesh.BoundsSet)
       {
-        minBounds.x = MathF.Min(minBounds.x, meshEntry.Mesh.MinBounds.x);
-        minBounds.y = MathF.Min(minBounds.y, meshEntry.Mesh.MinBounds.z);
-        minBounds.z = MathF.Min(minBounds.z, meshEntry.Mesh.MinBounds.y);
-        maxBounds.x = MathF.Max(maxBounds.x, meshEntry.Mesh.MaxBounds.x);
-        maxBounds.y = MathF.Max(maxBounds.y, meshEntry.Mesh.MaxBounds.z);
-        maxBounds.z = MathF.Max(maxBounds.z, meshEntry.Mesh.MaxBounds.y);
+        minBounds.x = Mathf.Min(minBounds.x, meshEntry.Mesh.MinBounds.x);
+        minBounds.y = Mathf.Min(minBounds.y, meshEntry.Mesh.MinBounds.z);
+        minBounds.z = Mathf.Min(minBounds.z, meshEntry.Mesh.MinBounds.y);
+        maxBounds.x = Mathf.Max(maxBounds.x, meshEntry.Mesh.MaxBounds.x);
+        maxBounds.y = Mathf.Max(maxBounds.y, meshEntry.Mesh.MaxBounds.z);
+        maxBounds.z = Mathf.Max(maxBounds.z, meshEntry.Mesh.MaxBounds.y);
       }
 
       meshEntry.Mesh.MinBounds = minBounds;
@@ -682,7 +700,7 @@ namespace Tes.Handlers
 
       int voffset = (int)msg.Offset;
       // Bounds check.
-      int vertexCount = (int)meshEntry.VertexCount;
+      int vertexCount = (int)meshEntry.Mesh.VertexCount;
       if (voffset >= vertexCount || voffset + msg.Count > vertexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.VertexColour);
@@ -697,7 +715,7 @@ namespace Tes.Handlers
         colour = reader.ReadUInt32();
         _uintBuffer.Add(colour);
       }
-      meshEntry.Mesh.SetColors(_uintBuffer, 0, voffset, _uintBuffer.Count);
+      meshEntry.Mesh.SetColours(_uintBuffer, 0, voffset, _uintBuffer.Count);
       _uintBuffer.Clear();
 
       if (!ok)
@@ -736,7 +754,7 @@ namespace Tes.Handlers
 
       int ioffset = (int)msg.Offset;
       // Bounds check.
-      int indexCount = (int)meshEntry.IndexCount;
+      int indexCount = (int)meshEntry.Mesh.IndexCount;
       if (ioffset >= indexCount || ioffset + msg.Count > indexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Index);
@@ -790,7 +808,7 @@ namespace Tes.Handlers
 
       int voffset = (int)msg.Offset;
       // Bounds check.
-      int vertexCount = (int)meshEntry.VertexCount;
+      int vertexCount = (int)meshEntry.Mesh.VertexCount;
       if (voffset >= vertexCount || voffset + msg.Count > vertexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Normal);
@@ -821,7 +839,7 @@ namespace Tes.Handlers
         boundsPadding.x = Mathf.Max(boundsPadding.x, Mathf.Abs(meshEntry.Mesh.BoundsPadding.x));
         boundsPadding.y = Mathf.Max(boundsPadding.y, Mathf.Abs(meshEntry.Mesh.BoundsPadding.y));
         boundsPadding.z = Mathf.Max(boundsPadding.z, Mathf.Abs(meshEntry.Mesh.BoundsPadding.z));
-        meshEntry.BoundsPadding = boundsPadding;
+        meshEntry.Mesh.BoundsPadding = boundsPadding;
       }
 
       if (!ok)
@@ -860,7 +878,7 @@ namespace Tes.Handlers
 
       int voffset = (int)msg.Offset;
       // Bounds check.
-      int vertexCount = (int)meshEntry.VertexCount;
+      int vertexCount = (int)meshEntry.Mesh.VertexCount;
       _v2Buffer.Clear();
       if (voffset >= vertexCount || voffset + msg.Count > vertexCount)
       {
@@ -911,20 +929,20 @@ namespace Tes.Handlers
       }
 
       meshEntry.Finalised = false;
-      if (msg.VertexCount != meshEntry.VertexCount)
+      if (msg.VertexCount != meshEntry.Mesh.VertexCount)
       {
-        meshEntry.SetVertexCount((int)msg.VertexCount);
+        meshEntry.Mesh.SetVertexCount((int)msg.VertexCount);
       }
       if (msg.IndexCount != 0)
       {
-        meshEntry.SetIndexCount((int)msg.IndexCount);
+        meshEntry.Mesh.SetIndexCount((int)msg.IndexCount);
       }
 
       meshEntry.ID = msg.MeshID;
       meshEntry.LocalPosition = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
       meshEntry.LocalRotation = new Quaternion(msg.Attributes.RotationX, msg.Attributes.RotationY, msg.Attributes.RotationZ, msg.Attributes.RotationW);
       meshEntry.LocalScale = new Vector3(msg.Attributes.ScaleX, msg.Attributes.ScaleY, msg.Attributes.ScaleZ);
-      meshEntry.Tint = ShapeComponent.ConvertColour(msg.Attributes.Colour);
+      meshEntry.Tint = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
 
       return new Error();
     }
@@ -958,77 +976,71 @@ namespace Tes.Handlers
       }
 
       bool generateNormals = (msg.Flags & (uint)MeshBuildFlags.CalculateNormals) != 0;
-
       if (generateNormals)
       {
         GenerateNormals(meshEntry.Mesh);
       }
 
-
-      bool haveNormals = meshEntry.Builder.Normals.Length > 0;
-      switch (meshEntry.Mesh.Topology)
-      {
-      case MeshTopology.Triangles:
-      case MeshTopology.Quads:
-        if (haveNormals || generateNormals)
-        {
-          meshEntry.Material = UnityEngine.Object.Instantiate<Material>(LitMaterial);
-        }
-        else
-        {
-          meshEntry.Material = UnityEngine.Object.Instantiate<Material>(UnlitMaterial);
-        }
-        break;
-      case MeshTopology.Points:
-        generateNormals = false;
-        if (meshEntry.DrawType == (byte)MeshDrawType.Voxels)
-        {
-          meshEntry.Material = UnityEngine.Object.Instantiate<Material>(VoxelsMaterial);
-          generateNormals = !haveNormals;
-        }
-        else
-        {
-          if (haveNormals)
-          {
-            meshEntry.Material = UnityEngine.Object.Instantiate<Material>(PointsLitMaterial);
-            meshEntry.Material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
-          }
-          else
-          {
-            meshEntry.Material = UnityEngine.Object.Instantiate<Material>(PointsUnlitMaterial);
-            meshEntry.Material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
-          }
-
-          int pointSize = (Materials != null) ? Materials.DefaultPointSize : 4;
-          meshEntry.Material.SetInt("_PointSize", pointSize);
-        }
-        //if (entry.VertexColours == null)
-        //{
-        //  entry.VertexColours = new Color32[entry.VertexCount];
-        //  for (int i = 0; i < entry.VertexCount; ++i)
-        //  {
-        //    entry.VertexColours[i] = new Color32(1, 1, 1, 1);
-        //  }
-        //}
-        break;
-      default:
-      case MeshTopology.Lines:
-      case MeshTopology.LineStrip:
-        generateNormals = false;
-        meshEntry.Material = UnityEngine.Object.Instantiate<Material>(UnlitMaterial);
-        break;
-      }
-
-      if (meshEntry.Material != null)
-      {
-        meshEntry.Material.color = meshEntry.Tint;
-        // meshEntry.Material.SetColor("_Tint", pointSize);
-      }
+      SelectMaterial(meshEntry.Mesh);
 
       // Generate the meshes here.
       meshEntry.Finalised = true;
       NotifyMeshFinalised(meshEntry);
       return new Error();
+    }
+
+    void SelectMaterial(RenderMesh mesh)
+    {
+      switch (mesh.Topology)
+      {
+      case MeshTopology.Triangles:
+      case MeshTopology.Quads:
+        mesh.Material = new Material(SingleSidedMaterial);
+
+        if (mesh.HasNormals)
+        {
+          mesh.Material.EnableKeyword("WITH_NORMALS");
+        }
+
+        if (mesh.HasColours)
+        {
+          mesh.Material.EnableKeyword("WITH_COLOURS");
+        }
+        break;
+      case MeshTopology.Points:
+        if (mesh.DrawType == MeshDrawType.Voxels)
+        {
+          mesh.Material = new Material(VoxelsMaterial);
+        }
+        else
+        {
+          mesh.Material = new Material(PointsMaterial);
+          mesh.Material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
+
+          if (mesh.HasNormals)
+          {
+            mesh.Material.EnableKeyword("WITH_NORMALS");
+          }
+
+          if (mesh.HasColours)
+          {
+            mesh.Material.EnableKeyword("WITH_COLOURS");
+          }
+
+          int pointSize = (Materials != null) ? Materials.DefaultPointSize : 4;
+          mesh.Material.SetInt("_PointSize", pointSize);
+        }
+        break;
+      default:
+      case MeshTopology.Lines:
+      case MeshTopology.LineStrip:
+        mesh.Material = new Material(SingleSidedMaterial);
+        if (mesh.HasColours)
+        {
+          mesh.Material.EnableKeyword("WITH_COLOURS");
+        }
+        break;
+      }
     }
 
     /// <summary>
@@ -1067,7 +1079,7 @@ namespace Tes.Handlers
 
     private void GenerateNormals(RenderMesh mesh)
     {
-      if (mesh.DrawType == MeshDrawType.Triangles || mesh.DrawType == MeshDrawType.Quads)
+      if (mesh.DrawType == MeshDrawType.Triangles)
       {
         if (_vertexArray.Length < mesh.VertexCount)
         {
@@ -1085,7 +1097,7 @@ namespace Tes.Handlers
         mesh.GetIndices(_indexArray);
 
         // Accumulate per face normals in the vertices.
-        int faceStride = mesh.DrawType == MeshDrawType.Quads ? 4 : 3;
+        int faceStride = 3;
         Vector3 edgeA = Vector3.zero;
         Vector3 edgeB = Vector3.zero;
         Vector3 partNormal = Vector3.zero;

@@ -168,7 +168,7 @@ namespace Tes.Handlers.Shape2D
         for (int i = 0; i < _text.Count; ++i)
         {
           TextEntry entry = _text[i];
-          
+
           if (!entry.Active)
           {
             continue;
@@ -269,7 +269,7 @@ namespace Tes.Handlers.Shape2D
     public override void BeginFrame(uint frameNumber, bool maintainTransient)
     {
       if (!maintainTransient)
-      { 
+      {
         TransientText.Clear();
       }
     }
@@ -434,7 +434,7 @@ namespace Tes.Handlers.Shape2D
       text.ObjectFlags = msg.Flags;
       text.Category = msg.Category;
       text.Position = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
-      text.Colour = ShapeComponent.ConvertColour(msg.Attributes.Colour);
+      text.Colour = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
       text.Active = CategoryCheck(text.Category);
 
       // Read the text.
@@ -470,7 +470,7 @@ namespace Tes.Handlers.Shape2D
       text.ID = msg.ObjectID;
       text.ObjectFlags = msg.Flags;
       text.Position = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
-      text.Colour = ShapeComponent.ConvertColour(msg.Attributes.Colour);
+      text.Colour = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
       text.Active = true;
 
       // Read the text.

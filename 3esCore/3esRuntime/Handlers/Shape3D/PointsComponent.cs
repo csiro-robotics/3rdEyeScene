@@ -7,7 +7,7 @@ namespace Tes.Handlers.Shape3D
   /// <summary>
   /// Used to track details of objects from <see cref="PointCloudHandler"/>.
   /// </summary>
-  public class PointsComponent
+  public class PointsComponent : IShapeData
   {
     /// <summary>
     /// Point attributes.

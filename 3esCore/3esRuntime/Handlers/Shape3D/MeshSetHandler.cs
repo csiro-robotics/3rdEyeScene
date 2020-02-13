@@ -21,7 +21,7 @@ namespace Tes.Handlers.Shape3D
   /// </remarks>
   public class MeshSetHandler : ShapeHandler
   {
-    public class PartSet
+    public class PartSet : IShapeData
     {
       public uint[] MeshIDs;
       public MeshCache.MeshDetails[] Meshes;
@@ -43,8 +43,8 @@ namespace Tes.Handlers.Shape3D
       : base(categoryCheck)
     {
       MeshCache = meshCache;
-      _shapeCache.AddExtensionType<PartSet>();
-      _transientCache.AddExtensionType<PartSet>();
+      _shapeCache.AddShapeDataType<PartSet>();
+      _transientCache.AddShapeDataType<PartSet>();
     }
 
     // /// <summary>
@@ -88,8 +88,8 @@ namespace Tes.Handlers.Shape3D
 
     private void RenderMeshes(ShapeCache cache, int shapeIndex)
     {
-      CreateMessage shape = cache.GetShapeDataByIndex<CreateMessage>(shapeIndex);
-      Matrix4x4 transform = cache.GetShapeDataByIndex<Matrix4x4>(shapeIndex);
+      CreateMessage shape = cache.GetShapeByIndex(shapeIndex);
+      Matrix4x4 transform = cache.GetShapeTransformByIndex(shapeIndex);
       PartSet parts = cache.GetShapeDataByIndex<PartSet>(shapeIndex);
 
       GL.PushMatrix();
@@ -157,12 +157,12 @@ namespace Tes.Handlers.Shape3D
 
             if (material.HasProperty("_Tint"))
             {
-              material.SetColor("_Tint", new Maths.Colour(shape.Attributes.Colour).ToUnity32());
+              material.SetColor("_Tint", mesh.Tint.ToUnity32());
             }
 
             if (material.HasProperty("_BackColour"))
             {
-              material.SetColor("_BackColour", mesh.Tint.ToUnity32());
+              material.SetColor("_BackColour", new Maths.Colour(shape.Attributes.Colour).ToUnity32());
             }
 
             // Bind vertices and draw.
