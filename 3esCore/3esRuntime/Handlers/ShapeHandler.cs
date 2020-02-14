@@ -33,6 +33,9 @@ namespace Tes.Handlers
   /// </remarks>
   public abstract class ShapeHandler : MessageHandler
   {
+    public ShapeCache TransientCache { get { return _transientCache; } }
+    public ShapeCache ShapeCache { get { return _shapeCache; } }
+
     /// <summary>
     /// Constructor initialising the persistent and transient caches.
     /// </summary>
@@ -207,6 +210,25 @@ namespace Tes.Handlers
       //     obj.SetActive(active);
       //   }
       // }
+    }
+
+    /// <summary>
+    /// Extract a <see cref="Shapes.Shape"/> representation of the shape with the given <paramref name="objectID"/>.
+    /// </summary>
+    /// <param name="objectID">The ID of the shape representation to extract.</param>
+    /// <returns>The extracted shape, or null on failure to resolve the <paramref name="objectID"/>.</returns>
+    /// <remarks>
+    /// The extract shape can be used to serialise the shape or for validation.
+    /// </remarks>
+    public virtual Shapes.Shape CreateSerialisationShapeFor(uint objectID)
+    {
+      int shapeIndex = _shapeCache.GetShapeIndex(objectID);
+      if (shapeIndex > -1)
+      {
+        return CreateSerialisationShape(_shapeCache, shapeIndex, _shapeCache.GetShapeByIndex(shapeIndex));
+      }
+
+      return null;
     }
 
     /// <summary>

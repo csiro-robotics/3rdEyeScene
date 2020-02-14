@@ -522,7 +522,7 @@ namespace Tes.Main
             }
           }
         }
-        catch (Exception e)
+        catch (System.Exception e)
         {
           _quitFlag = true;
           bytesRead = 0;
@@ -876,7 +876,7 @@ namespace Tes.Main
           return true;
         }
       }
-      catch (Exception e)
+      catch (System.Exception e)
       {
         if (keyframeStream != null)
         {
@@ -946,7 +946,7 @@ namespace Tes.Main
               keyframe.OpenStream = new FileStream(keyframe.TemporaryFilePath, FileMode.Create);
               return keyframe.OpenStream;
             }
-            catch (Exception e)
+            catch (System.Exception e)
             {
               Log.Exception(e);
             }

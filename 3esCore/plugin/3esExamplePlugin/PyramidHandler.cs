@@ -15,12 +15,8 @@ namespace Tes
     public PyramidHandler(Runtime.CategoryCheckDelegate categoryCheck)
       : base(categoryCheck)
     {
-      _solidMesh = SolidPyramid();
-      _wireframeMesh = WireframePyramid();
-      if (Root != null)
-      {
-        Root.name = Name;
-      }
+      SolidMesh = SolidPyramid();
+      WireframeMesh = WireframePyramid();
     }
 
     public static Mesh SolidPyramid()
@@ -120,24 +116,5 @@ namespace Tes
     /// <see cref="RoutingID.UserIDStart"/>
     /// </summary>
     public override ushort RoutingID { get { return (ushort)Net.RoutingID.UserIDStart; } }
-
-    /// <summary>
-    /// Solid mesh representation.
-    /// </summary>
-    public override Mesh SolidMesh { get { return _solidMesh; } }
-    /// <summary>
-    /// Wireframe mesh representation.
-    /// </summary>
-    public override Mesh WireframeMesh { get { return _wireframeMesh; } }
-
-    protected override Shapes.Shape CreateSerialisationShape(Handlers.ShapeComponent shapeComponent)
-    {
-      Shapes.Shape shape = new Pyramid();
-      ConfigureShape(shape, shapeComponent);
-      return shape;
-    }
-
-    private Mesh _solidMesh;
-    private Mesh _wireframeMesh;
   }
 }

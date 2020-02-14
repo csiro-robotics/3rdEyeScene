@@ -475,7 +475,7 @@ namespace Tes.Main
         _recordingWriter = writer;
         _recordingFileStream = fileStream;
       }
-      catch (Exception e)
+      catch (System.Exception e)
       {
         Log.Exception(e);
       }
@@ -810,14 +810,6 @@ namespace Tes.Main
           }
         }
 
-        // This is better tied to a true pre-cull or pre-render, but this object has no visual
-        // so that doesn't get called. Instead we assume the Update() call is tightly bound to
-        // the render frame rate (as opposed to FixedUpdate()).
-        foreach (MessageHandler handler in Handlers.Handlers)
-        {
-          handler.PreRender();
-        }
-
         Log.Flush();
       }
       finally
@@ -836,6 +828,27 @@ namespace Tes.Main
           }
         }
         Application.runInBackground = runInBackground;
+      }
+    }
+
+    /// <summary>
+    /// Called to render the current shape data.
+    /// </summary>
+    /// <param name="cameraTransform">The transformation matrix of the camera in the world frame.</param>
+    /// <remarks>
+    /// This should be called explicitly for each camera which is visualising the scene. In Unity terms, this should
+    /// be called from <c>Camera.OnRender()</c>.
+    /// </remarks>
+    public void Render(Matrix4x4 cameraTransform)
+    {
+      // TODO: (KS) resolve category based culling.
+
+      // This is better tied to a true pre-cull or pre-render, but this object has no visual
+      // so that doesn't get called. Instead we assume the Update() call is tightly bound to
+      // the render frame rate (as opposed to FixedUpdate()).
+      foreach (MessageHandler handler in Handlers.Handlers)
+      {
+        handler.Render(0u, cameraTransform);
       }
     }
 
@@ -1055,7 +1068,7 @@ namespace Tes.Main
           packet = null;
         }
       }
-      catch (Exception)
+      catch (System.Exception)
       {
         // Rethrow exceptions for now.
         throw;
@@ -1106,7 +1119,7 @@ namespace Tes.Main
         // Must be closed to ensure the compression stream finalises correctly.
         writer.Close();
       }
-      catch (Exception e)
+      catch (System.Exception e)
       {
         Debug.LogException(e);
         success = false;

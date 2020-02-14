@@ -103,7 +103,7 @@ namespace Tes.Main
         {
           Debug.Log($"Skipping DLL {file.Name}: not a .NET assembly");
         }
-        catch (Exception e)
+        catch (System.Exception e)
         {
           Debug.LogError($"Failed to load DLL {file.Name}");
           Debug.LogException(e);
