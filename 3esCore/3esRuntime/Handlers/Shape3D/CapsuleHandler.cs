@@ -34,44 +34,26 @@ namespace Tes.Handlers.Shape3D
     /// </summary>
     public override ushort RoutingID { get { return (ushort)ShapeID.Capsule; } }
 
-    public override void Render(ulong categoryMask, Matrix4x4 primaryCameraTransform)
-    {
-      // TODO: (KS) Reduce duplication with base ShapeHandler.Render(ulong) method.
-      // TODO: (KS) Address the same issues as ShapeHandler.Render(ulong).
-      // TODO: (KS) the scaling applied to
-      int itemCount = 0;
-      _solidTransforms.Clear();
-      _transparentTransforms.Clear();
-      _wireframeTransforms.Clear();
-      _transientCache.CollectTransforms(_solidTransforms, _transparentTransforms, _wireframeTransforms, categoryMask);
-      if (_solidTransforms.Count > 0)
-      {
-        Render(_solidMeshes, Materials[MaterialLibrary.Opaque], _solidTransforms, itemCount);
-      }
-      if (_transparentTransforms.Count > 0)
-      {
-        Render(_solidMeshes, Materials[MaterialLibrary.Transparent], _transparentTransforms, itemCount);
-      }
-      if (_wireframeTransforms.Count > 0)
-      {
-        Render(_wireframeMeshes, Materials[MaterialLibrary.Wireframe], _wireframeTransforms, itemCount);
-      }
 
-      _solidTransforms.Clear();
-      _transparentTransforms.Clear();
-      _wireframeTransforms.Clear();
-       _shapeCache.CollectTransforms(_solidTransforms, _transparentTransforms, _wireframeTransforms, categoryMask);
-      if (_solidTransforms.Count > 0)
+    protected override void RenderInstances(Matrix4x4 sceneTransform, Mesh mesh,
+                                            List<Matrix4x4> transforms, List<CreateMessage> shapes,
+                                            Material material)
+    {
+      // FIXME: (KS) fix handling the multi-mesh rendering for capsules.
+      for (int i = 0; i < transforms.Count; i += _instanceTransforms.Length)
       {
-        Render(_solidMeshes, Materials[MaterialLibrary.Opaque], _solidTransforms, itemCount);
-      }
-      if (_transparentTransforms.Count > 0)
-      {
-        Render(_solidMeshes, Materials[MaterialLibrary.Transparent], _transparentTransforms, itemCount);
-      }
-      if (_wireframeTransforms.Count > 0)
-      {
-        Render(_wireframeMeshes, Materials[MaterialLibrary.Wireframe], _wireframeTransforms, itemCount);
+        MaterialPropertyBlock materialProperties = new MaterialPropertyBlock();
+        int itemCount = 0;
+        _instanceColours.Clear();
+        for (int j = 0; j + i < transforms.Count; ++j)
+        {
+          _instanceTransforms[j] = sceneTransform * transforms[i + j];
+          Maths.Colour colour = new Maths.Colour(shapes[i + j].Attributes.Colour);
+          _instanceColours[i + j] = Maths.ColourExt.ToUnityVector4(colour);
+          itemCount = j;
+        }
+        materialProperties.SetVectorArray("_Color", _instanceColours);
+        Graphics.DrawMeshInstanced(mesh, 0, material, _instanceTransforms, itemCount, materialProperties);
       }
     }
 

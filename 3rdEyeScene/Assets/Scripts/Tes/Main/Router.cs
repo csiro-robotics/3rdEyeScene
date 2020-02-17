@@ -811,6 +811,9 @@ namespace Tes.Main
         }
 
         Log.Flush();
+
+        // Render the scene.
+        Render(Matrix4x4.identity);
       }
       finally
       {
@@ -843,12 +846,16 @@ namespace Tes.Main
     {
       // TODO: (KS) resolve category based culling.
 
+      // Resolve the 3es scene transform.
+      Matrix4x4 tesSceneToUnity = Matrix4x4.identity;
+      Runtime.FrameTransform.SetFrameRotation(ref tesSceneToUnity, ServerInfo.CoordinateFrame);
+
       // This is better tied to a true pre-cull or pre-render, but this object has no visual
       // so that doesn't get called. Instead we assume the Update() call is tightly bound to
       // the render frame rate (as opposed to FixedUpdate()).
       foreach (MessageHandler handler in Handlers.Handlers)
       {
-        handler.Render(0u, cameraTransform);
+        handler.Render(0u, tesSceneToUnity, cameraTransform);
       }
     }
 

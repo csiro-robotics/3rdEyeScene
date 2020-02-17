@@ -362,6 +362,56 @@ namespace Tes.Handlers
       }
     }
 
+    public enum CollectType
+    {
+      Solid,
+      Transparent,
+      Wireframe
+    }
+
+    public void Collect(List<Matrix4x4> transforms, List<CreateMessage> shapes, CollectType collectType)
+    {
+      // Walk the _headers and _transforms arrays directly. We can tell which indices are valid by investigating the
+      // _headers[].ID value. A zero value is not in use.
+      // TODO: (KS) consider storing a high water mark to limit iterating the arrays.
+      bool transientCache = IsTransientCache;
+      int itemLimit = (transientCache) ? _currentCount : _capacity;
+      for (int i = 0; i < itemLimit; ++i)
+      {
+        CreateMessage shape = _shapes[i];
+
+        // Transient cached we know everything up to the item limit is valid. All IDs will be zero.
+        // Non transient cache, we look for shapes with non-zero IDs.
+        // A transient cache has all IDs set to zero. A non-transient cache has all valid IDs as non-zero.
+        if ((transientCache || shape.ObjectID != 0))
+        {
+          // TODO: (KS) category check.
+          bool add = false;
+          if ((shape.Flags & (ushort)Tes.Net.ObjectFlag.Wireframe) != 0 && collectType == CollectType.Wireframe)
+          {
+            // Collecting wireframe.
+            add = true;
+          }
+          else if ((shape.Flags & (ushort)Tes.Net.ObjectFlag.Transparent) != 0 && collectType == CollectType.Transparent)
+          {
+            // Collecting transparent.
+            add = true;
+          }
+          else if (collectType == CollectType.Solid)
+          {
+            // Collecting solid.
+            add = true;
+          }
+
+          if (add)
+          {
+            transforms.Add(_transforms[i]);
+            shapes.Add(shape);
+          }
+        }
+      }
+    }
+
     /// <summary>
     /// Allocate and assign an index for a new shape.
     /// </summary>

@@ -18,10 +18,10 @@ namespace Tes
 
     public void OnRenderObject()
     {
-      if (_thirdEyeScene != null)
-      {
-        _thirdEyeScene.Render(transform.localToWorldMatrix);
-      }
+      //if (_thirdEyeScene != null)
+      //{
+      //  _thirdEyeScene.Render(transform.localToWorldMatrix);
+      //}
     }
   }
 }

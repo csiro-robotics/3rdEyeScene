@@ -91,6 +91,8 @@ Shader "Points/Points"
     fin.pos = ppos - float4((right + up), 0);
     #if WITH_COLOURS
     fin.colour = p[0].colour;
+    #else  // WITH_COLOURS
+    fin.colour = float4(1, 1, 1, 1);
     #endif // WITH_COLOURS
     fin.tex0 = float2(0, 0);
     triStream.Append(fin);
@@ -124,11 +126,7 @@ Shader "Points/Points"
     // The max radius is 0.5, which yields a division by 0.25, which is the same
     // as a multiplication by 4. uvdist2 is already pow(pixel radius, 2)
     const float scale = (_PointHighlighting) ? 1.0f - uvdist2 * 4.0f : 1.0f;
-    return scale * _Color * _Tint
-      #ifdef WITH_COLOURS
-        * input.colour
-      #endif // WITH_COLOURS
-    ;
+    return scale * _Color * _Tint * input.colour;
   }
 
   ENDCG

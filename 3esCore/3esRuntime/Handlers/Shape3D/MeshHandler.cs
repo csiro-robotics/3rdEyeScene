@@ -105,17 +105,28 @@ namespace Tes.Handlers.Shape3D
       base.BeginFrame(frameNumber, maintainTransient);
     }
 
-    public override void Render(ulong categoryMask, Matrix4x4 primaryCameraTransform)
+    public override void Render(ulong categoryMask, Matrix4x4 sceneTransform, Matrix4x4 primaryCameraTransform)
     {
-      // TODO: (KS) Resolve categories.
-      foreach (int shapeIndex in _transientCache.ShapeIndices)
-      {
-        RenderObject(_transientCache, shapeIndex);
-      }
+      GL.PushMatrix();
+      GL.MultMatrix(primaryCameraTransform.inverse);
+      GL.MultMatrix(sceneTransform);
 
-      foreach (int shapeIndex in _shapeCache.ShapeIndices)
+      try
       {
-        RenderObject(_shapeCache, shapeIndex);
+        // TODO: (KS) Resolve categories.
+        foreach (int shapeIndex in _transientCache.ShapeIndices)
+        {
+          RenderObject(_transientCache, shapeIndex);
+        }
+
+        foreach (int shapeIndex in _shapeCache.ShapeIndices)
+        {
+          RenderObject(_shapeCache, shapeIndex);
+        }
+      }
+      finally
+      {
+        GL.PopMatrix();
       }
     }
 
@@ -465,7 +476,7 @@ namespace Tes.Handlers.Shape3D
         break;
       default:
       case MeshDrawType.Lines:
-        mat = new Material(Materials[MaterialLibrary.Opaque]);
+        mat = new Material(Materials[MaterialLibrary.OpaqueMesh]);
         if (meshEntry.Mesh.HasColours)
         {
           mat.EnableKeyword("WITH_COLOURS");
@@ -475,19 +486,19 @@ namespace Tes.Handlers.Shape3D
         // Check wire frame.
         if ((shape.Flags & (uint)ObjectFlag.Wireframe) != 0u)
         {
-          mat = new Material(Materials[MaterialLibrary.Wireframe]);
+          mat = new Material(Materials[MaterialLibrary.WireframeMesh]);
         }
         else if ((shape.Flags & (uint)ObjectFlag.Transparent) != 0u)
         {
-          mat = new Material(Materials[MaterialLibrary.Transparent]);
+          mat = new Material(Materials[MaterialLibrary.TransparentMesh]);
         }
         else if ((shape.Flags & (uint)ObjectFlag.TwoSided) != 0u)
         {
-          mat = new Material(Materials[MaterialLibrary.OpaqueTwoSided]);
+          mat = new Material(Materials[MaterialLibrary.OpaqueTwoSidedMesh]);
         }
         else
         {
-          mat = new Material(Materials[MaterialLibrary.Opaque]);
+          mat = new Material(Materials[MaterialLibrary.OpaqueMesh]);
         }
         MaterialLibrary.SetupMaterial(mat, meshEntry.Mesh);
         break;

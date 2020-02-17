@@ -33,6 +33,10 @@ namespace Tes.Handlers
   /// </remarks>
   public abstract class ShapeHandler : MessageHandler
   {
+    /// <summary>
+    /// Maximum number of instances which can be rendered in a single draw call. This is a Unity limitation.
+    /// </summary>
+    public static readonly int InstanceRenderLimit = 1023;
     public ShapeCache TransientCache { get { return _transientCache; } }
     public ShapeCache ShapeCache { get { return _shapeCache; } }
 
@@ -102,51 +106,52 @@ namespace Tes.Handlers
     /// <summary>
     /// Render all the current objects.
     /// </summary>
-    public override void Render(ulong categoryMask, Matrix4x4 primaryCameraTransform)
+    public override void Render(ulong categoryMask, Matrix4x4 sceneTransform, Matrix4x4 primaryCameraTransform)
     {
       // TODO: (KS) Handle categories beyond the 64 which fit into categoryMask.
       // TODO: (KS) Find a better way to split solid, transparent and wireframe rendering. Also need to respect the
       // TwoSided flag.
       // TODO: (KS) Restore colour/tint support from ObjectAttributes to rendering.
-      int itemCount = 0;
-      _solidTransforms.Clear();
-      _transparentTransforms.Clear();
-      _wireframeTransforms.Clear();
-       _transientCache.CollectTransforms(_solidTransforms, _transparentTransforms, _wireframeTransforms, categoryMask);
-      if (_solidTransforms.Count > 0)
-      {
-        Graphics.DrawMeshInstanced(SolidMesh, 0, Materials[MaterialLibrary.VertexColourUnlit],
-                                   _solidTransforms.ToArray(), itemCount);
-      }
-      if (_transparentTransforms.Count > 0)
-      {
-        Graphics.DrawMeshInstanced(SolidMesh, 0, Materials[MaterialLibrary.VertexColourTransparent],
-                                   _transparentTransforms.ToArray(), itemCount);
-      }
-      if (_wireframeTransforms.Count > 0)
-      {
-        Graphics.DrawMeshInstanced(WireframeMesh, 0, Materials[MaterialLibrary.WireframeTriangles],
-                                   _wireframeTransforms.ToArray(), itemCount);
-      }
 
-      _solidTransforms.Clear();
-      _transparentTransforms.Clear();
-      _wireframeTransforms.Clear();
-       _shapeCache.CollectTransforms(_solidTransforms, _transparentTransforms, _wireframeTransforms, categoryMask);
-      if (_solidTransforms.Count > 0)
+      _renderTransforms.Clear();
+      _renderShapes.Clear();
+      _transientCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Solid);
+      _shapeCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Solid);
+      RenderInstances(sceneTransform, SolidMesh, _renderTransforms, _renderShapes, Materials[MaterialLibrary.OpaqueInstanced]);
+
+      _renderTransforms.Clear();
+      _renderShapes.Clear();
+      _transientCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Transparent);
+      _shapeCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Transparent);
+      RenderInstances(sceneTransform, SolidMesh, _renderTransforms, _renderShapes, Materials[MaterialLibrary.TransparentInstanced]);
+
+      _renderTransforms.Clear();
+      _renderShapes.Clear();
+      _transientCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Wireframe);
+      _shapeCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Wireframe);
+      RenderInstances(sceneTransform, WireframeMesh, _renderTransforms, _renderShapes, Materials[MaterialLibrary.OpaqueInstanced]);
+    }
+
+    protected virtual void RenderInstances(Matrix4x4 sceneTransform, Mesh mesh,
+                                           List<Matrix4x4> transforms, List<CreateMessage> shapes,
+                                           Material material)
+    {
+      // Handle instancing block size limits.
+      for (int i = 0; i < transforms.Count; i += _instanceTransforms.Length)
       {
-        Graphics.DrawMeshInstanced(SolidMesh, 0, Materials[MaterialLibrary.VertexColourUnlit],
-                                   _solidTransforms.ToArray(), itemCount);
-      }
-      if (_transparentTransforms.Count > 0)
-      {
-        Graphics.DrawMeshInstanced(SolidMesh, 0, Materials[MaterialLibrary.VertexColourTransparent],
-                                   _transparentTransforms.ToArray(), itemCount);
-      }
-      if (_wireframeTransforms.Count > 0)
-      {
-        Graphics.DrawMeshInstanced(WireframeMesh, 0, Materials[MaterialLibrary.WireframeTriangles],
-                                   _wireframeTransforms.ToArray(), itemCount);
+        MaterialPropertyBlock materialProperties = new MaterialPropertyBlock();
+        int itemCount = 0;
+        _instanceColours.Clear();
+        for (int j = 0; j + i < transforms.Count; ++j)
+        {
+          _instanceTransforms[j] = sceneTransform * transforms[i + j];
+          Maths.Colour colour = new Maths.Colour(shapes[i + j].Attributes.Colour);
+          _instanceColours.Add(Maths.ColourExt.ToUnityVector4(colour));
+          itemCount = j + 1;
+        }
+
+        materialProperties.SetVectorArray("_Color", _instanceColours);
+        Graphics.DrawMeshInstanced(mesh, 0, material, _instanceTransforms, itemCount, materialProperties);
       }
     }
 
@@ -867,9 +872,10 @@ namespace Tes.Handlers
     /// Cache for persistent objects.
     /// </summary>
     protected ShapeCache _shapeCache = null;
-    protected List<Matrix4x4> _solidTransforms = new List<Matrix4x4>();
-    protected List<Matrix4x4> _transparentTransforms = new List<Matrix4x4>();
-    protected List<Matrix4x4> _wireframeTransforms = new List<Matrix4x4>();
+    protected List<Matrix4x4> _renderTransforms = new List<Matrix4x4>();
+    protected List<CreateMessage> _renderShapes = new List<CreateMessage>();
+    protected Matrix4x4[] _instanceTransforms = new Matrix4x4[InstanceRenderLimit];
+    protected List<Vector4> _instanceColours = new List<Vector4>(InstanceRenderLimit);
     /// <summary>
     /// Index of the last item added to the _transientCache. Intended for handling DataMessage packets for transient
     /// shapes.

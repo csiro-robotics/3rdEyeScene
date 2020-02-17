@@ -21,11 +21,7 @@ Shader "Points/Voxel"
 #pragma target 4.0
 #pragma vertex vert
 #pragma fragment frag
-#ifdef WIREFRAME
 #pragma geometry cubeGeom
-#else  // WIREFRAME
-#pragma geometry linesGeom
-#endif // WIREFRAME
 #include "UnityCG.cginc"
 
       // **************************************************************
@@ -72,7 +68,7 @@ Shader "Points/Voxel"
       GeometryInput vert(uint vid : SV_VertexID)
       {
         GeometryInput o;
-        o.pos = mul(unity_ObjectToWorld, _Vertices[vid].vertex);
+        o.pos = mul(unity_ObjectToWorld, float4(_Vertices[vid], 1));
         o.halfExtents = _Normals[vid];
         o.colour = _Color * _Tint
           #ifdef WITH_COLOURS

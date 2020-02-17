@@ -273,9 +273,9 @@ namespace Tes.Handlers
     public override void Initialise(GameObject root, GameObject serverRoot, MaterialLibrary materials)
     {
       Materials = materials;
-      SingleSidedMaterial = materials[MaterialLibrary.Opaque];
-      DoubleSidedSidedMaterial = materials[MaterialLibrary.OpaqueTwoSided];
-      TransparentMaterial = materials[MaterialLibrary.Transparent];
+      SingleSidedMaterial = materials[MaterialLibrary.OpaqueMesh];
+      DoubleSidedSidedMaterial = materials[MaterialLibrary.OpaqueTwoSidedMesh];
+      TransparentMaterial = materials[MaterialLibrary.TransparentMesh];
       // PointsMaterial = materials[MaterialLibrary.Wireframe];
       PointsMaterial = materials[MaterialLibrary.Points];
       VoxelsMaterial = materials[MaterialLibrary.Voxels];

@@ -18,6 +18,16 @@ namespace Tes.Maths
     }
 
     /// <summary>
+    /// Convert to a Unity colour.
+    /// </summary>
+    /// <returns>The equivalent Unity colour.</returns>
+    /// <param name="c">The colour to convert.</param>
+    public static UnityEngine.Vector4 ToUnityVector4(this Colour c)
+    {
+      return new UnityEngine.Vector4(c.Rf, c.Gf, c.Bf, c.Af);
+    }
+
+    /// <summary>
     /// Set from a Unity colour.
     /// </summary>
     /// <param name="c">The TES colour to modify.</param>

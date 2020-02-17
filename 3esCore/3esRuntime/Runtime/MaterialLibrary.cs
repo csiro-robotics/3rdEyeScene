@@ -24,44 +24,13 @@ namespace Tes.Runtime
   /// <remarks>
   public class MaterialLibrary
   {
-    public static string Opaque { get { return "opaque"; } }
-    public static string OpaqueTwoSided { get { return "opaqueTwoSided"; } }
-    public static string Transparent { get { return "transparent"; } }
-    public static string Wireframe { get { return "wireframe"; } }
-    public static string Points { get { return "points"; } }
-
-    /// <summary>
-    /// The name of a default material, supporting per vertex colour and lighting.
-    /// </summary>
-    public static string VertexColourLit { get { return "vertexLit"; } }
-    /// <summary>
-    /// The name of a default material, supporting per vertex colour with no lighting.
-    /// </summary>
-    public static string VertexColourUnlit { get { return "vertexUnlit"; } }
-    /// <summary>
-    /// The name of a default material, supporting per vertex colour and lighting with culling disabled.
-    /// </summary>
-    public static string VertexColourLitTwoSided { get { return "vertexLitTwoSided"; } }
-    /// <summary>
-    /// The name of a default material, supporting per vertex colour with no lighting and culling disabled.
-    /// </summary>
-    public static string VertexColourUnlitTwoSided { get { return "vertexUnlitTwoSided"; } }
-    /// <summary>
-    /// The name of a default wireframe triangle rendering material.
-    /// </summary>
-    public static string WireframeTriangles { get { return "wireframe"; } }
-    /// <summary>
-    /// The name of a default material, supporting per vertex colour with no lighting.
-    /// </summary>
-    public static string VertexColourTransparent { get { return "vertexTransparent"; } }
-    /// <summary>
-    /// The name of a default material for rendering unlit points. per vertex colour with no lighting.
-    /// </summary>
-    public static string PointsLit { get { return "pointsLit"; } }
-    /// <summary>
-    /// The name of a default material for rendering unlit points.
-    /// </summary>
-    public static string PointsUnlit { get { return "pointsUnlit"; } }
+    public static string OpaqueInstanced { get { return "OpaqueInstanced"; } }
+    public static string TransparentInstanced { get { return "TransparentInstanced"; } }
+    public static string OpaqueMesh { get { return "OpaqueMesh"; } }
+    public static string OpaqueTwoSidedMesh { get { return "OpaqueTwoSidedMesh"; } }
+    public static string TransparentMesh { get { return "TransparentMesh"; } }
+    public static string WireframeMesh { get { return "WireframeMesh"; } }
+    public static string Points { get { return "Points"; } }
 
     /// <summary>
     /// The name of a default material for rendering geometry shader based voxels.

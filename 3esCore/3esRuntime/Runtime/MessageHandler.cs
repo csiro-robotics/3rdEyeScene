@@ -147,10 +147,10 @@ namespace Tes.Runtime
     /// <summary>
     /// Render the current objects frame.
     /// </summary>
-    /// <remarks>
-    /// Called between <see cref="BeginFrame(uint, bool)"/> and <see cref="EndFrame(uint)"/>.
-    /// </remarks>
-    public virtual void Render(ulong categoryMask, Matrix4x4 primaryCameraTransform) { }
+    /// <param name="categoryMask">A bit field representing the state of the first 64 categories.</>
+    /// <param name="tesToWorld">The transform from the 3es scene frame into the Unity world frame.</>
+    /// <param name="cameraToWorld">The transform from the render camera frame into the Unity world frame.</>
+    public virtual void Render(ulong categoryMask, Matrix4x4 sceneTransform, Matrix4x4 primaryCameraTransform) { }
 
     /// <summary>
     /// Called when a message arrives with a message routing ID matching

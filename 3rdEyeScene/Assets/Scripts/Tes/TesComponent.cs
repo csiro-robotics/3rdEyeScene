@@ -17,14 +17,13 @@ using UnityEngine;
 public class TesComponent : Router
 {
   public Tes.Net.CoordinateFrame Frame = Tes.Net.CoordinateFrame.ZXY;
-  public Material VertexColourLitMaterial;
-  public Material VertexColourUnlitMaterial;
-  public Material VertexColourLitTwoSidedMaterial;
-  public Material VertexColourUnlitTwoSidedMaterial;
-  public Material WireframeTriangles;
-  public Material VertexColourTransparent;
-  public Material PointsLitMaterial;
-  public Material PointsUnlitMaterial;
+  public Material OpaqueInstancedMaterial;
+  public Material TransparentInstancedMaterial;
+  public Material OpaqueMeshMaterial;
+  public Material OpaqueTwoSidedMeshMaterial;
+  public Material TransparentMeshMaterial;
+  public Material WireframeMeshMaterial;
+  public Material PointsMaterial;
   public Material VoxelsMaterial;
   public FileDialogUI FileDialogUI;
 
@@ -60,14 +59,13 @@ public class TesComponent : Router
   {
     base.Start();
 
-    Materials.Register(MaterialLibrary.VertexColourLit, VertexColourLitMaterial);
-    Materials.Register(MaterialLibrary.VertexColourUnlit, VertexColourUnlitMaterial);
-    Materials.Register(MaterialLibrary.VertexColourLitTwoSided, VertexColourLitTwoSidedMaterial);
-    Materials.Register(MaterialLibrary.VertexColourUnlitTwoSided, VertexColourUnlitTwoSidedMaterial);
-    Materials.Register(MaterialLibrary.WireframeTriangles, WireframeTriangles);
-    Materials.Register(MaterialLibrary.VertexColourTransparent, VertexColourTransparent);
-    Materials.Register(MaterialLibrary.PointsLit, PointsLitMaterial);
-    Materials.Register(MaterialLibrary.PointsUnlit, PointsUnlitMaterial);
+    Materials.Register(MaterialLibrary.OpaqueInstanced, OpaqueInstancedMaterial);
+    Materials.Register(MaterialLibrary.TransparentInstanced, TransparentInstancedMaterial);
+    Materials.Register(MaterialLibrary.OpaqueMesh, OpaqueMeshMaterial);
+    Materials.Register(MaterialLibrary.OpaqueTwoSidedMesh, OpaqueTwoSidedMeshMaterial);
+    Materials.Register(MaterialLibrary.TransparentMesh, TransparentMeshMaterial);
+    Materials.Register(MaterialLibrary.WireframeMesh, WireframeMeshMaterial);
+    Materials.Register(MaterialLibrary.Points, PointsMaterial);
     Materials.Register(MaterialLibrary.Voxels, VoxelsMaterial);
 
     if (Scene != null && Scene.Root != null)

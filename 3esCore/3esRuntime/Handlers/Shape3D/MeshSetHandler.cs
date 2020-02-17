@@ -73,16 +73,27 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Render all the current objects.
     /// </summary>
-    public override void Render(ulong categoryMask, Matrix4x4 primaryCameraTransform)
+    public override void Render(ulong categoryMask, Matrix4x4 sceneTransform, Matrix4x4 primaryCameraTransform)
     {
-      // TODO: (KS) category handling.
-      foreach (int index in _transientCache.ShapeIndices)
+      GL.PushMatrix();
+      GL.MultMatrix(primaryCameraTransform.inverse);
+      GL.MultMatrix(sceneTransform);
+
+      try
       {
-        RenderMeshes(_transientCache, index);
+        // TODO: (KS) category handling.
+        foreach (int index in _transientCache.ShapeIndices)
+        {
+          RenderMeshes(_transientCache, index);
+        }
+        foreach (int index in _shapeCache.ShapeIndices)
+        {
+          RenderMeshes(_shapeCache, index);
+        }
       }
-      foreach (int index in _shapeCache.ShapeIndices)
+      finally
       {
-        RenderMeshes(_shapeCache, index);
+        GL.PopMatrix();
       }
     }
 
@@ -418,15 +429,15 @@ namespace Tes.Handlers.Shape3D
       Material material = null;
       if ((partSet.ObjectFlags & ObjectFlag.Wireframe) == ObjectFlag.Wireframe)
       {
-        material = Materials[MaterialLibrary.WireframeTriangles];
+        material = Materials[MaterialLibrary.WireframeMesh];
       }
       else if ((partSet.ObjectFlags & ObjectFlag.Transparent) == ObjectFlag.Transparent)
       {
-        material = Materials[MaterialLibrary.Transparent];
+        material = Materials[MaterialLibrary.TransparentMesh];
       }
       else if ((partSet.ObjectFlags & ObjectFlag.TwoSided) == ObjectFlag.TwoSided)
       {
-        material = Materials[MaterialLibrary.OpaqueTwoSided];
+        material = Materials[MaterialLibrary.OpaqueTwoSidedMesh];
       }
       // else no override.
 

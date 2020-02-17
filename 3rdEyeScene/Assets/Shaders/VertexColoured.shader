@@ -37,6 +37,7 @@
       float4 colour : COLOR;
       #endif // WITH_COLOURS
     };
+
     struct FragmentInput
     {
       float4 vertex : SV_POSITION;
@@ -107,7 +108,7 @@
 
       uniform float4 _BackColour;
 
-      FragmentInput vert(VertexInput v)
+      FragmentInput vert(uint vid : SV_VertexID)
       {
         return calcVert(_Vertices[vid],
           #ifdef WITH_NORMALS
