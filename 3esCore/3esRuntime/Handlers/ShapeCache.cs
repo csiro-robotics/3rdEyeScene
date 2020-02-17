@@ -83,6 +83,11 @@ namespace Tes.Handlers
       {
         _idMap.Clear();
       }
+      CreateMessage clearMsg = new CreateMessage();
+      for (int i = 0; i < _shapes.Length; ++i)
+      {
+        _shapes[i] = clearMsg;
+      }
       _currentCount = 0;
     }
 
@@ -316,50 +321,6 @@ namespace Tes.Handlers
       }
 
       throw new InvalidDataTypeException($"Unregistered shape extension type : {typeof(T).Name}");
-    }
-
-    /// <summary>
-    /// Iterate the active shapes collecting render transforms into the provided lists.
-    /// </summary>
-    /// <param name="solidTransforms">Transforms for shapes to be rendered as opaque are collected here.</param>
-    /// <param name="transparentTransforms">Transforms for shapes to be rendered with transparency are collected here.</param>
-    /// <param name="wireframeTransforms">Transforms for shapes to be rendered as wireframe are collected here.</param>
-    /// <param name="categoryMask">Mask of active categories.</param>
-    /// <remarks>
-    /// Only shapes in active categories as indicated by <paramref name="categoryMask"/> are collected.
-    /// </remarks>
-    public void CollectTransforms(List<Matrix4x4> solidTransforms, List<Matrix4x4> transparentTransforms, List<Matrix4x4> wireframeTransforms, ulong categoryMask)
-    {
-      // Walk the _headers and _transforms arrays directly. We can tell which indices are valid by investigating the
-      // _headers[].ID value. A zero value is not in use.
-      // TODO: (KS) consider storing a high water mark to limit iterating the arrays.
-      bool transientCache = IsTransientCache;
-      int itemLimit = (transientCache) ? _currentCount : _capacity;
-      for (int i = 0; i < itemLimit; ++i)
-      {
-        CreateMessage shape = _shapes[i];
-        // Check ID and category. A transient cache has all IDs set to zero. A non-transient cache has all valid IDs
-        // as non-zero.
-        if ((transientCache || shape.ObjectID != 0) && (shape.Category == 0 || ((1ul << shape.Category) & categoryMask) != 0))
-        {
-          // Check add transform to either solid or wireframe lists.
-          if ((shape.Flags & (ushort)Tes.Net.ObjectFlag.Wireframe) == 0)
-          {
-            if ((shape.Flags & (ushort)Tes.Net.ObjectFlag.Transparent) == 0)
-            {
-              solidTransforms.Add(_transforms[i]);
-            }
-            else
-            {
-              transparentTransforms.Add(_transforms[i]);
-            }
-          }
-          else
-          {
-            wireframeTransforms.Add(_transforms[i]);
-          }
-        }
-      }
     }
 
     public enum CollectType
