@@ -39,74 +39,56 @@ namespace Tes.Handlers.Shape3D
                                             List<Matrix4x4> transforms, List<CreateMessage> shapes,
                                             Material material)
     {
-      // FIXME: (KS) fix handling the multi-mesh rendering for capsules.
+      // Work out which mesh set we are rendering from the parent call: solid or wireframe. We could also look at
+      // the first CreateMessage flags.
+      Mesh[] meshes = (mesh == SolidMesh)  ? _solidMeshes : _wireframeMeshes;
+
       for (int i = 0; i < transforms.Count; i += _instanceTransforms.Length)
       {
+        // Build a block up the the block size limit.
         MaterialPropertyBlock materialProperties = new MaterialPropertyBlock();
         int itemCount = 0;
         _instanceColours.Clear();
         for (int j = 0; j + i < transforms.Count; ++j)
         {
-          _instanceTransforms[j] = sceneTransform * transforms[i + j];
+          // Build the end cap transforms.
+          Matrix4x4 transform = transforms[i + j];
+
+          // Add the transform as is for the body.
+          _instanceTransforms[i + j] = sceneTransform * transform;
+
+          // Extract radius and length to position the end caps.
+          float radius = transform.GetColumn(0).magnitude;
+          Vector4 zAxis = transform.GetColumn(2);
+          float length = zAxis.magnitude;
+          zAxis *= 1.0f / (length != 0 ? length : 1.0f);
+          // Scale the length axis to match the other two as the end caps are spheres.
+          transform.SetColumn(2, zAxis * radius);
+
+          // Adjust position for the first end cap.
+          Vector4 tAxis = transform.GetColumn(3);
+          tAxis += -0.5f * length * zAxis;
+          transform.SetColumn(3, tAxis);
+          _cap1Transforms[i + j] = sceneTransform * transform;
+
+          // Adjust position for the second end cap.
+          tAxis += length * zAxis;
+          transform.SetColumn(3, tAxis);
+          _cap2Transforms[i + j] = sceneTransform * transform;
+
           Maths.Colour colour = new Maths.Colour(shapes[i + j].Attributes.Colour);
           _instanceColours[i + j] = Maths.ColourExt.ToUnityVector4(colour);
           itemCount = j;
         }
+
         materialProperties.SetVectorArray("_Color", _instanceColours);
-        Graphics.DrawMeshInstanced(mesh, 0, material, _instanceTransforms, itemCount, materialProperties);
+
+        // Render body.
+        Graphics.DrawMeshInstanced(meshes[0], 0, material, _instanceTransforms, itemCount, materialProperties);
+        // Render end caps.
+        Graphics.DrawMeshInstanced(meshes[1], 0, material, _cap1Transforms, itemCount, materialProperties);
+        Graphics.DrawMeshInstanced(meshes[2], 0, material, _cap2Transforms, itemCount, materialProperties);
       }
-    }
-
-    protected void Render(Mesh[] meshes, Material material, List<Matrix4x4> transforms, int itemCount)
-    {
-      // Note: scaling must change while rendering. The cylinder must be scaled by radius (XY) and length (Z) while the
-      // sphere end caps are only scale by radius applied as a uniform scale.
-      // Axes XY will already share the radius scale so we only update Z scale.
-
-      // Render with full scaling for the cylinder part.
-      Graphics.DrawMeshInstanced(meshes[Tessellate.Capsule.CylinderIndex], 0, material, transforms.ToArray(), itemCount);
-
-      _modifiedTransforms.Clear();
-      if (_modifiedTransforms.Capacity < transforms.Capacity)
-      {
-        _modifiedTransforms.Capacity = transforms.Capacity;
-      }
-
-      // Convert to uniform scaling and modify the position for the bottom cap.
-      for (int i = 0; i < itemCount; ++i)
-      {
-        Matrix4x4 transform = transforms[i];
-        float radius = transform.GetColumn(0).magnitude;
-        Vector4 zAxis = transform.GetColumn(2);
-        float length = zAxis.magnitude;
-        zAxis *= 1.0f / (length != 0 ? length : 1.0f);
-        transform.SetColumn(2, zAxis * radius);
-        // Adjust position.
-        Vector4 tAxis = transform.GetColumn(3);
-        tAxis += -0.5f * length * zAxis;
-        transform.SetColumn(3, tAxis);
-        _modifiedTransforms.Add(transform);
-      }
-
-      Graphics.DrawMeshInstanced(meshes[Tessellate.Capsule.BottomIndex], 0, material, _modifiedTransforms.ToArray(),
-                                 itemCount);
-
-      // Convert to uniform scaling and modify the position for the top cap.
-      for (int i = 0; i < itemCount; ++i)
-      {
-        // Modify the bottom cap transform.
-        Matrix4x4 transform = _modifiedTransforms[i];
-        // Read the original zAxis for direction and length.
-        Vector4 zAxis = transforms[i].GetColumn(2);
-        // Adjust position.
-        Vector4 tAxis = transform.GetColumn(3);
-        tAxis += zAxis;
-        transform.SetColumn(3, tAxis);
-        _modifiedTransforms[i] = transform;
-      }
-
-      Graphics.DrawMeshInstanced(meshes[Tessellate.Capsule.TopIndex], 0, material, _modifiedTransforms.ToArray(),
-                                 itemCount);
     }
 
     /// <summary>
@@ -130,6 +112,7 @@ namespace Tes.Handlers.Shape3D
 
     private Mesh[] _solidMeshes;
     private Mesh[] _wireframeMeshes;
-    private List<Matrix4x4> _modifiedTransforms = new List<Matrix4x4>();
+    private Matrix4x4[] _cap1Transforms = new Matrix4x4[InstanceRenderLimit];
+    private Matrix4x4[] _cap2Transforms = new Matrix4x4[InstanceRenderLimit];
   }
 }
