@@ -1,4 +1,4 @@
-﻿Shader "VertexColour/VertexColoured"
+﻿Shader "Tes/VertexColoured"
 {
   Properties
   {

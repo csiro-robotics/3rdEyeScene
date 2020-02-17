@@ -1,4 +1,4 @@
-﻿Shader "VertexColour/VertexTransparent"
+﻿Shader "Tes/VertexTransparent"
 {
   Properties
   {

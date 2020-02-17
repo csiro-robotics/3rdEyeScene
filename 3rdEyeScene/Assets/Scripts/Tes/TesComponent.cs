@@ -17,8 +17,10 @@ using UnityEngine;
 public class TesComponent : Router
 {
   public Tes.Net.CoordinateFrame Frame = Tes.Net.CoordinateFrame.ZXY;
-  public Material OpaqueInstancedMaterial;
-  public Material TransparentInstancedMaterial;
+  public Material OpaqueInstancedLeftHandedMaterial;
+  public Material TransparentInstancedLeftHandedMaterial;
+  public Material OpaqueInstancedRightHandedMaterial;
+  public Material TransparentInstancedRightHandedMaterial;
   public Material OpaqueMeshMaterial;
   public Material OpaqueTwoSidedMeshMaterial;
   public Material TransparentMeshMaterial;
@@ -59,14 +61,7 @@ public class TesComponent : Router
   {
     base.Start();
 
-    Materials.Register(MaterialLibrary.OpaqueInstanced, OpaqueInstancedMaterial);
-    Materials.Register(MaterialLibrary.TransparentInstanced, TransparentInstancedMaterial);
-    Materials.Register(MaterialLibrary.OpaqueMesh, OpaqueMeshMaterial);
-    Materials.Register(MaterialLibrary.OpaqueTwoSidedMesh, OpaqueTwoSidedMeshMaterial);
-    Materials.Register(MaterialLibrary.TransparentMesh, TransparentMeshMaterial);
-    Materials.Register(MaterialLibrary.WireframeMesh, WireframeMeshMaterial);
-    Materials.Register(MaterialLibrary.Points, PointsMaterial);
-    Materials.Register(MaterialLibrary.Voxels, VoxelsMaterial);
+    UpdateMaterials();
 
     if (Scene != null && Scene.Root != null)
     {
@@ -129,6 +124,33 @@ public class TesComponent : Router
     };
 
     HandleCommandLineStart();
+  }
+
+  void UpdateMaterials()
+  {
+    // TODO: (KS) validate the mesh materials in left handed remote scenes.
+    if (Tes.Net.CoordinateFrameUtil.LeftHanded(ServerInfo.CoordinateFrame))
+    {
+      Materials.Register(MaterialLibrary.OpaqueInstanced, OpaqueInstancedLeftHandedMaterial);
+      Materials.Register(MaterialLibrary.TransparentInstanced, TransparentInstancedLeftHandedMaterial);
+      Materials.Register(MaterialLibrary.OpaqueMesh, OpaqueMeshMaterial);
+      Materials.Register(MaterialLibrary.OpaqueTwoSidedMesh, OpaqueTwoSidedMeshMaterial);
+      Materials.Register(MaterialLibrary.TransparentMesh, TransparentMeshMaterial);
+      Materials.Register(MaterialLibrary.WireframeMesh, WireframeMeshMaterial);
+      Materials.Register(MaterialLibrary.Points, PointsMaterial);
+      Materials.Register(MaterialLibrary.Voxels, VoxelsMaterial);
+    }
+    else
+    {
+      Materials.Register(MaterialLibrary.OpaqueInstanced, OpaqueInstancedRightHandedMaterial);
+      Materials.Register(MaterialLibrary.TransparentInstanced, TransparentInstancedRightHandedMaterial);
+      Materials.Register(MaterialLibrary.OpaqueMesh, OpaqueMeshMaterial);
+      Materials.Register(MaterialLibrary.OpaqueTwoSidedMesh, OpaqueTwoSidedMeshMaterial);
+      Materials.Register(MaterialLibrary.TransparentMesh, TransparentMeshMaterial);
+      Materials.Register(MaterialLibrary.WireframeMesh, WireframeMeshMaterial);
+      Materials.Register(MaterialLibrary.Points, PointsMaterial);
+      Materials.Register(MaterialLibrary.Voxels, VoxelsMaterial);
+    }
   }
 
   void HandleCommandLineStart()
