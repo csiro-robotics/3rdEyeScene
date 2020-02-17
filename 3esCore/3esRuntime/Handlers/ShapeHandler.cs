@@ -40,6 +40,10 @@ namespace Tes.Handlers
     public ShapeCache TransientCache { get { return _transientCache; } }
     public ShapeCache ShapeCache { get { return _shapeCache; } }
 
+    public string SolidMaterialName { get; protected set; }
+    public string WireframeMaterialName { get; protected set; }
+    public string TransparentMaterialName { get; protected set; }
+
     /// <summary>
     /// Constructor initialising the persistent and transient caches.
     /// </summary>
@@ -48,6 +52,9 @@ namespace Tes.Handlers
     {
       _transientCache = new ShapeCache(128, true);
       _shapeCache = new ShapeCache(128, false);
+      SolidMaterialName = MaterialLibrary.OpaqueInstanced;
+      WireframeMaterialName = MaterialLibrary.WireframeInstanced;
+      TransparentMaterialName = MaterialLibrary.TransparentInstanced;
     }
 
     /// <summary>
@@ -117,19 +124,19 @@ namespace Tes.Handlers
       _renderShapes.Clear();
       _transientCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Solid);
       _shapeCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Solid);
-      RenderInstances(sceneTransform, SolidMesh, _renderTransforms, _renderShapes, Materials[MaterialLibrary.OpaqueInstanced]);
+      RenderInstances(sceneTransform, SolidMesh, _renderTransforms, _renderShapes, Materials[SolidMaterialName]);
 
       _renderTransforms.Clear();
       _renderShapes.Clear();
       _transientCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Transparent);
       _shapeCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Transparent);
-      RenderInstances(sceneTransform, SolidMesh, _renderTransforms, _renderShapes, Materials[MaterialLibrary.TransparentInstanced]);
+      RenderInstances(sceneTransform, SolidMesh, _renderTransforms, _renderShapes, Materials[TransparentMaterialName]);
 
       _renderTransforms.Clear();
       _renderShapes.Clear();
       _transientCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Wireframe);
       _shapeCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Wireframe);
-      RenderInstances(sceneTransform, WireframeMesh, _renderTransforms, _renderShapes, Materials[MaterialLibrary.OpaqueInstanced]);
+      RenderInstances(sceneTransform, WireframeMesh, _renderTransforms, _renderShapes, Materials[WireframeMaterialName]);
     }
 
     protected virtual void RenderInstances(Matrix4x4 sceneTransform, Mesh mesh,
@@ -146,6 +153,7 @@ namespace Tes.Handlers
         {
           _instanceTransforms[j] = sceneTransform * transforms[i + j];
           Maths.Colour colour = new Maths.Colour(shapes[i + j].Attributes.Colour);
+          colour.A = 64;
           _instanceColours.Add(Maths.ColourExt.ToUnityVector4(colour));
           itemCount = j + 1;
         }

@@ -18,8 +18,10 @@ public class TesComponent : Router
 {
   public Tes.Net.CoordinateFrame Frame = Tes.Net.CoordinateFrame.ZXY;
   public Material OpaqueInstancedLeftHandedMaterial;
+  public Material WireframeInstancedLeftHandedMaterial;
   public Material TransparentInstancedLeftHandedMaterial;
   public Material OpaqueInstancedRightHandedMaterial;
+  public Material WireframeInstancedRightHandedMaterial;
   public Material TransparentInstancedRightHandedMaterial;
   public Material OpaqueMeshMaterial;
   public Material OpaqueTwoSidedMeshMaterial;
@@ -132,6 +134,7 @@ public class TesComponent : Router
     if (Tes.Net.CoordinateFrameUtil.LeftHanded(ServerInfo.CoordinateFrame))
     {
       Materials.Register(MaterialLibrary.OpaqueInstanced, OpaqueInstancedLeftHandedMaterial);
+      Materials.Register(MaterialLibrary.WireframeInstanced, WireframeInstancedLeftHandedMaterial);
       Materials.Register(MaterialLibrary.TransparentInstanced, TransparentInstancedLeftHandedMaterial);
       Materials.Register(MaterialLibrary.OpaqueMesh, OpaqueMeshMaterial);
       Materials.Register(MaterialLibrary.OpaqueTwoSidedMesh, OpaqueTwoSidedMeshMaterial);
@@ -143,6 +146,7 @@ public class TesComponent : Router
     else
     {
       Materials.Register(MaterialLibrary.OpaqueInstanced, OpaqueInstancedRightHandedMaterial);
+      Materials.Register(MaterialLibrary.WireframeInstanced, WireframeInstancedRightHandedMaterial);
       Materials.Register(MaterialLibrary.TransparentInstanced, TransparentInstancedRightHandedMaterial);
       Materials.Register(MaterialLibrary.OpaqueMesh, OpaqueMeshMaterial);
       Materials.Register(MaterialLibrary.OpaqueTwoSidedMesh, OpaqueTwoSidedMeshMaterial);

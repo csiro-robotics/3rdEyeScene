@@ -25,6 +25,7 @@ namespace Tes.Runtime
   public class MaterialLibrary
   {
     public static string OpaqueInstanced { get { return "OpaqueInstanced"; } }
+    public static string WireframeInstanced { get { return "WireframeInstanced"; } }
     public static string TransparentInstanced { get { return "TransparentInstanced"; } }
     public static string OpaqueMesh { get { return "OpaqueMesh"; } }
     public static string OpaqueTwoSidedMesh { get { return "OpaqueTwoSidedMesh"; } }

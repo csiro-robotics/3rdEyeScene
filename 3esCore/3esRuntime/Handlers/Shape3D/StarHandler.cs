@@ -17,6 +17,8 @@ namespace Tes.Handlers.Shape3D
     {
       SolidMesh = Tes.Tessellate.Star.Solid();
       WireframeMesh = Tes.Tessellate.Star.Wireframe();
+      // Use the wireframe material to flat shade the star.
+      SolidMaterialName = Runtime.MaterialLibrary.WireframeInstanced;
     }
 
     /// <summary>

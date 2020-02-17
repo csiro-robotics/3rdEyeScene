@@ -1,4 +1,4 @@
-﻿Shader "Tes/RightHanded/Primitives"
+Shader "Tes/RightHanded/PrimitivesTransparent"
 {
   Properties
   {
@@ -9,8 +9,9 @@
 
   SubShader
   {
-    Tags { "RenderType" = "Opaque" }
-    LOD 100
+    Tags { "Queue"="Transparent" "RenderType"="Transparent" }
+    ZWrite Off
+    Blend SrcAlpha OneMinusSrcAlpha
 
     Pass
     {

@@ -43,9 +43,9 @@ namespace Tes.Handlers.Shape3D
       // the first CreateMessage flags.
       Mesh[] meshes = (mesh == SolidMesh)  ? _solidMeshes : _wireframeMeshes;
 
+      // Handle instancing block size limits.
       for (int i = 0; i < transforms.Count; i += _instanceTransforms.Length)
       {
-        // Build a block up the the block size limit.
         MaterialPropertyBlock materialProperties = new MaterialPropertyBlock();
         int itemCount = 0;
         _instanceColours.Clear();
@@ -53,9 +53,7 @@ namespace Tes.Handlers.Shape3D
         {
           // Build the end cap transforms.
           Matrix4x4 transform = transforms[i + j];
-
-          // Add the transform as is for the body.
-          _instanceTransforms[i + j] = sceneTransform * transform;
+          _instanceTransforms[j] = sceneTransform * transform;
 
           // Extract radius and length to position the end caps.
           float radius = transform.GetColumn(0).magnitude;
@@ -69,20 +67,20 @@ namespace Tes.Handlers.Shape3D
           Vector4 tAxis = transform.GetColumn(3);
           tAxis += -0.5f * length * zAxis;
           transform.SetColumn(3, tAxis);
-          _cap1Transforms[i + j] = sceneTransform * transform;
+          _cap1Transforms[j] = sceneTransform * transform;
 
           // Adjust position for the second end cap.
           tAxis += length * zAxis;
           transform.SetColumn(3, tAxis);
-          _cap2Transforms[i + j] = sceneTransform * transform;
+          _cap2Transforms[j] = sceneTransform * transform;
 
           Maths.Colour colour = new Maths.Colour(shapes[i + j].Attributes.Colour);
-          _instanceColours[i + j] = Maths.ColourExt.ToUnityVector4(colour);
-          itemCount = j;
+          colour.A = 64;
+          _instanceColours.Add(Maths.ColourExt.ToUnityVector4(colour));
+          itemCount = j + 1;
         }
 
         materialProperties.SetVectorArray("_Color", _instanceColours);
-
         // Render body.
         Graphics.DrawMeshInstanced(meshes[0], 0, material, _instanceTransforms, itemCount, materialProperties);
         // Render end caps.

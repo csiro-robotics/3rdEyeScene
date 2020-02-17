@@ -1,4 +1,4 @@
-﻿Shader "Tes/RightHanded/Primitives"
+Shader "Tes/LeftHanded/PrimitivesTransparent"
 {
   Properties
   {
@@ -9,13 +9,14 @@
 
   SubShader
   {
-    Tags { "RenderType" = "Opaque" }
-    LOD 100
+    Tags { "Queue"="Transparent" "RenderType"="Transparent" }
+    ZWrite Off
+    Blend SrcAlpha OneMinusSrcAlpha
 
     Pass
     {
       Lighting On
-      Cull Front
+      Cull Back
 
       CGPROGRAM
       #pragma vertex vert
