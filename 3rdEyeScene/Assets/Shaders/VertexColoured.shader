@@ -27,17 +27,6 @@
     StructuredBuffer<float4> _Colours;
     #endif // WITH_COLOURS
 
-    struct VertexInput
-    {
-      float4 vertex : POSITION;
-      #ifdef WITH_NORMALS
-      float4 normal : NORMAL;
-      #endif // WITH_NORMALS
-      #ifdef WITH_COLOURS
-      float4 colour : COLOR;
-      #endif // WITH_COLOURS
-    };
-
     struct FragmentInput
     {
       float4 vertex : SV_POSITION;
@@ -56,15 +45,14 @@
     {
       FragmentInput o;
       o.vertex = UnityObjectToClipPos(vertexPosition);
-      // o.colour = _Tint * faceColour
-      //   #ifdef WITH_COLOURS
-      //     * vertexColour
-      //   #endif // WITH_COLOURS
-      //   #ifdef WITH_NORMALS
-      //      * float4(ShadeVertexLights(vertexPosition, vertexNormal), 1.0f)
-      //   #endif // WITH_NORMALS
-      //   ;
-      o.colour = float4(1, 1, 1, 1);
+      o.colour = _Tint * faceColour
+        #ifdef WITH_COLOURS
+          * vertexColour
+        #endif // WITH_COLOURS
+        #ifdef WITH_NORMALS
+           * float4(ShadeVertexLights(vertexPosition, vertexNormal), 1.0f)
+        #endif // WITH_NORMALS
+        ;
       return o;
     }
     ENDCG

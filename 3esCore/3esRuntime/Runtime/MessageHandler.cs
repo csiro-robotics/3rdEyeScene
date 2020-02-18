@@ -147,12 +147,9 @@ namespace Tes.Runtime
     public virtual void EndFrame(uint frameNumber) { }
 
     /// <summary>
-    /// Render the current objects frame.
+    /// Render the current objects frame within the given <paramref name="cameraContext"/>
     /// </summary>
-    /// <param name="categoryMask">A bit field representing the state of the first 64 categories.</>
-    /// <param name="tesToWorld">The transform from the 3es scene frame into the Unity world frame.</>
-    /// <param name="cameraToWorld">The transform from the render camera frame into the Unity world frame.</>
-    public virtual void Render(ulong categoryMask, Matrix4x4 tesSceneToUnity, Matrix4x4 primaryCameraTransform) { }
+    public virtual void Render(CameraContext cameraContext) { }
 
     /// <summary>
     /// Called when a message arrives with a message routing ID matching

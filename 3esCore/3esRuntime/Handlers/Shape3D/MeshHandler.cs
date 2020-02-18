@@ -63,18 +63,11 @@ namespace Tes.Handlers.Shape3D
       // Add a render mesh component to the shapes.
     }
 
-    public override void AddCamera(Camera camera)
-    {
-      camera.AddCommandBuffer(CameraEvent.AfterForwardOpaque, _commandBuffer);
-    }
-
     /// <summary>
     /// Overridden to release mesh resources.
     /// </summary>
     public override void Reset()
     {
-      _commandBuffer.Clear();
-
       // Clear out all the mesh data in our objects.
       foreach (int shapeIndex in _transientCache.ShapeIndices)
       {
@@ -94,7 +87,6 @@ namespace Tes.Handlers.Shape3D
     /// </summary>
     public override void BeginFrame(uint frameNumber, bool maintainTransient)
     {
-      _commandBuffer.Clear();
       if (!maintainTransient)
       {
         foreach (int shapeIndex in _transientCache.ShapeIndices)
@@ -113,32 +105,32 @@ namespace Tes.Handlers.Shape3D
       base.BeginFrame(frameNumber, maintainTransient);
     }
 
-    public override void Render(ulong categoryMask, Matrix4x4 tesSceneToUnity, Matrix4x4 primaryCameraTransform)
+    public override void Render(CameraContext cameraContext)
     {
       // TODO: (KS) Resolve categories.
       foreach (int shapeIndex in _transientCache.ShapeIndices)
       {
-        RenderObject(tesSceneToUnity, _transientCache, shapeIndex);
+        RenderObject(cameraContext, _transientCache, shapeIndex);
       }
 
       foreach (int shapeIndex in _shapeCache.ShapeIndices)
       {
-        RenderObject(tesSceneToUnity, _shapeCache, shapeIndex);
+        RenderObject(cameraContext, _shapeCache, shapeIndex);
       }
     }
 
-    protected void RenderObject(Matrix4x4 tesSceneToUnity, ShapeCache cache, int shapeIndex)
+    protected void RenderObject(CameraContext cameraContext, ShapeCache cache, int shapeIndex)
     {
       CreateMessage shape = cache.GetShapeByIndex(shapeIndex);
       MeshEntry meshEntry = cache.GetShapeDataByIndex<MeshEntry>(shapeIndex);
       Matrix4x4 transform = cache.GetShapeTransformByIndex(shapeIndex);
 
+      // TODO: (KS) select command buffer for transparent rendering.
+      CommandBuffer renderQueue = cameraContext.OpaqueBuffer;
       Material material = meshEntry.Material;
       RenderMesh mesh = meshEntry.Mesh;
 
-      Matrix4x4 modelWorld = tesSceneToUnity * transform;
-      // material.SetMatrix("unity_ObjectToWorld", modelWorld);
-      // material.SetMatrix("unity_WorldToObject", modelWorld.inverse);
+      Matrix4x4 modelWorld = cameraContext.TesSceneToWorldTransform * transform;
 
       if (mesh.HasColours)
       {
@@ -157,7 +149,7 @@ namespace Tes.Handlers.Shape3D
 
       if (material.HasProperty("_Color"))
       {
-        material.SetColor("_Color", Color.cyan);//Maths.ColourExt.ToUnity(new Maths.Colour(shape.Attributes.Colour)));
+        material.SetColor("_Color", Maths.ColourExt.ToUnity(new Maths.Colour(shape.Attributes.Colour)));
       }
 
       if (material.HasProperty("_Tint"))
@@ -175,11 +167,11 @@ namespace Tes.Handlers.Shape3D
 
       if (mesh.IndexBuffer != null)
       {
-        _commandBuffer.DrawProcedural(mesh.IndexBuffer, modelWorld, material, 0, mesh.Topology, mesh.IndexCount);
+        renderQueue.DrawProcedural(mesh.IndexBuffer, modelWorld, material, 0, mesh.Topology, mesh.IndexCount);
       }
       else
       {
-        _commandBuffer.DrawProcedural(modelWorld, material, 0, mesh.Topology, mesh.VertexCount);
+        renderQueue.DrawProcedural(modelWorld, material, 0, mesh.Topology, mesh.VertexCount);
       }
     }
 
@@ -514,6 +506,5 @@ namespace Tes.Handlers.Shape3D
     private int[] _intBuffer = new int[s_bufferChuckSize];
     private uint[] _uintBuffer = new uint[s_bufferChuckSize];
     private List<RenderMesh> _toCalculateNormals = new List<RenderMesh>();
-    private CommandBuffer _commandBuffer = new CommandBuffer();
   }
 }

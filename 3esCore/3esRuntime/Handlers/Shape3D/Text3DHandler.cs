@@ -41,18 +41,19 @@ namespace Tes.Handlers.Shape3D
     /// </summary>
     public override ushort RoutingID { get { return (ushort)Tes.Net.ShapeID.Text3D; } }
 
-    public override void Render(ulong categoryMask, Matrix4x4 tesSceneToUnity, Matrix4x4 primaryCameraTransform)
+    public override void Render(CameraContext cameraContext)
     {
-      Render(_transientCache, categoryMask, primaryCameraTransform);
-      Render(_shapeCache, categoryMask, primaryCameraTransform);
+      Render(cameraContext, _transientCache);
+      Render(cameraContext, _shapeCache);
     }
 
-    protected void Render(ShapeCache shapeCache, ulong categoryMask, Matrix4x4 primaryCameraTransform)
+    protected void Render(CameraContext cameraContext, ShapeCache shapeCache)
     {
       // TODO: (KS) verify material setup.
       // TODO: (KS) incorporate the 3es scene transform.
+      // TODO: (KS) handle multiple cameras (code only tailored to one).
       Material material = Materials[MaterialLibrary.OpaqueInstanced];
-      Vector3 cameraPosition = (Vector3)primaryCameraTransform.GetColumn(3);
+      Vector3 cameraPosition = (Vector3)cameraContext.CameraToWorldTransform.GetColumn(3);
       int sideAxis = CoordinateFrameUtil.AxisIndex(ServerInfo.CoordinateFrame, 0);
       int forwardAxis = CoordinateFrameUtil.AxisIndex(ServerInfo.CoordinateFrame, 1);
       int upAxis = CoordinateFrameUtil.AxisIndex(ServerInfo.CoordinateFrame, 2);

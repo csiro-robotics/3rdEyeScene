@@ -1,5 +1,7 @@
 using System;
+using Tes.Runtime;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Tes
 {
@@ -16,20 +18,43 @@ namespace Tes
       set { _thirdEyeScene = value; }
     }
 
+    void Start()
+    {
+      Camera camera = GetComponent<Camera>();
+      if (camera != null)
+      {
+        _opaqueBuffer = new CommandBuffer();
+        _opaqueBuffer.name = $"{gameObject.name}-Opaque";
+        _transparentBuffer = new CommandBuffer();
+        _transparentBuffer.name = $"{gameObject.name}-Transparent";
+
+        camera.AddCommandBuffer(CameraEvent.AfterForwardOpaque, _opaqueBuffer);
+        camera.AddCommandBuffer(CameraEvent.AfterForwardAlpha, _transparentBuffer);
+      }
+    }
+
     public void OnRenderObject()
     {
+      _opaqueBuffer.Clear();
+      _transparentBuffer.Clear();
+      // AddLights();
       if (_thirdEyeScene != null)
       {
-      //  _thirdEyeScene.Render(transform.localToWorldMatrix);
         Camera camera = GetComponent<Camera>();
         if (camera != null)
         {
-          foreach (var handler in _thirdEyeScene.Handlers.Handlers)
+          CameraContext cameraContext = new CameraContext
           {
-            handler.AddCamera(camera);
-          }
+            CameraToWorldTransform = camera.transform.localToWorldMatrix,
+            OpaqueBuffer = _opaqueBuffer,
+            TransparentBuffer = _transparentBuffer
+          };
+          _thirdEyeScene.Render(cameraContext);
         }
       }
     }
+
+    private CommandBuffer _opaqueBuffer = null;
+    private CommandBuffer _transparentBuffer = null;
   }
 }

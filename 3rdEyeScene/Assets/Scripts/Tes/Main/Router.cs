@@ -808,9 +808,6 @@ namespace Tes.Main
         }
 
         Log.Flush();
-
-        // Render the scene.
-        Render(Matrix4x4.identity);
       }
       finally
       {
@@ -832,27 +829,26 @@ namespace Tes.Main
     }
 
     /// <summary>
-    /// Called to render the current shape data.
+    /// Called from each 3es render camera to render the current shape data.
     /// </summary>
     /// <param name="cameraTransform">The transformation matrix of the camera in the world frame.</param>
     /// <remarks>
     /// This should be called explicitly for each camera which is visualising the scene. In Unity terms, this should
     /// be called from <c>Camera.OnRender()</c>.
     /// </remarks>
-    public void Render(Matrix4x4 cameraTransform)
+    public void Render(CameraContext cameraContext)
     {
       // TODO: (KS) resolve category based culling.
 
-      // Resolve the 3es scene transform.
-      Matrix4x4 tesSceneToUnity = Matrix4x4.identity;
-      Runtime.FrameTransform.SetFrameRotation(ref tesSceneToUnity, ServerInfo.CoordinateFrame);
+      // Update the 3es scene to unity world transform.
+      Runtime.FrameTransform.SetFrameRotation(ref cameraContext.TesSceneToWorldTransform, ServerInfo.CoordinateFrame);
 
       // This is better tied to a true pre-cull or pre-render, but this object has no visual
       // so that doesn't get called. Instead we assume the Update() call is tightly bound to
       // the render frame rate (as opposed to FixedUpdate()).
       foreach (MessageHandler handler in Handlers.Handlers)
       {
-        handler.Render(0u, tesSceneToUnity, cameraTransform);
+        handler.Render(cameraContext);
       }
     }
 

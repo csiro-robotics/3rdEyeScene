@@ -5,6 +5,7 @@ using Tes.IO;
 using Tes.Net;
 using Tes.Runtime;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Tes.Handlers
 {
@@ -113,7 +114,7 @@ namespace Tes.Handlers
     /// <summary>
     /// Render all the current objects.
     /// </summary>
-    public override void Render(ulong categoryMask, Matrix4x4 tesSceneToUnity, Matrix4x4 primaryCameraTransform)
+    public override void Render(CameraContext cameraContext)
     {
       // TODO: (KS) Handle categories beyond the 64 which fit into categoryMask.
       // TODO: (KS) Find a better way to split solid, transparent and wireframe rendering. Also need to respect the
@@ -124,25 +125,27 @@ namespace Tes.Handlers
       _renderShapes.Clear();
       _transientCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Solid);
       _shapeCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Solid);
-      RenderInstances(tesSceneToUnity, SolidMesh, _renderTransforms, _renderShapes, Materials[SolidMaterialName]);
+      RenderInstances(cameraContext, cameraContext.OpaqueBuffer, SolidMesh, _renderTransforms, _renderShapes, Materials[SolidMaterialName]);
 
       _renderTransforms.Clear();
       _renderShapes.Clear();
       _transientCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Transparent);
       _shapeCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Transparent);
-      RenderInstances(tesSceneToUnity, SolidMesh, _renderTransforms, _renderShapes, Materials[TransparentMaterialName]);
+      RenderInstances(cameraContext, cameraContext.TransparentBuffer, SolidMesh, _renderTransforms, _renderShapes, Materials[TransparentMaterialName]);
 
       _renderTransforms.Clear();
       _renderShapes.Clear();
       _transientCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Wireframe);
       _shapeCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Wireframe);
-      RenderInstances(tesSceneToUnity, WireframeMesh, _renderTransforms, _renderShapes, Materials[WireframeMaterialName]);
+      RenderInstances(cameraContext, cameraContext.OpaqueBuffer, WireframeMesh, _renderTransforms, _renderShapes, Materials[WireframeMaterialName]);
     }
 
-    protected virtual void RenderInstances(Matrix4x4 tesSceneToUnity, Mesh mesh,
+    protected virtual void RenderInstances(CameraContext cameraContext, CommandBuffer renderQueue, Mesh mesh,
                                            List<Matrix4x4> transforms, List<CreateMessage> shapes,
                                            Material material)
     {
+      renderQueue.
+      material.SetPass(0);
       // Handle instancing block size limits.
       for (int i = 0; i < transforms.Count; i += _instanceTransforms.Length)
       {
@@ -151,7 +154,7 @@ namespace Tes.Handlers
         _instanceColours.Clear();
         for (int j = 0; j + i < transforms.Count; ++j)
         {
-          _instanceTransforms[j] = tesSceneToUnity * transforms[i + j];
+          _instanceTransforms[j] = cameraContext.TesSceneToWorldTransform * transforms[i + j];
           Maths.Colour colour = new Maths.Colour(shapes[i + j].Attributes.Colour);
           colour.A = 64;
           _instanceColours.Add(Maths.ColourExt.ToUnityVector4(colour));
@@ -159,7 +162,7 @@ namespace Tes.Handlers
         }
 
         materialProperties.SetVectorArray("_Color", _instanceColours);
-        Graphics.DrawMeshInstanced(mesh, 0, material, _instanceTransforms, itemCount, materialProperties);
+        renderQueue.DrawMeshInstanced(mesh, 0, material, 0, _instanceTransforms, itemCount, materialProperties);
       }
     }
 

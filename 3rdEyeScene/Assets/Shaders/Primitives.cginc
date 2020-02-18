@@ -28,7 +28,6 @@ FragmentInput vert(VertexInput v)
   o.colour = UNITY_ACCESS_INSTANCED_PROP(Props, _Color) *
     max(float4(ShadeVertexLights(v.vertex, v.normal), 1.0f),
         float4(_FlatShaded, _FlatShaded, _FlatShaded, _FlatShaded));
-  o.colour.w = 0.25f;
   return o;
 }
 

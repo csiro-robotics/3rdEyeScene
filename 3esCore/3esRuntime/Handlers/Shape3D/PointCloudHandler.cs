@@ -5,6 +5,7 @@ using Tes.IO;
 using Tes.Net;
 using Tes.Runtime;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Tes.Handlers.Shape3D
 {
@@ -69,35 +70,25 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Render all the current objects.
     /// </summary>
-    public override void Render(ulong categoryMask, Matrix4x4 tesSceneToUnity, Matrix4x4 primaryCameraTransform)
+    public override void Render(CameraContext cameraContext)
     {
-      GL.PushMatrix();
-      GL.MultMatrix(primaryCameraTransform.inverse);
-      GL.MultMatrix(tesSceneToUnity);
-
-      try
+      // TODO: (KS) category handling.
+      foreach (int index in _transientCache.ShapeIndices)
       {
-        // TODO: (KS) category handling.
-        foreach (int index in _transientCache.ShapeIndices)
-        {
-          RenderPoints(_transientCache, index);
-        }
-        foreach (int index in _shapeCache.ShapeIndices)
-        {
-          RenderPoints(_shapeCache, index);
-        }
+        RenderPoints(cameraContext, _transientCache, index);
       }
-      finally
+      foreach (int index in _shapeCache.ShapeIndices)
       {
-        GL.PopMatrix();
+        RenderPoints(cameraContext, _shapeCache, index);
       }
     }
 
-    void RenderPoints(ShapeCache cache, int shapeIndex)
+    void RenderPoints(CameraContext cameraContext, ShapeCache cache, int shapeIndex)
     {
       CreateMessage shape = cache.GetShapeByIndex(shapeIndex);
-      Matrix4x4 transform = cache.GetShapeTransformByIndex(shapeIndex);
+      Matrix4x4 modelWorld = cameraContext.TesSceneToWorldTransform * cache.GetShapeTransformByIndex(shapeIndex);
       PointsComponent points = cache.GetShapeDataByIndex<PointsComponent>(shapeIndex);
+      CommandBuffer renderQueue = cameraContext.OpaqueBuffer;
       RenderMesh mesh = points.Mesh != null ? points.Mesh.Mesh : null;
 
       if (mesh == null)
@@ -114,61 +105,44 @@ namespace Tes.Handlers.Shape3D
         return;
       }
 
-      GL.PushMatrix();
-
-      try
+      // Check rendering with index buffer?
+      GraphicsBuffer indexBuffer = null;
+      int indexCount = 0;
+      if (mesh.IndexCount > 0 || points.IndexCount > 0)
       {
-        // Bind the material
-        points.Material.SetPass(0);
-
-        // Add shape transform.
-        GL.MultMatrix(transform);
-        // Add mesh local transform.
-        GL.MultMatrix(points.Mesh.LocalTransform);
-
-        // Check rendering with index buffer?
-        GraphicsBuffer indexBuffer = null;
-        int indexCount = 0;
-        if (mesh.IndexCount > 0 || points.IndexCount > 0)
+        if ((int)points.IndexCount > 0)
         {
-          if ((int)points.IndexCount > 0)
-          {
-            indexBuffer = points.IndexBuffer;
-            indexCount = (int)points.IndexCount;
-          }
-          // We only use the mesh index buffer if the mesh has points topology.
-          // Otherwise we convert to points using vertices as is.
-          else if (mesh.Topology == MeshTopology.Points)
-          {
-            indexBuffer = mesh.IndexBuffer;
-            indexCount = mesh.IndexCount;
-          }
+          indexBuffer = points.IndexBuffer;
+          indexCount = (int)points.IndexCount;
         }
-
-        if (mesh.HasColours)
+        // We only use the mesh index buffer if the mesh has points topology.
+        // Otherwise we convert to points using vertices as is.
+        else if (mesh.Topology == MeshTopology.Points)
         {
-          points.Material.SetBuffer("_Colours", mesh.ColoursBuffer);
-        }
-
-        if (mesh.HasNormals)
-        {
-          points.Material.SetBuffer("_Normals", mesh.NormalsBuffer);
-        }
-
-        points.Material.SetBuffer("_Vertices", mesh.VertexBuffer);
-
-        if (indexBuffer != null)
-        {
-          Graphics.DrawProceduralNow(mesh.Topology, indexBuffer, indexCount, 1);
-        }
-        else
-        {
-          Graphics.DrawProceduralNow(mesh.Topology, mesh.VertexCount, 1);
+          indexBuffer = mesh.IndexBuffer;
+          indexCount = mesh.IndexCount;
         }
       }
-      finally
+
+      if (mesh.HasColours)
       {
-        GL.PopMatrix();
+        points.Material.SetBuffer("_Colours", mesh.ColoursBuffer);
+      }
+
+      if (mesh.HasNormals)
+      {
+        points.Material.SetBuffer("_Normals", mesh.NormalsBuffer);
+      }
+
+      points.Material.SetBuffer("_Vertices", mesh.VertexBuffer);
+
+      if (mesh.IndexBuffer != null)
+      {
+        renderQueue.DrawProcedural(mesh.IndexBuffer, modelWorld, points.Material, 0, mesh.Topology, mesh.IndexCount);
+      }
+      else
+      {
+        renderQueue.DrawProcedural(modelWorld, points.Material, 0, mesh.Topology, mesh.VertexCount);
       }
     }
 

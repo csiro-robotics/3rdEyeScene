@@ -42,7 +42,7 @@
         o.vertex = UnityObjectToClipPos(_Vertices[vid]);
         o.colour = _Color * _Tint
             #ifdef WITH_COLOURS
-            * v.colour
+            * _Colours[vid]
             #endif // WITH_COLOURS
           ;
         return o;

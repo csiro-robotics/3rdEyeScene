@@ -7,6 +7,7 @@ using Tes.Net;
 using Tes.Runtime;
 using Tes.Maths;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Tes.Handlers.Shape3D
 {
@@ -73,130 +74,95 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Render all the current objects.
     /// </summary>
-    public override void Render(ulong categoryMask, Matrix4x4 tesSceneToUnity, Matrix4x4 primaryCameraTransform)
+    public override void Render(CameraContext cameraContext)
     {
-      GL.PushMatrix();
-      GL.MultMatrix(primaryCameraTransform.inverse);
-      GL.MultMatrix(tesSceneToUnity);
-
-      try
+      // TODO: (KS) category handling.
+      foreach (int index in _transientCache.ShapeIndices)
       {
-        // TODO: (KS) category handling.
-        foreach (int index in _transientCache.ShapeIndices)
-        {
-          RenderMeshes(_transientCache, index);
-        }
-        foreach (int index in _shapeCache.ShapeIndices)
-        {
-          RenderMeshes(_shapeCache, index);
-        }
+        RenderMeshes(cameraContext, _transientCache, index);
       }
-      finally
+      foreach (int index in _shapeCache.ShapeIndices)
       {
-        GL.PopMatrix();
+        RenderMeshes(cameraContext, _shapeCache, index);
       }
     }
 
-    private void RenderMeshes(ShapeCache cache, int shapeIndex)
+    private void RenderMeshes(CameraContext cameraContext, ShapeCache cache, int shapeIndex)
     {
       CreateMessage shape = cache.GetShapeByIndex(shapeIndex);
-      Matrix4x4 transform = cache.GetShapeTransformByIndex(shapeIndex);
+      Matrix4x4 shapeWorldTransform = cameraContext.TesSceneToWorldTransform * cache.GetShapeTransformByIndex(shapeIndex);
       PartSet parts = cache.GetShapeDataByIndex<PartSet>(shapeIndex);
 
-      GL.PushMatrix();
-
-      try
+      for (int i = 0; i < parts.Meshes.Length; ++i)
       {
-        // Add shape transform.
-        GL.MultMatrix(transform);
+        RenderMesh mesh = (parts.Meshes[i] != null) ? parts.Meshes[i].Mesh : null;
 
-        for (int i = 0; i < parts.Meshes.Length; ++i)
+        if (mesh == null)
         {
-          RenderMesh mesh = (parts.Meshes[i] != null) ? parts.Meshes[i].Mesh : null;
-
-          if (mesh == null)
-          {
-            continue;
-          }
-
-          if (mesh.MaterialDirty)
-          {
-            mesh.UpdateMaterial();
-          }
-
-          Material material =
-            (parts.MaterialOverrides != null && parts.MaterialOverrides.Length > 0 && parts.MaterialOverrides[i]) ?
-              parts.MaterialOverrides[i] : mesh.Material;
-
-          if (material == null)
-          {
-            continue;
-          }
-
-          GL.PushMatrix();
-
-          try
-          {
-            // Push the part transform.
-            GL.MultMatrix(parts.Transforms[i]);
-
-            // Push any transform associated with the part's mesh.
-            GL.MultMatrix(mesh.LocalTransform);
-
-            // Activate material and bind available buffers.
-            material.SetPass(0);
-
-            if (mesh.HasColours)
-            {
-              material.SetBuffer("_Colours", mesh.ColoursBuffer);
-            }
-
-            if (mesh.HasNormals)
-            {
-              material.SetBuffer("_Normals", mesh.NormalsBuffer);
-            }
-
-            // if (mesh.HasUVs)
-            // {
-            //   material.SetBuffer("uvs", mesh.UvsBuffer);
-            // }
-
-            if (material.HasProperty("_Color"))
-            {
-              material.SetColor("_Color", new Maths.Colour(shape.Attributes.Colour).ToUnity32());
-            }
-
-            if (material.HasProperty("_Tint"))
-            {
-              material.SetColor("_Tint", mesh.Tint.ToUnity32());
-            }
-
-            if (material.HasProperty("_BackColour"))
-            {
-              material.SetColor("_BackColour", new Maths.Colour(shape.Attributes.Colour).ToUnity32());
-            }
-
-            // Bind vertices and draw.
-            material.SetBuffer("_Vertices", mesh.VertexBuffer);
-
-            if (mesh.IndexBuffer != null)
-            {
-              Graphics.DrawProceduralNow(mesh.Topology, mesh.IndexBuffer, mesh.IndexCount, 1);
-            }
-            else
-            {
-              Graphics.DrawProceduralNow(mesh.Topology, mesh.VertexCount, 1);
-            }
-          }
-          finally
-          {
-            GL.PopMatrix();
-          }
+          continue;
         }
-      }
-      finally
-      {
-        GL.PopMatrix();
+
+        if (mesh.MaterialDirty)
+        {
+          mesh.UpdateMaterial();
+        }
+
+        Material material =
+          (parts.MaterialOverrides != null && parts.MaterialOverrides.Length > 0 && parts.MaterialOverrides[i]) ?
+            parts.MaterialOverrides[i] : mesh.Material;
+
+        if (material == null)
+        {
+          continue;
+        }
+
+        // TODO: (KS) use transparent queue for parts with transparency.
+        CommandBuffer renderQueue = cameraContext.OpaqueBuffer;
+
+        // Push the part transform.
+        Matrix4x4 partWorldTransform = shapeWorldTransform * parts.Transforms[i] * mesh.LocalTransform;
+
+        if (mesh.HasColours)
+        {
+          material.SetBuffer("_Colours", mesh.ColoursBuffer);
+        }
+
+        if (mesh.HasNormals)
+        {
+          material.SetBuffer("_Normals", mesh.NormalsBuffer);
+        }
+
+        // if (mesh.HasUVs)
+        // {
+        //   material.SetBuffer("uvs", mesh.UvsBuffer);
+        // }
+
+        if (material.HasProperty("_Color"))
+        {
+          material.SetColor("_Color", new Maths.Colour(shape.Attributes.Colour).ToUnity32());
+        }
+
+        if (material.HasProperty("_Tint"))
+        {
+          material.SetColor("_Tint", mesh.Tint.ToUnity32());
+        }
+
+        if (material.HasProperty("_BackColour"))
+        {
+          material.SetColor("_BackColour", new Maths.Colour(shape.Attributes.Colour).ToUnity32());
+        }
+
+        // Bind vertices and draw.
+        material.SetBuffer("_Vertices", mesh.VertexBuffer);
+
+        if (mesh.IndexBuffer != null)
+        {
+          renderQueue.DrawProcedural(mesh.IndexBuffer, partWorldTransform, material, 0, mesh.Topology, mesh.IndexCount);
+        }
+        else
+        {
+          renderQueue.DrawProcedural(partWorldTransform, material, 0, mesh.Topology, mesh.VertexCount);
+        }
       }
     }
 

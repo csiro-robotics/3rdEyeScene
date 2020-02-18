@@ -2,6 +2,7 @@
 using Tes.Net;
 using Tes.Runtime;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Tes.Handlers.Shape3D
 {
@@ -35,7 +36,7 @@ namespace Tes.Handlers.Shape3D
     public override ushort RoutingID { get { return (ushort)ShapeID.Capsule; } }
 
 
-    protected override void RenderInstances(Matrix4x4 tesSceneToUnity, Mesh mesh,
+    protected override void RenderInstances(CameraContext cameraContext, CommandBuffer renderQueue, Mesh mesh,
                                             List<Matrix4x4> transforms, List<CreateMessage> shapes,
                                             Material material)
     {
@@ -53,7 +54,7 @@ namespace Tes.Handlers.Shape3D
         {
           // Build the end cap transforms.
           Matrix4x4 transform = transforms[i + j];
-          _instanceTransforms[j] = tesSceneToUnity * transform;
+          _instanceTransforms[j] = cameraContext.TesSceneToWorldTransform * transform;
 
           // Extract radius and length to position the end caps.
           float radius = transform.GetColumn(0).magnitude;
@@ -67,12 +68,12 @@ namespace Tes.Handlers.Shape3D
           Vector4 tAxis = transform.GetColumn(3);
           tAxis += -0.5f * length * zAxis;
           transform.SetColumn(3, tAxis);
-          _cap1Transforms[j] = tesSceneToUnity * transform;
+          _cap1Transforms[j] = cameraContext.TesSceneToWorldTransform * transform;
 
           // Adjust position for the second end cap.
           tAxis += length * zAxis;
           transform.SetColumn(3, tAxis);
-          _cap2Transforms[j] = tesSceneToUnity * transform;
+          _cap2Transforms[j] = cameraContext.TesSceneToWorldTransform * transform;
 
           Maths.Colour colour = new Maths.Colour(shapes[i + j].Attributes.Colour);
           colour.A = 64;
@@ -82,10 +83,10 @@ namespace Tes.Handlers.Shape3D
 
         materialProperties.SetVectorArray("_Color", _instanceColours);
         // Render body.
-        Graphics.DrawMeshInstanced(meshes[0], 0, material, _instanceTransforms, itemCount, materialProperties);
+        renderQueue.DrawMeshInstanced(meshes[0], 0, material, 0, _instanceTransforms, itemCount, materialProperties);
         // Render end caps.
-        Graphics.DrawMeshInstanced(meshes[1], 0, material, _cap1Transforms, itemCount, materialProperties);
-        Graphics.DrawMeshInstanced(meshes[2], 0, material, _cap2Transforms, itemCount, materialProperties);
+        renderQueue.DrawMeshInstanced(meshes[1], 0, material, 0, _cap1Transforms, itemCount, materialProperties);
+        renderQueue.DrawMeshInstanced(meshes[2], 0, material, 0, _cap2Transforms, itemCount, materialProperties);
       }
     }
 
