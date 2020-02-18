@@ -12,10 +12,6 @@
         "-property:GenerateFullPaths=true"
       ],
       "type": "shell",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
       "presentation": {
         "reveal": "silent"
       },
@@ -66,7 +62,10 @@
       "dependsOn": "build",
       "command": "python unity-marshal.py -c ${input:build_config}",
       "type": "shell",
-      "group": "none",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
       "options": {
         "cwd": "${workspaceFolder}"
       },
