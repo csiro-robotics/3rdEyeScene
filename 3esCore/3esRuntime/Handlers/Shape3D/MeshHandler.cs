@@ -6,6 +6,7 @@ using Tes.Net;
 using Tes.Shapes;
 using Tes.Runtime;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Tes.Handlers.Shape3D
 {
@@ -60,7 +61,11 @@ namespace Tes.Handlers.Shape3D
       base.Initialise(root, serverRoot, materials);
 
       // Add a render mesh component to the shapes.
+    }
 
+    public override void AddCamera(Camera camera)
+    {
+      camera.AddCommandBuffer(CameraEvent.AfterForwardOpaque, _commandBuffer);
     }
 
     /// <summary>
@@ -68,6 +73,8 @@ namespace Tes.Handlers.Shape3D
     /// </summary>
     public override void Reset()
     {
+      _commandBuffer.Clear();
+
       // Clear out all the mesh data in our objects.
       foreach (int shapeIndex in _transientCache.ShapeIndices)
       {
@@ -87,6 +94,7 @@ namespace Tes.Handlers.Shape3D
     /// </summary>
     public override void BeginFrame(uint frameNumber, bool maintainTransient)
     {
+      _commandBuffer.Clear();
       if (!maintainTransient)
       {
         foreach (int shapeIndex in _transientCache.ShapeIndices)
@@ -105,104 +113,73 @@ namespace Tes.Handlers.Shape3D
       base.BeginFrame(frameNumber, maintainTransient);
     }
 
-    public override void Render(ulong categoryMask, Matrix4x4 sceneTransform, Matrix4x4 primaryCameraTransform)
+    public override void Render(ulong categoryMask, Matrix4x4 tesSceneToUnity, Matrix4x4 primaryCameraTransform)
     {
-      GL.PushMatrix();
-      GL.MultMatrix(primaryCameraTransform.inverse);
-      GL.MultMatrix(sceneTransform);
-
-      try
+      // TODO: (KS) Resolve categories.
+      foreach (int shapeIndex in _transientCache.ShapeIndices)
       {
-        // TODO: (KS) Resolve categories.
-        foreach (int shapeIndex in _transientCache.ShapeIndices)
-        {
-          RenderObject(_transientCache, shapeIndex);
-        }
-
-        foreach (int shapeIndex in _shapeCache.ShapeIndices)
-        {
-          RenderObject(_shapeCache, shapeIndex);
-        }
+        RenderObject(tesSceneToUnity, _transientCache, shapeIndex);
       }
-      finally
+
+      foreach (int shapeIndex in _shapeCache.ShapeIndices)
       {
-        GL.PopMatrix();
+        RenderObject(tesSceneToUnity, _shapeCache, shapeIndex);
       }
     }
 
-    protected void RenderObject(ShapeCache cache, int shapeIndex)
+    protected void RenderObject(Matrix4x4 tesSceneToUnity, ShapeCache cache, int shapeIndex)
     {
       CreateMessage shape = cache.GetShapeByIndex(shapeIndex);
       MeshEntry meshEntry = cache.GetShapeDataByIndex<MeshEntry>(shapeIndex);
       Matrix4x4 transform = cache.GetShapeTransformByIndex(shapeIndex);
 
-      // Set buffers.
-      GL.PushMatrix();
-      GL.MultMatrix(transform);
+      Material material = meshEntry.Material;
+      RenderMesh mesh = meshEntry.Mesh;
 
-      try
+      Matrix4x4 modelWorld = tesSceneToUnity * transform;
+      // material.SetMatrix("unity_ObjectToWorld", modelWorld);
+      // material.SetMatrix("unity_WorldToObject", modelWorld.inverse);
+
+      if (mesh.HasColours)
       {
-        Material material = meshEntry.Material;
-        RenderMesh mesh = meshEntry.Mesh;
-
-        material.SetPass(0);
-
-        if (mesh.HasColours)
-        {
-          material.SetBuffer("_Colours", mesh.ColoursBuffer);
-        }
-
-        if (mesh.HasNormals)
-        {
-          material.SetBuffer("_Normals", mesh.NormalsBuffer);
-        }
-
-        // if (mesh.HasUVs)
-        // {
-        //   material.SetBuffer("uvs", mesh.UvsBuffer);
-        // }
-
-        if (material.HasProperty("_Color"))
-        {
-          material.SetColor("_Color", Maths.ColourExt.ToUnity(new Maths.Colour(shape.Attributes.Colour)));
-        }
-
-        if (material.HasProperty("_Tint"))
-        {
-          material.SetColor("_Tint", Maths.ColourExt.ToUnity(mesh.Tint));
-        }
-
-        if (material.HasProperty("_BackColour"))
-        {
-          material.SetColor("_Color", Maths.ColourExt.ToUnity(new Maths.Colour(shape.Attributes.Colour)));
-        }
-
-        // Bind vertices and draw.
-        material.SetBuffer("_Vertices", mesh.VertexBuffer);
-
-        if (mesh.IndexBuffer != null)
-        {
-          Graphics.DrawProceduralNow(mesh.Topology, mesh.IndexBuffer, mesh.IndexCount, 1);
-        }
-        else
-        {
-          Graphics.DrawProceduralNow(mesh.Topology, mesh.VertexCount, 1);
-        }
-        // material.SetPass(0);
-        // // material.EnableKeyword("WITH_COLOUR");
-
-        // if (_indexBuffer != null)
-        // {
-        //   Graphics.DrawProceduralNow(Topology, _indexBuffer, VertexCount, 1);
-        // }
-        // else
-        // {
-        //   Graphics.DrawProceduralNow(Topology, VertexCount, 1);
-        // }
+        material.SetBuffer("_Colours", mesh.ColoursBuffer);
       }
-      finally
+
+      if (mesh.HasNormals)
       {
-        GL.PopMatrix();
+        material.SetBuffer("_Normals", mesh.NormalsBuffer);
+      }
+
+      // if (mesh.HasUVs)
+      // {
+      //   material.SetBuffer("uvs", mesh.UvsBuffer);
+      // }
+
+      if (material.HasProperty("_Color"))
+      {
+        material.SetColor("_Color", Color.cyan);//Maths.ColourExt.ToUnity(new Maths.Colour(shape.Attributes.Colour)));
+      }
+
+      if (material.HasProperty("_Tint"))
+      {
+        material.SetColor("_Tint", Maths.ColourExt.ToUnity(mesh.Tint));
+      }
+
+      if (material.HasProperty("_BackColour"))
+      {
+        material.SetColor("_Color", Maths.ColourExt.ToUnity(new Maths.Colour(shape.Attributes.Colour)));
+      }
+
+      // Bind vertices and draw.
+      material.SetBuffer("_Vertices", mesh.VertexBuffer);
+
+      if (mesh.IndexBuffer != null)
+      {
+        _commandBuffer.DrawProcedural(mesh.IndexBuffer, modelWorld, material, 0, mesh.Topology, mesh.IndexCount);
+      }
+      else
+      {
+        _commandBuffer.DrawProcedural(modelWorld, material, 0, mesh.Topology, mesh.VertexCount);
       }
     }
 
@@ -295,7 +272,7 @@ namespace Tes.Handlers.Shape3D
         {
           return ReadMeshVector3Data(reader2, offset, count, (Vector3[] buffer, int writeOffset, int writeCount) =>
           {
-            meshEntry.Mesh.SetVertices(buffer, 0, writeOffset, writeOffset);
+            meshEntry.Mesh.SetVertices(buffer, 0, writeOffset, writeCount);
           });
         }),
         // Index handler
@@ -498,6 +475,7 @@ namespace Tes.Handlers.Shape3D
         }
         else
         {
+          //mat = new Material(Materials[MaterialLibrary.OpaqueTwoSidedMesh]);
           mat = new Material(Materials[MaterialLibrary.OpaqueMesh]);
         }
         MaterialLibrary.SetupMaterial(mat, meshEntry.Mesh);
@@ -536,5 +514,6 @@ namespace Tes.Handlers.Shape3D
     private int[] _intBuffer = new int[s_bufferChuckSize];
     private uint[] _uintBuffer = new uint[s_bufferChuckSize];
     private List<RenderMesh> _toCalculateNormals = new List<RenderMesh>();
+    private CommandBuffer _commandBuffer = new CommandBuffer();
   }
 }

@@ -173,20 +173,9 @@ public class TesComponent : Router
     }
   }
 
-  void OnApplicationQuit()
+  void OnDestroy()
   {
-    // Try improve shut down time with a partial reset. Let Unity deal with the objects.
-    _quitting = true;
-    Reset(true);
-  }
-
-  void OnDisable()
-  {
-    // Reset already effected in OnApplicationQuit().
-    if (!_quitting)
-    {
-      Reset();
-    }
+    Reset();
   }
 
   public void RecordStop()
@@ -292,9 +281,4 @@ public class TesComponent : Router
       handler.OnCategoryChange(categoryId, active);
     }
   }
-
-  /// <summary>
-  /// True while quitting the application. Avoids a double reset.
-  /// </summary>
-  private bool _quitting = false;
 }

@@ -73,11 +73,11 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Render all the current objects.
     /// </summary>
-    public override void Render(ulong categoryMask, Matrix4x4 sceneTransform, Matrix4x4 primaryCameraTransform)
+    public override void Render(ulong categoryMask, Matrix4x4 tesSceneToUnity, Matrix4x4 primaryCameraTransform)
     {
       GL.PushMatrix();
       GL.MultMatrix(primaryCameraTransform.inverse);
-      GL.MultMatrix(sceneTransform);
+      GL.MultMatrix(tesSceneToUnity);
 
       try
       {

@@ -110,6 +110,8 @@ namespace Tes.Runtime
     /// <param name="materials">Maintains available materials and shaders.</param>
     public virtual void Initialise(GameObject root, GameObject serverRoot, MaterialLibrary materials) { }
 
+    public virtual void AddCamera(Camera camera) {}
+
     /// <summary>
     /// Called on all handlers whenever the server info changes.
     /// </summary>
@@ -150,7 +152,7 @@ namespace Tes.Runtime
     /// <param name="categoryMask">A bit field representing the state of the first 64 categories.</>
     /// <param name="tesToWorld">The transform from the 3es scene frame into the Unity world frame.</>
     /// <param name="cameraToWorld">The transform from the render camera frame into the Unity world frame.</>
-    public virtual void Render(ulong categoryMask, Matrix4x4 sceneTransform, Matrix4x4 primaryCameraTransform) { }
+    public virtual void Render(ulong categoryMask, Matrix4x4 tesSceneToUnity, Matrix4x4 primaryCameraTransform) { }
 
     /// <summary>
     /// Called when a message arrives with a message routing ID matching

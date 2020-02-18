@@ -588,7 +588,7 @@ namespace Tes.Main
       }
     }
 
-    public void Reset(bool partialReset = false)
+    public void Reset()
     {
       StopRecording();
       if (_dataThread != null)
@@ -597,10 +597,7 @@ namespace Tes.Main
         _dataThread.Join();
         _dataThread = null;
       }
-      if (!partialReset)
-      {
-        ResetScene();
-      }
+      ResetScene();
       // No longer run in background. Will again once we have a DataThread
       Application.runInBackground = false;
     }

@@ -35,7 +35,7 @@ namespace Tes.Handlers.Shape3D
     public override ushort RoutingID { get { return (ushort)ShapeID.Capsule; } }
 
 
-    protected override void RenderInstances(Matrix4x4 sceneTransform, Mesh mesh,
+    protected override void RenderInstances(Matrix4x4 tesSceneToUnity, Mesh mesh,
                                             List<Matrix4x4> transforms, List<CreateMessage> shapes,
                                             Material material)
     {
@@ -53,7 +53,7 @@ namespace Tes.Handlers.Shape3D
         {
           // Build the end cap transforms.
           Matrix4x4 transform = transforms[i + j];
-          _instanceTransforms[j] = sceneTransform * transform;
+          _instanceTransforms[j] = tesSceneToUnity * transform;
 
           // Extract radius and length to position the end caps.
           float radius = transform.GetColumn(0).magnitude;
@@ -67,12 +67,12 @@ namespace Tes.Handlers.Shape3D
           Vector4 tAxis = transform.GetColumn(3);
           tAxis += -0.5f * length * zAxis;
           transform.SetColumn(3, tAxis);
-          _cap1Transforms[j] = sceneTransform * transform;
+          _cap1Transforms[j] = tesSceneToUnity * transform;
 
           // Adjust position for the second end cap.
           tAxis += length * zAxis;
           transform.SetColumn(3, tAxis);
-          _cap2Transforms[j] = sceneTransform * transform;
+          _cap2Transforms[j] = tesSceneToUnity * transform;
 
           Maths.Colour colour = new Maths.Colour(shapes[i + j].Attributes.Colour);
           colour.A = 64;

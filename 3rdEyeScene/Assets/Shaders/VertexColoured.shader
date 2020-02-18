@@ -56,14 +56,15 @@
     {
       FragmentInput o;
       o.vertex = UnityObjectToClipPos(vertexPosition);
-      o.colour = _Tint * faceColour
-        #ifdef WITH_COLOURS
-          * vertexColour
-        #endif // WITH_COLOURS
-        #ifdef WITH_NORMALS
-           * float4(ShadeVertexLights(vertexPosition, vertexNormal), 1.0f)
-        #endif // WITH_NORMALS
-        ;
+      // o.colour = _Tint * faceColour
+      //   #ifdef WITH_COLOURS
+      //     * vertexColour
+      //   #endif // WITH_COLOURS
+      //   #ifdef WITH_NORMALS
+      //      * float4(ShadeVertexLights(vertexPosition, vertexNormal), 1.0f)
+      //   #endif // WITH_NORMALS
+      //   ;
+      o.colour = float4(1, 1, 1, 1);
       return o;
     }
     ENDCG
@@ -71,6 +72,7 @@
     Pass
     {
       Lighting On
+      Cull Off
 
       CGPROGRAM
       #pragma vertex vert

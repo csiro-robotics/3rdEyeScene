@@ -41,7 +41,7 @@ namespace Tes.Handlers.Shape3D
     /// </summary>
     public override ushort RoutingID { get { return (ushort)Tes.Net.ShapeID.Text3D; } }
 
-    public override void Render(ulong categoryMask, Matrix4x4 sceneTransform, Matrix4x4 primaryCameraTransform)
+    public override void Render(ulong categoryMask, Matrix4x4 tesSceneToUnity, Matrix4x4 primaryCameraTransform)
     {
       Render(_transientCache, categoryMask, primaryCameraTransform);
       Render(_shapeCache, categoryMask, primaryCameraTransform);

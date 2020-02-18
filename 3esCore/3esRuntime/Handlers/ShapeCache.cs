@@ -317,6 +317,7 @@ namespace Tes.Handlers
         if (typeof(T) == _dataExtensions[i].DataType)
         {
           _dataExtensions[i].Elements[index] = data;
+          return;
         }
       }
 

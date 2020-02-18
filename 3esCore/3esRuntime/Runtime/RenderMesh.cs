@@ -288,35 +288,95 @@ namespace Tes.Runtime
       Array.Copy(_indices, bufferStartIndex, indices, listStartIndex, count);
     }
 
-    public void SetVertices(List<Vector3> vertices)
+    public void SetVertices(List<Vector3> vertices, bool adjustBounds = false)
     {
       Debug.Assert(vertices.Count <= VertexCount);
+      if (adjustBounds)
+      {
+        _minBounds = _maxBounds = (vertices.Count > 0) ? vertices[0] : Vector3.zero;
+        for (int i = 0; i < vertices.Count; ++i)
+        {
+          _minBounds.x = Mathf.Min(vertices[i].x, _minBounds.x);
+          _minBounds.y = Mathf.Min(vertices[i].y, _minBounds.y);
+          _minBounds.z = Mathf.Min(vertices[i].z, _minBounds.z);
+          _maxBounds.x = Mathf.Max(vertices[i].x, _maxBounds.x);
+          _maxBounds.y = Mathf.Max(vertices[i].y, _maxBounds.y);
+          _maxBounds.z = Mathf.Max(vertices[i].z, _maxBounds.z);
+        }
+      }
       _vertexBuffer.SetData(vertices);
     }
 
-    public void SetVertices(Vector3[] vertices)
+    public void SetVertices(Vector3[] vertices, bool adjustBounds)
     {
       Debug.Assert(vertices.Length <= VertexCount);
+      if (adjustBounds)
+      {
+        _minBounds = _maxBounds = (vertices.Length > 0) ? vertices[0] : Vector3.zero;
+        for (int i = 0; i < vertices.Length; ++i)
+        {
+          _minBounds.x = Mathf.Min(vertices[i].x, _minBounds.x);
+          _minBounds.y = Mathf.Min(vertices[i].y, _minBounds.y);
+          _minBounds.z = Mathf.Min(vertices[i].z, _minBounds.z);
+          _maxBounds.x = Mathf.Max(vertices[i].x, _maxBounds.x);
+          _maxBounds.y = Mathf.Max(vertices[i].y, _maxBounds.y);
+          _maxBounds.z = Mathf.Max(vertices[i].z, _maxBounds.z);
+        }
+      }
       _vertexBuffer.SetData(vertices);
     }
 
-    public void SetVertices(List<Vector3> vertices, int listStartIndex, int bufferStartIndex, int count)
+    public void SetVertices(List<Vector3> vertices, int listStartIndex, int bufferStartIndex, int count,
+                            bool adjustBounds = false)
     {
       Debug.Assert(count >= 0 &&
                    0 <= listStartIndex && listStartIndex < vertices.Count &&
                    listStartIndex + count <= vertices.Count &&
                    0 <= bufferStartIndex && bufferStartIndex < VertexCount &&
                    bufferStartIndex + count < bufferStartIndex);
+      if (adjustBounds)
+      {
+        if (bufferStartIndex == 0)
+        {
+          _minBounds = _maxBounds = (vertices.Count > 0) ? vertices[0] : Vector3.zero;
+        }
+        for (int i = 0; i < vertices.Count; ++i)
+        {
+          _minBounds.x = Mathf.Min(vertices[i].x, _minBounds.x);
+          _minBounds.y = Mathf.Min(vertices[i].y, _minBounds.y);
+          _minBounds.z = Mathf.Min(vertices[i].z, _minBounds.z);
+          _maxBounds.x = Mathf.Max(vertices[i].x, _maxBounds.x);
+          _maxBounds.y = Mathf.Max(vertices[i].y, _maxBounds.y);
+          _maxBounds.z = Mathf.Max(vertices[i].z, _maxBounds.z);
+        }
+      }
       _vertexBuffer.SetData(vertices, listStartIndex, bufferStartIndex, count);
     }
 
-    public void SetVertices(Vector3[] vertices, int listStartIndex, int bufferStartIndex, int count)
+    public void SetVertices(Vector3[] vertices, int listStartIndex, int bufferStartIndex, int count,
+                            bool adjustBounds = false)
     {
       Debug.Assert(count >= 0 &&
                    0 <= listStartIndex && listStartIndex < vertices.Length &&
                    listStartIndex + count <= vertices.Length &&
                    0 <= bufferStartIndex && bufferStartIndex < VertexCount &&
                    bufferStartIndex + count < bufferStartIndex);
+      if (adjustBounds)
+      {
+        if (bufferStartIndex == 0)
+        {
+          _minBounds = _maxBounds = (vertices.Length > 0) ? vertices[0] : Vector3.zero;
+        }
+        for (int i = 0; i < vertices.Length; ++i)
+        {
+          _minBounds.x = Mathf.Min(vertices[i].x, _minBounds.x);
+          _minBounds.y = Mathf.Min(vertices[i].y, _minBounds.y);
+          _minBounds.z = Mathf.Min(vertices[i].z, _minBounds.z);
+          _maxBounds.x = Mathf.Max(vertices[i].x, _maxBounds.x);
+          _maxBounds.y = Mathf.Max(vertices[i].y, _maxBounds.y);
+          _maxBounds.z = Mathf.Max(vertices[i].z, _maxBounds.z);
+        }
+      }
       _vertexBuffer.SetData(vertices, listStartIndex, bufferStartIndex, count);
     }
 
@@ -604,13 +664,17 @@ namespace Tes.Runtime
     {
       if (_indices == null || _indices.Length != IndexCount)
       {
-        _indices = new int[IndexCount];
+        _indices = null;
         if (_indexBuffer != null)
         {
           _indexBuffer.Release();
           _indexBuffer = null;
         }
-        _indexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Index, IndexCount, Marshal.SizeOf(typeof(int)));
+        if (IndexCount > 0)
+        {
+          _indices = new int[IndexCount];
+          _indexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Index, IndexCount, Marshal.SizeOf(typeof(int)));
+        }
       }
     }
 

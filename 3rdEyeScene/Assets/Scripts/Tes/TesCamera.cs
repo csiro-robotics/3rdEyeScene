@@ -18,10 +18,18 @@ namespace Tes
 
     public void OnRenderObject()
     {
-      //if (_thirdEyeScene != null)
-      //{
+      if (_thirdEyeScene != null)
+      {
       //  _thirdEyeScene.Render(transform.localToWorldMatrix);
-      //}
+        Camera camera = GetComponent<Camera>();
+        if (camera != null)
+        {
+          foreach (var handler in _thirdEyeScene.Handlers.Handlers)
+          {
+            handler.AddCamera(camera);
+          }
+        }
+      }
     }
   }
 }
