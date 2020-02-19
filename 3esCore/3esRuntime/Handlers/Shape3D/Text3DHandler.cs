@@ -15,10 +15,16 @@ namespace Tes.Handlers.Shape3D
   {
     public struct TextShapeData : IShapeData
     {
-      public TextMesh Mesh;
+      public Mesh Mesh;
+      public Material Material;
       public string Text;
+      public int FontSize;
       public bool ScreenFacing;
     }
+
+    public delegate bool CreateTextMeshDelegate(string text, ref Mesh mesh, ref Material material);
+
+    public CreateTextMeshDelegate CreateTextMeshHandler;
 
     /// <summary>
     /// Create the shape handler.
@@ -52,7 +58,6 @@ namespace Tes.Handlers.Shape3D
       // TODO: (KS) verify material setup.
       // TODO: (KS) incorporate the 3es scene transform.
       // TODO: (KS) handle multiple cameras (code only tailored to one).
-      Material material = Materials[MaterialLibrary.OpaqueInstanced];
       Vector3 cameraPosition = (Vector3)cameraContext.CameraToWorldTransform.GetColumn(3);
       int sideAxis = CoordinateFrameUtil.AxisIndex(ServerInfo.CoordinateFrame, 0);
       int forwardAxis = CoordinateFrameUtil.AxisIndex(ServerInfo.CoordinateFrame, 1);
@@ -76,6 +81,23 @@ namespace Tes.Handlers.Shape3D
         Matrix4x4 transform = shapeCache.GetShapeTransformByIndex(shapeIndex);
         TextShapeData textData = shapeCache.GetShapeDataByIndex<TextShapeData>(shapeIndex);
 
+        if (textData.Mesh == null || textData.Material == null)
+        {
+          // No mesh/material. Try instantiate via the delegate.
+          if (CreateTextMeshHandler != null)
+          {
+            CreateTextMeshHandler(textData.Text, ref textData.Mesh, ref textData.Material);
+          }
+
+          if (textData.Mesh == null || textData.Material == null)
+          {
+            continue;
+          }
+
+          // Newly creates mesh/material. Store the changes.
+          shapeCache.SetShapeDataByIndex<TextShapeData>(shapeIndex, textData);
+        }
+
         if (textData.ScreenFacing)
         {
           Vector3 textPosition = (Vector3)transform.GetColumn(3);
@@ -93,13 +115,17 @@ namespace Tes.Handlers.Shape3D
             transform.SetColumn(sideAxis, new Vector4(side.x, side.y, side.z));
             transform.SetColumn(forwardAxis, new Vector4(toCamera.x, toCamera.y, toCamera.z));
             transform.SetColumn(upAxis, new Vector4(up.x, up.y, up.z));
-            transform.SetColumn(4, new Vector4(textPosition.x, textPosition.y, textPosition.z, 1.0f));
+            transform.SetColumn(3, new Vector4(textPosition.x, textPosition.y, textPosition.z, 1.0f));
 
             // Write the transform back to the shape cache. This maintains consistency close to the camera.
             shapeCache.SetShapeTransformByIndex(shapeIndex, transform);
           }
           // else too close to the camera to build a rotation.
         }
+
+        // This probably needs to be applied before screen facing.
+        transform = cameraContext.TesSceneToWorldTransform * transform;
+        cameraContext.OpaqueBuffer.DrawMesh(textData.Mesh, transform, textData.Material);
 
         // TODO: (KS) resolve procedural rendering without a game object. Consider TextMeshPro.
         // TODO: (KS) select opaque layer.
@@ -132,10 +158,7 @@ namespace Tes.Handlers.Shape3D
           textData.Text = System.Text.Encoding.UTF8.GetString(textBytes);
         }
 
-        textData.Mesh = new TextMesh();
-        textData.Mesh.text = textData.Text;
-        textData.Mesh.fontSize = (int)msg.Attributes.ScaleZ;
-        textData.Mesh.color = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
+        textData.FontSize = (int)msg.Attributes.ScaleZ;
 
         if ((msg.Flags & (ushort)Text3DFlag.ScreenFacing) != 0)
         {
@@ -162,8 +185,8 @@ namespace Tes.Handlers.Shape3D
     {
       TextShapeData textData = cache.GetShapeDataByIndex<TextShapeData>(shapeIndex);
 
-      textData.Mesh.fontSize = (int)msg.Attributes.ScaleZ;
-      textData.Mesh.color = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
+      // textData.Mesh.fontSize = (int)msg.Attributes.ScaleZ;
+      // textData.Mesh.color = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
       textData.ScreenFacing = (msg.Flags & (ushort)Text3DFlag.ScreenFacing) != 0;
 
       cache.SetShapeDataByIndex(shapeIndex, textData);

@@ -59,6 +59,12 @@ public class TesComponent : Router
       bounds.max.x, bounds.max.y, bounds.max.z));
   }
 
+  public bool GenerateTextMesh(string text, ref Mesh mesh, ref Material material)
+  {
+    // TODO: (KS) generate a text mesh and bind material.
+    return false;
+  }
+
   protected override void Start()
   {
     base.Start();
@@ -89,7 +95,9 @@ public class TesComponent : Router
     Handlers.Register(new MeshSetHandler(categories.IsActive, meshCache));
     Handlers.Register(new PointCloudHandler(categories.IsActive, meshCache));
     Handlers.Register(new Text2DHandler(categories.IsActive));
-    Handlers.Register(new Text3DHandler(categories.IsActive));
+    Text3DHandler text3DHandler = new Text3DHandler(categories.IsActive);
+    text3DHandler.CreateTextMeshHandler = this.GenerateTextMesh;
+    Handlers.Register(text3DHandler);
 
     // Register handlers from plugins.
     string[] loadPaths = new string[]
