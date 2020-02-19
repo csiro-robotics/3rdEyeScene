@@ -339,7 +339,7 @@ namespace Tes.Handlers.Shape3D
 
       if (points.Mesh.Mesh.HasColours)
       {
-        material.EnableKeyword("WITH_COLOURS");
+        material.EnableKeyword("WITH_COLOURS_UINT");
       }
 
       if (points.Mesh.Mesh.HasNormals)

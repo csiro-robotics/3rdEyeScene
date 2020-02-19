@@ -11,7 +11,9 @@
   }
 
   CGINCLUDE
-#include "UnityCG.cginc"
+  #pragma multi_compile __ WITH_COLOURS_UINT WITH_COLOURS_V4 WITH_COLOURS_RANGE_X WITH_COLOURS_RANGE_Y WITH_COLOURS_RANGE_Z
+  #pragma multi_compile __ WITH_NORMALS
+  #include "UnityCG.cginc"
 
   // **************************************************************
   // Data structures                        *
@@ -22,9 +24,7 @@
     #ifdef WITH_NORMALS
     float3 normal : NORMAL;
     #endif // WITH_NORMALS
-    #ifdef WITH_COLOURS
     float4 colour : COLOR;
-    #endif // WITH_COLOURS
   };
 
   struct FragmentInput
@@ -40,17 +40,58 @@
   uniform float4 _Tint;
   uniform int _PointHighlighting;
   uniform int _LeftHanded;
+  uniform float _ColourRangeMin;
+  uniform float _ColourRangeMax;
+
   StructuredBuffer<float3> _Vertices;
   #ifdef WITH_NORMALS
   StructuredBuffer<float3> _Normals;
   #endif // WITH_NORMALS
-  #ifdef WITH_COLOURS
+  #ifdef WITH_COLOURS_UINT
+  StructuredBuffer<uint> _Colours;
+  #endif // WITH_COLOURS_UINT
+  #ifdef WITH_COLOURS_V4
   StructuredBuffer<float4> _Colours;
-  #endif // WITH_COLOURS
+  #endif // WITH_COLOURS_V4
 
   // **************************************************************
   // Shader Programs                        *
   // **************************************************************
+  float4 colourRangeRainbow(float value)
+  {
+    // Using HSV colour with S and V = 1, adjusting H from 0 255 based on value.
+    const float colourRange = _ColourRangeMin;
+    const float h = max(0.0f, min((value - _ColourRangeMin) / (colourRange != 0 ? colourRange : 1.0f), 1.0f));
+    const float s = 1.0f;
+    const float v = 1.0f;
+
+    const float hSector = h / 60.0f; // sector 0 to 5
+    const int sectorIndex = int(min(max(0.0f, floor(hSector)), 5.0f));
+    const float f = hSector - float(sectorIndex);
+    const float p = v * (1 - s);
+    const float q = v * (1 - s * f);
+    const float t = v * (1 - s * (1 - f));
+
+    static const int vindex[] = { 0, 1, 1, 2, 2, 0 };
+    static const int pindex[] = { 2, 2, 0, 0, 1, 1 };
+    static const int qindex[] = { 3, 0, 3, 1, 3, 2 };
+    static const int tindex[] = { 1, 3, 2, 3, 0, 3 };
+
+    float4 rgb;
+    rgb[vindex[sectorIndex]] = v;
+    rgb[pindex[sectorIndex]] = p;
+    rgb[qindex[sectorIndex]] = q;
+    rgb[tindex[sectorIndex]] = t;
+
+    // Handle achromatic here by testing s inline.
+    rgb[0] = (s != 0) ? rgb[0] : v;
+    rgb[1] = (s != 0) ? rgb[1] : v;
+    rgb[2] = (s != 0) ? rgb[2] : v;
+
+    rgb[3] = 1.0f;
+
+    return rgb;
+  }
 
   // Vertex Shader ------------------------------------------------
   GeometryInput vert(uint vid : SV_VertexID)
@@ -60,9 +101,26 @@
     #ifdef WITH_NORMALS
     o.normal = mul(UNITY_MATRIX_MV, _Normals[vid]);
     #endif // WITH_NORMALS
-    #ifdef WITH_COLOURS
-    o.colour = _Colours[vid];
+
+    o.colour =
+    #if defined(WITH_COLOURS_UINT)
+      float4((float)((_Colours[vid] >> 24) & 255) / 255.0f,
+                  (float)((_Colours[vid] >> 16) & 255) / 255.0f,
+                  (float)((_Colours[vid] >> 8) & 255) / 255.0f,
+                  (float)(_Colours[vid] & 255) / 255.0f)
+    #elif defined(WITH_COLOURS_V4)
+      _Colours[vid]
+    #elif defined(WITH_COLOURS_RANGE_X)
+      colourRangeRainbow(_Vertices[vid].x)
+    #elif defined(WITH_COLOURS_RANGE_Y)
+      colourRangeRainbow(_Vertices[vid].y)
+    #elif defined(WITH_COLOURS_RANGE_Z)
+      colourRangeRainbow(_Vertices[vid].z)
+    #else
+      float4(1, 1, 1, 1)
     #endif // WITH_COLOURS
+    ;
+
     return o;
   }
 
@@ -87,11 +145,7 @@
     const float3 up = mul(UNITY_MATRIX_VP, UNITY_MATRIX_V[1].xyz * size);
 
     fin.pos = ppos - float4((right + up), 0);
-    #if WITH_COLOURS
     fin.colour = p[0].colour;
-    #else  // WITH_COLOURS
-    fin.colour = float4(1, 1, 1, 1);
-    #endif // WITH_COLOURS
     fin.tex0 = float2(0, 0);
     triStream.Append(fin);
 
@@ -140,10 +194,10 @@
       Cull Off
 
       CGPROGRAM
-#pragma target 4.0
-#pragma vertex vert
-#pragma fragment frag
-#pragma geometry geom
+      #pragma target 4.0
+      #pragma vertex vert
+      #pragma fragment frag
+      #pragma geometry geom
       ENDCG
     }
   }

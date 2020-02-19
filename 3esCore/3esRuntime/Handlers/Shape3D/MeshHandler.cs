@@ -130,6 +130,11 @@ namespace Tes.Handlers.Shape3D
       Material material = meshEntry.Material;
       RenderMesh mesh = meshEntry.Mesh;
 
+      if (material == null || mesh == null)
+      {
+        return;
+      }
+
       Matrix4x4 modelWorld = cameraContext.TesSceneToWorldTransform * transform;
 
       if (mesh.HasColours)
@@ -224,8 +229,6 @@ namespace Tes.Handlers.Shape3D
         CalculateNormals = (msg.Flags & (ushort)MeshShapeFlag.CalculateNormals) != 0
       };
 
-      meshEntry.Material = CreateMaterial(msg, meshEntry);
-
       cache.SetShapeDataByIndex(shapeIndex, meshEntry);
 
       if (meshEntry.CalculateNormals)
@@ -309,6 +312,13 @@ namespace Tes.Handlers.Shape3D
       if (readComponent == -1)
       {
         return new Error(ErrorCode.MalformedMessage, DataMessage.MessageID);
+      }
+
+      if (readComponent == (int)(MeshShape.SendDataType.Vertices |  MeshShape.SendDataType.End))
+      {
+        // Finalise the material.
+        meshEntry.Material = CreateMaterial(cache.GetShapeByIndex(shapeIndex), meshEntry);
+        cache.SetShapeDataByIndex(shapeIndex, meshEntry);
       }
 
       return new Error();
@@ -448,7 +458,7 @@ namespace Tes.Handlers.Shape3D
         mat = new Material(Materials[MaterialLibrary.OpaqueMesh]);
         if (meshEntry.Mesh.HasColours)
         {
-          mat.EnableKeyword("WITH_COLOURS");
+          mat.EnableKeyword("WITH_COLOURS_UINT");
         }
         break;
       case MeshDrawType.Triangles:
@@ -474,7 +484,7 @@ namespace Tes.Handlers.Shape3D
         break;
       }
 
-      if (mat.HasProperty("_Colour"))
+      if (mat.HasProperty("_Color"))
       {
         mat.SetColor("_Color", Maths.ColourExt.ToUnity(new Maths.Colour(shape.Attributes.Colour)));
       }

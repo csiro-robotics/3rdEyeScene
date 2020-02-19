@@ -18,11 +18,16 @@ Shader "Tes/Voxel"
       Cull Off
 
       CGPROGRAM
-#pragma target 4.0
-#pragma vertex vert
-#pragma fragment frag
-#pragma geometry cubeGeom
-#include "UnityCG.cginc"
+      #pragma target 4.0
+      #pragma vertex vert
+      #pragma fragment frag
+      #pragma multi_compile __ SOLID_VOXELS
+      #ifdef SOLID_VOXELS
+      #pragma geometry cubeGeom
+      #else  // SOLID_VOXELS
+      #pragma geometry linesGeom
+      #endif // SOLID_VOXELS
+      #include "UnityCG.cginc"
 
       // **************************************************************
       // Data structures                        *

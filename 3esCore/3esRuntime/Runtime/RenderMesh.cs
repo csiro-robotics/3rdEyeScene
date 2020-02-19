@@ -184,7 +184,7 @@ namespace Tes.Runtime
       {
         if (HasColours)
         {
-          _material.EnableKeyword("WITH_COLOURS");
+          _material.EnableKeyword("WITH_COLOURS_UINT");
         }
 
         if (HasNormals)

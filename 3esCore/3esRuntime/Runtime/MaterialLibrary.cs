@@ -11,7 +11,7 @@ namespace Tes.Runtime
   /// Material requirements:
   /// - Must support rendering from a compute buffer containing float3 vertices.
   /// - Keyword blocks (preprocessor style blocks):
-  ///   - WITH_COLOURS to support a per vertex uint32 colour stream.
+  ///   - WITH_COLOURS_UINT to support a per vertex uint32 colour (RGBA with high byte R, low byte A) stream.
   ///   - WITH_NORMALS to support a per vertex float3 normal stream. This enables lighting.
   ///   - WITH_UVS to support a per vertex float2 UV stream. This feature is not used yet.
   /// - Material properties:
@@ -110,7 +110,7 @@ namespace Tes.Runtime
 
       if (mesh.HasColours)
       {
-        material.EnableKeyword("WITH_COLOURS");
+        material.EnableKeyword("WITH_COLOURS_UINT");
       }
     }
 

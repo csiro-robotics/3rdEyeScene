@@ -1004,7 +1004,7 @@ namespace Tes.Handlers
 
         if (mesh.HasColours)
         {
-          mesh.Material.EnableKeyword("WITH_COLOURS");
+          mesh.Material.EnableKeyword("WITH_COLOURS_UINT");
         }
         break;
       case MeshTopology.Points:
@@ -1024,7 +1024,7 @@ namespace Tes.Handlers
 
           if (mesh.HasColours)
           {
-            mesh.Material.EnableKeyword("WITH_COLOURS");
+            mesh.Material.EnableKeyword("WITH_COLOURS_UINT");
           }
 
           int pointSize = (Materials != null) ? Materials.DefaultPointSize : 4;
@@ -1037,7 +1037,7 @@ namespace Tes.Handlers
         mesh.Material = new Material(SingleSidedMaterial);
         if (mesh.HasColours)
         {
-          mesh.Material.EnableKeyword("WITH_COLOURS");
+          mesh.Material.EnableKeyword("WITH_COLOURS_UINT");
         }
         break;
       }

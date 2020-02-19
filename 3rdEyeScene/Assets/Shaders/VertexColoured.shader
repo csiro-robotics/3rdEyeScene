@@ -15,6 +15,9 @@
     LOD 200
 
     CGINCLUDE
+    #pragma multi_compile __ WITH_COLOURS_UINT WITH_COLOURS_V4
+    #pragma multi_compile __ WITH_NORMALS
+
     #include "UnityCG.cginc"
 
     uniform float4 _Color;
@@ -23,9 +26,12 @@
     #ifdef WITH_NORMALS
     StructuredBuffer<float3> _Normals;
     #endif // WITH_NORMALS
-    #ifdef WITH_COLOURS
+    #ifdef WITH_COLOURS_UINT
+    StructuredBuffer<uint> _Colours;
+    #endif // WITH_COLOURS_UINT
+    #ifdef WITH_COLOURS_V4
     StructuredBuffer<float4> _Colours;
-    #endif // WITH_COLOURS
+    #endif // WITH_COLOURS_V4
 
     struct FragmentInput
     {
@@ -38,20 +44,20 @@
                           #ifdef WITH_NORMALS
                            float3 vertexNormal,
                           #endif // WITH_NORMALS
-                          #ifdef WITH_COLOURS
+                          #if defined(WITH_COLOURS_UINT) || defined(WITH_COLOURS_V4)
                            float4 vertexColour,
-                          #endif // WITH_COLOURS
+                          #endif // defined(WITH_COLOURS_UINT) || defined(WITH_COLOURS_V4)
                            float4 faceColour)
     {
       FragmentInput o;
       o.vertex = UnityObjectToClipPos(vertexPosition);
       o.colour = _Tint * faceColour
-        #ifdef WITH_COLOURS
+        #if defined(WITH_COLOURS_UINT) || defined(WITH_COLOURS_V4)
           * vertexColour
-        #endif // WITH_COLOURS
-        #ifdef WITH_NORMALS
-           * float4(ShadeVertexLights(vertexPosition, vertexNormal), 1.0f)
-        #endif // WITH_NORMALS
+        #endif // defined(WITH_COLOURS_UINT) || defined(WITH_COLOURS_V4)
+        // #ifdef WITH_NORMALS
+        //   * float4(ShadeVertexLights(o.vertex, vertexNormal), 1.0f)
+        // #endif // WITH_NORMALS
         ;
       return o;
     }
@@ -71,11 +77,16 @@
         return calcVert(_Vertices[vid],
           #ifdef WITH_NORMALS
             _Normals[vid],
-          #endif // _Tint
-          #ifdef WITH_COLOURS
+          #endif // WITH_NORMALS
+          #ifdef WITH_COLOURS_UINT
+            float4((float)((_Colours[vid] >> 24) & 255) / 255.0f,
+                           (float)((_Colours[vid] >> 16) & 255) / 255.0f,
+                           (float)((_Colours[vid] >> 8) & 255) / 255.0f,
+                           (float)(_Colours[vid] & 255) / 255.0f),
+          #elif defined(WITH_COLOURS_V4)
             _Colours[vid],
-          #endif // WITH_COLOURS
-          _Color);
+          #endif // WITH_COLOURS_
+            _Color);
       }
 
       float4 frag(FragmentInput i) : COLOR
@@ -105,9 +116,11 @@
             // Flip normal for the back face.
             -1.0f * _Normals[vid],
           #endif // _Tint
-          #ifdef WITH_COLOURS
+          #ifdef WITH_COLOURS_UINT
             _Colours[vid],
-          #endif // WITH_COLOURS
+          #elif defined(WITH_COLOURS_V4)
+            _Colours[vid],
+          #endif // WITH_COLOURS_
           _Color);
       }
 

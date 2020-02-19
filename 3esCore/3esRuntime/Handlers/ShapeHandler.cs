@@ -144,8 +144,6 @@ namespace Tes.Handlers
                                            List<Matrix4x4> transforms, List<CreateMessage> shapes,
                                            Material material)
     {
-      renderQueue.
-      material.SetPass(0);
       // Handle instancing block size limits.
       for (int i = 0; i < transforms.Count; i += _instanceTransforms.Length)
       {

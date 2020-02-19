@@ -417,7 +417,7 @@ namespace Tes.Handlers.Shape3D
           material = new Material(material);
           if (mesh.HasColours)
           {
-            material.EnableKeyword("WITH_COLOURS");
+            material.EnableKeyword("WITH_COLOURS_UINT");
           }
 
           if (mesh.HasNormals)
