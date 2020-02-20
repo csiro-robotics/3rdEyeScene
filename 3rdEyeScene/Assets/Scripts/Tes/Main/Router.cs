@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net;
 using System.Collections.Generic;
@@ -878,17 +878,6 @@ namespace Tes.Main
         }
       }
     }
-
-    ///// <summary>
-    ///// Triggers <see cref="Tes.Runtime.MessageHandler.PreRender()"/> calls in all handlers.
-    ///// </summary>
-    //public void OnPreRender()
-    //{
-    //  foreach (MessageHandler handler in Handlers.Handlers)
-    //  {
-    //    handler.PreRender();
-    //  }
-    //}
 
     public void HandleControlMessage(PacketBuffer packet, BinaryReader reader, bool catchingUp)
     {

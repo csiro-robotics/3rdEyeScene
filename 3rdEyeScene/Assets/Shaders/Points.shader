@@ -8,6 +8,8 @@
     _PointHighlighting("Point Highlighting", Range(0, 1)) = 1
     // Are we building for a left handed coordinate system?
     _LeftHanded("Left Handed", Range(0, 1)) = 1
+    [HideInInspector] _BoundsMin("Bounds Min", Vector) = (0, 0, 0, 0)
+    [HideInInspector] _BoundsMax("Bounds Min", Vector) = (100, 100, 100, 0)
   }
 
   CGINCLUDE
@@ -40,8 +42,8 @@
   uniform float4 _Tint;
   uniform int _PointHighlighting;
   uniform int _LeftHanded;
-  uniform float _ColourRangeMin;
-  uniform float _ColourRangeMax;
+  uniform float4 _BoundsMin;
+  uniform float4 _BoundsMax;
 
   StructuredBuffer<float3> _Vertices;
   #ifdef WITH_NORMALS
@@ -57,38 +59,54 @@
   // **************************************************************
   // Shader Programs                        *
   // **************************************************************
-  float4 colourRangeRainbow(float value)
+  float4 colourRangeRainbow(float value, float minValue, float maxValue)
   {
     // Using HSV colour with S and V = 1, adjusting H from 0 255 based on value.
-    const float colourRange = _ColourRangeMin;
-    const float h = max(0.0f, min((value - _ColourRangeMin) / (colourRange != 0 ? colourRange : 1.0f), 1.0f));
+    const float colourRange = maxValue - minValue;
+    const float h = 255.0f * max(0.0f, min((value - minValue) / (colourRange != 0 ? colourRange : 1.0f), 1.0f));
     const float s = 1.0f;
     const float v = 1.0f;
 
     const float hSector = h / 60.0f; // sector 0 to 5
     const int sectorIndex = int(min(max(0.0f, floor(hSector)), 5.0f));
-    const float f = hSector - float(sectorIndex);
-    const float p = v * (1 - s);
-    const float q = v * (1 - s * f);
-    const float t = v * (1 - s * (1 - f));
+    const float f = hSector - (float)sectorIndex;
+    const float p = v * (1.0f - s);
+    const float q = v * (1.0f - s * f);
+    const float t = v * (1.0f - s * (1.0f - f));
 
-    static const int vindex[] = { 0, 1, 1, 2, 2, 0 };
-    static const int pindex[] = { 2, 2, 0, 0, 1, 1 };
-    static const int qindex[] = { 3, 0, 3, 1, 3, 2 };
-    static const int tindex[] = { 1, 3, 2, 3, 0, 3 };
+    float4 rgb = float4(v, p, q, t);
 
-    float4 rgb;
-    rgb[vindex[sectorIndex]] = v;
-    rgb[pindex[sectorIndex]] = p;
-    rgb[qindex[sectorIndex]] = q;
-    rgb[tindex[sectorIndex]] = t;
+    if (sectorIndex == 0)
+    {
+      rgb = rgb.xzwy;
+    }
+    else if (sectorIndex == 1)
+    {
+      rgb = rgb.yzxw;
+    }
+    else if (sectorIndex == 2)
+    {
+      rgb = rgb.yxwz;
+    }
+    else if (sectorIndex == 3)
+    {
+      rgb = rgb.zxyw;
+    }
+    else if (sectorIndex == 4)
+    {
+      rgb = rgb.zywx;
+    }
+    else if (sectorIndex == 5)
+    {
+      rgb = rgb.xyzw;
+    }
 
     // Handle achromatic here by testing s inline.
-    rgb[0] = (s != 0) ? rgb[0] : v;
-    rgb[1] = (s != 0) ? rgb[1] : v;
-    rgb[2] = (s != 0) ? rgb[2] : v;
+    rgb.r = (s != 0) ? rgb.r : v;
+    rgb.g = (s != 0) ? rgb.g : v;
+    rgb.b = (s != 0) ? rgb.b : v;
 
-    rgb[3] = 1.0f;
+    rgb.w= 1.0f;
 
     return rgb;
   }
@@ -111,11 +129,11 @@
     #elif defined(WITH_COLOURS_V4)
       _Colours[vid]
     #elif defined(WITH_COLOURS_RANGE_X)
-      colourRangeRainbow(_Vertices[vid].x)
+      colourRangeRainbow(_Vertices[vid].x, _BoundsMin.x, _BoundsMax.x)
     #elif defined(WITH_COLOURS_RANGE_Y)
-      colourRangeRainbow(_Vertices[vid].y)
+      colourRangeRainbow(_Vertices[vid].y, _BoundsMin.y, _BoundsMax.y)
     #elif defined(WITH_COLOURS_RANGE_Z)
-      colourRangeRainbow(_Vertices[vid].z)
+      colourRangeRainbow(_Vertices[vid].z, _BoundsMin.z, _BoundsMax.z)
     #else
       float4(1, 1, 1, 1)
     #endif // WITH_COLOURS

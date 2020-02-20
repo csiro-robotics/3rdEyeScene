@@ -152,11 +152,10 @@ namespace Tes.Handlers
         _instanceColours.Clear();
         for (int j = 0; j + i < transforms.Count; ++j)
         {
-          _instanceTransforms[j] = cameraContext.TesSceneToWorldTransform * transforms[i + j];
+          _instanceTransforms[itemCount] = cameraContext.TesSceneToWorldTransform * transforms[i + j];
           Maths.Colour colour = new Maths.Colour(shapes[i + j].Attributes.Colour);
-          colour.A = 64;
           _instanceColours.Add(Maths.ColourExt.ToUnityVector4(colour));
-          itemCount = j + 1;
+          ++itemCount;
         }
 
         materialProperties.SetVectorArray("_Color", _instanceColours);

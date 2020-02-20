@@ -46,6 +46,7 @@ namespace Tes
           CameraContext cameraContext = new CameraContext
           {
             CameraToWorldTransform = camera.transform.localToWorldMatrix,
+            CameraFrustumPlanes = GeometryUtility.CalculateFrustumPlanes(camera),
             OpaqueBuffer = _opaqueBuffer,
             TransparentBuffer = _transparentBuffer
           };

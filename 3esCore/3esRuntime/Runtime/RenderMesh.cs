@@ -338,9 +338,9 @@ namespace Tes.Runtime
       {
         if (bufferStartIndex == 0)
         {
-          _minBounds = _maxBounds = (vertices.Count > 0) ? vertices[0] : Vector3.zero;
+          _minBounds = _maxBounds = (count > 0) ? vertices[listStartIndex] : Vector3.zero;
         }
-        for (int i = 0; i < vertices.Count; ++i)
+        for (int i = listStartIndex; i < listStartIndex + count; ++i)
         {
           _minBounds.x = Mathf.Min(vertices[i].x, _minBounds.x);
           _minBounds.y = Mathf.Min(vertices[i].y, _minBounds.y);
@@ -365,9 +365,9 @@ namespace Tes.Runtime
       {
         if (bufferStartIndex == 0)
         {
-          _minBounds = _maxBounds = (vertices.Length > 0) ? vertices[0] : Vector3.zero;
+          _minBounds = _maxBounds = (count > 0) ? vertices[listStartIndex] : Vector3.zero;
         }
-        for (int i = 0; i < vertices.Length; ++i)
+        for (int i = listStartIndex; i < listStartIndex + count; ++i)
         {
           _minBounds.x = Mathf.Min(vertices[i].x, _minBounds.x);
           _minBounds.y = Mathf.Min(vertices[i].y, _minBounds.y);

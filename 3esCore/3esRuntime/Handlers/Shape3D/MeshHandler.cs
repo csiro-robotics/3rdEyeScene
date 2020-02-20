@@ -137,6 +137,14 @@ namespace Tes.Handlers.Shape3D
 
       Matrix4x4 modelWorld = cameraContext.TesSceneToWorldTransform * transform;
 
+      // Transform and cull bounds
+      // FIXME: (KS) this really isn't how culling should be performed.
+      Bounds bounds = GeometryUtility.CalculateBounds(new Vector3[] { mesh.MinBounds, mesh.MaxBounds }, modelWorld);
+      if (!GeometryUtility.TestPlanesAABB(cameraContext.CameraFrustumPlanes, bounds))
+      {
+        return;
+      }
+
       if (mesh.HasColours)
       {
         material.SetBuffer("_Colours", mesh.ColoursBuffer);
@@ -165,6 +173,21 @@ namespace Tes.Handlers.Shape3D
       if (material.HasProperty("_BackColour"))
       {
         material.SetColor("_Color", Maths.ColourExt.ToUnity(new Maths.Colour(shape.Attributes.Colour)));
+      }
+
+      // TODO: (KS) Need to derive this from the shape properties.
+      if (mesh.Topology == MeshTopology.Points)
+      {
+        // Set min/max shader values.
+        if (material.HasProperty("_BoundsMin"))
+        {
+          material.SetVector("_BoundsMin", mesh.MinBounds);
+        }
+        if (material.HasProperty("_BoundsMax"))
+        {
+          material.SetVector("_BoundsMax", mesh.MaxBounds);
+        }
+        material.EnableKeyword("WITH_COLOURS_RANGE_Z");
       }
 
       // Bind vertices and draw.
@@ -267,7 +290,7 @@ namespace Tes.Handlers.Shape3D
         {
           return ReadMeshVector3Data(reader2, offset, count, (Vector3[] buffer, int writeOffset, int writeCount) =>
           {
-            meshEntry.Mesh.SetVertices(buffer, 0, writeOffset, writeCount);
+            meshEntry.Mesh.SetVertices(buffer, 0, writeOffset, writeCount, true);
           });
         }),
         // Index handler
@@ -421,6 +444,12 @@ namespace Tes.Handlers.Shape3D
     protected override Error PostHandleMessage(DestroyMessage msg, PacketBuffer packet, BinaryReader reader,
                                                ShapeCache cache, int shapeIndex)
     {
+      if (shapeIndex >= 0)
+      {
+        // Delete of invalid object is allowed.
+        ResetObject(cache, shapeIndex);
+      }
+
       ResetObject(cache, shapeIndex);
       return new Error();
     }

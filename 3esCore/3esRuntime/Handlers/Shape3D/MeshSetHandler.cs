@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using Tes.IO;
@@ -267,6 +267,13 @@ namespace Tes.Handlers.Shape3D
     protected override Error PostHandleMessage(DestroyMessage msg, PacketBuffer packet, BinaryReader reader,
                                                ShapeCache cache, int shapeIndex)
     {
+      if (shapeIndex < 0)
+      {
+        // Nothing to delete.
+        // Delete of invalid object is allowed.
+        return new Error();
+      }
+
       PartSet partSet = cache.GetShapeDataByIndex<PartSet>(shapeIndex);
 
       if (partSet != null)
