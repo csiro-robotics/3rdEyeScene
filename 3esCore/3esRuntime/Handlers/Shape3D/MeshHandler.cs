@@ -61,6 +61,7 @@ namespace Tes.Handlers.Shape3D
       base.Initialise(root, serverRoot, materials);
 
       // Add a render mesh component to the shapes.
+      _transientCache.TransientExpiry = this.ExpireTransientShapes;
     }
 
     /// <summary>
@@ -87,14 +88,6 @@ namespace Tes.Handlers.Shape3D
     /// </summary>
     public override void BeginFrame(uint frameNumber, bool maintainTransient)
     {
-      if (!maintainTransient)
-      {
-        foreach (int shapeIndex in _transientCache.ShapeIndices)
-        {
-          ResetObject(_transientCache, shapeIndex);
-        }
-      }
-
       for (int i = 0; i < _toCalculateNormals.Count; ++i)
       {
         _toCalculateNormals[i].CalculateNormals();
@@ -103,6 +96,14 @@ namespace Tes.Handlers.Shape3D
       _toCalculateNormals.Clear();
 
       base.BeginFrame(frameNumber, maintainTransient);
+    }
+
+    protected void ExpireTransientShapes(ShapeCache cache, int fromIndex, int count)
+    {
+      for (int i = 0; i < count; ++i)
+      {
+        ResetObject(_transientCache, i + fromIndex);
+      }
     }
 
     public override void Render(CameraContext cameraContext)
@@ -450,7 +451,6 @@ namespace Tes.Handlers.Shape3D
         ResetObject(cache, shapeIndex);
       }
 
-      ResetObject(cache, shapeIndex);
       return new Error();
     }
 

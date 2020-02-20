@@ -18,6 +18,15 @@ namespace Tes.Handlers
   /// </remarks>
   public class ShapeCache
   {
+    public struct Age
+    {
+      public uint Frames;
+      public float Time;
+    }
+
+    public delegate void TransientExpiryDelegate(ShapeCache cache, int srcIndex, int count);
+    public TransientExpiryDelegate TransientExpiry;
+
     /// <summary>
     /// Create a new shape cache.
     /// </summary>
@@ -27,6 +36,7 @@ namespace Tes.Handlers
     {
       _capacity = (initialCapacity > 0) ? initialCapacity : 128;
       _shapes = new CreateMessage[_capacity];
+      _ages = new Age[_capacity];
       _transforms = new Matrix4x4[_capacity];
       if (!transient)
       {
@@ -75,6 +85,14 @@ namespace Tes.Handlers
     /// </summary>
     public void Reset()
     {
+      if (IsTransientCache)
+      {
+        // Erase items from the arrays up to the expiryWatermark.
+        if (TransientExpiry != null)
+        {
+          TransientExpiry(this, 0, _currentCount);
+        }
+      }
       if (_freeList != null)
       {
         _freeList.Clear();
@@ -89,6 +107,56 @@ namespace Tes.Handlers
         _shapes[i] = clearMsg;
       }
       _currentCount = 0;
+    }
+
+    public void UpdateTransientAges(float deltaTime, Age expiry)
+    {
+      if (IsTransientCache)
+      {
+        bool fullReset = true;
+        if (expiry.Frames > 1 || expiry.Time > deltaTime)
+        {
+          bool expireByTime = expiry.Frames == 0 && expiry.Time > 0;
+          int expiryWatermark = 0;
+          for (int i = 0; i < _currentCount; ++i)
+          {
+            ++_ages[i].Frames;
+            _ages[i].Time += deltaTime;
+
+            if (!expireByTime && _ages[i].Frames > expiry.Frames ||
+                expireByTime && _ages[i].Time >= expiry.Time)
+            {
+              expiryWatermark = i;
+            }
+          }
+
+          if (expiryWatermark < _currentCount)
+          {
+            // Erase items from the arrays up to the expiryWatermark.
+            if (TransientExpiry != null)
+            {
+              TransientExpiry(this, 0, expiryWatermark);
+            }
+
+            // TODO: (KS) find more efficient ways to manage this. Possibly with circular buffer indexing.
+            Array.Copy(_shapes, expiryWatermark, _shapes, 0, _currentCount - expiryWatermark);
+            Array.Copy(_ages, expiryWatermark, _ages, 0, _currentCount - expiryWatermark);
+            Array.Copy(_transforms, expiryWatermark, _transforms, 0, _currentCount - expiryWatermark);
+
+            for (int i = 0; i < _dataExtensions.Count; ++i)
+            {
+              Array.Copy(_dataExtensions[i].Elements, expiryWatermark, _dataExtensions[i].Elements, 0, _currentCount - expiryWatermark);
+            }
+
+            _currentCount -= expiryWatermark;
+          }
+        }
+
+        if (fullReset)
+        {
+          Reset();
+        }
+      }
     }
 
     /// <summary>
@@ -121,6 +189,7 @@ namespace Tes.Handlers
       int shapeIndex = AssignNewShapeIndex(shape.ObjectID);
 
       _shapes[shapeIndex] = shape;
+      _ages[shapeIndex] = new Age { Frames = 0, Time = 0 };
       _transforms[shapeIndex] = transform;
 
       return shapeIndex;
@@ -474,6 +543,7 @@ namespace Tes.Handlers
     /// Core data for each shape.
     /// </summary>
     CreateMessage[] _shapes = null;
+    Age[] _ages = null;
     /// <summary>
     /// Transforms for each shape.
     /// </summary>

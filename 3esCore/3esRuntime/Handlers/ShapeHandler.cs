@@ -108,6 +108,7 @@ namespace Tes.Handlers
       if (!maintainTransient)
       {
         _transientCache.Reset();
+        // _transientCache.UpdateTransientAges(0.0f, new ShapeCache.Age { Frames = 10 });
       }
     }
 
