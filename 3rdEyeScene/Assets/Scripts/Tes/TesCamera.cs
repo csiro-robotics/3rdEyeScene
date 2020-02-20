@@ -33,7 +33,7 @@ namespace Tes
       }
     }
 
-    public void OnRenderObject()
+    public void OnPreRender()
     {
       _opaqueBuffer.Clear();
       _transparentBuffer.Clear();
