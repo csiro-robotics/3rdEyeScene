@@ -42,10 +42,6 @@ namespace Tes.Handlers.Shape2D
       /// The text to display.
       /// </summary>
       public string Text;
-      /// <summary>
-      /// Is this entry currently in active, according to its category?
-      /// </summary>
-      public bool Active;
 
       /// <summary>
       /// True if located in 3D space and projected into screen space.
@@ -61,6 +57,8 @@ namespace Tes.Handlers.Shape2D
     /// </summary>
     public class Text2DManager : MonoBehaviour
     {
+      public Text2DHandler TextHandler { get; set; }
+
       /// <summary>
       /// Enumerate the text list.
       /// </summary>
@@ -137,23 +135,6 @@ namespace Tes.Handlers.Shape2D
       }
 
       /// <summary>
-      /// Sets the active state of text matching <paramref name="categoryID"/>.
-      /// </summary>
-      /// <param name="categoryID">The category to (de)activate.</param>
-      /// <param name="active">True to activate.</param>
-      public void CategoryActive(ushort categoryID, bool active)
-      {
-        for (int i = 0; i < _text.Count; ++i)
-        {
-          TextEntry entry = _text[i];
-          if (entry.Category == categoryID)
-          {
-            entry.Active = active;
-          }
-        }
-      }
-
-      /// <summary>
       /// Text rendering entry point.
       /// </summary>
       /// <remarks>
@@ -169,7 +150,7 @@ namespace Tes.Handlers.Shape2D
         {
           TextEntry entry = _text[i];
 
-          if (!entry.Active)
+          if (TextHandler.CategoriesState != null && !TextHandler.CategoriesState.IsActive(entry.Category))
           {
             continue;
           }
@@ -238,16 +219,16 @@ namespace Tes.Handlers.Shape2D
     /// <summary>
     /// Create a new handler.
     /// </summary>
-    /// <param name="categoryCheck"></param>
-    public Text2DHandler(CategoryCheckDelegate categoryCheck)
-      : base(categoryCheck)
+    public Text2DHandler()
     {
       Root = new GameObject(Name);
       Persistent = new GameObject("Persistent " + Name);
-      Persistent.AddComponent<Text2DManager>();
+      Text2DManager textManager = Persistent.AddComponent<Text2DManager>();
+      textManager.TextHandler = this;
       Persistent.transform.SetParent(Root.transform, false);
       Transient = new GameObject("Transient " + Name);
-      Transient.AddComponent<Text2DManager>();
+      textManager = Transient.AddComponent<Text2DManager>();
+      textManager.TextHandler = this;
       Transient.transform.SetParent(Root.transform, false);
     }
 
@@ -410,17 +391,6 @@ namespace Tes.Handlers.Shape2D
     }
 
     /// <summary>
-    /// Handle category activation changes.
-    /// </summary>
-    /// <param name="categoryId"></param>
-    /// <param name="active"></param>
-    public override void OnCategoryChange(ushort categoryId, bool active)
-    {
-      PersistentText.CategoryActive(categoryId, active);
-      TransientText.CategoryActive(categoryId, active);
-    }
-
-    /// <summary>
     /// Handle create messages.
     /// </summary>
     /// <param name="msg"></param>
@@ -435,7 +405,6 @@ namespace Tes.Handlers.Shape2D
       text.Category = msg.Category;
       text.Position = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
       text.Colour = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
-      text.Active = CategoryCheck(text.Category);
 
       // Read the text.
       int textLength = reader.ReadUInt16();
@@ -471,7 +440,6 @@ namespace Tes.Handlers.Shape2D
       text.ObjectFlags = msg.Flags;
       text.Position = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
       text.Colour = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
-      text.Active = true;
 
       // Read the text.
       int textLength = reader.ReadUInt16();

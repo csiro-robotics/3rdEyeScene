@@ -81,21 +81,21 @@ public class TesComponent : Router
     Handlers.Register(meshCache);
     Handlers.Register(categories);
 
-    Handlers.Register(new CameraHandler(categories.IsActive));
+    Handlers.Register(new CameraHandler());
 
-    Handlers.Register(new ArrowHandler(categories.IsActive));
-    Handlers.Register(new BoxHandler(categories.IsActive));
-    Handlers.Register(new CapsuleHandler(categories.IsActive));
-    Handlers.Register(new ConeHandler(categories.IsActive));
-    Handlers.Register(new CylinderHandler(categories.IsActive));
-    Handlers.Register(new PlaneHandler(categories.IsActive));
-    Handlers.Register(new SphereHandler(categories.IsActive));
-    Handlers.Register(new StarHandler(categories.IsActive));
-    Handlers.Register(new MeshHandler(categories.IsActive));
-    Handlers.Register(new MeshSetHandler(categories.IsActive, meshCache));
-    Handlers.Register(new PointCloudHandler(categories.IsActive, meshCache));
-    Handlers.Register(new Text2DHandler(categories.IsActive));
-    Text3DHandler text3DHandler = new Text3DHandler(categories.IsActive);
+    Handlers.Register(new ArrowHandler());
+    Handlers.Register(new BoxHandler());
+    Handlers.Register(new CapsuleHandler());
+    Handlers.Register(new ConeHandler());
+    Handlers.Register(new CylinderHandler());
+    Handlers.Register(new PlaneHandler());
+    Handlers.Register(new SphereHandler());
+    Handlers.Register(new StarHandler());
+    Handlers.Register(new MeshHandler());
+    Handlers.Register(new MeshSetHandler(meshCache));
+    Handlers.Register(new PointCloudHandler(meshCache));
+    Handlers.Register(new Text2DHandler());
+    Text3DHandler text3DHandler = new Text3DHandler();
     text3DHandler.CreateTextMeshHandler = this.GenerateTextMesh;
     Handlers.Register(text3DHandler);
 
@@ -110,7 +110,6 @@ public class TesComponent : Router
 #endif // UNITY_EDITOR
     };
 
-    CategoryCheckDelegate catDelegate = categories.IsActive;
     foreach (string loadPath in loadPaths)
     {
       string[] excludeList = new string[] {
@@ -120,18 +119,10 @@ public class TesComponent : Router
         "SharpCompress.dll",
         "System.*.dll"
       };
-      Handlers.LoadPlugins(loadPath, Plugins, excludeList, new object[] { catDelegate });
+      Handlers.LoadPlugins(loadPath, Plugins, excludeList, new object[] {});
     }
 
     InitialiseHandlers();
-
-    categories.OnActivationChange += (ushort categoryId, bool active) =>
-    {
-      foreach (MessageHandler handler in Handlers.Handlers)
-      {
-        handler.OnCategoryChange(categoryId, active);
-      }
-    };
 
     HandleCommandLineStart();
   }
@@ -280,13 +271,5 @@ public class TesComponent : Router
     }
 
     base.Update();
-  }
-
-  private void OnCategoryActiveChange(ushort categoryId, bool active)
-  {
-    foreach (MessageHandler handler in Handlers.Handlers)
-    {
-      handler.OnCategoryChange(categoryId, active);
-    }
   }
 }

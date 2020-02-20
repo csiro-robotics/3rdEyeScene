@@ -28,9 +28,7 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Create the shape handler.
     /// </summary>
-    /// <param name="categoryCheck"></param>
-    public MeshHandler(Runtime.CategoryCheckDelegate categoryCheck)
-      : base(categoryCheck)
+    public MeshHandler()
     {
       // if (Root != null)
       // {
@@ -123,6 +121,12 @@ namespace Tes.Handlers.Shape3D
     protected void RenderObject(CameraContext cameraContext, ShapeCache cache, int shapeIndex)
     {
       CreateMessage shape = cache.GetShapeByIndex(shapeIndex);
+
+      if (CategoriesState != null && !CategoriesState.IsActive(shape.Category))
+      {
+        return;
+      }
+
       MeshEntry meshEntry = cache.GetShapeDataByIndex<MeshEntry>(shapeIndex);
       Matrix4x4 transform = cache.GetShapeTransformByIndex(shapeIndex);
 

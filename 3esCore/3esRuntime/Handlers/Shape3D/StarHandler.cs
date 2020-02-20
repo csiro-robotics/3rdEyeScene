@@ -11,9 +11,7 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Create the shape handler.
     /// </summary>
-    /// <param name="categoryCheck"></param>
-    public StarHandler(Runtime.CategoryCheckDelegate categoryCheck)
-      : base(categoryCheck)
+    public StarHandler()
     {
       SolidMesh = Tes.Tessellate.Star.Solid();
       WireframeMesh = Tes.Tessellate.Star.Wireframe();

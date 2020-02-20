@@ -11,9 +11,7 @@ namespace Tes
     /// <summary>
     /// Create the shape handler.
     /// </summary>
-    /// <param name="categoryCheck"></param>
-    public PyramidHandler(Runtime.CategoryCheckDelegate categoryCheck)
-      : base(categoryCheck)
+    public PyramidHandler()
     {
       SolidMesh = SolidPyramid();
       WireframeMesh = WireframePyramid();

@@ -144,6 +144,7 @@ namespace Tes.Main
       }
 
       _handlers.Add(handler.RoutingID, handler);
+      handler.CategoriesState = _categoriesState;
       return true;
     }
 
@@ -168,5 +169,6 @@ namespace Tes.Main
     }
 
     private Dictionary<int, MessageHandler> _handlers = new Dictionary<int, MessageHandler>();
+    private CategoriesState _categoriesState = new CategoriesState();
   }
 }

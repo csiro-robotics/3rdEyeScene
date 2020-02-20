@@ -11,9 +11,7 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Create the shape handler.
     /// </summary>
-    /// <param name="categoryCheck"></param>
-    public SphereHandler(Runtime.CategoryCheckDelegate categoryCheck)
-      : base(categoryCheck)
+    public SphereHandler()
     {
       SolidMesh = Tes.Tessellate.Sphere.Solid();
       WireframeMesh = Tes.Tessellate.Sphere.Wireframe();

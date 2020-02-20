@@ -11,9 +11,7 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Create the shape handler.
     /// </summary>
-    /// <param name="categoryCheck"></param>
-    public ArrowHandler(Runtime.CategoryCheckDelegate categoryCheck)
-      : base(categoryCheck)
+    public ArrowHandler()
     {
       SolidMesh = Tes.Tessellate.Arrow.Solid();
       WireframeMesh = Tes.Tessellate.Arrow.Wireframe();

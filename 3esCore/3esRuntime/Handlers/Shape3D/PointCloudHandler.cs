@@ -25,10 +25,8 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Create the shape handler.
     /// </summary>
-    /// <param name="categoryCheck"></param>
     /// <param name="meshCache">The mesh cache from which to read resources.</param>
-    public PointCloudHandler(Runtime.CategoryCheckDelegate categoryCheck, MeshCache meshCache)
-      : base(categoryCheck)
+    public PointCloudHandler(MeshCache meshCache)
     {
       // if (Root != null)
       // {
@@ -86,6 +84,11 @@ namespace Tes.Handlers.Shape3D
     void RenderPoints(CameraContext cameraContext, ShapeCache cache, int shapeIndex)
     {
       CreateMessage shape = cache.GetShapeByIndex(shapeIndex);
+      if (CategoriesState != null && !CategoriesState.IsActive(shape.Category))
+      {
+        return;
+      }
+
       Matrix4x4 modelWorld = cameraContext.TesSceneToWorldTransform * cache.GetShapeTransformByIndex(shapeIndex);
       PointsComponent points = cache.GetShapeDataByIndex<PointsComponent>(shapeIndex);
       CommandBuffer renderQueue = cameraContext.OpaqueBuffer;

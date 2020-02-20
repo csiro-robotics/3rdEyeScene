@@ -257,14 +257,6 @@ namespace Tes.Handlers
     }
 
     /// <summary>
-    /// Constructor.
-    /// </summary>
-    public MeshCache()
-      : base(null)
-    {
-    }
-
-    /// <summary>
     /// Initialise, caching the required materials from <paramref name="materials"/>.
     /// </summary>
     /// <param name="root"></param>
@@ -379,15 +371,6 @@ namespace Tes.Handlers
       }
 
       return new Error();
-    }
-
-    /// <summary>
-    /// Empty
-    /// </summary>
-    /// <param name="categoryId"></param>
-    /// <param name="active"></param>
-    public override void OnCategoryChange(ushort categoryId, bool active)
-    {
     }
 
     /// <summary>

@@ -48,8 +48,7 @@ namespace Tes.Handlers
     /// <summary>
     /// Constructor initialising the persistent and transient caches.
     /// </summary>
-    public ShapeHandler(CategoryCheckDelegate categoryCheck)
-      : base(categoryCheck)
+    public ShapeHandler()
     {
       _transientCache = new ShapeCache(128, true);
       _shapeCache = new ShapeCache(128, false);
@@ -145,6 +144,7 @@ namespace Tes.Handlers
                                            List<Matrix4x4> transforms, List<CreateMessage> shapes,
                                            Material material)
     {
+      CategoriesState categories = this.CategoriesState;
       // Handle instancing block size limits.
       for (int i = 0; i < transforms.Count; i += _instanceTransforms.Length)
       {
@@ -153,14 +153,20 @@ namespace Tes.Handlers
         _instanceColours.Clear();
         for (int j = 0; j + i < transforms.Count; ++j)
         {
-          _instanceTransforms[itemCount] = cameraContext.TesSceneToWorldTransform * transforms[i + j];
-          Maths.Colour colour = new Maths.Colour(shapes[i + j].Attributes.Colour);
-          _instanceColours.Add(Maths.ColourExt.ToUnityVector4(colour));
-          ++itemCount;
+          if (categories == null || categories.IsActive(shapes[i + j].Category))
+          {
+            _instanceTransforms[itemCount] = cameraContext.TesSceneToWorldTransform * transforms[i + j];
+            Maths.Colour colour = new Maths.Colour(shapes[i + j].Attributes.Colour);
+            _instanceColours.Add(Maths.ColourExt.ToUnityVector4(colour));
+            ++itemCount;
+          }
         }
 
-        materialProperties.SetVectorArray("_Color", _instanceColours);
-        renderQueue.DrawMeshInstanced(mesh, 0, material, 0, _instanceTransforms, itemCount, materialProperties);
+        if (itemCount > 0)
+        {
+          materialProperties.SetVectorArray("_Color", _instanceColours);
+          renderQueue.DrawMeshInstanced(mesh, 0, material, 0, _instanceTransforms, itemCount, materialProperties);
+        }
       }
     }
 
@@ -205,27 +211,6 @@ namespace Tes.Handlers
     /// <remarks>
     /// Handlers should only ever visualise objects in active categories.
     /// </remarks>
-    public override void OnCategoryChange(ushort categoryId, bool active)
-    {
-      // foreach (GameObject obj in _transientCache.Objects)
-      // {
-      //   ShapeComponent shape = obj.GetComponent<ShapeComponent>();
-      //   if (shape != null && shape.Category == categoryId)
-      //   {
-      //     obj.SetActive(active);
-      //   }
-      // }
-
-      // foreach (GameObject obj in _shapeCache.Objects)
-      // {
-      //   ShapeComponent shape = obj.GetComponent<ShapeComponent>();
-      //   if (shape != null && shape.Category == categoryId)
-      //   {
-      //     obj.SetActive(active);
-      //   }
-      // }
-    }
-
     /// <summary>
     /// Extract a <see cref="Shapes.Shape"/> representation of the shape with the given <paramref name="objectID"/>.
     /// </summary>

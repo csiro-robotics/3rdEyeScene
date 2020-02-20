@@ -29,9 +29,7 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Create the shape handler.
     /// </summary>
-    /// <param name="categoryCheck"></param>
-    public Text3DHandler(Runtime.CategoryCheckDelegate categoryCheck)
-      : base(categoryCheck)
+    public Text3DHandler()
     {
       _shapeCache.AddShapeDataType<TextShapeData>();
       _transientCache.AddShapeDataType<TextShapeData>();

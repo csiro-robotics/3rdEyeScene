@@ -23,7 +23,7 @@ namespace Tes.Handlers
     /// <summary>
     /// Category details.
     /// </summary>
-    public class Category
+    public struct Category
     {
       /// <summary>
       /// Display name.
@@ -41,15 +41,6 @@ namespace Tes.Handlers
       /// Is the category active?
       /// </summary>
       public bool Active;
-
-      /// <summary>
-      /// Shallow copy implementation.
-      /// </summary>
-      /// <returns></returns>
-      public Category ShallowCopy()
-      {
-        return (Category)MemberwiseClone();
-      }
     }
 
     /// <summary>
@@ -85,7 +76,6 @@ namespace Tes.Handlers
     /// Constructor initialising the persistent and transient caches.
     /// </summary>
     public CategoriesHandler()
-      : base(null)
     {
       //AddTest();
     }
@@ -114,24 +104,25 @@ namespace Tes.Handlers
       cat.Name = name;
       cat.Active = active;
       _categories[cat.ID] = cat;
-      NotifyNewCategory(cat.ShallowCopy());
+      bool parentActive = parentId == 0 || CategoriesState.IsActive(parentId);
+      CategoriesState.SetActive(cat.ID, cat.Active && parentActive);
+      NotifyNewCategory(cat);
     }
 
     /// <summary>
     /// Lookup and retrieve details of a category.
     /// </summary>
     /// <param name="id">The category to lookup.</param>
-    /// <returns>A shallow copy of the category on success, null on failure.</returns>
-    public Category Lookup(ushort id)
+    /// <param name="category">Set to match the category on success.</param>
+    /// <returns>True if <paramref name="id"/> is present and <paramref name="category"/> is valid..</returns>
+    public bool Lookup(ushort id, out Category category)
     {
-      Category cat = null;
-      if (_categories.TryGetValue(id, out cat))
+      if (_categories.TryGetValue(id, out category))
       {
-        // Prevent mutation.
-        return cat.ShallowCopy();
+        return true;
       }
 
-      return cat;
+      return false;
     }
 
     /// <summary>
@@ -170,13 +161,7 @@ namespace Tes.Handlers
     /// <returns>True if active or unknown/</returns>
     public bool IsActive(ushort id)
     {
-      Category cat = null;
-      if (_categories.TryGetValue(id, out cat))
-      {
-        return cat.Active;
-      }
-      // Unregistered categories are all active.
-      return true;
+      return CategoriesState.IsActive(id);
     }
 
     /// <summary>
@@ -192,19 +177,57 @@ namespace Tes.Handlers
     /// </remarks>
     public void SetActive(ushort id, bool active)
     {
-      Category cat = null;
+      Category cat;
       if (_categories.TryGetValue(id, out cat))
       {
         if (cat.Active != active)
         {
           cat.Active = active;
+          // Update the dictionary.
+          _categories[cat.ID] = cat;
+          // Check hierarchy to determin final state.
+          bool mergedActive = active && CheckHierarchyActive(cat.ParentID);
+          CategoriesState.SetActive(cat.ID, mergedActive);
+          PropagateActiveToChildren(id, mergedActive);
           if (OnActivationChange != null)
           {
             OnActivationChange(id, active);
           }
-          SetChildrenActive(id, active);
         }
       }
+    }
+
+    /// <summary>
+    /// Checks the current active state of <paramref name="id"/> within the category hierarchy.
+    /// </summary>
+    /// <param name="id">The ID to check.</param>
+    /// <returns>True if <paramref name="id"/> and its ancestor categories are active.</returns>
+    /// <remarks>
+    /// This is a deep check, traversing up the category tree.
+    /// </remarks>
+    private bool CheckHierarchyActive(ushort id)
+    {
+      Category cat;
+      bool active = true;
+      ushort currentId = id;
+      ushort prevId = id;
+      while (active && currentId != 0)
+      {
+        if (_categories.TryGetValue(currentId, out cat))
+        {
+          active = cat.Active;
+          if (currentId != cat.ParentID)
+          {
+            currentId = cat.ParentID;
+          }
+          else
+          {
+            currentId = 0;
+          }
+        }
+      }
+
+      return active;
     }
 
     /// <summary>
@@ -212,20 +235,22 @@ namespace Tes.Handlers
     /// </summary>
     /// <param name="id">The parent category ID.</param>
     /// <param name="active">The new active state.</param>
-    private void SetChildrenActive(ushort id, bool active)
+    private void PropagateActiveToChildren(ushort id, bool active)
     {
+      // Skip default category.
+      if (id == 0)
+      {
+        return;
+      }
+
       // Also affect all children.
       foreach (Category cat in ChildCategories(id))
       {
-        if (cat.Active != active)
+        if (CategoriesState.IsActive(cat.ID) != active)
         {
-          cat.Active = active;
-          if (OnActivationChange != null)
-          {
-            OnActivationChange(cat.ID, active);
-          }
+          CategoriesState.SetActive(cat.ID, active);
         }
-        SetChildrenActive(cat.ID, active);
+        PropagateActiveToChildren(cat.ID, active);
       }
     }
 
@@ -262,11 +287,13 @@ namespace Tes.Handlers
     /// </summary>
     public override void Reset()
     {
+      CategoriesState.Reset();
       _categories.Clear();
       if (OnClearCategories != null)
       {
         OnClearCategories();
       }
+
       // FIXME: localisation.
       AddCategory(0, 0, "Default", true);
     }
@@ -326,15 +353,6 @@ namespace Tes.Handlers
       return err;
     }
 
-    /// <summary>
-    /// Empty: this event is sourced from this class.
-    /// </summary>
-    /// <param name="categoryId"></param>
-    /// <param name="active"></param>
-    public override void OnCategoryChange(ushort categoryId, bool active)
-    {
-      // Ignore. Sourced from here.
-    }
 
     /// <summary>
     /// Invoke <see cref="OnNewCategory"/>

@@ -46,8 +46,7 @@ namespace Tes.Handlers
     /// <summary>
     /// Constructor initialising the persistent and transient caches.
     /// </summary>
-    public CameraHandler(CategoryCheckDelegate categoryCheck)
-      : base(categoryCheck)
+    public CameraHandler()
     {
       _root.name = Name;
     }
@@ -256,15 +255,6 @@ namespace Tes.Handlers
       }
 
       return err;
-    }
-
-    /// <summary>
-    /// Empty
-    /// </summary>
-    /// <param name="categoryId"></param>
-    /// <param name="active"></param>
-    public override void OnCategoryChange(ushort categoryId, bool active)
-    {
     }
 
     /// <summary>

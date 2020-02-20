@@ -6,13 +6,6 @@ using UnityEngine;
 namespace Tes.Runtime
 {
   /// <summary>
-  /// Delegate used to check if a category is enabled.
-  /// </summary>
-  /// <param name="categoryID">Category ID to query.</param>
-  /// <returns>True if enabled.</returns>
-  public delegate bool CategoryCheckDelegate(ushort categoryID);
-
-  /// <summary>
   /// This class defines the interface for any message handler class.
   /// Messages are routed by the <see cref="RoutingID"/>.
   /// </summary>
@@ -44,34 +37,6 @@ namespace Tes.Runtime
     public ModeFlags Mode { get; set; }
 
     /// <summary>
-    /// Delegate used to check if a category is enabled.
-    /// </summary>
-    public CategoryCheckDelegate CategoryCheck { get; protected set; }
-
-    /// <summary>
-    /// Function used as a <see cref="CategoryCheck"/> to always be true.
-    /// </summary>
-    /// <param name="categoryID">The category ID to check.</param>
-    /// <returns><c>true</c></returns>
-    /// <remarks>
-    /// Used for handlers which ignore category settings.
-    /// </remarks>
-    private bool CheckTrue(ushort categoryID) { return true; }
-
-    /// <summary>
-    /// Create a message handler with the given delegate to assign to <see cref="CategoryCheck"/>.
-    /// </summary>
-    /// <param name="categoryCheck">The delegate to invoke for category enable checks.</param>
-    public MessageHandler(CategoryCheckDelegate categoryCheck)
-    {
-      CategoryCheck = categoryCheck;
-      if (CategoryCheck == null)
-      {
-        CategoryCheck = CheckTrue;
-      }
-    }
-
-    /// <summary>
     /// A reference name for the handler. Used for debugging and logging.
     /// </summary>
     /// <value>A debug name for the handler.</value>
@@ -95,6 +60,8 @@ namespace Tes.Runtime
     {
       get; protected set;
     }
+
+    public CategoriesState CategoriesState { get; set; }
 
     /// <summary>
     /// Called to initialise the handler with various 3rd Eye Scene components.
@@ -195,13 +162,6 @@ namespace Tes.Runtime
     /// <param name="writer">The steam to serialise the current state to.</param>
     /// <param name="info">Passed to attain information about serialisation.</param>
     public abstract Error Serialise(BinaryWriter writer, ref SerialiseInfo info);
-
-    /// <summary>
-    /// Called whenever a category's active state changes. All start active.
-    /// </summary>
-    /// <param name="categoryId">The category changing state.</param>
-    /// <param name="active">Active or not?</param>
-    public abstract void OnCategoryChange(ushort categoryId, bool active);
   }
 }
 

@@ -14,9 +14,7 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Create the shape handler.
     /// </summary>
-    /// <param name="categoryCheck"></param>
-    public CapsuleHandler(Runtime.CategoryCheckDelegate categoryCheck)
-      : base(categoryCheck)
+    public CapsuleHandler()
     {
       _solidMeshes = Tessellate.Capsule.Solid();
       _wireframeMeshes = Tessellate.Capsule.Wireframe();
@@ -43,6 +41,7 @@ namespace Tes.Handlers.Shape3D
       // Work out which mesh set we are rendering from the parent call: solid or wireframe. We could also look at
       // the first CreateMessage flags.
       Mesh[] meshes = (mesh == SolidMesh)  ? _solidMeshes : _wireframeMeshes;
+      CategoriesState categories = this.CategoriesState;
 
       // Handle instancing block size limits.
       for (int i = 0; i < transforms.Count; i += _instanceTransforms.Length)
@@ -52,9 +51,14 @@ namespace Tes.Handlers.Shape3D
         _instanceColours.Clear();
         for (int j = 0; j + i < transforms.Count; ++j)
         {
+          if (categories != null && !categories.IsActive(shapes[i + j].Category))
+          {
+            continue;
+          }
+
           // Build the end cap transforms.
           Matrix4x4 transform = transforms[i + j];
-          _instanceTransforms[j] = cameraContext.TesSceneToWorldTransform * transform;
+          _instanceTransforms[itemCount] = cameraContext.TesSceneToWorldTransform * transform;
 
           // Extract radius and length to position the end caps.
           float radius = transform.GetColumn(0).magnitude;
@@ -78,15 +82,18 @@ namespace Tes.Handlers.Shape3D
           Maths.Colour colour = new Maths.Colour(shapes[i + j].Attributes.Colour);
           colour.A = 64;
           _instanceColours.Add(Maths.ColourExt.ToUnityVector4(colour));
-          itemCount = j + 1;
+          ++itemCount;
         }
 
-        materialProperties.SetVectorArray("_Color", _instanceColours);
-        // Render body.
-        renderQueue.DrawMeshInstanced(meshes[0], 0, material, 0, _instanceTransforms, itemCount, materialProperties);
-        // Render end caps.
-        renderQueue.DrawMeshInstanced(meshes[1], 0, material, 0, _cap1Transforms, itemCount, materialProperties);
-        renderQueue.DrawMeshInstanced(meshes[2], 0, material, 0, _cap2Transforms, itemCount, materialProperties);
+        if (itemCount > 0)
+        {
+          materialProperties.SetVectorArray("_Color", _instanceColours);
+          // Render body.
+          renderQueue.DrawMeshInstanced(meshes[0], 0, material, 0, _instanceTransforms, itemCount, materialProperties);
+          // Render end caps.
+          renderQueue.DrawMeshInstanced(meshes[1], 0, material, 0, _cap1Transforms, itemCount, materialProperties);
+          renderQueue.DrawMeshInstanced(meshes[2], 0, material, 0, _cap2Transforms, itemCount, materialProperties);
+        }
       }
     }
 

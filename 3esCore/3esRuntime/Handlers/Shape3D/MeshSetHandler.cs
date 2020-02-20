@@ -38,10 +38,8 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Create the shape handler.
     /// </summary>
-    /// <param name="categoryCheck"></param>
     /// <param name="meshCache">The mesh cache from which to read resources.</param>
-    public MeshSetHandler(Runtime.CategoryCheckDelegate categoryCheck, MeshCache meshCache)
-      : base(categoryCheck)
+    public MeshSetHandler(MeshCache meshCache)
     {
       MeshCache = meshCache;
       _shapeCache.AddShapeDataType<PartSet>();
@@ -90,6 +88,11 @@ namespace Tes.Handlers.Shape3D
     private void RenderMeshes(CameraContext cameraContext, ShapeCache cache, int shapeIndex)
     {
       CreateMessage shape = cache.GetShapeByIndex(shapeIndex);
+      if (CategoriesState != null && !CategoriesState.IsActive(shape.Category))
+      {
+        return;
+      }
+
       Matrix4x4 shapeWorldTransform = cameraContext.TesSceneToWorldTransform * cache.GetShapeTransformByIndex(shapeIndex);
       PartSet parts = cache.GetShapeDataByIndex<PartSet>(shapeIndex);
 

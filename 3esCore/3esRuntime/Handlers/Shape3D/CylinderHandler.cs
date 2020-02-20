@@ -11,9 +11,7 @@ namespace Tes.Handlers.Shape3D
     /// <summary>
     /// Create the shape handler.
     /// </summary>
-    /// <param name="categoryCheck"></param>
-    public CylinderHandler(Runtime.CategoryCheckDelegate categoryCheck)
-      : base(categoryCheck)
+    public CylinderHandler()
     {
       SolidMesh = Tes.Tessellate.Cylinder.Solid();
       WireframeMesh = Tes.Tessellate.Cylinder.Wireframe();
