@@ -469,7 +469,7 @@ namespace Tes.Main
                       // want the frame before. We use a cached copy just in case in future we can be here
                       // for other reasons.
                       lastSeekableFrame = preControlMsgFrame;
-                      Log.Diag("Last seekable: {0}", lastSeekableFrame);
+                      // Log.Diag("Last seekable: {0}", lastSeekableFrame);
                     }
 
                     bool keyframeRequested = false;

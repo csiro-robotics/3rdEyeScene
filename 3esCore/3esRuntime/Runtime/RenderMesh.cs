@@ -624,42 +624,6 @@ namespace Tes.Runtime
       }
     }
 
-    // public void Render(string vertexStreamName = "_Vertices", string normalsStreamName = "_Normals",
-    //                    string coloursStreamName = "_Colours")
-    // {
-    //   // Set buffers.
-    //   // GL.PushMatrix();
-    //   // GL.MultMatrix(cloud.Matrix4);
-
-    //   _material.SetPass(0);
-    //   // material.SetColor("_Color", Color.white);
-    //   // material.SetColor("_Tint", Color.white);
-    //   // // material.SetFloat("_PointSize", 8);
-    //   // materialmaterial.SetInt("_PointHighlighting", 0);
-    //   // material.SetInt("_LeftHanded", 1);
-    //   // // material.EnableKeyword("WITH_COLOUR");
-
-    //   _material.SetBuffer(vertexStreamName, _vertexBuffer);
-    //   if (_normalsBuffer != null)
-    //   {
-    //     _material.SetBuffer(normalsStreamName, _normalsBuffer);
-    //   }
-    //   if (_normalsBuffer != null)
-    //   {
-    //     _material.SetBuffer(coloursStreamName, _vertexBuffer);
-    //   }
-
-    //   if (_indexBuffer != null)
-    //   {
-    //     Graphics.DrawProceduralNow(Topology, _indexBuffer, IndexCount, 1);
-    //   }
-    //   else
-    //   {
-    //     Graphics.DrawProceduralNow(Topology, VertexCount, 1);
-    //   }
-    //   // GL.PopMatrix();
-    // }
-
     protected void CreateIndexBuffer()
     {
       if (_indices == null || _indices.Length != IndexCount)
