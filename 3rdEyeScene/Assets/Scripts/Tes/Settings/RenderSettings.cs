@@ -57,6 +57,7 @@ public class RenderSettings : Settings
     Skybox,
     Black,
     White,
+    Grey,
     Red,
     Green,
     Blue,
@@ -71,12 +72,13 @@ public class RenderSettings : Settings
     new Color32(0, 0, 0, 0),  // Clear/skybox.
     new Color32(0, 0, 0, 255),  // Black
     new Color32(255, 255, 255, 255),  // White
-    new Color32(255, 0, 0, 255),  // Red
-    new Color32(0, 255, 0, 255),  // Green
-    new Color32(0, 0, 255, 255),  // Blue
-    new Color32(255, 255, 0, 255),  // Yellow
-    new Color32(255, 0, 255, 255),  // Magenta
-    new Color32(0, 255, 255, 255) // Cyan
+    new Color32(32, 32, 32, 255),  // Grey
+    new Color32(128, 0, 0, 255),  // Red
+    new Color32(0, 128, 0, 255),  // Green
+    new Color32(0, 0, 128, 255),  // Blue
+    new Color32(128, 128, 0, 255),  // Yellow
+    new Color32(128, 0, 128, 255),  // Magenta
+    new Color32(0, 128, 128, 255) // Cyan
   };
 
   [Browsable(true), Tooltip("Use a skybox for the background (true) or a flat colour (false).")]
