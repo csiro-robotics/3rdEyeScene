@@ -1045,6 +1045,14 @@ namespace Tes.Main
                   ((ErrorCode)errorCode.Code).ToString() : errorCode.Code.ToString();
                 Log.Error($"Message handling error : {errorCodeString} : {errorCode.Value}, " +
                           $"RoutingID: {RoutingIDName(packet.Header.RoutingID)} , MessageID: {packet.Header.MessageID}");
+                // Pause playback.
+                if (PlaybackSettings.Instance.PauseOnError)
+                {
+                  if (Mode == RouterMode.Playing)
+                  {
+                    TogglePause();
+                  }
+                }
               }
             }
             else
