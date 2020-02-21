@@ -63,7 +63,7 @@
   {
     // Using HSV colour with S and V = 1, adjusting H from 0 255 based on value.
     const float colourRange = maxValue - minValue;
-    const float h = 255.0f * max(0.0f, min((value - minValue) / (colourRange != 0 ? colourRange : 1.0f), 1.0f));
+    const float h = 360.0f * max(0.0f, min((value - minValue) / (colourRange != 0 ? colourRange : 1.0f), 1.0f));
     const float s = 1.0f;
     const float v = 1.0f;
 
@@ -78,11 +78,11 @@
 
     if (sectorIndex == 0)
     {
-      rgb = rgb.xzwy;
+      rgb = rgb.xwyz;
     }
     else if (sectorIndex == 1)
     {
-      rgb = rgb.yzxw;
+      rgb = rgb.zxyw;
     }
     else if (sectorIndex == 2)
     {
@@ -90,11 +90,11 @@
     }
     else if (sectorIndex == 3)
     {
-      rgb = rgb.zxyw;
+      rgb = rgb.yzxw;
     }
     else if (sectorIndex == 4)
     {
-      rgb = rgb.zywx;
+      rgb = rgb.wyxz;
     }
     else if (sectorIndex == 5)
     {
@@ -106,7 +106,7 @@
     rgb.g = (s != 0) ? rgb.g : v;
     rgb.b = (s != 0) ? rgb.b : v;
 
-    rgb.w= 1.0f;
+    rgb.a = 1.0f;
 
     return rgb;
   }
@@ -115,7 +115,7 @@
   GeometryInput vert(uint vid : SV_VertexID)
   {
     GeometryInput o;
-    o.pos = mul(unity_ObjectToWorld, _Vertices[vid]);
+    o.pos = mul(unity_ObjectToWorld, float4(_Vertices[vid], 1.0f));
     #ifdef WITH_NORMALS
     o.normal = mul(UNITY_MATRIX_MV, _Normals[vid]);
     #endif // WITH_NORMALS
