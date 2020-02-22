@@ -119,6 +119,11 @@ namespace Tes.Runtime
     {
       get
       {
+        if (IndexCount == 0)
+        {
+          return null;
+        }
+
         if (_indexBuffer == null)
         {
           _indexBuffer = GpuBufferManager.Instance.AllocateIndexBuffer(IndexCount);
@@ -139,6 +144,11 @@ namespace Tes.Runtime
     {
       get
       {
+        if (VertexCount == 0)
+        {
+          return null;
+        }
+
         if (_vertexBuffer == null)
         {
           _vertexBuffer = GpuBufferManager.Instance.AllocateVertexBuffer(VertexCount);
@@ -159,6 +169,11 @@ namespace Tes.Runtime
     {
       get
       {
+        if (VertexCount == 0)
+        {
+          return null;
+        }
+
         if (_normalsBuffer == null)
         {
           _normalsBuffer = GpuBufferManager.Instance.AllocateNormalsBuffer(VertexCount);
@@ -179,6 +194,11 @@ namespace Tes.Runtime
     {
       get
       {
+        if (VertexCount == 0)
+        {
+          return null;
+        }
+
         if (_coloursBuffer == null)
         {
           _coloursBuffer = GpuBufferManager.Instance.AllocateColoursUIntBuffer(VertexCount);
@@ -199,6 +219,11 @@ namespace Tes.Runtime
     {
       get
       {
+        if (VertexCount == 0)
+        {
+          return null;
+        }
+
         if (_uvsBuffer == null)
         {
           _uvsBuffer = GpuBufferManager.Instance.AllocateUVsBuffer(VertexCount);
@@ -249,7 +274,6 @@ namespace Tes.Runtime
         GpuBufferManager.Instance.ReleaseIndexBuffer(_indexBuffer);
         _indexBuffer = null;
       }
-      _indices = null;
       if (_vertexBuffer != null)
       {
         GpuBufferManager.Instance.ReleaseVertexBuffer(_vertexBuffer);
@@ -735,12 +759,16 @@ namespace Tes.Runtime
       }
       if (_indices == null || _indices.Length != _indexCount)
       {
-        int[] indices = new int[_indexCount];
-        if (_indices != null)
+        int[] indices = null;
+        if (_indexCount > 0)
         {
-          Array.Copy(_indices, indices, _indices.Length);
+          indices = new int[_indexCount];
+          if (_indices != null)
+          {
+            Array.Copy(_indices, indices, _indices.Length);
+          }
+          _indices = indices;
         }
-        _indices = indices;
       }
 
       if (_vertexBuffer != null && _vertexBuffer.count < _vertexCount)
@@ -751,12 +779,16 @@ namespace Tes.Runtime
       }
       if (_vertices == null || _vertices.Length != _vertexCount)
       {
-        Vector3[] indices = new Vector3[_vertexCount];
-        if (_vertices != null)
+        Vector3[] vertices = null;
+        if (_vertexCount > 0)
         {
-          Array.Copy(_vertices, indices, _vertices.Length);
+          vertices = new Vector3[_vertexCount];
+          if (_vertices != null)
+          {
+            Array.Copy(_vertices, vertices, _vertices.Length);
+          }
+          _vertices = vertices;
         }
-        _vertices = indices;
       }
 
       if (_normalsBuffer != null && _normalsBuffer.count < _vertexCount)
@@ -767,9 +799,13 @@ namespace Tes.Runtime
       }
       if (_normals != null && _normals.Length != _vertexCount)
       {
-        Vector3[] indices = new Vector3[_vertexCount];
-        Array.Copy(_normals, indices, _normals.Length);
-        _normals = indices;
+        Vector3[] normals = null;
+        if (_vertexCount > 0)
+        {
+          normals = new Vector3[_vertexCount];
+          Array.Copy(_normals, normals, _normals.Length);
+          _normals = normals;
+        }
       }
 
       if (_coloursBuffer != null && _coloursBuffer.count < _vertexCount)
@@ -780,9 +816,13 @@ namespace Tes.Runtime
       }
       if (_colours != null && _colours.Length != _vertexCount)
       {
-        uint[] indices = new uint[_vertexCount];
-        Array.Copy(_colours, indices, _colours.Length);
-        _colours = indices;
+        uint[] colours = null;
+        if (_vertexCount > 0)
+        {
+          colours = new uint[_vertexCount];
+          Array.Copy(_colours, colours, _colours.Length);
+          _colours = colours;
+        }
       }
 
       if (_uvsBuffer != null && _uvsBuffer.count < _vertexCount)
@@ -793,9 +833,13 @@ namespace Tes.Runtime
       }
       if (_uvs != null && _uvs.Length != _vertexCount)
       {
-        Vector2[] indices = new Vector2[_vertexCount];
-        Array.Copy(_uvs, indices, _uvs.Length);
-        _uvs = indices;
+        Vector2[] uvs = null;
+        if (_vertexCount > 0)
+        {
+          uvs = new Vector2[_vertexCount];
+          Array.Copy(_uvs, uvs, _uvs.Length);
+          _uvs = uvs;
+        }
       }
     }
 

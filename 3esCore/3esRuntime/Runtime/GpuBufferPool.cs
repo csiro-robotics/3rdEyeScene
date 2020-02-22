@@ -161,7 +161,6 @@ namespace Tes.Runtime
         object newbuffer = _bufferAbstraction.Allocate(ElementCount, Stride);
         Debug.Assert(newbuffer != null);
         _buffers.Add(newbuffer);
-        _freeList.Add(newbuffer);
         return newbuffer;
       }
 
