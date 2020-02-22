@@ -175,6 +175,7 @@ public class TesComponent : Router
   void OnDestroy()
   {
     Reset();
+    GpuBufferManager.Instance.Reset();
   }
 
   public void RecordStop()

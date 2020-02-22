@@ -112,26 +112,23 @@ namespace Tes.Handlers
         MeshComponentFlag components = 0;
 
         // Copy arrays into the correct format.
-        _vertices = new Maths.Vector3[mesh.VertexCount];
-        mesh.VertexBuffer.GetData(_vertices);
+        _vertices = Maths.Vector3Ext.FromUnity(mesh.Vertices);
 
         _indices = new int[mesh.IndexCount];
-        mesh.GetIndices(_indices);
+        Array.Copy(mesh.Indices, _indices, _indices.Length);
 
         if (mesh.HasNormals)
         {
-          _normals = new Maths.Vector3[mesh.VertexCount];
-          mesh.NormalsBuffer.GetData(_normals);
+          _normals = Maths.Vector3Ext.FromUnity(mesh.Normals);
         }
         if (mesh.HasUVs)
         {
-          _uvs = new Maths.Vector2[mesh.VertexCount];
-          mesh.UvsBuffer.GetData(_uvs);
+          _uvs = Maths.Vector2Ext.FromUnity(mesh.UVs);
         }
         if (mesh.HasColours)
         {
           _colours = new uint[mesh.VertexCount];
-          mesh.GetColours(_colours);
+          Array.Copy(mesh.Colours, _colours, _colours.Length);
         }
 
         if (mesh.VertexCount > 0) { components |= MeshComponentFlag.Vertex; }
@@ -961,7 +958,7 @@ namespace Tes.Handlers
       bool generateNormals = (msg.Flags & (uint)MeshBuildFlags.CalculateNormals) != 0;
       if (generateNormals)
       {
-        GenerateNormals(meshEntry.Mesh);
+        meshEntry.Mesh.CalculateNormals();
       }
 
       SelectMaterial(meshEntry.Mesh);
@@ -1058,52 +1055,6 @@ namespace Tes.Handlers
         return 1;
       }
       return 1;
-    }
-
-    private void GenerateNormals(RenderMesh mesh)
-    {
-      if (mesh.DrawType == MeshDrawType.Triangles)
-      {
-        if (_vertexArray.Length < mesh.VertexCount)
-        {
-          _vertexArray = new Vector3[mesh.VertexCount];
-        }
-        if (_normalsArray.Length < mesh.VertexCount)
-        {
-          _normalsArray = new Vector3[mesh.VertexCount];
-        }
-        if (_indexArray.Length < mesh.IndexCount)
-        {
-          _indexArray = new int[mesh.IndexCount];
-        }
-        mesh.GetVertices(_vertexArray);
-        mesh.GetIndices(_indexArray);
-
-        // Accumulate per face normals in the vertices.
-        int faceStride = 3;
-        Vector3 edgeA = Vector3.zero;
-        Vector3 edgeB = Vector3.zero;
-        Vector3 partNormal = Vector3.zero;
-        for (int i = 0; i < _indexArray.Length; i += faceStride)
-        {
-          // Generate a normal for the current face.
-          edgeA = _vertexArray[_indexArray[i + 1]] - _vertexArray[_indexArray[i + 0]];
-          edgeB = _vertexArray[_indexArray[i + 2]] - _vertexArray[_indexArray[i + 1]];
-          partNormal = Vector3.Cross(edgeB, edgeA);
-          for (int v = 0; v < faceStride; ++v)
-          {
-            _normalsArray[_indexArray[i + v]] += partNormal;
-          }
-        }
-
-        // Normalise all the part normals.
-        for (int i = 0; i < _normalsArray.Length; ++i)
-        {
-          _normalsArray[i] = _normalsArray[i].normalized;
-        }
-
-        mesh.SetNormals(_normalsArray);
-      }
     }
 
     /// <summary>

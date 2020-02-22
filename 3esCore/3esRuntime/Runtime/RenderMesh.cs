@@ -111,15 +111,109 @@ namespace Tes.Runtime
       get { return _vertexCount; }
     }
 
-    public bool HasNormals { get { return _normalsBuffer != null; } }
-    public bool HasColours { get { return _coloursBuffer != null; } }
-    public bool HasUVs { get { return _uvsBuffer != null; } }
+    public bool HasNormals { get { return _normals != null; } }
+    public bool HasColours { get { return _colours != null; } }
+    public bool HasUVs { get { return _uvs != null; } }
 
-    public GraphicsBuffer IndexBuffer { get { return _indexBuffer; } }
-    public ComputeBuffer VertexBuffer { get { return _vertexBuffer; } }
-    public ComputeBuffer NormalsBuffer { get { return _normalsBuffer; } }
-    public ComputeBuffer ColoursBuffer { get { return _coloursBuffer; } }
-    public ComputeBuffer UvsBuffer { get { return _uvsBuffer; } }
+    public GraphicsBuffer IndexBuffer
+    {
+      get
+      {
+        if (_indexBuffer == null)
+        {
+          _indexBuffer = GpuBufferManager.Instance.AllocateIndexBuffer(IndexCount);
+          _indicesDirty = true;
+        }
+
+        if (_indicesDirty)
+        {
+          _indexBuffer.SetData(_indices);
+          _indicesDirty = false;
+        }
+
+        return _indexBuffer;
+      }
+    }
+
+    public ComputeBuffer VertexBuffer
+    {
+      get
+      {
+        if (_vertexBuffer == null)
+        {
+          _vertexBuffer = GpuBufferManager.Instance.AllocateVertexBuffer(VertexCount);
+          _verticesDirty = true;
+        }
+
+        if (_verticesDirty)
+        {
+          _vertexBuffer.SetData(_vertices);
+          _verticesDirty = false;
+        }
+
+        return _vertexBuffer;
+      }
+    }
+
+    public ComputeBuffer NormalsBuffer
+    {
+      get
+      {
+        if (_normalsBuffer == null)
+        {
+          _normalsBuffer = GpuBufferManager.Instance.AllocateNormalsBuffer(VertexCount);
+          _normalsDirty = true;
+        }
+
+        if (_normalsDirty)
+        {
+          _normalsBuffer.SetData(_normals);
+          _normalsDirty = false;
+        }
+
+        return _normalsBuffer;
+      }
+    }
+
+    public ComputeBuffer ColoursBuffer
+    {
+      get
+      {
+        if (_coloursBuffer == null)
+        {
+          _coloursBuffer = GpuBufferManager.Instance.AllocateColoursUIntBuffer(VertexCount);
+          _coloursDirty = true;
+        }
+
+        if (_coloursDirty)
+        {
+          _coloursBuffer.SetData(_colours);
+          _coloursDirty = false;
+        }
+
+        return _coloursBuffer;
+      }
+    }
+
+    public ComputeBuffer UvsBuffer
+    {
+      get
+      {
+        if (_uvsBuffer == null)
+        {
+          _uvsBuffer = GpuBufferManager.Instance.AllocateUVsBuffer(VertexCount);
+          _uvsDirty = true;
+        }
+
+        if (_uvsDirty)
+        {
+          _uvsBuffer.SetData(_uvs);
+          _uvsDirty = false;
+        }
+
+        return _uvsBuffer;
+      }
+    }
 
     private Material _material = null;
     public Material Material
@@ -152,28 +246,28 @@ namespace Tes.Runtime
     {
       if (_indexBuffer != null)
       {
-        _indexBuffer.Release();
+        GpuBufferManager.Instance.ReleaseIndexBuffer(_indexBuffer);
         _indexBuffer = null;
       }
       _indices = null;
       if (_vertexBuffer != null)
       {
-        _vertexBuffer.Release();
+        GpuBufferManager.Instance.ReleaseVertexBuffer(_vertexBuffer);
         _vertexBuffer = null;
       }
       if (_normalsBuffer != null)
       {
-        _normalsBuffer.Release();
+        GpuBufferManager.Instance.ReleaseNormalsBuffer(_normalsBuffer);
         _normalsBuffer = null;
       }
       if (_coloursBuffer != null)
       {
-        _coloursBuffer.Release();
+        GpuBufferManager.Instance.ReleaseColoursUIntBuffer(_coloursBuffer);
         _coloursBuffer = null;
       }
       if (_uvsBuffer != null)
       {
-        _uvsBuffer.Release();
+        GpuBufferManager.Instance.ReleaseUVsBuffer(_uvsBuffer);
         _uvsBuffer = null;
       }
     }
@@ -209,42 +303,30 @@ namespace Tes.Runtime
     public void SetIndexCount(int indexCount)
     {
       _indexCount = indexCount;
-      CreateIndexBuffer();
+      ValidateBufferSizes();
     }
 
     public void SetVertexCount(int vertexCount)
     {
       _vertexCount = vertexCount;
-      CreateVertexBuffer();
-      if (HasNormals)
-      {
-        CreateColoursBuffer();
-      }
-      if (HasColours)
-      {
-        CreateColoursBuffer();
-      }
-      if (HasUVs)
-      {
-        CreateUVsBuffer();
-      }
+      ValidateBufferSizes();
     }
 
     public void SetIndices(List<int> indices)
     {
       Debug.Assert(_indices != null && indices.Count <= _indices.Length);
+      _indicesDirty = true;
       for (int i = 0; i < indices.Count; ++i)
       {
         _indices[i] = indices[i];
       }
-      _indexBuffer.SetData(_indices);
     }
 
     public void SetIndices(int[] indices)
     {
       Debug.Assert(_indices != null && indices.Length <= _indices.Length);
+      _indicesDirty = true;
       Array.Copy(indices, 0, _indices, 0, indices.Length);
-      _indexBuffer.SetData(indices);
     }
 
     public void SetIndices(List<int> indices, int listStartIndex, int bufferStartIndex, int count)
@@ -254,11 +336,11 @@ namespace Tes.Runtime
                    listStartIndex + count <= indices.Count &&
                    0 <= bufferStartIndex && bufferStartIndex < IndexCount &&
                    bufferStartIndex + count < bufferStartIndex);
+      _indicesDirty = true;
       for (int i = 0; i < count; ++i)
       {
         _indices[bufferStartIndex + i] = indices[listStartIndex + i];
       }
-      _indexBuffer.SetData(_indices, bufferStartIndex, bufferStartIndex, count);
     }
 
     public void SetIndices(int[] indices, int listStartIndex, int bufferStartIndex, int count)
@@ -268,25 +350,11 @@ namespace Tes.Runtime
                    listStartIndex + count <= indices.Length &&
                    0 <= bufferStartIndex && bufferStartIndex < IndexCount &&
                    bufferStartIndex + count < bufferStartIndex);
+      _indicesDirty = true;
       Array.Copy(indices, listStartIndex, _indices, bufferStartIndex, count);
-      _indexBuffer.SetData(_indices, bufferStartIndex, bufferStartIndex, count);
     }
 
-    public void GetIndices(int[] indices)
-    {
-      Debug.Assert(_indices != null && indices.Length <= IndexCount);
-      Array.Copy(_indices, 0, indices, 0, indices.Length);
-    }
-
-    public void GetIndices(int[] indices, int listStartIndex, int bufferStartIndex, int count)
-    {
-      Debug.Assert(count >= 0 && _indices != null &&
-                   0 <= listStartIndex && listStartIndex < indices.Length &&
-                   listStartIndex + count <= indices.Length &&
-                   0 <= bufferStartIndex && bufferStartIndex < IndexCount &&
-                   bufferStartIndex + count < bufferStartIndex);
-      Array.Copy(_indices, bufferStartIndex, indices, listStartIndex, count);
-    }
+    public int[] Indices { get { return _indices; } }
 
     public void SetVertices(List<Vector3> vertices, bool adjustBounds = false)
     {
@@ -304,7 +372,11 @@ namespace Tes.Runtime
           _maxBounds.z = Mathf.Max(vertices[i].z, _maxBounds.z);
         }
       }
-      _vertexBuffer.SetData(vertices);
+      for (int i = 0; i < vertices.Count; ++i)
+      {
+        _vertices[i] = vertices[i];
+      }
+      _verticesDirty = true;
     }
 
     public void SetVertices(Vector3[] vertices, bool adjustBounds)
@@ -323,7 +395,8 @@ namespace Tes.Runtime
           _maxBounds.z = Mathf.Max(vertices[i].z, _maxBounds.z);
         }
       }
-      _vertexBuffer.SetData(vertices);
+      Array.Copy(vertices, _vertices, vertices.Length);
+      _verticesDirty = true;
     }
 
     public void SetVertices(List<Vector3> vertices, int listStartIndex, int bufferStartIndex, int count,
@@ -350,7 +423,11 @@ namespace Tes.Runtime
           _maxBounds.z = Mathf.Max(vertices[i].z, _maxBounds.z);
         }
       }
-      _vertexBuffer.SetData(vertices, listStartIndex, bufferStartIndex, count);
+      for (int i = 0; i < count; ++i)
+      {
+        _vertices[bufferStartIndex + i] = vertices[listStartIndex + i];
+      }
+      _verticesDirty = true;
     }
 
     public void SetVertices(Vector3[] vertices, int listStartIndex, int bufferStartIndex, int count,
@@ -377,37 +454,37 @@ namespace Tes.Runtime
           _maxBounds.z = Mathf.Max(vertices[i].z, _maxBounds.z);
         }
       }
-      _vertexBuffer.SetData(vertices, listStartIndex, bufferStartIndex, count);
+      Array.Copy(vertices, listStartIndex, _vertices, bufferStartIndex, count);
+      _verticesDirty = true;
     }
 
-    public void GetVertices(Vector3[] vertices)
-    {
-      Debug.Assert(vertices.Length <= VertexCount);
-      _vertexBuffer.GetData(vertices);
-    }
-
-    public void GetVertices(Vector3[] vertices, int listStartIndex, int bufferStartIndex, int count)
-    {
-      Debug.Assert(count >= 0 &&
-                   0 <= listStartIndex && listStartIndex < vertices.Length &&
-                   listStartIndex + count <= vertices.Length &&
-                   0 <= bufferStartIndex && bufferStartIndex < VertexCount &&
-                   bufferStartIndex + count < bufferStartIndex);
-      _vertexBuffer.GetData(vertices, listStartIndex, bufferStartIndex, count);
-    }
+    public Vector3[] Vertices { get { return _vertices; } }
 
     public void SetNormals(List<Vector3> normals)
     {
       Debug.Assert(normals.Count <= VertexCount);
-      CreateNormalsBuffer();
-      _normalsBuffer.SetData(normals);
+      if (_normals == null)
+      {
+        _normals = new Vector3[VertexCount];
+      }
+
+      for (int i = 0; i < normals.Count; ++i)
+      {
+        _normals[i] = normals[i];
+      }
+      _normalsDirty = true;
     }
 
     public void SetNormals(Vector3[] normals)
     {
       Debug.Assert(normals.Length <= VertexCount);
-      CreateNormalsBuffer();
-      _normalsBuffer.SetData(normals);
+      if (_normals == null)
+      {
+        _normals = new Vector3[VertexCount];
+      }
+
+      Array.Copy(normals, _normals, normals.Length);
+      _normalsDirty = true;
     }
 
     public void SetNormals(List<Vector3> normals, int listStartIndex, int bufferStartIndex, int count)
@@ -417,8 +494,16 @@ namespace Tes.Runtime
                    listStartIndex + count <= normals.Count &&
                    0 <= bufferStartIndex && bufferStartIndex < VertexCount &&
                    bufferStartIndex + count < bufferStartIndex);
-      CreateNormalsBuffer();
-      _normalsBuffer.SetData(normals, listStartIndex, bufferStartIndex, count);
+      if (_normals == null)
+      {
+        _normals = new Vector3[VertexCount];
+      }
+
+      for (int i = 0; i < count; ++i)
+      {
+        _normals[bufferStartIndex + i] = normals[listStartIndex + i];
+      }
+      _normalsDirty = true;
     }
 
     public void SetNormals(Vector3[] normals, int listStartIndex, int bufferStartIndex, int count)
@@ -428,38 +513,42 @@ namespace Tes.Runtime
                    listStartIndex + count <= normals.Length &&
                    0 <= bufferStartIndex && bufferStartIndex < VertexCount &&
                    bufferStartIndex + count < bufferStartIndex);
-      CreateNormalsBuffer();
-      _normalsBuffer.SetData(normals, listStartIndex, bufferStartIndex, count);
+      if (_normals == null)
+      {
+        _normals = new Vector3[VertexCount];
+      }
+
+      Array.Copy(normals, listStartIndex, _normals, bufferStartIndex, count);
+      _normalsDirty = true;
     }
 
-    public void GetNormals(Vector3[] normals)
-    {
-      Debug.Assert(_normalsBuffer != null && normals.Length <= VertexCount);
-      _normalsBuffer.GetData(normals);
-    }
-
-    public void GetNormals(Vector3[] normals, int listStartIndex, int bufferStartIndex, int count)
-    {
-      Debug.Assert(_normalsBuffer != null && count >= 0 &&
-                   0 <= listStartIndex && listStartIndex < normals.Length &&
-                   listStartIndex + count <= normals.Length &&
-                   0 <= bufferStartIndex && bufferStartIndex < VertexCount &&
-                   bufferStartIndex + count < bufferStartIndex);
-      _normalsBuffer.GetData(normals, listStartIndex, bufferStartIndex, count);
-    }
+    public Vector3[] Normals { get { return _normals; } }
 
     public void SetColours(List<uint> colours)
     {
       Debug.Assert(colours.Count <= VertexCount);
-      CreateColoursBuffer();
-      _coloursBuffer.SetData(colours);
+      if (_colours == null)
+      {
+        _colours = new uint[VertexCount];
+      }
+
+      for (int i = 0; i < colours.Count; ++i)
+      {
+        _colours[i] = colours[i];
+      }
+      _coloursDirty = true;
     }
 
     public void SetColours(uint[] colours)
     {
       Debug.Assert(colours.Length <= VertexCount);
-      CreateColoursBuffer();
-      _coloursBuffer.SetData(colours);
+      if (_colours == null)
+      {
+        _colours = new uint[VertexCount];
+      }
+
+      Array.Copy(colours, _colours, colours.Length);
+      _coloursDirty = true;
     }
 
     public void SetColours(List<uint> colours, int listStartIndex, int bufferStartIndex, int count)
@@ -469,8 +558,16 @@ namespace Tes.Runtime
                    listStartIndex + count <= colours.Count &&
                    0 <= bufferStartIndex && bufferStartIndex < VertexCount &&
                    bufferStartIndex + count < bufferStartIndex);
-      CreateColoursBuffer();
-      _coloursBuffer.SetData(colours, listStartIndex, bufferStartIndex, count);
+      if (_colours == null)
+      {
+        _colours = new uint[VertexCount];
+      }
+
+      for (int i = 0; i < count; ++i)
+      {
+        _colours[bufferStartIndex + i] = colours[listStartIndex + i];
+      }
+      _coloursDirty = true;
     }
 
     public void SetColours(uint[] colours, int listStartIndex, int bufferStartIndex, int count)
@@ -480,38 +577,42 @@ namespace Tes.Runtime
                    listStartIndex + count <= colours.Length &&
                    0 <= bufferStartIndex && bufferStartIndex < VertexCount &&
                    bufferStartIndex + count < bufferStartIndex);
-      CreateColoursBuffer();
-      _coloursBuffer.SetData(colours, listStartIndex, bufferStartIndex, count);
+      if (_colours == null)
+      {
+        _colours = new uint[VertexCount];
+      }
+
+      Array.Copy(colours, listStartIndex, _colours, bufferStartIndex, count);
+      _coloursDirty = true;
     }
 
-    public void GetColours(uint[] colours)
-    {
-      Debug.Assert(_normalsBuffer != null && colours.Length <= VertexCount);
-      _coloursBuffer.GetData(colours);
-    }
+    public uint[] Colours { get { return _colours; } }
 
-    public void GetColours(uint[] colours, int listStartIndex, int bufferStartIndex, int count)
-    {
-      Debug.Assert(_normalsBuffer != null && count >= 0 &&
-                   0 <= listStartIndex && listStartIndex < colours.Length &&
-                   listStartIndex + count <= colours.Length &&
-                   0 <= bufferStartIndex && bufferStartIndex < VertexCount &&
-                   bufferStartIndex + count < bufferStartIndex);
-      _coloursBuffer.GetData(colours, listStartIndex, bufferStartIndex, count);
-    }
-
-    public void SetUVs(List<uint> uvs)
+    public void SetUVs(List<Vector2> uvs)
     {
       Debug.Assert(uvs.Count <= VertexCount);
-      CreateUVsBuffer();
-      _uvsBuffer.SetData(uvs);
+      if (_uvs == null)
+      {
+        _uvs = new Vector2[VertexCount];
+      }
+
+      for (int i = 0; i < uvs.Count; ++i)
+      {
+        _uvs[i] = uvs[i];
+      }
+      _uvsDirty = true;
     }
 
     public void SetUVs(Vector2[] uvs)
     {
       Debug.Assert(uvs.Length <= VertexCount);
-      CreateUVsBuffer();
-      _uvsBuffer.SetData(uvs);
+      if (_uvs == null)
+      {
+        _uvs = new Vector2[VertexCount];
+      }
+
+      Array.Copy(uvs, _uvs, uvs.Length);
+      _uvsDirty = true;
     }
 
     public void SetUVs(List<Vector2> uvs, int listStartIndex, int bufferStartIndex, int count)
@@ -521,8 +622,16 @@ namespace Tes.Runtime
                    listStartIndex + count <= uvs.Count &&
                    0 <= bufferStartIndex && bufferStartIndex < VertexCount &&
                    bufferStartIndex + count < bufferStartIndex);
-      CreateUVsBuffer();
-      _uvsBuffer.SetData(uvs, listStartIndex, bufferStartIndex, count);
+      if (_uvs == null)
+      {
+        _uvs = new Vector2[VertexCount];
+      }
+
+      for (int i = 0; i < count; ++i)
+      {
+        _uvs[bufferStartIndex + i] = uvs[listStartIndex + i];
+      }
+      _uvsDirty = true;
     }
 
     public void SetUVs(Vector2[] uvs, int listStartIndex, int bufferStartIndex, int count)
@@ -532,32 +641,26 @@ namespace Tes.Runtime
                    listStartIndex + count <= uvs.Length &&
                    0 <= bufferStartIndex && bufferStartIndex < VertexCount &&
                    bufferStartIndex + count < bufferStartIndex);
-      CreateUVsBuffer();
-      _uvsBuffer.SetData(uvs, listStartIndex, bufferStartIndex, count);
+      if (_uvs == null)
+      {
+        _uvs = new Vector2[VertexCount];
+      }
+
+      Array.Copy(uvs, listStartIndex, _uvs, bufferStartIndex, count);
+      _uvsDirty = true;
     }
 
-    public void GetUVs(Vector2[] uvs)
-    {
-      Debug.Assert(_normalsBuffer != null && uvs.Length <= VertexCount);
-      _uvsBuffer.GetData(uvs);
-    }
-
-    public void GetUVs(Vector2[] uvs, int listStartIndex, int bufferStartIndex, int count)
-    {
-      Debug.Assert(_normalsBuffer != null && count >= 0 &&
-                   0 <= listStartIndex && listStartIndex < uvs.Length &&
-                   listStartIndex + count <= uvs.Length &&
-                   0 <= bufferStartIndex && bufferStartIndex < VertexCount &&
-                   bufferStartIndex + count < bufferStartIndex);
-      _uvsBuffer.GetData(uvs, listStartIndex, bufferStartIndex, count);
-    }
+    public Vector2[] UVs { get { return _uvs; } }
 
     public void CalculateNormals()
     {
       if (DrawType == MeshDrawType.Triangles)
       {
-        Vector3[] vertexArray = new Vector3[VertexCount];
-        Vector3[] normalsArray = new Vector3[VertexCount];
+        if (_normals == null)
+        {
+          _normals = new Vector3[VertexCount];
+        }
+
         // Handle explicit and implied indexing.
         int[] indexArray = _indices;
 
@@ -571,8 +674,6 @@ namespace Tes.Runtime
           }
         }
 
-        GetVertices(vertexArray);
-
         // Accumulate per face normals in the vertices.
         int faceStride = 3;
         Vector3 edgeA = Vector3.zero;
@@ -581,22 +682,22 @@ namespace Tes.Runtime
         for (int i = 0; i < indexArray.Length; i += faceStride)
         {
           // Generate a normal for the current face.
-          edgeA = vertexArray[indexArray[i + 1]] - vertexArray[indexArray[i + 0]];
-          edgeB = vertexArray[indexArray[i + 2]] - vertexArray[indexArray[i + 1]];
+          edgeA = _vertices[indexArray[i + 1]] - _vertices[indexArray[i + 0]];
+          edgeB = _vertices[indexArray[i + 2]] - _vertices[indexArray[i + 1]];
           partNormal = Vector3.Cross(edgeB, edgeA);
           for (int v = 0; v < faceStride; ++v)
           {
-            normalsArray[indexArray[i + v]] += partNormal;
+            _normals[indexArray[i + v]] += partNormal;
           }
         }
 
         // Normalise all the part normals.
-        for (int i = 0; i < normalsArray.Length; ++i)
+        for (int i = 0; i < _normals.Length; ++i)
         {
-          normalsArray[i] = normalsArray[i].normalized;
+          _normals[i] = _normals[i].normalized;
         }
 
-        SetNormals(normalsArray);
+        _normalsDirty = true;
       }
     }
 
@@ -624,94 +725,96 @@ namespace Tes.Runtime
       }
     }
 
-    protected void CreateIndexBuffer()
+    private void ValidateBufferSizes()
     {
-      if (_indices == null || _indices.Length != IndexCount)
+      if (_indexBuffer != null && _indexBuffer.count < _indexCount)
       {
-        _indices = null;
-        if (_indexBuffer != null)
+        GpuBufferManager.Instance.ReleaseIndexBuffer(_indexBuffer);
+        _indexBuffer = null;
+        _indicesDirty = true;
+      }
+      if (_indices == null || _indices.Length != _indexCount)
+      {
+        int[] indices = new int[_indexCount];
+        if (_indices != null)
         {
-          _indexBuffer.Release();
-          _indexBuffer = null;
+          Array.Copy(_indices, indices, _indices.Length);
         }
-        if (IndexCount > 0)
+        _indices = indices;
+      }
+
+      if (_vertexBuffer != null && _vertexBuffer.count < _vertexCount)
+      {
+        GpuBufferManager.Instance.ReleaseVertexBuffer(_vertexBuffer);
+        _vertexBuffer = null;
+        _verticesDirty = true;
+      }
+      if (_vertices == null || _vertices.Length != _vertexCount)
+      {
+        Vector3[] indices = new Vector3[_vertexCount];
+        if (_vertices != null)
         {
-          _indices = new int[IndexCount];
-          _indexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Index, IndexCount, Marshal.SizeOf(typeof(int)));
+          Array.Copy(_vertices, indices, _vertices.Length);
         }
+        _vertices = indices;
+      }
+
+      if (_normalsBuffer != null && _normalsBuffer.count < _vertexCount)
+      {
+        GpuBufferManager.Instance.ReleaseNormalsBuffer(_normalsBuffer);
+        _normalsBuffer = null;
+        _normalsDirty = true;
+      }
+      if (_normals != null && _normals.Length != _vertexCount)
+      {
+        Vector3[] indices = new Vector3[_vertexCount];
+        Array.Copy(_normals, indices, _normals.Length);
+        _normals = indices;
+      }
+
+      if (_coloursBuffer != null && _coloursBuffer.count < _vertexCount)
+      {
+        GpuBufferManager.Instance.ReleaseColoursUIntBuffer(_coloursBuffer);
+        _coloursBuffer = null;
+        _coloursDirty = true;
+      }
+      if (_colours != null && _colours.Length != _vertexCount)
+      {
+        uint[] indices = new uint[_vertexCount];
+        Array.Copy(_colours, indices, _colours.Length);
+        _colours = indices;
+      }
+
+      if (_uvsBuffer != null && _uvsBuffer.count < _vertexCount)
+      {
+        GpuBufferManager.Instance.ReleaseUVsBuffer(_uvsBuffer);
+        _uvsBuffer = null;
+        _uvsDirty = true;
+      }
+      if (_uvs != null && _uvs.Length != _vertexCount)
+      {
+        Vector2[] indices = new Vector2[_vertexCount];
+        Array.Copy(_uvs, indices, _uvs.Length);
+        _uvs = indices;
       }
     }
 
-    protected void CreateVertexBuffer()
-    {
-      EnsureBufferSize<Vector3>(ref _vertexBuffer, _vertexCount);
-    }
-
-    protected void CreateNormalsBuffer()
-    {
-      _materialDirty = _normalsBuffer == null;
-      EnsureBufferSize<Vector3>(ref _normalsBuffer, _vertexCount);
-    }
-
-    protected void CreateColoursBuffer()
-    {
-      _materialDirty = _normalsBuffer == null;
-      EnsureBufferSize<uint>(ref _coloursBuffer, _vertexCount);
-    }
-
-    protected void CreateUVsBuffer()
-    {
-      _materialDirty = _normalsBuffer == null;
-      EnsureBufferSize<Vector2>(ref _uvsBuffer, _vertexCount);
-    }
-
-    protected void EnsureBufferSize<T>(ref ComputeBuffer buffer, int count)
-    {
-      int stride = Marshal.SizeOf(typeof(T));
-      T[] copyFrom = null;
-      if (buffer != null)
-      {
-        if (count > 0)
-        {
-          if (buffer.stride != stride || buffer.count != count)
-          {
-            copyFrom = new T[Math.Min(count, buffer.count)];
-            if (copyFrom.Length > 0)
-            {
-              buffer.GetData(copyFrom, 0, 0, copyFrom.Length);
-            }
-            buffer.Release();
-            buffer = null;
-          }
-        }
-        else
-        {
-          buffer.Release();
-          buffer = null;
-        }
-      }
-
-      if (buffer == null)
-      {
-        if (count > 0)
-        {
-          buffer = new ComputeBuffer(count, stride);
-          if (copyFrom != null)
-          {
-            buffer.SetData(copyFrom, 0, 0, copyFrom.Length);
-          }
-        }
-      }
-    }
-
-
-    private GraphicsBuffer _indexBuffer = null;
     // Can't read indices back from the GraphicsBuffer, so we have to have a cache here.
     private int[] _indices = null;
+    private Vector3[] _vertices = null;
+    private Vector3[] _normals = null;
+    private uint[] _colours = null;
+    private Vector2[] _uvs = null;
+    private GraphicsBuffer _indexBuffer = null;
     private ComputeBuffer _vertexBuffer = null;
     private ComputeBuffer _normalsBuffer = null;
     private ComputeBuffer _coloursBuffer = null;
     private ComputeBuffer _uvsBuffer = null;
+    private bool _indicesDirty = true;
+    private bool _verticesDirty = true;
+    private bool _normalsDirty = true;
+    private bool _coloursDirty = true;
+    private bool _uvsDirty = true;
     private Vector3 _minBounds = Vector3.zero;
     private Vector3 _maxBounds = Vector3.zero;
     private Vector3 _boundsPadding = Vector3.zero;

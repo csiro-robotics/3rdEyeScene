@@ -218,18 +218,9 @@ namespace Tes.Handlers.Shape3D
       MeshEntry meshEntry = cache.GetShapeDataByIndex<MeshEntry>(shapeIndex);
       RenderMesh mesh = meshEntry.Mesh;
 
-      Vector3[] vertices = new Vector3[mesh.VertexCount];
-      int[] indices = (mesh.IndexCount > 0) ? new int[mesh.IndexCount] : null;
-
-      mesh.GetVertices(vertices);
-      if (indices != null)
-      {
-        mesh.GetIndices(indices);
-      }
-
       Shapes.MeshShape meshShape = new Shapes.MeshShape(meshEntry.Mesh.DrawType,
-                                                        Maths.Vector3Ext.FromUnity(vertices),
-                                                        indices,
+                                                        Maths.Vector3Ext.FromUnity(mesh.Vertices),
+                                                        mesh.Indices,
                                                         shapeData.ObjectID, shapeData.Category);
       meshShape.SetAttributes(shapeData.Attributes);
       return meshShape;

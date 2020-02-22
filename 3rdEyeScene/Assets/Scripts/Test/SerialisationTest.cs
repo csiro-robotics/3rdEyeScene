@@ -669,17 +669,14 @@ public class SerialisationTest : MonoBehaviour
     MeshShape meshShapeReference = (MeshShape)referenceShape;
     bool ok = true;
 
-    Vector3[] vertices = new Vector3[meshEntry.Mesh.VertexCount];
-    meshEntry.Mesh.GetVertices(vertices);
-    ok = ValidateVectors("Vertex", vertices, meshShapeReference.Vertices) && ok;
+    ok = ValidateVectors("Vertex", meshEntry.Mesh.Vertices, meshShapeReference.Vertices) && ok;
     if (meshEntry.Mesh.HasNormals)
     {
-      Vector3[] normals = new Vector3[meshEntry.Mesh.VertexCount];
-      meshEntry.Mesh.GetNormals(normals);
+      Vector3[] normals = meshEntry.Mesh.Normals;
       if (meshShapeReference.Normals.Length == 1)
       {
         // Single uniform normal will have been expanded. Extract just the first normal.
-        normals = new Vector3[] { normals[0] };
+        normals = new Vector3[] { meshEntry.Mesh.Normals[0] };
       }
       ok = ValidateVectors("Normal", normals, meshShapeReference.Normals) && ok;
     }
@@ -693,9 +690,7 @@ public class SerialisationTest : MonoBehaviour
     }
     if (meshEntry.Mesh.IndexCount >0)
     {
-      int[] indices = null;
-      meshEntry.Mesh.GetIndices(indices);
-      ok = ValidateIndices("Index", indices, meshShapeReference.Indices) && ok;
+      ok = ValidateIndices("Index", meshEntry.Mesh.Indices, meshShapeReference.Indices) && ok;
     }
     else
     {
@@ -746,17 +741,14 @@ public class SerialisationTest : MonoBehaviour
       }
 
       // Validate mesh content.
-      Vector3[] vertices = new Vector3[meshDetails.Mesh.VertexCount];
-      meshDetails.Mesh.GetVertices(vertices);
-      ok = ValidateVectors("Vertex", vertices, referenceMesh.Vertices()) && ok;
+      ok = ValidateVectors("Vertex", meshDetails.Mesh.Vertices, referenceMesh.Vertices()) && ok;
       if (meshDetails.Mesh.HasNormals)
       {
-        Vector3[] normals = new Vector3[meshDetails.Mesh.VertexCount];
-        meshDetails.Mesh.GetNormals(normals);
+        Vector3[] normals = meshDetails.Mesh.Normals;
         if (referenceMesh.Normals().Length == 1)
         {
           // Single uniform normal will have been expanded. Extract just the first normal.
-          normals = new Vector3[] { normals[0] };
+          normals = new Vector3[] { meshDetails.Mesh.Normals[0] };
         }
         ok = ValidateVectors("Normal", normals, referenceMesh.Normals()) && ok;
       }
@@ -770,9 +762,7 @@ public class SerialisationTest : MonoBehaviour
       }
       if (meshDetails.Mesh.IndexCount > 0)
       {
-        int[] indices = null;
-        meshDetails.Mesh.GetIndices(indices);
-        ok = ValidateIndices("Index", indices, referenceMesh.Indices4()) && ok;
+        ok = ValidateIndices("Index", meshDetails.Mesh.Indices, referenceMesh.Indices4()) && ok;
       }
       else
       {
@@ -802,9 +792,7 @@ public class SerialisationTest : MonoBehaviour
     bool ok = true;
 
     // Only validate vertices.
-    Vector3[] vertices = new Vector3[pointsData.Mesh.Mesh.VertexCount];
-    pointsData.Mesh.Mesh.GetVertices(vertices);
-    ok = ValidateVectors("Point", vertices, cloudReference.PointCloud.Vertices()) && ok;
+    ok = ValidateVectors("Point", pointsData.Mesh.Mesh.Vertices, cloudReference.PointCloud.Vertices()) && ok;
 
     return ok;
   }
