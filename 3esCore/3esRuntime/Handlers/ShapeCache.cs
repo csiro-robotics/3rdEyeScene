@@ -18,6 +18,8 @@ namespace Tes.Handlers
   /// </remarks>
   public class ShapeCache
   {
+    public static readonly uint MultiShapeID = 0xFFFFFFFFu;
+
     public struct Age
     {
       public uint Frames;
@@ -38,6 +40,8 @@ namespace Tes.Handlers
       _shapes = new CreateMessage[_capacity];
       _ages = new Age[_capacity];
       _transforms = new Matrix4x4[_capacity];
+      _parentTransforms = new Matrix4x4[_capacity];
+      _multiShapeChain = new int[_capacity];
       if (!transient)
       {
         // Non-transient cache. Use the ID map.
@@ -142,6 +146,8 @@ namespace Tes.Handlers
             Array.Copy(_shapes, expiryWatermark, _shapes, 0, _currentCount - expiryWatermark);
             Array.Copy(_ages, expiryWatermark, _ages, 0, _currentCount - expiryWatermark);
             Array.Copy(_transforms, expiryWatermark, _transforms, 0, _currentCount - expiryWatermark);
+            Array.Copy(_parentTransforms, expiryWatermark, _parentTransforms, 0, _currentCount - expiryWatermark);
+            Array.Copy(_multiShapeChain, expiryWatermark, _multiShapeChain, 0, _currentCount - expiryWatermark);
 
             for (int i = 0; i < _dataExtensions.Count; ++i)
             {
@@ -184,13 +190,15 @@ namespace Tes.Handlers
     /// </remarks>
     /// <exception cref="DuplicateIDException">Thrown whn an object with the same ID already exists and the case is not
     /// transient.</exception>
-    public int CreateShape(CreateMessage shape, Matrix4x4 transform)
+    public int CreateShape(CreateMessage shape, Matrix4x4 transform, int multiShapeChainIndex = -1)
     {
       int shapeIndex = AssignNewShapeIndex(shape.ObjectID);
 
       _shapes[shapeIndex] = shape;
       _ages[shapeIndex] = new Age { Frames = 0, Time = 0 };
       _transforms[shapeIndex] = transform;
+      _parentTransforms[shapeIndex] = Matrix4x4.identity;
+      _multiShapeChain[shapeIndex] = multiShapeChainIndex;
 
       return shapeIndex;
     }
@@ -245,6 +253,24 @@ namespace Tes.Handlers
       }
 
       return -1;
+    }
+
+    public void DestroyShapeByIndex(int index)
+    {
+      if (IsTransientCache)
+      {
+        // Irrelevant for transient caches.
+        return;
+      }
+
+      uint id = _shapes[index].ObjectID;
+      _shapes[index].ObjectID = 0;
+      _freeList.Add(index);
+      --_currentCount;
+      if (id != MultiShapeID)
+      {
+        _idMap.Remove(id);
+      }
     }
 
     public CreateMessage GetShape(uint objectID)
@@ -309,6 +335,43 @@ namespace Tes.Handlers
         throw new InvalidIDException("Access by ObjectID not supported on a transient shape cache.");
       }
       _transforms[index] = transform;
+    }
+
+    public Matrix4x4 GetParentTransform(uint objectID)
+    {
+      if (IsTransientCache)
+      {
+        throw new InvalidIDException("Access by ObjectID not supported on a transient shape cache.");
+      }
+      return _parentTransforms[_idMap[objectID]];
+    }
+
+    public Matrix4x4 GetParentTransformByIndex(int index)
+    {
+      return _parentTransforms[index];
+    }
+
+    public void SetParentTransform(uint objectID, Matrix4x4 transform)
+    {
+      if (IsTransientCache)
+      {
+        throw new InvalidIDException("Access by ObjectID not supported on a transient shape cache.");
+      }
+      SetParentTransformByIndex(_idMap[objectID], transform);
+    }
+
+    public void SetParentTransformByIndex(int index, Matrix4x4 transform)
+    {
+      if (IsTransientCache)
+      {
+        throw new InvalidIDException("Access by ObjectID not supported on a transient shape cache.");
+      }
+      _parentTransforms[index] = transform;
+    }
+
+    public int GetMultiShapeChainByIndex(int index)
+    {
+      return _multiShapeChain[index];
     }
 
     /// <summary>
@@ -400,7 +463,8 @@ namespace Tes.Handlers
       Wireframe
     }
 
-    public void Collect(List<Matrix4x4> transforms, List<CreateMessage> shapes, CollectType collectType)
+    public void Collect(List<Matrix4x4> transforms, List<Matrix4x4> parentTransforms,
+                        List<CreateMessage> shapes, CollectType collectType)
     {
       // Walk the _headers and _transforms arrays directly. We can tell which indices are valid by investigating the
       // _headers[].ID value. A zero value is not in use.
@@ -412,7 +476,7 @@ namespace Tes.Handlers
         CreateMessage shape = _shapes[i];
 
         // Transient cached we know everything up to the item limit is valid. All IDs will be zero.
-        // Non transient cache, we look for shapes with non-zero IDs.
+        // Non transient cache, we look for shapes with non-Render IDs.
         // A transient cache has all IDs set to zero. A non-transient cache has all valid IDs as non-zero.
         if ((transientCache || shape.ObjectID != 0))
         {
@@ -437,6 +501,7 @@ namespace Tes.Handlers
           if (add)
           {
             transforms.Add(_transforms[i]);
+            parentTransforms.Add(_parentTransforms[i]);
             shapes.Add(shape);
           }
         }
@@ -482,7 +547,11 @@ namespace Tes.Handlers
         }
 
         // Record the mapping from object ID to index.
-        _idMap[id] = newIndex;
+        if (id != MultiShapeID)
+        {
+          _idMap[id] = newIndex;
+        }
+
         // We now have another object.
         ++_currentCount;
 
@@ -504,9 +573,13 @@ namespace Tes.Handlers
     private void Grow()
     {
       // Grow by powers of 2.
-      _capacity = Maths.IntUtil.NextPowerOf2(_capacity);
+      _capacity = Maths.IntUtil.NextPowerOf2(_capacity + 1);
+      Debug.Assert(_capacity > _shapes.Length);
       Array.Resize(ref _shapes, _capacity);
+      Array.Resize(ref _ages, _capacity);
       Array.Resize(ref _transforms, _capacity);
+      Array.Resize(ref _parentTransforms, _capacity);
+      Array.Resize(ref _multiShapeChain, _capacity);
 
       for (int i = 0; i < _dataExtensions.Count; ++i)
       {
@@ -548,6 +621,14 @@ namespace Tes.Handlers
     /// Transforms for each shape.
     /// </summary>
     Matrix4x4[] _transforms = null;
+    /// <summary>
+    /// Parent transform for each shape. Used for multi-shape sets.
+    /// </summary>
+    Matrix4x4[] _parentTransforms = null;
+    /// <summary>
+    /// Multi-shape index shape. Each entry is an index to the next shape in the chain. -1 terminates.
+    /// </summary>
+    int[] _multiShapeChain = null;
     /// <summary>
     /// Additional data for each shape.
     /// </summary>

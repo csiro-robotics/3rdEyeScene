@@ -407,6 +407,38 @@ namespace Tes
         shapes.Add(text);
       }
 
+      if (HaveOption("multi", args))
+      {
+        int blockSize = 10;
+        float separation = 0.4f;
+        float posOffset = -0.5f * blockSize * separation;
+        Shapes.Capsule[] capSet = new Shapes.Capsule[blockSize * blockSize * blockSize];
+        uint id = ids.NextShapeId++;
+        int i = 0;
+        for (int z = 0; z < blockSize; ++z)
+        {
+          for (int y = 0; y < blockSize; ++y)
+          {
+            for (int x = 0; x < blockSize; ++x)
+            {
+              Vector3 pos = Vector3.Zero;
+              pos.X = posOffset + x * separation;
+              pos.Y = posOffset + y * separation;
+              pos.Z = posOffset + z * separation;
+
+              Shapes.Capsule capsule = new Shapes.Capsule(id);
+              capsule.Position = pos;
+              capsule.Length = 0.5f;
+              capsule.Radius = 0.15f;
+              capSet[i++] = capsule;
+            }
+          }
+        }
+
+        Shapes.MultiShape multi = new Shapes.MultiShape(capSet, new Vector3(0, 10.0f, 0), new Quaternion(Vector3.AxisZ, 1.047f));
+        shapes.Add(multi);
+      }
+
       // Did we create anything?
       if (initialShapeCount == shapes.Count)
       {

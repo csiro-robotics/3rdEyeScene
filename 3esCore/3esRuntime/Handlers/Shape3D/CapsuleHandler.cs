@@ -35,8 +35,8 @@ namespace Tes.Handlers.Shape3D
 
 
     protected override void RenderInstances(CameraContext cameraContext, CommandBuffer renderQueue, Mesh mesh,
-                                            List<Matrix4x4> transforms, List<CreateMessage> shapes,
-                                            Material material)
+                                            List<Matrix4x4> transforms, List<Matrix4x4> parentTransforms,
+                                            List<CreateMessage> shapes, Material material)
     {
       // Work out which mesh set we are rendering from the parent call: solid or wireframe. We could also look at
       // the first CreateMessage flags.
@@ -57,7 +57,7 @@ namespace Tes.Handlers.Shape3D
           }
 
           // Build the end cap transforms.
-          Matrix4x4 transform = transforms[i + j];
+          Matrix4x4 transform = parentTransforms[i + j] * transforms[i + j];
           _instanceTransforms[itemCount] = cameraContext.TesSceneToWorldTransform * transform;
 
           // Extract radius and length to position the end caps.

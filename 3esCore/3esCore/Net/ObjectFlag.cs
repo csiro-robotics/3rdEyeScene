@@ -25,6 +25,18 @@ namespace Tes.Net
     /// </summary>
     TwoSided = (1 << 2),
     /// <summary>
+    /// Shape creation should replace any pre-exiting shape with the same object ID.
+    /// </summary>
+    /// <remarks>
+    /// Normally duplicate shape creation messages are not allowed. This flag allows a duplicate shape ID
+    /// (non-transient) by replacing the previous shape.
+    /// </remarks>
+    Replace = (1 << 3),
+    /// <summary>
+    /// Creating multiple shapes in one message.
+    /// </summary>
+    MultiShape = (1 << 4),
+    /// <summary>
     /// User flags start here.
     /// </summary>
     User = (1 << 8)

@@ -149,6 +149,28 @@ namespace Tes.Shapes
     }
 
     /// <summary>
+    /// Gets or sets the two sided display flag.
+    /// </summary>
+    /// <value><c>true</c> if two sided; otherwise, <c>false</c>.</value>
+    public bool TwoSided
+    {
+      get { return (_data.Flags & (ushort)ObjectFlag.TwoSided) != 0; }
+      set { _data.Flags &= (ushort)~ObjectFlag.TwoSided; _data.Flags |= value ? (ushort)ObjectFlag.TwoSided : (ushort)0; }
+    }
+
+    /// <summary>
+    /// Gets or sets the replace on creation flag.
+    /// </summary>
+    /// <value><c>true</c> if replacing; otherwise, <c>false</c>.</value>
+    public bool Replace
+    {
+      get { return (_data.Flags & (ushort)ObjectFlag.Replace) != 0; }
+      set { _data.Flags &= (ushort)~ObjectFlag.Replace; _data.Flags |= value ? (ushort)ObjectFlag.Replace : (ushort)0; }
+    }
+
+    public CreateMessage Data { get { return _data; } }
+
+    /// <summary>
     /// Exposes shape details via an <see cref="ObjectAttributes"/> structure.
     /// </summary>
     /// <returns>The attributes.</returns>

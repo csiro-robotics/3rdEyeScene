@@ -437,8 +437,7 @@ namespace Tes.Handlers.Shape3D
     /// <param name="packet"></param>
     /// <param name="reader"></param>
     /// <returns></returns>
-    protected override Error PostHandleMessage(DestroyMessage msg, PacketBuffer packet, BinaryReader reader,
-                                               ShapeCache cache, int shapeIndex)
+    protected override Error PostHandleMessage(DestroyMessage msg, ShapeCache cache, int shapeIndex)
     {
       if (shapeIndex >= 0)
       {

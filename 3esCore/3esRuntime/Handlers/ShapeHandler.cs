@@ -122,27 +122,28 @@ namespace Tes.Handlers
       // TODO: (KS) Restore colour/tint support from ObjectAttributes to rendering.
 
       _renderTransforms.Clear();
+      _parentTransforms.Clear();
       _renderShapes.Clear();
-      _transientCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Solid);
-      _shapeCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Solid);
-      RenderInstances(cameraContext, cameraContext.OpaqueBuffer, SolidMesh, _renderTransforms, _renderShapes, Materials[SolidMaterialName]);
+      _transientCache.Collect(_renderTransforms, _parentTransforms, _renderShapes, ShapeCache.CollectType.Solid);
+      _shapeCache.Collect(_renderTransforms, _parentTransforms, _renderShapes, ShapeCache.CollectType.Solid);
+      RenderInstances(cameraContext, cameraContext.OpaqueBuffer, SolidMesh, _renderTransforms, _parentTransforms, _renderShapes, Materials[SolidMaterialName]);
 
       _renderTransforms.Clear();
       _renderShapes.Clear();
-      _transientCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Transparent);
-      _shapeCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Transparent);
-      RenderInstances(cameraContext, cameraContext.TransparentBuffer, SolidMesh, _renderTransforms, _renderShapes, Materials[TransparentMaterialName]);
+      _transientCache.Collect(_renderTransforms, _parentTransforms, _renderShapes, ShapeCache.CollectType.Transparent);
+      _shapeCache.Collect(_renderTransforms, _parentTransforms, _renderShapes, ShapeCache.CollectType.Transparent);
+      RenderInstances(cameraContext, cameraContext.TransparentBuffer, SolidMesh, _renderTransforms, _parentTransforms, _renderShapes, Materials[TransparentMaterialName]);
 
       _renderTransforms.Clear();
       _renderShapes.Clear();
-      _transientCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Wireframe);
-      _shapeCache.Collect(_renderTransforms, _renderShapes, ShapeCache.CollectType.Wireframe);
-      RenderInstances(cameraContext, cameraContext.OpaqueBuffer, WireframeMesh, _renderTransforms, _renderShapes, Materials[WireframeMaterialName]);
+      _transientCache.Collect(_renderTransforms, _parentTransforms, _renderShapes, ShapeCache.CollectType.Wireframe);
+      _shapeCache.Collect(_renderTransforms, _parentTransforms, _renderShapes, ShapeCache.CollectType.Wireframe);
+      RenderInstances(cameraContext, cameraContext.OpaqueBuffer, WireframeMesh, _renderTransforms, _parentTransforms, _renderShapes, Materials[WireframeMaterialName]);
     }
 
     protected virtual void RenderInstances(CameraContext cameraContext, CommandBuffer renderQueue, Mesh mesh,
-                                           List<Matrix4x4> transforms, List<CreateMessage> shapes,
-                                           Material material)
+                                           List<Matrix4x4> transforms, List<Matrix4x4> parentTransforms,
+                                           List<CreateMessage> shapes, Material material)
     {
       CategoriesState categories = this.CategoriesState;
       // Handle instancing block size limits.
@@ -155,7 +156,8 @@ namespace Tes.Handlers
         {
           if (categories == null || categories.IsActive(shapes[i + j].Category))
           {
-            _instanceTransforms[itemCount] = cameraContext.TesSceneToWorldTransform * transforms[i + j];
+            _instanceTransforms[itemCount] =
+              cameraContext.TesSceneToWorldTransform * parentTransforms[i + j] * transforms[i + j];
             Maths.Colour colour = new Maths.Colour(shapes[i + j].Attributes.Colour);
             _instanceColours.Add(Maths.ColourExt.ToUnityVector4(colour));
             ++itemCount;
@@ -403,7 +405,8 @@ namespace Tes.Handlers
         {
           return new Error();
         }
-        return HandleMessage(destroy, packet, reader);
+        // No additional payload allowed.
+        return HandleMessage(destroy);
 
       case ObjectMessageID.Data:
         // Read the create message details.
@@ -455,11 +458,15 @@ namespace Tes.Handlers
     /// </summary>
     /// <param name="id">The ID of the new object. Must non be zero (for persistent objects).</param>
     /// <returns>The instantiated object or -1 on failure.</returns>
-    protected virtual int CreateShape(ShapeCache cache, CreateMessage shape)
+    protected virtual int CreateShape(ShapeCache cache, CreateMessage shape, int multiShapeChainIndex,
+                                      Matrix4x4 parentTransform)
     {
       Matrix4x4 transform = Matrix4x4.identity;
       DecodeTransform(shape.Attributes, out transform);
-      return cache.CreateShape(shape, transform);
+      transform = transform;
+      int index = cache.CreateShape(shape, transform, multiShapeChainIndex);
+      cache.SetParentTransformByIndex( index, parentTransform);
+      return index;
     }
 
     /// <summary>
@@ -676,9 +683,42 @@ namespace Tes.Handlers
 
       try
       {
-        shapeIndex = CreateShape(cache, msg);
+        // Check for replacement.
+        if (msg.ObjectID != 0 && (msg.Flags & (ushort)ObjectFlag.Replace) != 0)
+        {
+          if (cache.GetShapeIndex(msg.ObjectID) >= 0)
+          {
+            // Simulate a destroy message.
+            HandleMessage(new DestroyMessage { ObjectID = msg.ObjectID });
+          }
+        }
+
+        // Handle multi-shape message.
+        if ((msg.Flags & (ushort)ObjectFlag.MultiShape) != 0)
+        {
+          Matrix4x4 parentTransform = Maths.Matrix4Ext.ToUnity(msg.Attributes.GetTransform());
+          // Read the item count.
+          int itemCount = (int)reader.ReadUInt16();
+          CreateMessage multiShape = msg.Clone();
+          multiShape.ObjectID = ShapeCache.MultiShapeID;
+
+          // Read each shape attributes.
+          for (int i = 0; i < itemCount; ++i)
+          {
+            if (!multiShape.Attributes.Read(reader))
+            {
+              return new Error(ErrorCode.MalformedMessage, msg.ObjectID);
+            }
+
+            shapeIndex = CreateShape(cache, multiShape, shapeIndex, parentTransform);
+            cache.SetParentTransformByIndex(shapeIndex, parentTransform);
+          }
+        }
+
+        // Create the primary shape, the first link in the chain, last.
+        shapeIndex = CreateShape(cache, msg, shapeIndex, Matrix4x4.identity);
       }
-      catch (Tes.Exception.DuplicateIDException )
+      catch (Tes.Exception.DuplicateIDException)
       {
         return new Error(ErrorCode.DuplicateShape, msg.ObjectID);
       }
@@ -773,9 +813,24 @@ namespace Tes.Handlers
 
       if (updateTransform)
       {
-        Matrix4x4 transform = Matrix4x4.identity;
-        DecodeTransform(shape.Attributes, out transform);
-        _shapeCache.SetShapeTransformByIndex(shapeIndex, transform);
+        if ((shape.Flags & (ushort)ObjectFlag.MultiShape) != 0)
+        {
+          // Follow the multi-shape chain to update the transforms.
+          Matrix4x4 shapeSetTransform = Maths.Matrix4Ext.ToUnity(shape.Attributes.GetTransform());
+
+          int nextChainId = _shapeCache.GetMultiShapeChainByIndex(shapeIndex);
+          while (nextChainId >= -1)
+          {
+            _shapeCache.SetParentTransformByIndex(nextChainId, shapeSetTransform);
+            nextChainId = _shapeCache.GetMultiShapeChainByIndex(nextChainId);
+          }
+        }
+        else
+        {
+          Matrix4x4 transform = Matrix4x4.identity;
+          DecodeTransform(shape.Attributes, out transform);
+          _shapeCache.SetShapeTransformByIndex(shapeIndex, transform);
+        }
       }
 
       return PostHandleMessage(msg, packet, reader, _shapeCache, shapeIndex);
@@ -799,13 +854,14 @@ namespace Tes.Handlers
     /// Message handler for <see cref="DestroyMessage"/>
     /// </summary>
     /// <param name="msg">The incoming message.</param>
-    /// <param name="packet">The buffer containing the message.</param>
-    /// <param name="reader">The reader from which the message came.</param>
     /// <returns>An error code on failure.</returns>
     /// <remarks>
     /// Finds and destroys the object matching the message ObjectID.
+    ///
+    /// Neither the <see cref="PacketBuffer"/> nor the <see cref="BinaryReader"/> are provided as destroy message are
+    /// not allowed to carry additional payloads.
     /// </remarks>
-    protected virtual Error HandleMessage(DestroyMessage msg, PacketBuffer packet, BinaryReader reader)
+    protected virtual Error HandleMessage(DestroyMessage msg)
     {
       if (msg.ObjectID == 0)
       {
@@ -814,7 +870,7 @@ namespace Tes.Handlers
 
       // Do not check for existence. Not an error as we allow delete messages where the object has yet to be created.
       int shapeIndex = DestroyObject(msg.ObjectID);
-      return PostHandleMessage(msg, packet, reader, _shapeCache, shapeIndex);
+      return PostHandleMessage(msg, _shapeCache, shapeIndex);
     }
 
     /// <summary>
@@ -825,8 +881,11 @@ namespace Tes.Handlers
     /// <param name="packet">The buffer containing the message.</param>
     /// <param name="reader">The reader from which the message came.</param>
     /// <returns>An error code on failure.</returns>
-    protected virtual Error PostHandleMessage(DestroyMessage msg, PacketBuffer packet, BinaryReader reader,
-                                              ShapeCache cache, int shapeIndex)
+    /// <remarks>
+    /// Neither the <see cref="PacketBuffer"/> nor the <see cref="BinaryReader"/> are provided as destroy message are
+    /// not allowed to carry additional payloads.
+    /// </remarks>
+    protected virtual Error PostHandleMessage(DestroyMessage msg, ShapeCache cache, int shapeIndex)
     {
       return new Error();
     }
@@ -855,7 +914,22 @@ namespace Tes.Handlers
     /// <returns>A matching object or null on failure.</returns>
     protected int DestroyObject(uint id)
     {
-      return _shapeCache.DestroyShape(id);
+      int shapeIndex = _shapeCache.GetShapeIndex(id);
+      if (shapeIndex == -1)
+      {
+        return -1;
+      }
+
+      // Handle multi-shape.
+      int multiIndex = _shapeCache.GetMultiShapeChainByIndex(shapeIndex);
+      while (multiIndex != -1)
+      {
+        int nextIndex = _shapeCache.GetMultiShapeChainByIndex(multiIndex);
+        _shapeCache.DestroyShapeByIndex(multiIndex);
+        multiIndex = nextIndex;
+      }
+      _shapeCache.DestroyShapeByIndex(shapeIndex);
+      return shapeIndex;
     }
 
     /// <summary>
@@ -867,6 +941,7 @@ namespace Tes.Handlers
     /// </summary>
     protected ShapeCache _shapeCache = null;
     protected List<Matrix4x4> _renderTransforms = new List<Matrix4x4>();
+    protected List<Matrix4x4> _parentTransforms = new List<Matrix4x4>();
     protected List<CreateMessage> _renderShapes = new List<CreateMessage>();
     protected Matrix4x4[] _instanceTransforms = new Matrix4x4[InstanceRenderLimit];
     protected List<Vector4> _instanceColours = new List<Vector4>(InstanceRenderLimit);

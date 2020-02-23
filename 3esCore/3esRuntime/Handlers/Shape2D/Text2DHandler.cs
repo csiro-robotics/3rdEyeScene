@@ -83,6 +83,25 @@ namespace Tes.Handlers.Shape2D
       }
 
       /// <summary>
+      /// Check if there is a text entry matching the given <paramref name="id"/>
+      /// </summary>
+      /// <param name="id">The ID to search for</param>
+      /// <returns>True if there is an entry present matching <paramref name="id"/>.</returns>
+      public bool ContainsEntry(uint id)
+      {
+        for (int i = 0; i < _text.Count; ++i)
+        {
+          if (_text[i].ID == id)
+          {
+            _text.RemoveAt(i);
+            return true;
+          }
+        }
+
+        return false;
+      }
+
+      /// <summary>
       /// Update existing text display.
       /// </summary>
       /// <param name="entry">Updated text details.</param>
@@ -305,7 +324,7 @@ namespace Tes.Handlers.Shape2D
         {
           return new Error(ErrorCode.InvalidContent, packet.Header.MessageID);
         }
-        return HandleMessage(destroy, packet, reader);
+        return HandleMessage(destroy);
       }
     }
 
@@ -420,6 +439,18 @@ namespace Tes.Handlers.Shape2D
       }
       else
       {
+        if (PersistentText.ContainsEntry(text.ID))
+        {
+          // Object ID already present. Check for replace flag.
+          if ((msg.Flags & (ushort)ObjectFlag.Replace) == 0)
+          {
+            // Not replace flag => error.
+            return new Error(ErrorCode.DuplicateShape, msg.ObjectID);
+          }
+
+          // Replace.
+          PersistentText.Remove(text.ID);
+        }
         PersistentText.Add(text);
       }
 
@@ -464,7 +495,7 @@ namespace Tes.Handlers.Shape2D
     /// <param name="packet"></param>
     /// <param name="reader"></param>
     /// <returns></returns>
-    protected virtual Error HandleMessage(DestroyMessage msg, PacketBuffer packet, BinaryReader reader)
+    protected virtual Error HandleMessage(DestroyMessage msg)
     {
       PersistentText.Remove(msg.ObjectID);
       return new Error();
