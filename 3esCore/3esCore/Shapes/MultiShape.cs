@@ -36,6 +36,15 @@ namespace Tes.Shapes
       _data.Flags |= (ushort)ObjectFlag.MultiShape;
     }
 
+    public MultiShape(Shape[] shapes, Vector3 position, Quaternion rotation)
+      : this(shapes, position, rotation, Vector3.One) {}
+
+    public MultiShape(Shape[] shapes, Vector3 position)
+      : this(shapes, position, Quaternion.Identity, Vector3.One) {}
+
+    public MultiShape(Shape[] shapes)
+      : this(shapes, Vector3.Zero, Quaternion.Identity, Vector3.One) {}
+
     public override bool WriteCreate(PacketBuffer packet)
     {
       if (!base.WriteCreate(packet))
@@ -56,21 +65,6 @@ namespace Tes.Shapes
       }
 
       return true;
-    }
-
-    public MultiShape(Shape[] shapes, Vector3 position, Quaternion rotation)
-      : this(shapes, position, rotation, Vector3.One)
-    {
-    }
-
-    public MultiShape(Shape[] shapes, Vector3 position)
-      : this(shapes, position, Quaternion.Identity, Vector3.One)
-    {
-    }
-
-    public MultiShape(Shape[] shapes)
-      : this(shapes, Vector3.Zero, Quaternion.Identity, Vector3.One)
-    {
     }
 
     private Shape[] _shapes = null;

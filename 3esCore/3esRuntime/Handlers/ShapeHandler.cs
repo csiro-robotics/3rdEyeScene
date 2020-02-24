@@ -195,13 +195,13 @@ namespace Tes.Handlers
     public override Error Serialise(BinaryWriter writer, ref SerialiseInfo info)
     {
       info.TransientCount = info.PersistentCount = 0u;
-      Error err = SerialiseObjects(writer, _transientCache, ref info.TransientCount);
+      Error err = SerialiseShapes(writer, _transientCache, ref info.TransientCount);
       if (err.Failed)
       {
         return err;
       }
 
-      err = SerialiseObjects(writer, _shapeCache, ref info.PersistentCount);
+      err = SerialiseShapes(writer, _shapeCache, ref info.PersistentCount);
       return err;
     }
 
@@ -243,7 +243,7 @@ namespace Tes.Handlers
     /// Base classes should implement this method to return an instance of the appropriate
     /// <see cref="Shapes.Shape"/> derivation. For example, the <see cref="Shape3D.SphereHandler"/>
     /// should return a <see cref="Shapes.Sphere"/> object. See
-    /// <see cref="SerialiseObjects(BinaryWriter, ShapeCache, ref uint)"/> for further
+    /// <see cref="SerialiseShapes(BinaryWriter, ShapeCache, ref uint)"/> for further
     /// details.
     /// </remarks>
     protected virtual Shapes.Shape CreateSerialisationShape(ShapeCache cache, int shapeIndex, CreateMessage shape)
@@ -272,12 +272,13 @@ namespace Tes.Handlers
     /// Using the <see cref="Shapes.Shape"/> classes ensures serialisation is consistent with the server code
     /// and reduces the code maintenance to one code path.
     /// </remarks>
-    protected virtual Error SerialiseObjects(BinaryWriter writer, ShapeCache cache, ref uint processedCount)
+    protected virtual Error SerialiseShapes(BinaryWriter writer, ShapeCache cache, ref uint processedCount)
     {
       // Serialise transient objects.
       PacketBuffer packet = new PacketBuffer();
       Error err;
       Shapes.Shape tempShape = null;
+      List<Shapes.Shape> multiShapeList = new List<Shapes.Shape>();
       uint dataMarker = 0;
       int dataResult = 0;
 
@@ -288,7 +289,42 @@ namespace Tes.Handlers
       {
         ++processedCount;
         CreateMessage shapeData = cache.GetShapeByIndex(shapeIndex);
-        tempShape = CreateSerialisationShape(cache, shapeIndex, shapeData);
+        if ((shapeData.Flags & (ushort)ObjectFlag.MultiShape) != 0)
+        {
+          Debug.Log($"{Name} multi-shape");
+          // Multi-shape. Follow the link.
+          multiShapeList.Clear();
+          int nextIndex = cache.GetMultiShapeChainByIndex(shapeIndex);
+          while (nextIndex != -1)
+          {
+            CreateMessage multiShapeData = cache.GetShapeByIndex(nextIndex);
+            Debug.Log($"{Name} creating child");
+            tempShape = CreateSerialisationShape(cache, shapeIndex, shapeData);
+            Debug.Log($"{Name} created");
+            if (tempShape != null)
+            {
+              // Successfully created the child. Add to the list.
+              multiShapeList.Add(tempShape);
+            }
+            else
+            {
+              Debug.LogError($"{Name} failed to create multi-shape entry");
+            }
+            nextIndex = cache.GetMultiShapeChainByIndex(nextIndex);
+          }
+
+          // Create the multi-shape
+          Debug.Log($"{Name} adding {multiShapeList.Count}");
+          tempShape = new Shapes.MultiShape(multiShapeList.ToArray());
+          tempShape.ID = shapeData.ObjectID;
+          tempShape.Category = shapeData.Category;
+          tempShape.SetAttributes(shapeData.Attributes);
+        }
+        else if (shapeData.ObjectID != ShapeCache.MultiShapeID)
+        {
+          tempShape = CreateSerialisationShape(cache, shapeIndex, shapeData);
+        }
+
         if (tempShape != null)
         {
           tempShape.WriteCreate(packet);
