@@ -37,6 +37,20 @@ namespace Tes.Net
     /// </summary>
     MultiShape = (1 << 4),
     /// <summary>
+    /// Do not reference count resources or queue resources for sending.
+    /// </summary>
+    /// <remarks>
+    /// By default each connection reference counts and queues resources for each shape, sending them from
+    /// <see cref="IServer.UpdateTransfers(int)"/>. This flag prevents resources from being sent automatically for a
+    /// shape. References are then dereferenced (potentially destroyed) when destroying a resource using shape. This
+    /// flag prevents this reference counting for a shape, essentially assuming the client has the resources via
+    /// explicit references using <see cref="IConnection.AddResource(Resource)"/>.
+    ///
+    /// This should always be used when using the <c>Replace</c> flag as reference counting can only be maintained with
+    /// proper create/destroy command pairs.
+    /// </remarks>
+    SkipResources = (1 << 5),
+    /// <summary>
     /// User flags start here.
     /// </summary>
     User = (1 << 8)

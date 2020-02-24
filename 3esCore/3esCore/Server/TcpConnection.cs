@@ -157,7 +157,10 @@ namespace Tes.Server
               return res;
             }
           }
-          AddResources(shape);
+          if (!shape.SkipResources)
+          {
+            AddResources(shape);
+          }
           return writeSize;
         }
       }
@@ -179,7 +182,10 @@ namespace Tes.Server
       _packetLock.Lock();
       try
       {
-        RemoveResources(shape);
+        if (!shape.SkipResources)
+        {
+          RemoveResources(shape);
+        }
 
         if (shape.WriteDestroy(_packet))
         {
@@ -245,7 +251,7 @@ namespace Tes.Server
             {
               // Do not use collation buffer or compression for this message.
               if (_client != null && _client.Connected)
-              { 
+              {
                 _client.GetStream().Write(_packet.Data, _packet.Cursor, _packet.Count);
               }
               return true;
@@ -371,7 +377,7 @@ namespace Tes.Server
     /// The method may be called with the <c>_sendLock</c> already locked only if
     /// <paramref name="unguarded"/> is <c>true</c>. Otherwise the call will result
     /// in a deadlock.
-    /// 
+    ///
     /// Misused may result in out of phase data.
     /// </remarks>
     protected int SendImmediate(byte[] data, int offset, int length, bool unguarded)
@@ -491,7 +497,7 @@ namespace Tes.Server
             {
               int sendRes = Send(packet.Data, 0, packet.Count);
               if (sendRes >= 0)
-              { 
+              {
                 transferred += sendRes;
               }
               else
@@ -648,7 +654,7 @@ namespace Tes.Server
               // Remove the shared abort current resource transfer.
               _packetLock.Lock();
               try
-              { 
+              {
                 _currentResource.Resource.Destroy(_packet);
                 _packet.FinalisePacket();
                 Send(_packet.Data, 0, _packet.Count);

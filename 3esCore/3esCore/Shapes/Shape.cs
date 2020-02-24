@@ -168,6 +168,20 @@ namespace Tes.Shapes
       set { _data.Flags &= (ushort)~ObjectFlag.Replace; _data.Flags |= value ? (ushort)ObjectFlag.Replace : (ushort)0; }
     }
 
+    /// <summary>
+    /// Gets or sets skip resources flag.
+    /// </summary>
+    /// <value><c>true</c> if skipping resource referencing; otherwise, <c>false</c>.</value>
+    public bool SkipResources
+    {
+      get { return (_data.Flags & (ushort)ObjectFlag.SkipResources) != 0; }
+      set
+      {
+        _data.Flags &=
+          (ushort)~ObjectFlag.SkipResources; _data.Flags |= value ?(ushort)ObjectFlag.SkipResources : (ushort)0;
+        }
+    }
+
     public CreateMessage Data { get { return _data; } }
 
     /// <summary>
