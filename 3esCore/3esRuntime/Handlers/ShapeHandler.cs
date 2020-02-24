@@ -152,7 +152,7 @@ namespace Tes.Handlers
         MaterialPropertyBlock materialProperties = new MaterialPropertyBlock();
         int itemCount = 0;
         _instanceColours.Clear();
-        for (int j = 0; j + i < transforms.Count; ++j)
+        for (int j = 0; j < _instanceTransforms.Length && j + i < transforms.Count; ++j)
         {
           if (categories == null || categories.IsActive(shapes[i + j].Category))
           {
@@ -463,7 +463,6 @@ namespace Tes.Handlers
     {
       Matrix4x4 transform = Matrix4x4.identity;
       DecodeTransform(shape.Attributes, out transform);
-      transform = transform;
       int index = cache.CreateShape(shape, transform, multiShapeChainIndex);
       cache.SetParentTransformByIndex( index, parentTransform);
       return index;
@@ -700,6 +699,8 @@ namespace Tes.Handlers
           // Read the item count.
           int itemCount = (int)reader.ReadUInt16();
           CreateMessage multiShape = msg.Clone();
+          // Clear the multi-shape flag so these shapes are visualised.
+          multiShape.Flags &= (ushort)(~ObjectFlag.MultiShape);
           multiShape.ObjectID = ShapeCache.MultiShapeID;
 
           // Read each shape attributes.
@@ -711,7 +712,6 @@ namespace Tes.Handlers
             }
 
             shapeIndex = CreateShape(cache, multiShape, shapeIndex, parentTransform);
-            cache.SetParentTransformByIndex(shapeIndex, parentTransform);
           }
         }
 

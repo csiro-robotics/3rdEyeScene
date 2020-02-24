@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Tes.Net;
 using Tes.Runtime;
 using UnityEngine;
@@ -49,7 +49,7 @@ namespace Tes.Handlers.Shape3D
         MaterialPropertyBlock materialProperties = new MaterialPropertyBlock();
         int itemCount = 0;
         _instanceColours.Clear();
-        for (int j = 0; j + i < transforms.Count; ++j)
+        for (int j = 0; j < _instanceTransforms.Length && j + i < transforms.Count; ++j)
         {
           if (categories != null && !categories.IsActive(shapes[i + j].Category))
           {
@@ -57,8 +57,9 @@ namespace Tes.Handlers.Shape3D
           }
 
           // Build the end cap transforms.
-          Matrix4x4 transform = parentTransforms[i + j] * transforms[i + j];
-          _instanceTransforms[itemCount] = cameraContext.TesSceneToWorldTransform * transform;
+          Matrix4x4 modelToSceneTransform = cameraContext.TesSceneToWorldTransform * parentTransforms[i + j];
+          Matrix4x4 transform = transforms[i + j];
+          _instanceTransforms[itemCount] = modelToSceneTransform * transform;
 
           // Extract radius and length to position the end caps.
           float radius = transform.GetColumn(0).magnitude;
@@ -72,15 +73,14 @@ namespace Tes.Handlers.Shape3D
           Vector4 tAxis = transform.GetColumn(3);
           tAxis += -0.5f * length * zAxis;
           transform.SetColumn(3, tAxis);
-          _cap1Transforms[j] = cameraContext.TesSceneToWorldTransform * transform;
+          _cap1Transforms[j] = modelToSceneTransform * transform;
 
           // Adjust position for the second end cap.
           tAxis += length * zAxis;
           transform.SetColumn(3, tAxis);
-          _cap2Transforms[j] = cameraContext.TesSceneToWorldTransform * transform;
+          _cap2Transforms[j] = modelToSceneTransform * transform;
 
           Maths.Colour colour = new Maths.Colour(shapes[i + j].Attributes.Colour);
-          colour.A = 64;
           _instanceColours.Add(Maths.ColourExt.ToUnityVector4(colour));
           ++itemCount;
         }

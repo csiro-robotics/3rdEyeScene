@@ -480,22 +480,26 @@ namespace Tes.Handlers
         // A transient cache has all IDs set to zero. A non-transient cache has all valid IDs as non-zero.
         if ((transientCache || shape.ObjectID != 0))
         {
-          // TODO: (KS) category check.
           bool add = false;
-          if ((shape.Flags & (ushort)Tes.Net.ObjectFlag.Wireframe) != 0 && collectType == CollectType.Wireframe)
+          // Don't visualise multi-shape entries; they are essentially the parent transform for a set of other shapes
+          // not bearing this flag.
+          if ((shape.Flags & (ushort)Tes.Net.ObjectFlag.MultiShape) == 0)
           {
-            // Collecting wireframe.
-            add = true;
-          }
-          else if ((shape.Flags & (ushort)Tes.Net.ObjectFlag.Transparent) != 0 && collectType == CollectType.Transparent)
-          {
-            // Collecting transparent.
-            add = true;
-          }
-          else if (collectType == CollectType.Solid)
-          {
-            // Collecting solid.
-            add = true;
+            if ((shape.Flags & (ushort)Tes.Net.ObjectFlag.Wireframe) != 0 && collectType == CollectType.Wireframe)
+            {
+              // Collecting wireframe.
+              add = true;
+            }
+            else if ((shape.Flags & (ushort)Tes.Net.ObjectFlag.Transparent) != 0 && collectType == CollectType.Transparent)
+            {
+              // Collecting transparent.
+              add = true;
+            }
+            else if (collectType == CollectType.Solid)
+            {
+              // Collecting solid.
+              add = true;
+            }
           }
 
           if (add)
