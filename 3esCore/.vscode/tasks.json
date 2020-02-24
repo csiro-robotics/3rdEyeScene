@@ -25,7 +25,7 @@
           "publish",
           "-f", "netcoreapp2.2",
           "-c", "${input:build_config}",
-          "-o", "${workspaceFolder}\\build\\Debug",
+          "-o", "${workspaceFolder}\\build\\${input:build_config}",
           "-property:GenerateFullPaths=true",
           "-r", "win10-x64"
         ]
@@ -35,7 +35,7 @@
           "publish",
           "-f", "netcoreapp2.2",
           "-c", "${input:build_config}",
-          "-o", "${workspaceFolder}/build/Debug",
+          "-o", "${workspaceFolder}/build/${input:build_config}",
           "-property:GenerateFullPaths=true",
           "-r", "linux-x64"
         ]
@@ -45,7 +45,7 @@
           "publish",
           "-f", "netcoreapp2.2",
           "-c", "${input:build_config}",
-          "-o", "${workspaceFolder}/build/Debug",
+          "-o", "${workspaceFolder}/build/${input:build_config}",
           "-property:GenerateFullPaths=true",
           "-r", "osx-x64"
         ]
