@@ -96,8 +96,11 @@ namespace Tes.Shapes
     /// <summary>
     /// Direct creation for non-complex shapes.
     /// </summary>
-    public Shape(CreateMessage data)
+    /// <param name="routingID">The routing ID for the shape type.</param>
+    /// <param name="data">Data packet representing the non-complex shape.</param>
+    public Shape(ushort routingID, CreateMessage data)
     {
+      RoutingID = routingID;
       _data = data;
     }
 

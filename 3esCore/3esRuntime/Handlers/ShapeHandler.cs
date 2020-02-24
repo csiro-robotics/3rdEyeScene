@@ -248,7 +248,7 @@ namespace Tes.Handlers
     /// </remarks>
     protected virtual Shapes.Shape CreateSerialisationShape(ShapeCache cache, int shapeIndex, CreateMessage shape)
     {
-      return new Shapes.Shape(shape);
+      return new Shapes.Shape(RoutingID, shape);
     }
 
     /// <summary>
@@ -287,20 +287,19 @@ namespace Tes.Handlers
       processedCount = 0;
       foreach (int shapeIndex in cache.ShapeIndices)
       {
+        tempShape = null;
         ++processedCount;
         CreateMessage shapeData = cache.GetShapeByIndex(shapeIndex);
         if ((shapeData.Flags & (ushort)ObjectFlag.MultiShape) != 0)
         {
-          Debug.Log($"{Name} multi-shape");
           // Multi-shape. Follow the link.
           multiShapeList.Clear();
           int nextIndex = cache.GetMultiShapeChainByIndex(shapeIndex);
           while (nextIndex != -1)
           {
             CreateMessage multiShapeData = cache.GetShapeByIndex(nextIndex);
-            Debug.Log($"{Name} creating child");
             tempShape = CreateSerialisationShape(cache, shapeIndex, shapeData);
-            Debug.Log($"{Name} created");
+            tempShape.ID = shapeData.ObjectID;
             if (tempShape != null)
             {
               // Successfully created the child. Add to the list.
@@ -314,7 +313,6 @@ namespace Tes.Handlers
           }
 
           // Create the multi-shape
-          Debug.Log($"{Name} adding {multiShapeList.Count}");
           tempShape = new Shapes.MultiShape(multiShapeList.ToArray());
           tempShape.ID = shapeData.ObjectID;
           tempShape.Category = shapeData.Category;
@@ -355,7 +353,7 @@ namespace Tes.Handlers
             }
           }
         }
-        else
+        else if (shapeData.ObjectID != ShapeCache.MultiShapeID)
         {
           return new Error(ErrorCode.SerialisationFailure);
         }
