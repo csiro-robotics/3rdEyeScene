@@ -15,18 +15,27 @@ namespace Tes.Handlers
   /// Rather Unity ECS is provided as source built in the editor only.
   ///
   /// Unlike Unity ECS, this supports non blittable types.
+  ///
+  /// This functionality should eventually be migrated to Unity ECS as that technology matures.
   /// </remarks>
   public class ShapeCache
   {
+    /// <summary>
+    /// ID reserved to mark shape entries which are the entry point for <see cref="Shapes.MultiShape"/> sets.
+    /// </summary>
     public static readonly uint MultiShapeID = 0xFFFFFFFFu;
 
-    public struct Age
-    {
-      public uint Frames;
-      public float Time;
-    }
-
+    /// <summary>
+    /// Delegate function signature invoked when a set of shapes in a transient cache expire. For cleanup.
+    /// </summary>
+    /// <param name="cache">The calling cache.</param>
+    /// <param name="srcIndex">The index of the first expiring shape.</param>
+    /// <param name="count">Number of expiring entries.</param>
     public delegate void TransientExpiryDelegate(ShapeCache cache, int srcIndex, int count);
+
+    /// <summary>
+    /// Delegate to invoke when expiring transient shapes expire. This allows cleanup operations such as buffer release.
+    /// </summary>
     public TransientExpiryDelegate TransientExpiry;
 
     /// <summary>
@@ -38,7 +47,6 @@ namespace Tes.Handlers
     {
       _capacity = (initialCapacity > 0) ? initialCapacity : 128;
       _shapes = new CreateMessage[_capacity];
-      _ages = new Age[_capacity];
       _transforms = new Matrix4x4[_capacity];
       _parentTransforms = new Matrix4x4[_capacity];
       _multiShapeChain = new int[_capacity];
@@ -87,11 +95,13 @@ namespace Tes.Handlers
     /// <summary>
     /// Destroy all current shapes, clearing the cache.
     /// </summary>
+    /// <remarks>
+    /// The <see cref="TransientExpiry"/> delegate is called to cover transient shape expiry.
+    /// </remarks>
     public void Reset()
     {
       if (IsTransientCache)
       {
-        // Erase items from the arrays up to the expiryWatermark.
         if (TransientExpiry != null)
         {
           TransientExpiry(this, 0, _currentCount);
@@ -111,58 +121,6 @@ namespace Tes.Handlers
         _shapes[i] = clearMsg;
       }
       _currentCount = 0;
-    }
-
-    public void UpdateTransientAges(float deltaTime, Age expiry)
-    {
-      if (IsTransientCache)
-      {
-        bool fullReset = true;
-        if (expiry.Frames > 1 || expiry.Time > deltaTime)
-        {
-          bool expireByTime = expiry.Frames == 0 && expiry.Time > 0;
-          int expiryWatermark = 0;
-          for (int i = 0; i < _currentCount; ++i)
-          {
-            ++_ages[i].Frames;
-            _ages[i].Time += deltaTime;
-
-            if (!expireByTime && _ages[i].Frames > expiry.Frames ||
-                expireByTime && _ages[i].Time >= expiry.Time)
-            {
-              expiryWatermark = i;
-            }
-          }
-
-          if (expiryWatermark < _currentCount)
-          {
-            // Erase items from the arrays up to the expiryWatermark.
-            if (TransientExpiry != null)
-            {
-              TransientExpiry(this, 0, expiryWatermark);
-            }
-
-            // TODO: (KS) find more efficient ways to manage this. Possibly with circular buffer indexing.
-            Array.Copy(_shapes, expiryWatermark, _shapes, 0, _currentCount - expiryWatermark);
-            Array.Copy(_ages, expiryWatermark, _ages, 0, _currentCount - expiryWatermark);
-            Array.Copy(_transforms, expiryWatermark, _transforms, 0, _currentCount - expiryWatermark);
-            Array.Copy(_parentTransforms, expiryWatermark, _parentTransforms, 0, _currentCount - expiryWatermark);
-            Array.Copy(_multiShapeChain, expiryWatermark, _multiShapeChain, 0, _currentCount - expiryWatermark);
-
-            for (int i = 0; i < _dataExtensions.Count; ++i)
-            {
-              Array.Copy(_dataExtensions[i].Elements, expiryWatermark, _dataExtensions[i].Elements, 0, _currentCount - expiryWatermark);
-            }
-
-            _currentCount -= expiryWatermark;
-          }
-        }
-
-        if (fullReset)
-        {
-          Reset();
-        }
-      }
     }
 
     /// <summary>
@@ -195,7 +153,6 @@ namespace Tes.Handlers
       int shapeIndex = AssignNewShapeIndex(shape.ObjectID);
 
       _shapes[shapeIndex] = shape;
-      _ages[shapeIndex] = new Age { Frames = 0, Time = 0 };
       _transforms[shapeIndex] = transform;
       _parentTransforms[shapeIndex] = Matrix4x4.identity;
       _multiShapeChain[shapeIndex] = multiShapeChainIndex;
@@ -255,6 +212,10 @@ namespace Tes.Handlers
       return -1;
     }
 
+    /// <summary>
+    /// Destroy a shape by its internal index.
+    /// </summary>
+    /// <param name="index">Index of the shape to remove.</param>
     public void DestroyShapeByIndex(int index)
     {
       if (IsTransientCache)
@@ -273,6 +234,12 @@ namespace Tes.Handlers
       }
     }
 
+    /// <summary>
+    /// Get core shape data for an entry.
+    /// </summary>
+    /// <param name="objectID">ID of the shape to retrieve data for.</param>
+    /// <returns>The shape's core data.</returns>
+    /// <exception cref="InvalidIDException">Thrown if this is a transient shape cache</exception>
     public CreateMessage GetShape(uint objectID)
     {
       if (IsTransientCache)
@@ -282,11 +249,22 @@ namespace Tes.Handlers
       return _shapes[_idMap[objectID]];
     }
 
+    /// <summary>
+    /// Get core shape data for an entry by its index
+    /// </summary>
+    /// <param name="index">Index of the shape..</param>
+    /// <returns>The shape's core data.</returns>
     public CreateMessage GetShapeByIndex(int index)
     {
       return _shapes[index];
     }
 
+    /// <summary>
+    /// Set core shape data.
+    /// </summary>
+    /// <param name="objectID">ID of the shape.</param>
+    /// <param name="shape">Core shape data to set.</param>
+    /// <exception cref="InvalidIDException">Thrown if this is a transient shape cache</exception>
     public void SetShape(uint objectID, CreateMessage shape)
     {
       if (IsTransientCache)
@@ -296,6 +274,11 @@ namespace Tes.Handlers
       SetShapeByIndex(_idMap[objectID], shape);
     }
 
+    /// <summary>
+    /// Set core shape data by index.
+    /// </summary>
+    /// <param name="index">Index of the shape.</param>
+    /// <param name="shape">Core shape data to set.</param>
     public void SetShapeByIndex(int index, CreateMessage shape)
     {
       if (IsTransientCache)
@@ -305,6 +288,12 @@ namespace Tes.Handlers
       _shapes[index] = shape;
     }
 
+    /// <summary>
+    /// Get transform for a shape.
+    /// </summary>
+    /// <param name="objectID">ID of the shape.</param>
+    /// <returns>The shape's transform.</returns>
+    /// <exception cref="InvalidIDException">Thrown if this is a transient shape cache</exception>
     public Matrix4x4 GetShapeTransform(uint objectID)
     {
       if (IsTransientCache)
@@ -314,11 +303,22 @@ namespace Tes.Handlers
       return _transforms[_idMap[objectID]];
     }
 
+    /// <summary>
+    /// Get transform for a shape by its index.
+    /// </summary>
+    /// <param name="index">Index of the shape.</param>
+    /// <returns>The shape's transform.</returns>
     public Matrix4x4 GetShapeTransformByIndex(int index)
     {
       return _transforms[index];
     }
 
+    /// <summary>
+    /// Set transform for a shape.
+    /// </summary>
+    /// <param name="objectID">ID of the shape.</param>
+    /// <param name="transform">The transform matrix to set.</param>
+    /// <exception cref="InvalidIDException">Thrown if this is a transient shape cache</exception>
     public void SetShapeTransform(uint objectID, Matrix4x4 transform)
     {
       if (IsTransientCache)
@@ -328,15 +328,22 @@ namespace Tes.Handlers
       SetShapeTransformByIndex(_idMap[objectID], transform);
     }
 
+    /// <summary>
+    /// Set transform for a shape by its index.
+    /// </summary>
+    /// <param name="index">Index of the shape.</param>
+    /// <param name="transform">The transform matrix to set.</param>
     public void SetShapeTransformByIndex(int index, Matrix4x4 transform)
     {
-      if (IsTransientCache)
-      {
-        throw new InvalidIDException("Access by ObjectID not supported on a transient shape cache.");
-      }
       _transforms[index] = transform;
     }
 
+    /// <summary>
+    /// Get parent transform for a shape.
+    /// </summary>
+    /// <param name="objectID">ID of the shape.</param>
+    /// <returns>The shape's parent transform.</returns>
+    /// <exception cref="InvalidIDException">Thrown if this is a transient shape cache</exception>
     public Matrix4x4 GetParentTransform(uint objectID)
     {
       if (IsTransientCache)
@@ -346,11 +353,22 @@ namespace Tes.Handlers
       return _parentTransforms[_idMap[objectID]];
     }
 
+    /// <summary>
+    /// Get parent transform for a shape by its index.
+    /// </summary>
+    /// <param name="index">Index of the shape.</param>
+    /// <returns>The shape's parent transform.</returns>
     public Matrix4x4 GetParentTransformByIndex(int index)
     {
       return _parentTransforms[index];
     }
 
+    /// <summary>
+    /// Set parent transform for a shape.
+    /// </summary>
+    /// <param name="objectID">ID of the shape.</param>
+    /// <param name="transform">The parent transform matrix to set.</param>
+    /// <exception cref="InvalidIDException">Thrown if this is a transient shape cache</exception>
     public void SetParentTransform(uint objectID, Matrix4x4 transform)
     {
       if (IsTransientCache)
@@ -360,15 +378,26 @@ namespace Tes.Handlers
       SetParentTransformByIndex(_idMap[objectID], transform);
     }
 
+    /// <summary>
+    /// Set parent transform for a shape by its index.
+    /// </summary>
+    /// <param name="index">Index of the shape.</param>
+    /// <param name="transform">The parent transform matrix to set.</param>
     public void SetParentTransformByIndex(int index, Matrix4x4 transform)
     {
-      if (IsTransientCache)
-      {
-        throw new InvalidIDException("Access by ObjectID not supported on a transient shape cache.");
-      }
       _parentTransforms[index] = transform;
     }
 
+    /// <summary>
+    /// Get the multi-shape chain index for a shape.
+    /// </summary>
+    /// <param name="index">Index of the shape.</param>
+    /// <returns>The multi-shape chain index transform.</returns>
+    /// <remarks>
+    /// <see cref="MultiShape"/> objects are represented in the cache by chaining this index as a linked list. This
+    /// function essentially retrieves the next index value, returning -1 at the end of the chain. This index can only
+    /// be set when creating the shape.
+    /// </remarks>
     public int GetMultiShapeChainByIndex(int index)
     {
       return _multiShapeChain[index];
@@ -456,13 +485,36 @@ namespace Tes.Handlers
       throw new InvalidDataTypeException($"Unregistered shape extension type : {typeof(T).Name}");
     }
 
+    /// <summary>
+    /// Defines what to collect when calling <see cref="Collect()"/>.
+    /// </summary>
     public enum CollectType
     {
+      /// <summary>
+      /// Collect solid shapes.
+      /// </summary>
       Solid,
+      /// <summary>
+      /// Collect transparent shapes.
+      /// </summary>
       Transparent,
+      /// <summary>
+      /// Collect wireframe shapes.
+      /// </summary>
       Wireframe
     }
 
+    /// <summary>
+    /// Iterate the current shapes collecting their transforms (for rendering).
+    /// </summary>
+    /// <param name="transforms">List to populate with shape transforms.</param>
+    /// <param name="parentTransforms">List to populate with parent transforms.</param>
+    /// <param name="shapes">List of shapes collected</param>
+    /// <param name="collectType">Defines what kind of shapes to collect.</param>
+    /// <remarks>
+    /// This method is used to collect shapes for rendering, collecting each valid shape's transform, parent transform
+    /// and core shape data in the relevant lists.
+    /// </remarks>
     public void Collect(List<Matrix4x4> transforms, List<Matrix4x4> parentTransforms,
                         List<CreateMessage> shapes, CollectType collectType)
     {
@@ -580,7 +632,6 @@ namespace Tes.Handlers
       _capacity = Maths.IntUtil.NextPowerOf2(_capacity + 1);
       Debug.Assert(_capacity > _shapes.Length);
       Array.Resize(ref _shapes, _capacity);
-      Array.Resize(ref _ages, _capacity);
       Array.Resize(ref _transforms, _capacity);
       Array.Resize(ref _parentTransforms, _capacity);
       Array.Resize(ref _multiShapeChain, _capacity);
@@ -620,7 +671,6 @@ namespace Tes.Handlers
     /// Core data for each shape.
     /// </summary>
     CreateMessage[] _shapes = null;
-    Age[] _ages = null;
     /// <summary>
     /// Transforms for each shape.
     /// </summary>
