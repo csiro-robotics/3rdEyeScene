@@ -94,6 +94,7 @@ public class TesComponent : Router
     Handlers.Register(new MeshHandler());
     Handlers.Register(new MeshSetHandler(meshCache));
     Handlers.Register(new PointCloudHandler(meshCache));
+    Handlers.Register(new PoseHandler());
     Handlers.Register(new Text2DHandler());
     Text3DHandler text3DHandler = new Text3DHandler();
     text3DHandler.CreateTextMeshHandler = this.GenerateTextMesh;

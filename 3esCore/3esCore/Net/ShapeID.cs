@@ -59,10 +59,11 @@ namespace Tes.Net
     /// <see cref="Shapes.Text2D"/>
     /// </summary>
     Text2D,
-
     /// <summary>
-    /// Build in shapes end. User shapes start at <see cref="RoutingID.UserIDStart"/> regardless of this value.
+    /// <see cref="Shapes.Pose"/>
     /// </summary>
+    Pose,
+
     BuiltInEnd
   }
 }

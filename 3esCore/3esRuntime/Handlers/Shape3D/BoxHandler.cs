@@ -20,13 +20,6 @@ namespace Tes.Handlers.Shape3D
     public override void Initialise(GameObject root, GameObject serverRoot, Runtime.MaterialLibrary materials)
     {
       base.Initialise(root, serverRoot, materials);
-
-      // GameObject box = new GameObject();
-      // box.transform.position = new Vector3(2, 0, 0);
-      // MeshRenderer renderer = box.AddComponent<MeshRenderer>();
-      // MeshFilter mesh = box.AddComponent<MeshFilter>();
-      // mesh.mesh = SolidMesh;
-      // renderer.material = materials[Runtime.MaterialLibrary.OpaqueInstanced];
     }
 
     /// <summary>

@@ -158,7 +158,7 @@ namespace Tes
         shapes.Add(arrow);
         if (!noMove)
         {
-          movers.Add(new Oscilator(arrow, 2.0f, 2.5f));
+          movers.Add(new Oscillator(arrow, 2.0f, 2.5f));
         }
       }
 
@@ -170,7 +170,7 @@ namespace Tes
         shapes.Add(box);
         if (!noMove)
         {
-          movers.Add(new Oscilator(box, 2.0f, 2.5f));
+          movers.Add(new Oscillator(box, 2.0f, 2.5f));
         }
       }
 
@@ -183,7 +183,7 @@ namespace Tes
         shapes.Add(capsule);
         if (!noMove)
         {
-          movers.Add(new Oscilator(capsule, 2.0f, 2.5f));
+          movers.Add(new Oscillator(capsule, 2.0f, 2.5f));
         }
       }
 
@@ -196,7 +196,7 @@ namespace Tes
         shapes.Add(cone);
         if (!noMove)
         {
-          movers.Add(new Oscilator(cone, 2.0f, 2.5f));
+          movers.Add(new Oscillator(cone, 2.0f, 2.5f));
         }
       }
 
@@ -208,7 +208,7 @@ namespace Tes
         shapes.Add(cylinder);
         if (!noMove)
         {
-          movers.Add(new Oscilator(cylinder, 2.0f, 2.5f));
+          movers.Add(new Oscillator(cylinder, 2.0f, 2.5f));
         }
       }
 
@@ -222,7 +222,17 @@ namespace Tes
         shapes.Add(plane);
         if (!noMove)
         {
-          movers.Add(new Oscilator(plane, 2.0f, 2.5f));
+          movers.Add(new Oscillator(plane, 2.0f, 2.5f));
+        }
+      }
+
+      if (allShapes || HaveOption("pose", args))
+      {
+        Shapes.Pose pose = new Shapes.Pose(ids.NextShapeId++);
+        shapes.Add(pose);
+        if (!noMove)
+        {
+          movers.Add(new Oscillator(pose, 2.0f, 2.5f));
         }
       }
 
@@ -234,7 +244,7 @@ namespace Tes
         shapes.Add(sphere);
         if (!noMove)
         {
-          movers.Add(new Oscilator(sphere, 2.0f, 2.5f));
+          movers.Add(new Oscillator(sphere, 2.0f, 2.5f));
         }
       }
 
@@ -246,7 +256,7 @@ namespace Tes
         shapes.Add(star);
         if (!noMove)
         {
-          movers.Add(new Oscilator(star, 2.0f, 2.5f));
+          movers.Add(new Oscillator(star, 2.0f, 2.5f));
         }
       }
 
@@ -262,7 +272,7 @@ namespace Tes
         shapes.Add(lines);
         // if (!noMove)
         // {
-        //   movers.Add(new Oscilator(mesh, 2.0f, 2.5f));
+        //   movers.Add(new Oscillator(mesh, 2.0f, 2.5f));
         // }
       }
 
@@ -287,7 +297,7 @@ namespace Tes
         shapes.Add(triangles);
         // if (!noMove)
         // {
-        //   movers.Add(new Oscilator(mesh, 2.0f, 2.5f));
+        //   movers.Add(new Oscillator(mesh, 2.0f, 2.5f));
         // }
       }
 
@@ -301,7 +311,7 @@ namespace Tes
         shapes.Add(mesh);
         // if (!noMove)
         // {
-        //   movers.Add(new Oscilator(mesh, 2.0f, 2.5f));
+        //   movers.Add(new Oscillator(mesh, 2.0f, 2.5f));
         // }
       }
 
@@ -328,7 +338,7 @@ namespace Tes
         shapes.Add(points);
         // if (!noMove)
         // {
-        //   movers.Add(new Oscilator(mesh, 2.0f, 2.5f));
+        //   movers.Add(new Oscillator(mesh, 2.0f, 2.5f));
         // }
       }
 
@@ -352,7 +362,7 @@ namespace Tes
         resources.Add(cloud);
         // if (!noMove)
         // {
-        //   movers.Add(new Oscilator(points, 2.0f, 2.5f));
+        //   movers.Add(new Oscillator(points, 2.0f, 2.5f));
         // }
       }
 

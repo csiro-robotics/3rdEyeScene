@@ -3,19 +3,19 @@ using Tes.Maths;
 
 namespace Tes
 {
-  class Oscilator : ShapeMover
+  class Oscillator : ShapeMover
   {
     public Vector3 ReferencePos { get; set; }
     public Vector3 Axis { get; set; }
     public float Amplitude { get; set; }
     public float Period { get; set; }
 
-    public Oscilator(Shapes.Shape shape, float amplitude = 1.0f, float period = 5.0f)
+    public Oscillator(Shapes.Shape shape, float amplitude = 1.0f, float period = 5.0f)
       : this(shape, amplitude, period, Vector3.AxisZ)
     {
     }
 
-    public Oscilator(Shapes.Shape shape, float amplitude, float period, Vector3 axis)
+    public Oscillator(Shapes.Shape shape, float amplitude, float period, Vector3 axis)
       : base(shape)
     {
       ReferencePos = (shape != null) ? shape.Position : Vector3.Zero;

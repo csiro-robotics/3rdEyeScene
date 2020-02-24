@@ -40,7 +40,8 @@ namespace Tes.Handlers.Shape3D
     {
       // Work out which mesh set we are rendering from the parent call: solid or wireframe. We could also look at
       // the first CreateMessage flags.
-      Mesh[] meshes = (mesh == SolidMesh)  ? _solidMeshes : _wireframeMeshes;
+      Mesh[] meshes =
+        (shapes.Count > 0 && (shapes[0].Flags & (ushort)ObjectFlag.Wireframe) != 0)  ? _wireframeMeshes : _solidMeshes;
       CategoriesState categories = this.CategoriesState;
 
       // Handle instancing block size limits.
