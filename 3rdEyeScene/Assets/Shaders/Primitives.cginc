@@ -5,6 +5,7 @@ struct VertexInput
 {
   float4 vertex : POSITION;
   float4 normal : NORMAL;
+  float4 colour : COLOR;
   UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
@@ -25,7 +26,7 @@ FragmentInput vert(VertexInput v)
   FragmentInput o;
   UNITY_SETUP_INSTANCE_ID(v);
   o.vertex = UnityObjectToClipPos(v.vertex);
-  o.colour = UNITY_ACCESS_INSTANCED_PROP(Props, _Color) *
+  o.colour = v.colour * UNITY_ACCESS_INSTANCED_PROP(Props, _Color) *
     max(float4(ShadeVertexLights(v.vertex, v.normal), 1.0f),
         float4(_FlatShaded, _FlatShaded, _FlatShaded, _FlatShaded));
   return o;
