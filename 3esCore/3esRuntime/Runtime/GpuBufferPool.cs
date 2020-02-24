@@ -51,7 +51,7 @@ namespace Tes.Runtime
   public class GpuBufferPool<T> where T : class
   {
     public static readonly int BucketIndexOffset = 11;
-    public static readonly int BucketCount = 10;
+    public static readonly int BucketCount = 12;
     public static int MinimumElementCount { get { return 1 << BucketIndexOffset; } }
 
     public int Stride { get; private set; }
@@ -85,7 +85,7 @@ namespace Tes.Runtime
         throw new System.Exception($"Failed to resolve bucket({bucketIndex}) for element count {elementCount}");
       }
 
-      if (bucketIndex > _buckets.Length)
+      if (bucketIndex >= _buckets.Length)
       {
         // Very large buffer. Allocate directly.
         Debug.LogWarning($"Failed to allocate GPU buffer from pool. Buffer too large with {elementCount} elements.");
@@ -106,7 +106,7 @@ namespace Tes.Runtime
         return;
       }
 
-      if (bucketIndex > _buckets.Length)
+      if (bucketIndex >= _buckets.Length)
       {
         // Very large buffer. Release as is.
         _bufferAbstraction.Release(buffer);
