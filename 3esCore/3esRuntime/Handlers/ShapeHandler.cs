@@ -298,7 +298,7 @@ namespace Tes.Handlers
           while (nextIndex != -1)
           {
             CreateMessage multiShapeData = cache.GetShapeByIndex(nextIndex);
-            tempShape = CreateSerialisationShape(cache, shapeIndex, shapeData);
+            tempShape = CreateSerialisationShape(cache, shapeIndex, multiShapeData);
             tempShape.ID = shapeData.ObjectID;
             if (tempShape != null)
             {
