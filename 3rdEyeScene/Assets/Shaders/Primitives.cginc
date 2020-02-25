@@ -16,6 +16,10 @@ struct FragmentInput
 };
 
 uniform float _FlatShaded;
+uniform float4 _LightDir_0;
+uniform float4 _LightColour_0;
+uniform float4 _LightDir_1;
+uniform float4 _LightColour_1;
 
 UNITY_INSTANCING_BUFFER_START(Props)
   UNITY_DEFINE_INSTANCED_PROP(float4, _Color)
@@ -26,9 +30,10 @@ FragmentInput vert(VertexInput v)
   FragmentInput o;
   UNITY_SETUP_INSTANCE_ID(v);
   o.vertex = UnityObjectToClipPos(v.vertex);
-  o.colour = v.colour * UNITY_ACCESS_INSTANCED_PROP(Props, _Color) *
-    max(float4(ShadeVertexLights(v.vertex, v.normal), 1.0f),
-        float4(_FlatShaded, _FlatShaded, _FlatShaded, _FlatShaded));
+  o.colour = v.colour * UNITY_ACCESS_INSTANCED_PROP(Props, _Color)
+    // * max(float4(ShadeVertexLights(v.vertex, v.normal), 1.0f),
+    //       float4(_FlatShaded, _FlatShaded, _FlatShaded, _FlatShaded))
+    ;
   return o;
 }
 
