@@ -28,8 +28,8 @@ namespace Tes
         _transparentBuffer = new CommandBuffer();
         _transparentBuffer.name = $"{gameObject.name}-Transparent";
 
-        camera.AddCommandBuffer(CameraEvent.AfterForwardOpaque, _opaqueBuffer);
-        camera.AddCommandBuffer(CameraEvent.AfterForwardAlpha, _transparentBuffer);
+        camera.AddCommandBuffer(CameraEvent.BeforeForwardOpaque, _opaqueBuffer);
+        camera.AddCommandBuffer(CameraEvent.BeforeForwardAlpha, _transparentBuffer);
       }
     }
 
