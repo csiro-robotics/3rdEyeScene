@@ -50,7 +50,7 @@ namespace Tes.IO
     /// <summary>
     /// Size of the payload (bytes) following this header.
     /// </summary>
-    public UInt16 PayloadSize; 
+    public UInt16 PayloadSize;
     /// <summary>
     /// A byte offset from the end of the packet header to the payload data.
     /// </summary>
@@ -85,12 +85,14 @@ namespace Tes.IO
     /// <value>The byte offset to the packet flags member.</value>
     public static int FlagsOffset { get { return Marshal.OffsetOf(typeof(PacketHeader), "Flags").ToInt32(); } }
 
+    public int CrcOffset { get { return Size + PayloadSize; } }
+
     /// <summary>
     /// Create a new header with the default values set. This includes the
     /// default marker and version number.
     /// </summary>
     public static PacketHeader Default { get { return Create(0, 0); } }
-    
+
     /// <summary>
     /// Create a default header with the given <paramref name="routingID"/>.
     /// </summary>

@@ -360,6 +360,38 @@ namespace Tes.IO
     }
 
     /// <summary>
+    /// Recalculates and updates the CRC.
+    /// </summary>
+    /// <returns>True on success, even when <see cref="PacketFlag.NoCrc"/> is set, false on failure.</returns>
+    /// <remarks>
+    /// Ignored if <see cref="PacketFlag.NoCrc"/> is set.
+    /// </remarks>
+    public bool UpdateCrc()
+    {
+      if ((_header.Flags & (byte)PacketFlag.NoCrc) == 0)
+      {
+        if (_currentByteCount != _header.CrcOffset + Crc16.CrcSize)
+        {
+          return false;
+        }
+
+        int initialByteCount = _currentByteCount;
+        _currentByteCount -= Crc16.CrcSize;
+        ushort crc = Crc16.Crc.Calculate(_internalBuffer, (uint)_currentByteCount);
+        // Don't do Endian swap here. WriteBytes does it.
+        WriteBytes(BitConverter.GetBytes(crc), true);
+
+        if (initialByteCount != _currentByteCount)
+        {
+          // Failed to return to where we were.
+          return false;
+        }
+      }
+
+      return true;
+    }
+
+    /// <summary>
     /// Exports the packet contents to the given <code>BinaryWriter</code>.
     /// </summary>
     /// <param name="writer">The <code>BinaryWriter</code> to export available bytes to.</param>
