@@ -66,6 +66,24 @@ public class Avatar : MonoBehaviour
     }
   }
 
+  /// <summary>
+  /// Speed multiplier to apply to movement. Checks if speed mode is on.
+  /// </summary>
+  public float MouseMultiplier
+  {
+    get
+    {
+      // Do slow, but not fast multiply on mouse.
+      bool slow = _inputLayer.GetButton("Slow");
+      if (slow)
+      {
+        return LowSpeedMultiplier;
+      }
+
+      return 1.0f;
+    }
+  }
+
   [SerializeField, Range(0.1f, 100.0f)]
   private float _baseMovementRate = 5.0f;
   public float BaseMovementRate
@@ -76,8 +94,8 @@ public class Avatar : MonoBehaviour
 
   public float MovementRate { get { return _baseMovementRate * SpeedMultiplier; } }
 
-  [SerializeField, Range(1.0f, 89.0f)]
-  private float _pitchLimit = 89.0f;
+  [SerializeField, Range(1.0f, 90.0f)]
+  private float _pitchLimit = 90.0f;
   public float PitchLimit
   {
     get { return _pitchLimit; }
@@ -92,12 +110,15 @@ public class Avatar : MonoBehaviour
   //  set { _turnRate = value; }
   //}
 
-  [SerializeField, Range(0.1f, 100.0f)]
+  public const float MinMouseSensitivity = 0.1f;
+  public const float MaxMouseSensitivity = 30.0f;
+
+  [SerializeField, Range(MinMouseSensitivity, MaxMouseSensitivity)]
   private float _mouseSensitivity = 15.0f;
   public float MouseSensitivity
   {
     get { return _mouseSensitivity; }
-    set { _mouseSensitivity = Mathf.Clamp(value, 0.0f, 100.0f); }
+    set { _mouseSensitivity = Mathf.Clamp(value, MinMouseSensitivity, MaxMouseSensitivity); }
   }
 
   [SerializeField]
@@ -153,8 +174,16 @@ public class Avatar : MonoBehaviour
     if (_inputLayer.GetAxis("SpeedAdjust") != 0)
     {
       float speedChange = _inputLayer.GetAxis("SpeedAdjust");
-      BaseSpeedMultiplier = Mathf.Clamp(BaseSpeedMultiplier + speedChange * BaseSpeedMultiplier,
-                                        MinBaseSpeedMultipler, MaxBaseSpeedMultipler);
+      if (_inputLayer.GetKeyDown("left ctrl") || _inputLayer.GetKeyDown("right ctrl"))
+      {
+        MouseSensitivity = Mathf.Clamp(MouseSensitivity + speedChange * MouseSensitivity,
+                                       MinMouseSensitivity, MaxMouseSensitivity);
+      }
+      else
+      {
+        BaseSpeedMultiplier = Mathf.Clamp(BaseSpeedMultiplier + speedChange * BaseSpeedMultiplier,
+                                          MinBaseSpeedMultipler, MaxBaseSpeedMultipler);
+      }
     }
 
     if (_mode == Mode.BoundCamera && _cameras != null && _cameras.ActiveCamera != null)
@@ -300,8 +329,8 @@ public class Avatar : MonoBehaviour
     Transform pitchTransform = (Camera != null) ? Camera.transform : gameObject.transform;
     Transform yawTransform = gameObject.transform;
 
-    deltaYaw = _inputLayer.GetAxis("Horizontal") * MouseSensitivity;
-    deltaPitch = _inputLayer.GetAxis("Vertical") * MouseSensitivity;
+    deltaYaw = _inputLayer.GetAxis("Horizontal") * MouseSensitivity * MouseMultiplier;
+    deltaPitch = _inputLayer.GetAxis("Vertical") * MouseSensitivity * MouseMultiplier;
     deltaPitch *= (CameraSettings.Instance.InvertY) ? -1.0f : 1.0f;
 
     localEulerAngles = pitchTransform.localEulerAngles;
@@ -337,11 +366,14 @@ public class Avatar : MonoBehaviour
     float forward = moveRate * _inputLayer.GetAxis("LinearMove");
     float strafe = moveRate * _inputLayer.GetAxis("StrafeMove");
     float elevation = moveRate * _inputLayer.GetAxis("ElevationMove");
+    // Elevation aligned with the camera up axis.
+    float alignedElevation = moveRate * _inputLayer.GetAxis("AlignedElevationMove");
 
     Vector3 move = Vector3.zero;
     move += forward * ((Camera != null) ? Camera.transform.forward : gameObject.transform.forward);
     move += strafe * gameObject.transform.right;
     move += elevation * gameObject.transform.up;
+    move += alignedElevation * ((Camera != null) ? Camera.transform.up : gameObject.transform.up);
 
     gameObject.transform.position += move;
   }
