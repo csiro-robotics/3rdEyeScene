@@ -22,7 +22,8 @@ namespace Tes.Handlers.Shape3D
       public bool ScreenFacing;
     }
 
-    public delegate bool CreateTextMeshDelegate(string text, ref Mesh mesh, ref Material material);
+    public delegate bool CreateTextMeshDelegate(string text, int fontSize, Color colour,
+                                                ref Mesh mesh, ref Material material);
 
     public CreateTextMeshDelegate CreateTextMeshHandler;
 
@@ -57,23 +58,18 @@ namespace Tes.Handlers.Shape3D
       // TODO: (KS) incorporate the 3es scene transform.
       // TODO: (KS) handle multiple cameras (code only tailored to one).
       Vector3 cameraPosition = (Vector3)cameraContext.CameraToWorldTransform.GetColumn(3);
-      int sideAxis = CoordinateFrameUtil.AxisIndex(ServerInfo.CoordinateFrame, 0);
-      int forwardAxis = CoordinateFrameUtil.AxisIndex(ServerInfo.CoordinateFrame, 1);
-      int upAxis = CoordinateFrameUtil.AxisIndex(ServerInfo.CoordinateFrame, 2);
-      // Set flipAxis if up axis is negative. We will negate again for right handed base systems.
-      bool flipAxis = !CoordinateFrameUtil.LeftHanded(ServerInfo.CoordinateFrame);
-
-      // TODO: (KS) May have the negation the wrong way around for getting into Unity's left handed frame.
-      if (CoordinateFrameUtil.LeftHanded(ServerInfo.CoordinateFrame))
-      {
-        flipAxis = !flipAxis;
-      }
+      CategoriesState categories = this.CategoriesState;
 
       // Walk the items in the shape cache.
       foreach (int shapeIndex in shapeCache.ShapeIndices)
       {
-        // TODO: (KS) check category enabled.
         // if (shapeCache.GetShapeDataByIndex<CreateMessage>(shapeIndex).Category)
+        CreateMessage shape = shapeCache.GetShapeByIndex(shapeIndex);
+        if (!categories.IsActive(shape.Category))
+        {
+          // Category not enabled.
+          continue;
+        }
 
         // Get transform and text data.
         Matrix4x4 transform = shapeCache.GetShapeTransformByIndex(shapeIndex);
@@ -84,7 +80,9 @@ namespace Tes.Handlers.Shape3D
           // No mesh/material. Try instantiate via the delegate.
           if (CreateTextMeshHandler != null)
           {
-            CreateTextMeshHandler(textData.Text, ref textData.Mesh, ref textData.Material);
+            CreateTextMeshHandler(textData.Text, textData.FontSize,
+                                  Maths.ColourExt.ToUnity(new Maths.Colour(shape.Attributes.Colour)),
+                                  ref textData.Mesh, ref textData.Material);
           }
 
           if (textData.Mesh == null || textData.Material == null)
@@ -96,34 +94,41 @@ namespace Tes.Handlers.Shape3D
           shapeCache.SetShapeDataByIndex<TextShapeData>(shapeIndex, textData);
         }
 
+        if (textData.Mesh == null || textData.Material == null)
+        {
+          continue;
+        }
+
         if (textData.ScreenFacing)
         {
-          Vector3 textPosition = (Vector3)transform.GetColumn(3);
+          Vector3 textPosition = cameraContext.TesSceneToWorldTransform * (Vector3)transform.GetColumn(3);
           Vector3 toCamera = cameraPosition - textPosition;
-          // Remove any height component from the camera. This depends on the server settings.
-          toCamera[upAxis] = 0;
+          // Remove any height component from the camera. Indexing using Unity's left handed, Y up system.
+          toCamera[1] = 0;
 
           if (toCamera.sqrMagnitude > 1e-3f)
           {
             toCamera = toCamera.normalized;
-            Vector3 up = Vector3.zero;
-            up[upAxis] = 1.0f;
-            Vector3 side = Vector3.Cross(toCamera, up);
+            Vector3 side = Vector3.Cross(toCamera, Vector3.up);
             // Build new rotation axes using toCamera for forward and a new Up axis.
-            transform.SetColumn(sideAxis, new Vector4(side.x, side.y, side.z));
-            transform.SetColumn(forwardAxis, new Vector4(toCamera.x, toCamera.y, toCamera.z));
-            transform.SetColumn(upAxis, new Vector4(up.x, up.y, up.z));
+            transform.SetColumn(0, new Vector4(side.x, side.y, side.z));
+            transform.SetColumn(1, new Vector4(Vector3.up.x, Vector3.up.y, Vector3.up.z));
+            transform.SetColumn(2, new Vector4(toCamera.x, toCamera.y, toCamera.z));
             transform.SetColumn(3, new Vector4(textPosition.x, textPosition.y, textPosition.z, 1.0f));
-
-            // Write the transform back to the shape cache. This maintains consistency close to the camera.
-            shapeCache.SetShapeTransformByIndex(shapeIndex, transform);
           }
           // else too close to the camera to build a rotation.
         }
+        else
+        {
+          // transform = cameraContext.TesSceneToWorldTransform * transform;
+          // Just extract the text position.
+          // TODO: (KS) will have to look at allowing users to orient the text from the server.
+          Vector3 textPosition = cameraContext.TesSceneToWorldTransform * (Vector3)transform.GetColumn(3);
+          transform = Matrix4x4.identity;
+          transform.SetColumn(3, new Vector4(textPosition.x, textPosition.y, textPosition.z, 1.0f));
+        }
 
-        // This probably needs to be applied before screen facing.
-        transform = cameraContext.TesSceneToWorldTransform * transform;
-        cameraContext.OpaqueBuffer.DrawMesh(textData.Mesh, transform, textData.Material);
+        cameraContext.TransparentBuffer.DrawMesh(textData.Mesh, transform, textData.Material);
 
         // TODO: (KS) resolve procedural rendering without a game object. Consider TextMeshPro.
         // TODO: (KS) select opaque layer.

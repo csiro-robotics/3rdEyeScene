@@ -8,7 +8,9 @@ using Tes.Runtime;
 using Tes.Handlers;
 using Tes.Handlers.Shape2D;
 using Tes.Handlers.Shape3D;
+using TMPro;
 using UnityEngine;
+
 
 /// <summary>
 /// Primary component for instantiating the 3rd Eye Scene managers.
@@ -59,9 +61,21 @@ public class TesComponent : Router
       bounds.max.x, bounds.max.y, bounds.max.z));
   }
 
-  public bool GenerateTextMesh(string text, ref Mesh mesh, ref Material material)
+  public bool GenerateTextMesh(string text, int fontSize, Color colour, ref Mesh mesh, ref Material material)
   {
-    // TODO: (KS) generate a text mesh and bind material.
+    // Generate a mesh using TextMeshPro.
+    TMPro.TextMeshPro tmp = GetComponent<TMPro.TextMeshPro>();
+    if (tmp != null)
+    {
+      tmp.fontSize = fontSize;
+      tmp.text = text;
+      tmp.ForceMeshUpdate();
+      mesh = Mesh.Instantiate(tmp.mesh);
+      material = new Material(tmp.fontMaterial);
+      material.SetColor("_FaceColor", colour);
+      // material.SetColor("_OutlineColor", colour);
+      return true;
+    }
     return false;
   }
 
