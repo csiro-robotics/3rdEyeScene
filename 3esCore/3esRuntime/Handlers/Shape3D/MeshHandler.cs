@@ -23,6 +23,10 @@ namespace Tes.Handlers.Shape3D
       public RenderMesh Mesh;
       public Material Material;
       public bool CalculateNormals;
+      /// <summary>
+      /// Render scaling for points, lines, etc.
+      /// </summary>
+      public float DrawScale;
     }
 
     /// <summary>
@@ -177,7 +181,7 @@ namespace Tes.Handlers.Shape3D
 
       if (material.HasProperty("_BackColour"))
       {
-        material.SetColor("_Color", Maths.ColourExt.ToUnity(new Maths.Colour(shape.Attributes.Colour)));
+        material.SetColor("_BackColour", Maths.ColourExt.ToUnity(new Maths.Colour(shape.Attributes.Colour)));
       }
 
       // TODO: (KS) Need to derive this from the shape properties.
@@ -192,7 +196,29 @@ namespace Tes.Handlers.Shape3D
         {
           material.SetVector("_BoundsMax", mesh.MaxBounds);
         }
-        material.EnableKeyword("WITH_COLOURS_RANGE_Z");
+
+        float pointScale = (meshEntry.DrawScale > 0) ? meshEntry.DrawScale : 1.0f;
+        material.SetFloat("_PointSize", GlobalSettings.PointSize * pointScale);
+
+        // Colour by height if we have a zero colour value.
+        if (shape.Attributes.Colour == 0)
+        {
+          material.SetColor("_Color", Color.white);
+          material.SetColor("_BackColour", Color.white);
+          switch (CoordinateFrameUtil.AxisIndex(ServerInfo.CoordinateFrame, 2))
+          {
+          case 0:
+            material.EnableKeyword("WITH_COLOURS_RANGE_X");
+            break;
+          case 1:
+            material.EnableKeyword("WITH_COLOURS_RANGE_Y");
+            break;
+          default:
+          case 2:
+            material.EnableKeyword("WITH_COLOURS_RANGE_Z");
+            break;
+          }
+        }
       }
 
       // Bind vertices and draw.
@@ -245,8 +271,19 @@ namespace Tes.Handlers.Shape3D
       MeshEntry meshEntry = new MeshEntry
       {
         Mesh = mesh,
-        CalculateNormals = (msg.Flags & (ushort)MeshShapeFlag.CalculateNormals) != 0
+        CalculateNormals = (msg.Flags & (ushort)MeshShapeFlag.CalculateNormals) != 0,
+        DrawScale = 0.0f
       };
+
+      if (packet.Header.VersionMajor == 0 && packet.Header.VersionMinor == 1)
+      {
+        // Legacy handling.
+        meshEntry.DrawScale = 0.0f;
+      }
+      else
+      {
+        meshEntry.DrawScale = reader.ReadSingle();
+      }
 
       cache.SetShapeDataByIndex(shapeIndex, meshEntry);
 
@@ -468,7 +505,6 @@ namespace Tes.Handlers.Shape3D
         mat = new Material(Materials[MaterialLibrary.Points]);
         MaterialLibrary.SetupMaterial(mat, meshEntry.Mesh);
         int pointSize = (Materials != null) ? Materials.DefaultPointSize : 4;
-        mat.SetInt("_PointSize", pointSize);
         mat.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
         break;
       case MeshDrawType.Voxels:

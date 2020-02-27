@@ -44,7 +44,7 @@ namespace Tes
   /// Mesh data and materials are good examples of shared resources. Shared resources are
   /// transferred on the connection as required, and the destruction message sent some time
   /// after the resource is no longer referenced.
-  /// 
+  ///
   /// Typically calling pattern on the resource is:
   /// <list type="bullet">
   /// <item><see cref="Create(PacketBuffer)"/></item>
@@ -89,7 +89,7 @@ namespace Tes
     /// Supports amortised transfer via the <paramref name="progress"/> argument.
     /// On first call, this is the default initialised structure (zero). On subsequent
     /// calls it is the last returned value unless <c>Failed</c> was true.
-    /// 
+    ///
     /// The semantics of this value are entirely dependent on the internal implementation.
     /// </remarks>
     void Transfer(PacketBuffer packet, int byteLimit, ref TransferProgress progress);
@@ -97,9 +97,10 @@ namespace Tes
     /// <summary>
     /// Create resource <see cref="Create(PacketBuffer)"/> message content.
     /// </summary>
+    /// <param name="packet">The buffer from which the reader reads.</param>
     /// <param name="reader">Stream to read from.</param>
     /// <returns>True on success.</returns>
-    bool ReadCreate(BinaryReader reader);
+    bool ReadCreate(PacketBuffer packet, BinaryReader reader);
 
     /// <summary>
     /// Read data <see cref="Transfer(PacketBuffer, int, ref TransferProgress)"/> message content.

@@ -9,6 +9,10 @@ public class RenderSettings : Settings
   public RenderSettings()
   {
     Name = "Render";
+    if (Tes.Runtime.GlobalSettings.PointSize != PointSize)
+    {
+      Tes.Runtime.GlobalSettings.PointSize = PointSize;
+    }
   }
 
   [Browsable(true), SetRange(1, 64), Tooltip("Default point render size (pixels)")]
@@ -44,6 +48,13 @@ public class RenderSettings : Settings
   {
     get { return PlayerPrefs.GetFloat("render.edlLinearScale", 1); }
     set { PlayerPrefs.SetFloat("render.edlLinearScale", value); Notify("EdlLinearScale"); }
+  }
+
+  [Browsable(true), SetRange(1, 64), Tooltip("Point size for point cloud data")]
+  public float PointSize
+  {
+    get { return PlayerPrefs.GetFloat("render.pointSize", Tes.Runtime.GlobalSettings.PointSize); }
+    set { Tes.Runtime.GlobalSettings.PointSize = value; PlayerPrefs.SetFloat("render.pointSize", value); Notify("PointSize"); }
   }
 
   /// <summary>

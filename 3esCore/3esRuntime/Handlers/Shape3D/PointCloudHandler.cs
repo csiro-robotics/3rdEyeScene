@@ -139,6 +139,40 @@ namespace Tes.Handlers.Shape3D
 
       points.Material.SetBuffer("_Vertices", mesh.VertexBuffer);
 
+
+      // Set min/max shader values.
+      if (points.Material.HasProperty("_BoundsMin"))
+      {
+        points.Material.SetVector("_BoundsMin", points.Mesh.Mesh.MinBounds);
+      }
+      if (points.Material.HasProperty("_BoundsMax"))
+      {
+        points.Material.SetVector("_BoundsMax", points.Mesh.Mesh.MaxBounds);
+      }
+
+      float pointScale = (points.PointScale > 0) ? points.PointScale : 1.0f;
+      points.Material.SetFloat("_PointSize", GlobalSettings.PointSize * pointScale);
+
+      // Colour by height if we have a zero colour value.
+      if (shape.Attributes.Colour == 0)
+      {
+        points.Material.SetColor("_Color", Color.white);
+        points.Material.SetColor("_BackColour", Color.white);
+        switch (CoordinateFrameUtil.AxisIndex(ServerInfo.CoordinateFrame, 2))
+        {
+        case 0:
+          points.Material.EnableKeyword("WITH_COLOURS_RANGE_X");
+          break;
+        case 1:
+          points.Material.EnableKeyword("WITH_COLOURS_RANGE_Y");
+          break;
+        default:
+        case 2:
+          points.Material.EnableKeyword("WITH_COLOURS_RANGE_Z");
+          break;
+        }
+      }
+
       if (mesh.IndexBuffer != null)
       {
         renderQueue.DrawProcedural(mesh.IndexBuffer, modelWorld, points.Material, 0, mesh.Topology, mesh.IndexCount);
@@ -192,7 +226,7 @@ namespace Tes.Handlers.Shape3D
       Shapes.PointCloudShape points = new Shapes.PointCloudShape(new MeshResourcePlaceholder(pointsComp.MeshID),
                                                                  shapeData.ObjectID,
                                                                  shapeData.Category,
-                                                                 (byte)pointsComp.PointSize);
+                                                                 pointsComp.PointScale);
       points.SetAttributes(shapeData.Attributes);
       if (pointsComp.IndexCount > 0)
       {
@@ -217,7 +251,16 @@ namespace Tes.Handlers.Shape3D
       pointsComp.MeshID = reader.ReadUInt32();
       // Read the number of indices (zero implies show entire mesh).
       pointsComp.IndexCount = reader.ReadUInt32();
-      pointsComp.PointSize = reader.ReadByte();
+
+      if (packet.Header.VersionMajor == 0 && packet.Header.VersionMinor == 1)
+      {
+        // Legacy support.
+        pointsComp.PointScale = (float)reader.ReadByte();
+      }
+      else
+      {
+        pointsComp.PointScale = reader.ReadSingle();
+      }
 
       cache.SetShapeDataByIndex(shapeIndex, pointsComp);
 
@@ -356,7 +399,8 @@ namespace Tes.Handlers.Shape3D
 
       if (material.HasProperty("_PointSize"))
       {
-        material.SetInt("_PointSize", points.PointSize);
+        float pointScale = (points.PointScale > 0) ? points.PointScale : 1.0f;
+        material.SetFloat("_PointSize", GlobalSettings.PointSize * pointScale);
       }
 
       if (material.HasProperty("_Color"))

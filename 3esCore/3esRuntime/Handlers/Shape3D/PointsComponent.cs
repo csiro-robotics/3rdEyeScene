@@ -117,9 +117,9 @@ namespace Tes.Handlers.Shape3D
     public int[] Indices { get { return _indices; } }
     public GraphicsBuffer IndexBuffer { get { return _indexBuffer; } }
     /// <summary>
-    /// Point render size override. Zero to use the default.
+    /// Point render scale. Zero to use the default.
     /// </summary>
-    public int PointSize { get { return _pointSize; } set { _pointSize = value; } }
+    public float PointScale { get { return _pointScale; } set { _pointScale = value; } }
 
     /// <summary>
     /// True if the mesh is dirty and needs updating.
@@ -127,7 +127,7 @@ namespace Tes.Handlers.Shape3D
     public bool MeshDirty { get; set; }
 
     [SerializeField]
-    private int _pointSize;
+    private float _pointScale;
 
     private int[] _indices = null;
     private GraphicsBuffer _indexBuffer = null;

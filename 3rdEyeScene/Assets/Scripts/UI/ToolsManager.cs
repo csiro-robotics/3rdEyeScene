@@ -23,7 +23,6 @@ namespace UI
     public void ToggleActivePanel(GameObject panel)
     {
       bool currentlyActive = panel == ActivePanel;
-      Debug.Log($"Active panel: {ActivePanel}");
       if (ActivePanel != null)
       {
         ActivePanel.SetActive(false);

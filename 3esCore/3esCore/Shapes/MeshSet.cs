@@ -135,13 +135,14 @@ namespace Tes.Shapes
     /// <summary>
     /// Read the contents of a create message for a <c>MeshSet</c>.
     /// </summary>
+    /// <param name="packet">The buffer from which the reader reads.</param>
     /// <param name="reader">Stream to read from</param>
     /// <returns>True on success.</returns>
     /// <remarks>
     /// Reads additional data about the mesh parts contained in the mesh. All parts are represented
     /// by a <see cref="PlaceholderMesh"/> as real mesh data cannot be resolved here.
     /// </remarks>
-    public override bool ReadCreate(BinaryReader reader)
+    public override bool ReadCreate(PacketBuffer packet, BinaryReader reader)
     {
       if (!_data.Read(reader))
       {

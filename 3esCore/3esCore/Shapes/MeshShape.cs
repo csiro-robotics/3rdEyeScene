@@ -17,7 +17,10 @@ namespace Tes.Shapes
   /// The shape can be used to render triangles, lines or points. The vertex and/or index data
   /// must match the topology. That is, there must be three indices or vertices per triangle.
   ///
-  /// The shape does support splitting large data sets.
+  /// For point types, the points are coloured by type when the colour value is zero (black, with zero alpha).
+  /// This is the default colour for points.
+  ///
+  /// The shape supports splitting large data sets for transmission.
   /// </remarks>
   public class MeshShape : Shape
   {
@@ -192,7 +195,7 @@ namespace Tes.Shapes
     /// <param name="rotation">Local rotation.</param>
     /// <param name="scale">Local scaling.</param>
     public MeshShape(MeshDrawType drawType, Vector3[] vertices, Vector3 position, Quaternion rotation, Vector3 scale)
-      : this(drawType, vertices, null, position, rotation, scale) { }
+      : this(drawType, vertices, null, position, rotation, scale) {}
 
     /// <summary>
     /// Create a mesh shape.
@@ -213,6 +216,11 @@ namespace Tes.Shapes
       Position = position;
       Rotation = rotation;
       Scale = scale;
+
+      if (drawType == MeshDrawType.Points)
+      {
+        ColourByHeight = true;
+      }
     }
 
     /// <summary>
@@ -246,6 +254,11 @@ namespace Tes.Shapes
       Position = position;
       Rotation = rotation;
       Scale = scale;
+
+      if (drawType == MeshDrawType.Points)
+      {
+        ColourByHeight = true;
+      }
     }
 
     /// <summary>
@@ -281,6 +294,11 @@ namespace Tes.Shapes
       Position = position;
       Rotation = rotation;
       Scale = scale;
+
+      if (drawType == MeshDrawType.Points)
+      {
+        ColourByHeight = true;
+      }
     }
 
     /// <summary>
@@ -450,6 +468,59 @@ namespace Tes.Shapes
     }
 
     /// <summary>
+    /// Colour <see cref="MeshDrawType.Points"/> by height.
+    /// </summary>
+    /// <remarks>
+    /// This sets the shape colour to zero (black, with zero alpha).
+    ///
+    /// Ignored for non point types.
+    /// </remarks>
+    public bool ColourByHeight
+    {
+      get
+      {
+        if (DrawType == MeshDrawType.Points)
+        {
+          return _data.Attributes.Colour == 0;
+        }
+        return false;
+      }
+
+      set
+      {
+        if (DrawType == MeshDrawType.Points)
+        {
+          if (value)
+          {
+            _data.Attributes.Colour = 0;
+          }
+          else if (_data.Attributes.Colour == 0)
+          {
+            _data.Attributes.Colour = 0xFFFFFFFFu;
+          }
+        }
+      }
+    }
+
+    /// <summary>
+    /// Access the draw weight used to (de)emphasise the rendering.
+    /// </summary>
+    /// <remarks>
+    /// This equates to point size for <see cref="MeshDrawType.Points"/> or line width for
+    /// <see cref="MeshDrawType.Lines"/>. A zero value indicates use of the viewer default drawing weight.
+    ///
+    /// The viewer is free to ignore this value.
+    /// </remarks>
+    public float DrawScale
+    {
+      get { return _drawWeight; }
+      set
+      {
+        _drawWeight = value;
+      }
+    }
+
+    /// <summary>
     /// Access vertex array.
     /// </summary>
     public Vector3[] Vertices { get { return _vertices; } }
@@ -476,10 +547,13 @@ namespace Tes.Shapes
     /// <summary>
     /// Optional 32-bit colours array. See <see cref="Colour"/>.
     /// </summary>
+    /// <remarks>
+    /// For points, this clears <see cref="ColourByHeight"/>.
+    /// </remarks>
     public UInt32[] Colours
     {
       get { return _colours; }
-      set { _colours = value; }
+      set { ColourByHeight = false; _colours = value; }
     }
 
     /// <summary>
@@ -528,6 +602,8 @@ namespace Tes.Shapes
       packet.WriteBytes(BitConverter.GetBytes(count), true);
       byte drawType = (byte)DrawType;
       packet.WriteBytes(new byte[] { drawType }, false);
+      packet.WriteBytes(BitConverter.GetBytes(_drawWeight), true);
+
       return true;
     }
 
@@ -674,14 +750,15 @@ namespace Tes.Shapes
     /// <summary>
     /// Read a <see cref="CreateMessage"/> and additional payload.
     /// </summary>
+    /// <param name="packet">The buffer from which the reader reads.</param>
     /// <param name="reader">Stream to read from</param>
     /// <returns>True on success.</returns>
     /// <remarks>
     /// Read the additional payload to resolve vertex and index counts.
     /// </remarks>
-    public override bool ReadCreate(BinaryReader reader)
+    public override bool ReadCreate(PacketBuffer packet, BinaryReader reader)
     {
-      if (!base.ReadCreate(reader))
+      if (!base.ReadCreate(packet, reader))
       {
         return false;
       }
@@ -710,6 +787,16 @@ namespace Tes.Shapes
       }
 
       _normals = null;
+
+      if (packet.Header.VersionMajor != 0 || packet.Header.VersionMajor == 0 && packet.Header.VersionMinor >= 2)
+      {
+        _drawWeight = reader.ReadSingle();
+      }
+      else
+      {
+        // Legacy support
+        _drawWeight = 0;
+      }
 
       return true;
     }
@@ -743,9 +830,10 @@ namespace Tes.Shapes
     /// <summary>
     /// Read <see cref="DataMessage"/> and payload generated by <see cref="WriteData(PacketBuffer, ref uint)"/>.
     /// </summary>
+    /// <param name="packet">The buffer from which the reader reads.</param>
     /// <param name="reader">Stream to read from</param>
     /// <returns>True on success.</returns>
-    public override bool ReadData(BinaryReader reader)
+    public override bool ReadData(PacketBuffer packet, BinaryReader reader)
     {
       DataMessage msg = new DataMessage();
 
@@ -1065,5 +1153,9 @@ namespace Tes.Shapes
     /// Index data.
     /// </summary>
     private int[] _indices;
+    /// <summary>
+    /// Draw weight: equates to point size or line width.
+    /// </summary>
+    private float _drawWeight = 0.0f;
   }
 }

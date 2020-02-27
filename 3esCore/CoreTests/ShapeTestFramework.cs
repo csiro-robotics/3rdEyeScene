@@ -199,15 +199,15 @@ namespace Tes.CoreTests
       switch (packet.Header.MessageID)
       {
         case (int)ObjectMessageID.Create:
-          Assert.True(shape.ReadCreate(reader));
+          Assert.True(shape.ReadCreate(packet, reader));
           break;
 
         case (int)ObjectMessageID.Update:
-          Assert.True(shape.ReadUpdate(reader));
+          Assert.True(shape.ReadUpdate(packet, reader));
           break;
 
         case (int)ObjectMessageID.Data:
-          Assert.True(shape.ReadData(reader));
+          Assert.True(shape.ReadData(packet, reader));
           break;
       }
     }
@@ -244,7 +244,7 @@ namespace Tes.CoreTests
           // Create message. Should not already exists.
           Assert.Null(mesh);//, "Recreating existing mesh.");
           mesh = new SimpleMesh(meshId);
-          Assert.True(mesh.ReadCreate(reader));
+          Assert.True(mesh.ReadCreate(packet, reader));
           resources.Add(mesh.UniqueKey(), mesh);
           break;
 
@@ -259,7 +259,7 @@ namespace Tes.CoreTests
           break;
       }
     }
-    
+
     public static void ValidateShape(Shape shape, Shape reference, Dictionary<ulong, Resource> resources)
     {
       Assert.Equal(reference.RoutingID, shape.RoutingID);

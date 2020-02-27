@@ -409,12 +409,13 @@ namespace Tes.Shapes
     /// Read a <see cref="CreateMessage"/> for this shape. This will override the
     /// <see cref="ID"/> of this instance.
     /// </summary>
+    /// <param name="packet">The buffer from which the reader reads.</param>
     /// <param name="reader">stream The stream to read message data from.</param>
     /// <returns><c>true</c> if the message is successfully read.</returns>
     /// <remarks>
     /// The <see cref="RoutingID"/> must have already been resolved.
     /// </remarks>
-    public virtual bool ReadCreate(BinaryReader reader)
+    public virtual bool ReadCreate(PacketBuffer packet, BinaryReader reader)
     {
       return _data.Read(reader);
     }
@@ -422,12 +423,13 @@ namespace Tes.Shapes
     /// <summary>
     /// Read an <see cref="UpdateMessage"/> for this shape.
     /// </summary>
+    /// <param name="packet">The buffer from which the reader reads.</param>
     /// <param name="reader">The stream to read message data from.</param>
     /// <returns><c>true</c> if the message is successfully read.</returns>
     /// <remarks>
     /// Respects the <see cref="UpdateFlag"/> values, only modifying requested data.
     /// </remarks>
-    public virtual bool ReadUpdate(BinaryReader reader)
+    public virtual bool ReadUpdate(PacketBuffer packet, BinaryReader reader)
     {
       UpdateMessage up = new UpdateMessage();
       if (up.Read(reader))
@@ -473,6 +475,7 @@ namespace Tes.Shapes
     /// Read back data written by <see cref="WriteData(PacketBuffer, ref uint)"/>.
     /// </summary>
     ///
+    /// <param name="packet">The buffer from which the reader reads.</param>
     /// <param name="reader">The stream to read message data from.</param>
     /// <returns><c>true</c> if the message is successfully read.</returns>
     ///
@@ -481,7 +484,7 @@ namespace Tes.Shapes
     /// then data payload. The base implementation returns <c>false</c> assuming a
     /// simple shape.
     /// </remarks>
-    public virtual bool ReadData(BinaryReader reader)
+    public virtual bool ReadData(PacketBuffer packet, BinaryReader reader)
     {
       return false;
     }

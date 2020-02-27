@@ -519,7 +519,7 @@ namespace Tes.CoreTests
       PointCloudShape shape = (PointCloudShape)shapeArg;
       PointCloudShape reference = (PointCloudShape)referenceArg;
 
-      Assert.Equal(reference.PointSize, shape.PointSize);
+      Assert.Equal(reference.PointScale, shape.PointScale);
       Assert.NotNull(reference.PointCloud);
       Assert.NotNull(shape.PointCloud);
 
