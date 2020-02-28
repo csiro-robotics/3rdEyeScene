@@ -50,7 +50,7 @@ namespace Tes.IO
     /// <summary>
     /// Size of the payload (bytes) following this header.
     /// </summary>
-    public UInt16 PayloadSize; 
+    public UInt16 PayloadSize;
     /// <summary>
     /// A byte offset from the end of the packet header to the payload data.
     /// </summary>
@@ -85,12 +85,14 @@ namespace Tes.IO
     /// <value>The byte offset to the packet flags member.</value>
     public static int FlagsOffset { get { return Marshal.OffsetOf(typeof(PacketHeader), "Flags").ToInt32(); } }
 
+    public int CrcOffset { get { return Size + PayloadSize; } }
+
     /// <summary>
     /// Create a new header with the default values set. This includes the
     /// default marker and version number.
     /// </summary>
     public static PacketHeader Default { get { return Create(0, 0); } }
-    
+
     /// <summary>
     /// Create a default header with the given <paramref name="routingID"/>.
     /// </summary>
@@ -169,7 +171,28 @@ namespace Tes.IO
       PayloadSize = reader.ReadUInt16();
       PayloadOffset = reader.ReadByte();
       Flags = reader.ReadByte();
-      return Marker == PacketMarker && VersionMajor == PacketVersionMajor && VersionMinor == PacketVersionMinor;
+      return Marker == PacketMarker && IsCompatibleVersion(VersionMajor, VersionMinor);
+    }
+
+    /// <summary>
+    /// Check if the given version number is read compatible.
+    /// </summary>
+    /// <param name="versionMajor">The major version number.</param>
+    /// <param name="versionMinor">The minor version number.</param>
+    /// <returns>True if the given version information is read compatible.`</returns>
+    /// <remarks>
+    /// The version number must either match the current version number or must be between the current and the
+    /// compatibility version number.
+    /// </remarks>
+    public static bool IsCompatibleVersion(ushort versionMajor, ushort versionMinor)
+    {
+      bool equalCurrent = versionMajor == PacketVersionMajor && versionMinor == PacketVersionMinor;
+      bool lessThanCurrent = versionMajor < PacketVersionMajor ||
+                             versionMajor == PacketVersionMajor && versionMinor < PacketVersionMinor;
+      bool geqCompat = versionMajor > CompatibilityPacketVersionMajor ||
+                       versionMajor == CompatibilityPacketVersionMajor && versionMinor >= CompatibilityPacketVersionMinor;
+
+      return equalCurrent || lessThanCurrent && geqCompat;
     }
 
     /// <summary>
@@ -183,6 +206,15 @@ namespace Tes.IO
     /// <summary>
     /// The current minor version number for a 3rd Eye Scene packet.
     /// </summary>
-    public static readonly UInt16 PacketVersionMinor = (UInt16)0x1u;
+    public static readonly UInt16 PacketVersionMinor = (UInt16)0x2u;
+
+    /// <summary>
+    /// The minimum (major) version number which can be read by this library.
+    /// </summary>
+    public static readonly UInt16 CompatibilityPacketVersionMajor = (UInt16)0x0u;
+    /// <summary>
+    /// The minimum (minor) version number which can be read by this library.
+    /// </summary>
+    public static readonly UInt16 CompatibilityPacketVersionMinor = (UInt16)0x1u;
   }
 }

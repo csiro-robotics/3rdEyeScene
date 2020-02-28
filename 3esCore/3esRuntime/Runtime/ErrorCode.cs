@@ -42,7 +42,7 @@ namespace Tes.Runtime
     /// </summary>
     InvalidMessageID,
     /// <summary>
-    /// The message content could not be successfully doded.
+    /// The message content could not be successfully decoded.
     /// The value is set to the message content ID.
     /// </summary>
     MalformedMessage,
@@ -70,7 +70,7 @@ namespace Tes.Runtime
     // Serialisation codes
 
     /// <summary>
-    /// The spified file name is invalid for the current operation. Includes permission failures.
+    /// The specified file name is invalid for the current operation. Includes permission failures.
     /// </summary>
     InvalidFileName,
 

@@ -1,5 +1,5 @@
 ﻿// // Copyright (c) CSIRO 2017
-// // Commonwealth Scientific and Industrial Research Organisation (CSIRO) 
+// // Commonwealth Scientific and Industrial Research Organisation (CSIRO)
 // // ABN 41 687 119 230
 // //
 // // author Kazys Stepanas
@@ -67,15 +67,15 @@ namespace Tes.CoreTests
         switch((ObjectMessageID)packet.Header.MessageID)
         {
           case ObjectMessageID.Create:
-            Assert.True(readMesh.ReadCreate(reader));
+            Assert.True(readMesh.ReadCreate(packet, reader));
             break;
 
           case ObjectMessageID.Update:
-            Assert.True(readMesh.ReadUpdate(reader));
+            Assert.True(readMesh.ReadUpdate(packet, reader));
             break;
 
           case ObjectMessageID.Data:
-            Assert.True(readMesh.ReadData(reader));
+            Assert.True(readMesh.ReadData(packet, reader));
             break;
         }
       }

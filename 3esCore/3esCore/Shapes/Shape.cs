@@ -94,6 +94,17 @@ namespace Tes.Shapes
     }
 
     /// <summary>
+    /// Direct creation for non-complex shapes.
+    /// </summary>
+    /// <param name="routingID">The routing ID for the shape type.</param>
+    /// <param name="data">Data packet representing the non-complex shape.</param>
+    public Shape(ushort routingID, CreateMessage data)
+    {
+      RoutingID = routingID;
+      _data = data;
+    }
+
+    /// <summary>
     /// Access to the routing ID for this shape.
     /// </summary>
     public ushort RoutingID { get; protected set; }
@@ -139,6 +150,42 @@ namespace Tes.Shapes
       get { return (_data.Flags & (ushort)ObjectFlag.Transparent) != 0; }
       set { _data.Flags &= (ushort)~ObjectFlag.Transparent; _data.Flags |= value ? (ushort)ObjectFlag.Transparent : (ushort)0; }
     }
+
+    /// <summary>
+    /// Gets or sets the two sided display flag.
+    /// </summary>
+    /// <value><c>true</c> if two sided; otherwise, <c>false</c>.</value>
+    public bool TwoSided
+    {
+      get { return (_data.Flags & (ushort)ObjectFlag.TwoSided) != 0; }
+      set { _data.Flags &= (ushort)~ObjectFlag.TwoSided; _data.Flags |= value ? (ushort)ObjectFlag.TwoSided : (ushort)0; }
+    }
+
+    /// <summary>
+    /// Gets or sets the replace on creation flag.
+    /// </summary>
+    /// <value><c>true</c> if replacing; otherwise, <c>false</c>.</value>
+    public bool Replace
+    {
+      get { return (_data.Flags & (ushort)ObjectFlag.Replace) != 0; }
+      set { _data.Flags &= (ushort)~ObjectFlag.Replace; _data.Flags |= value ? (ushort)ObjectFlag.Replace : (ushort)0; }
+    }
+
+    /// <summary>
+    /// Gets or sets skip resources flag.
+    /// </summary>
+    /// <value><c>true</c> if skipping resource referencing; otherwise, <c>false</c>.</value>
+    public bool SkipResources
+    {
+      get { return (_data.Flags & (ushort)ObjectFlag.SkipResources) != 0; }
+      set
+      {
+        _data.Flags &=
+          (ushort)~ObjectFlag.SkipResources; _data.Flags |= value ?(ushort)ObjectFlag.SkipResources : (ushort)0;
+        }
+    }
+
+    public CreateMessage Data { get { return _data; } }
 
     /// <summary>
     /// Exposes shape details via an <see cref="ObjectAttributes"/> structure.
@@ -291,7 +338,7 @@ namespace Tes.Shapes
     /// Used in maintaining cached copies of shapes. The shapes should
     /// already represent the same object.
     ///
-    /// Not all attributes need to be updated. Only attributes which may be updated 
+    /// Not all attributes need to be updated. Only attributes which may be updated
     /// via an <see cref="UpdateMessage"/> for this shape need be copied.
     ///
     /// The default implementation copies only the <see cref="ObjectAttributes"/>.
@@ -362,12 +409,13 @@ namespace Tes.Shapes
     /// Read a <see cref="CreateMessage"/> for this shape. This will override the
     /// <see cref="ID"/> of this instance.
     /// </summary>
+    /// <param name="packet">The buffer from which the reader reads.</param>
     /// <param name="reader">stream The stream to read message data from.</param>
     /// <returns><c>true</c> if the message is successfully read.</returns>
     /// <remarks>
     /// The <see cref="RoutingID"/> must have already been resolved.
     /// </remarks>
-    public virtual bool ReadCreate(BinaryReader reader)
+    public virtual bool ReadCreate(PacketBuffer packet, BinaryReader reader)
     {
       return _data.Read(reader);
     }
@@ -375,12 +423,13 @@ namespace Tes.Shapes
     /// <summary>
     /// Read an <see cref="UpdateMessage"/> for this shape.
     /// </summary>
+    /// <param name="packet">The buffer from which the reader reads.</param>
     /// <param name="reader">The stream to read message data from.</param>
     /// <returns><c>true</c> if the message is successfully read.</returns>
     /// <remarks>
     /// Respects the <see cref="UpdateFlag"/> values, only modifying requested data.
     /// </remarks>
-    public virtual bool ReadUpdate(BinaryReader reader)
+    public virtual bool ReadUpdate(PacketBuffer packet, BinaryReader reader)
     {
       UpdateMessage up = new UpdateMessage();
       if (up.Read(reader))
@@ -426,6 +475,7 @@ namespace Tes.Shapes
     /// Read back data written by <see cref="WriteData(PacketBuffer, ref uint)"/>.
     /// </summary>
     ///
+    /// <param name="packet">The buffer from which the reader reads.</param>
     /// <param name="reader">The stream to read message data from.</param>
     /// <returns><c>true</c> if the message is successfully read.</returns>
     ///
@@ -434,7 +484,7 @@ namespace Tes.Shapes
     /// then data payload. The base implementation returns <c>false</c> assuming a
     /// simple shape.
     /// </remarks>
-    public virtual bool ReadData(BinaryReader reader)
+    public virtual bool ReadData(PacketBuffer packet, BinaryReader reader)
     {
       return false;
     }

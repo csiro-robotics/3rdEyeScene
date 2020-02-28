@@ -9,6 +9,10 @@ public class RenderSettings : Settings
   public RenderSettings()
   {
     Name = "Render";
+    if (Tes.Runtime.GlobalSettings.PointSize != PointSize)
+    {
+      Tes.Runtime.GlobalSettings.PointSize = PointSize;
+    }
   }
 
   [Browsable(true), SetRange(1, 64), Tooltip("Default point render size (pixels)")]
@@ -46,6 +50,13 @@ public class RenderSettings : Settings
     set { PlayerPrefs.SetFloat("render.edlLinearScale", value); Notify("EdlLinearScale"); }
   }
 
+  [Browsable(true), SetRange(1, 64), Tooltip("Point size for point cloud data")]
+  public float PointSize
+  {
+    get { return PlayerPrefs.GetFloat("render.pointSize", Tes.Runtime.GlobalSettings.PointSize); }
+    set { Tes.Runtime.GlobalSettings.PointSize = value; PlayerPrefs.SetFloat("render.pointSize", value); Notify("PointSize"); }
+  }
+
   /// <summary>
   /// Values for the <see cref="Background"/> property.
   /// </summary>
@@ -57,6 +68,7 @@ public class RenderSettings : Settings
     Skybox,
     Black,
     White,
+    Grey,
     Red,
     Green,
     Blue,
@@ -71,12 +83,13 @@ public class RenderSettings : Settings
     new Color32(0, 0, 0, 0),  // Clear/skybox.
     new Color32(0, 0, 0, 255),  // Black
     new Color32(255, 255, 255, 255),  // White
-    new Color32(255, 0, 0, 255),  // Red
-    new Color32(0, 255, 0, 255),  // Green
-    new Color32(0, 0, 255, 255),  // Blue
-    new Color32(255, 255, 0, 255),  // Yellow
-    new Color32(255, 0, 255, 255),  // Magenta
-    new Color32(0, 255, 255, 255) // Cyan
+    new Color32(32, 32, 32, 255),  // Grey
+    new Color32(128, 0, 0, 255),  // Red
+    new Color32(0, 128, 0, 255),  // Green
+    new Color32(0, 0, 128, 255),  // Blue
+    new Color32(128, 128, 0, 255),  // Yellow
+    new Color32(128, 0, 128, 255),  // Magenta
+    new Color32(0, 128, 128, 255) // Cyan
   };
 
   [Browsable(true), Tooltip("Use a skybox for the background (true) or a flat colour (false).")]

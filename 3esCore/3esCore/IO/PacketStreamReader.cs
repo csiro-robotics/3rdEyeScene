@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
-using SharpCompress.Compressors;
-using SharpCompress.Compressors.Deflate;
+using System.IO.Compression;
 
 namespace Tes.IO
 {
@@ -285,8 +284,11 @@ namespace Tes.IO
       processedBytes += packet.Emplace(_activeStream, _header.PacketSize + crcSize - bytesRead);
       if (packet.Status != PacketBufferStatus.Complete)
       {
-        // TODO: throw exception
         _searchForHeader = true;
+        if (packet.Status == PacketBufferStatus.CrcError)
+        {
+          throw new CrcFailureException("Invalid CRC.");
+        }
         throw new InsufficientDataException("Incomplete packet");
       }
 

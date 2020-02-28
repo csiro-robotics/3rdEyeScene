@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 namespace Tes.Handlers.Shape3D
@@ -6,7 +7,7 @@ namespace Tes.Handlers.Shape3D
   /// <summary>
   /// Used to track details of objects from <see cref="PointCloudHandler"/>.
   /// </summary>
-  public class PointsComponent : MonoBehaviour
+  public class PointsComponent : IShapeData
   {
     /// <summary>
     /// Point attributes.
@@ -28,12 +29,36 @@ namespace Tes.Handlers.Shape3D
       Colours = (1 << 1)
     }
 
+    public Material Material { get; set; }
+
+    private Color32 _colour = new Color32(255, 255, 255, 255);
+    public Color32 Colour { get { return _colour; } set { _colour = value; } }
+
+    ~PointsComponent()
+    {
+      Release();
+    }
+
+    public void Release()
+    {
+      if (_indexBuffer != null)
+      {
+        _indexBuffer.Release();
+        _indexBuffer = null;
+      }
+    }
+
     /// <summary>
     /// The <see cref="MeshCache"/> resource ID from which to attain vertex data.
     /// </summary>
     public uint MeshID { get { return _meshID; } set { _meshID = value; } }
     [SerializeField]
     private uint _meshID;
+    /// <summary>
+    /// The mesh component once resolved from the mesh cache.
+    /// </summary>
+    /// <value></value>
+    public MeshCache.MeshDetails Mesh { get; set; }
     /// <summary>
     /// Number of indices used as a window into the mesh.
     /// </summary>
@@ -45,14 +70,44 @@ namespace Tes.Handlers.Shape3D
       get { return (_indices != null) ? (uint)_indices.Length : 0u; }
       set
       {
-        int[] oldIndices = _indices;
-        _indices = new int[value];
-        if (oldIndices != null)
+        int oldCount = (_indices != null) ? _indices.Length : 0;
+        if (value != oldCount)
         {
-          Array.Copy(oldIndices, _indices, _indices.Length);
+          int[] oldIndices = _indices;
+          _indices = new int[value];
+          if (oldIndices != null && (oldCount > 0 || value > 0))
+          {
+            Array.Copy(oldIndices, _indices, _indices.Length);
+          }
+
+          if (_indexBuffer != null)
+          {
+            _indexBuffer.Release();
+            _indexBuffer = null;
+          }
+          IndicesDirty = true;
+
+          // if (value > 0)
+          // {
+          //   _indexBuffer = new ComputeBuffer(value, Marshal.Sizeof(typeof(int)));
+          // }
         }
       }
     }
+
+    #region First pass changes.
+    public bool IndicesDirty { get; set; }
+    public void UpdateIndexBuffer()
+    {
+      if (_indexBuffer == null)
+      {
+        _indexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Index, (int)IndexCount, Marshal.SizeOf(typeof(int)));
+      }
+      _indexBuffer.SetData(_indices);
+      IndicesDirty = false;
+    }
+    #endregion
+
     /// <summary>
     /// Window of point indices limiting rendered points from the source mesh (optional).
     /// </summary>
@@ -60,10 +115,11 @@ namespace Tes.Handlers.Shape3D
     /// May be null, in which case all vertices are used.
     /// </remarks>
     public int[] Indices { get { return _indices; } }
+    public GraphicsBuffer IndexBuffer { get { return _indexBuffer; } }
     /// <summary>
-    /// Point render size override. Zero to use the default.
+    /// Point render scale. Zero to use the default.
     /// </summary>
-    public int PointSize { get { return _pointSize; } set { _pointSize = value; } }
+    public float PointScale { get { return _pointScale; } set { _pointScale = value; } }
 
     /// <summary>
     /// True if the mesh is dirty and needs updating.
@@ -71,8 +127,9 @@ namespace Tes.Handlers.Shape3D
     public bool MeshDirty { get; set; }
 
     [SerializeField]
-    private int _pointSize;
+    private float _pointScale;
 
     private int[] _indices = null;
+    private GraphicsBuffer _indexBuffer = null;
   }
 }

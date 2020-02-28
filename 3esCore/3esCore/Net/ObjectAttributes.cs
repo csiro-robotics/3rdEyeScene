@@ -17,7 +17,7 @@ namespace Tes.Net
   /// <item>Quaternion rotation.</item>
   /// <item>Scale.</item>
   /// </list>
-  /// 
+  ///
   /// Semantics may vary for different shapes, especially scale interpretation.
   /// </remarks>
   [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -151,6 +151,23 @@ namespace Tes.Net
       trans.Translation = new Vector3(X, Y, Z);
       trans.ApplyScaling(new Vector3(ScaleX, ScaleY, ScaleZ));
       return trans;
+    }
+
+    public ObjectAttributes Clone()
+    {
+      ObjectAttributes copy = new ObjectAttributes();
+      copy.Colour = Colour;
+      copy.X = X;
+      copy.Y = Y;
+      copy.Z = Z;
+      copy.RotationX = RotationX;
+      copy.RotationY = RotationY;
+      copy.RotationZ = RotationZ;
+      copy.RotationW = RotationW;
+      copy.ScaleX = ScaleX;
+      copy.ScaleY = ScaleY;
+      copy.ScaleZ = ScaleZ;
+      return copy;
     }
   }
 }

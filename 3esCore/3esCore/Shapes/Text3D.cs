@@ -108,13 +108,13 @@ namespace Tes.Shapes
     {
       get
       {
-        return (_data.Flags & (ushort)Tes.Net.Text3DFlag.SceenFacing) != 0;
+        return (_data.Flags & (ushort)Tes.Net.Text3DFlag.ScreenFacing) != 0;
       }
 
       set
       {
-        _data.Flags &= (ushort)~Tes.Net.Text3DFlag.SceenFacing;
-        _data.Flags |= (ushort)((value) ? Tes.Net.Text3DFlag.SceenFacing : 0);
+        _data.Flags &= (ushort)~Tes.Net.Text3DFlag.ScreenFacing;
+        _data.Flags |= (ushort)((value) ? Tes.Net.Text3DFlag.ScreenFacing : 0);
       }
     }
 
@@ -173,11 +173,12 @@ namespace Tes.Shapes
     /// <summary>
     /// Read create message and appended text string.
     /// </summary>
+    /// <param name="packet">The buffer from which the reader reads.</param>
     /// <param name="reader">Stream to read from</param>
     /// <returns>True on success.</returns>
-    public override bool ReadCreate(BinaryReader reader)
+    public override bool ReadCreate(PacketBuffer packet, BinaryReader reader)
     {
-      if (!base.ReadCreate(reader))
+      if (!base.ReadCreate(packet, reader))
       {
         return false;
       }

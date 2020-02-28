@@ -210,7 +210,7 @@ namespace Tes.Maths
   public struct Colour
   {
     /// <summary>
-    /// An enumeration of the various colour channels. 
+    /// An enumeration of the various colour channels.
     /// </summary>
     public enum Channel : byte
     {
@@ -230,7 +230,7 @@ namespace Tes.Maths
       /// Alpha
       /// </summary>
       A
-    } 
+    }
 
     /// <summary>
     /// The 32-bit colour value in the form: 0xRRGGBBAAu.
@@ -266,7 +266,7 @@ namespace Tes.Maths
       get { return GetChannel(Channel.B); }
       set { SetChannel(Channel.B, value); }
     }
-  
+
     /// <summary>
     /// Gets or sets the alpha channel.
     /// </summary>
@@ -276,6 +276,26 @@ namespace Tes.Maths
       get { return GetChannel(Channel.A); }
       set { SetChannel(Channel.A, value); }
     }
+
+    /// <summary>
+    /// Get the red colour channel in floating point form [0, 1].
+    /// </summary>
+    public float Rf { get { return (float)R / 255.0f; } }
+
+    /// <summary>
+    /// Get the green colour channel in floating point form [0, 1].
+    /// </summary>
+    public float Gf { get { return (float)G / 255.0f; } }
+
+    /// <summary>
+    /// Get the blue colour channel in floating point form [0, 1].
+    /// </summary>
+    public float Bf { get { return (float)B / 255.0f; } }
+
+    /// <summary>
+    /// Get the alpha colour channel in floating point form [0, 1].
+    /// </summary>
+    public float Af { get { return (float)A / 255.0f; } }
 
     /// <summary>
     /// Initialises a colour from a 32-bit integer. Simply copies the value.
@@ -323,7 +343,7 @@ namespace Tes.Maths
       // Adjust the shift for an Endian swap.
       shift = 24 - shift;
       return shift;
-    } 
+    }
 
     /// <summary>
     /// Get the value of the requested colour channel.

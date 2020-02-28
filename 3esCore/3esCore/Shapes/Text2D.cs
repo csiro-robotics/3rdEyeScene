@@ -12,7 +12,7 @@ namespace Tes.Shapes
   /// <remarks>
   /// Can represent 2D screen located text, or 3D located text projected in to screen space.
   /// Use <see cref="InWorldSpace"/> <c>true</c> for 3D located text.
-  /// 
+  ///
   /// 2D located text ignores the position Z coordinate. X and Y range [0, 1], with (0, 0) being
   /// the top left corner and (1, 1) the bottom right.
   /// </remarks>
@@ -133,11 +133,12 @@ namespace Tes.Shapes
     /// <summary>
     /// Read create message and appended text string.
     /// </summary>
+    /// <param name="packet">The buffer from which the reader reads.</param>
     /// <param name="reader">Stream to read from</param>
     /// <returns>True on success.</returns>
-    public override bool ReadCreate(BinaryReader reader)
+    public override bool ReadCreate(PacketBuffer packet, BinaryReader reader)
     {
-      if (!base.ReadCreate(reader))
+      if (!base.ReadCreate(packet, reader))
       {
         return false;
       }

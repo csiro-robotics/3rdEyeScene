@@ -276,6 +276,8 @@ namespace Tes.Main
                       // Convert back to bytes and copy into the packet buffer.
                       byte[] frameNumberBytes = BitConverter.GetBytes(Endian.ToNetwork(controlFlags));
                       Array.Copy(frameNumberBytes, 0, packetData, memberOffset, frameNumberBytes.Length);
+                      // Recalculate the CRC as we've modified the packet.
+                      completedPacket.UpdateCrc();
 
                       // Update the frame
                       timer.Stop();

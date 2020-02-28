@@ -46,8 +46,7 @@ namespace Tes.Handlers
     /// <summary>
     /// Constructor initialising the persistent and transient caches.
     /// </summary>
-    public CameraHandler(CategoryCheckDelegate categoryCheck)
-      : base(categoryCheck)
+    public CameraHandler()
     {
       _root.name = Name;
     }
@@ -143,12 +142,6 @@ namespace Tes.Handlers
     public override ushort RoutingID { get { return (ushort)Net.RoutingID.Camera; } }
 
     /// <summary>
-    /// Defines the scene root for all objects of this shape type.
-    /// </summary>
-    /// <value>The root for objects of this shape.</value>
-    public GameObject Root { get { return null; } }
-
-    /// <summary>
     /// Empty
     /// </summary>
     /// <param name="frameNumber"></param>
@@ -163,21 +156,6 @@ namespace Tes.Handlers
     /// <param name="frameNumber"></param>
     public override void EndFrame(uint frameNumber)
     {
-    }
-
-    /// <summary>
-    /// Initialise the shape handler by initialising the shape scene root and
-    /// fetching the default materials.
-    /// </summary>
-    /// <param name="root">The 3rd Eye Scene root object.</param>
-    /// <param name="serverRoot">The server scene root (transformed into the server reference frame).</param>
-    /// <param name="materials">Material library from which to resolve materials.</param>
-    public override void Initialise(GameObject root, GameObject serverRoot, MaterialLibrary materials)
-    {
-      // Note: cameras are maintained in Unity coordinate space, thus we do not add
-      // it to the scene root.
-      // We still make it a child of root to maintain Unity clean order consistency.
-      _root.transform.SetParent(root.transform, true);
     }
 
     /// <summary>
@@ -277,15 +255,6 @@ namespace Tes.Handlers
       }
 
       return err;
-    }
-
-    /// <summary>
-    /// Empty
-    /// </summary>
-    /// <param name="categoryId"></param>
-    /// <param name="active"></param>
-    public override void OnCategoryChange(ushort categoryId, bool active)
-    {
     }
 
     /// <summary>

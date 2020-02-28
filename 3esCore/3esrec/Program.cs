@@ -3,11 +3,10 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using SharpCompress.Compressors;
-using SharpCompress.Compressors.Deflate;
 using Tes.IO;
 using Tes.Logging;
 using Tes.Net;
@@ -392,8 +391,8 @@ This program attempts to connect to and record a Third Eye Scene server.
       {
         switch (e.ErrorCode)
         {
-        // case 10061: // WSAECONNREFUSED (Mono)
-        //   break;
+          // Connection refused/denied
+        case 10061: // WSAECONNREFUSED (Mono)
         case 111: // Connection refused (.Net Core)
           break;
         default:
@@ -457,7 +456,7 @@ This program attempts to connect to and record a Third Eye Scene server.
             stream = new CollationStream(fileStream, false);
             break;
           case Mode.FileCompression:
-            stream = new GZipStream(fileStream, CompressionMode.Compress, CompressionLevel.Default);
+            stream = new GZipStream(fileStream, CompressionLevel.Fastest);
             break;
           case Mode.Uncompressed:
             stream = fileStream;

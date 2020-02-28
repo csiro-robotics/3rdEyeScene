@@ -4,124 +4,68 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "build Debug",
+      "label": "build",
       "command": "dotnet",
       "args": [
         "build",
-        "-c", "Debug",
+        "-c", "${input:build_config}",
         "-property:GenerateFullPaths=true"
       ],
+      "type": "shell",
+      "presentation": {
+        "reveal": "silent"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "publish",
+      "command": "dotnet",
+      "windows": {
+        "args": [
+          "publish",
+          "-f", "netcoreapp2.2",
+          "-c", "${input:build_config}",
+          "-o", "${workspaceFolder}\\build\\${input:build_config}",
+          "-property:GenerateFullPaths=true",
+          "-r", "win10-x64"
+        ]
+      },
+      "linux": {
+        "args": [
+          "publish",
+          "-f", "netcoreapp2.2",
+          "-c", "${input:build_config}",
+          "-o", "${workspaceFolder}/build/${input:build_config}",
+          "-property:GenerateFullPaths=true",
+          "-r", "linux-x64"
+        ]
+      },
+      "osx": {
+        "args": [
+          "publish",
+          "-f", "netcoreapp2.2",
+          "-c", "${input:build_config}",
+          "-o", "${workspaceFolder}/build/${input:build_config}",
+          "-property:GenerateFullPaths=true",
+          "-r", "osx-x64"
+        ]
+      },
+      "type": "shell",
+      "group": "build",
+      "presentation": {
+        "reveal": "silent"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "marshal",
+      "dependsOn": "build",
+      "command": "python unity-marshal.py -c ${input:build_config}",
       "type": "shell",
       "group": {
         "kind": "build",
         "isDefault": true
       },
-      "presentation": {
-        "reveal": "silent"
-      },
-      "problemMatcher": "$msCompile"
-    },
-    {
-      "label": "build Release",
-      "command": "dotnet",
-      "args": [
-        "build",
-        "-c", "Release",
-        "-property:GenerateFullPaths=true"
-      ],
-      "type": "shell",
-      "group": "build",
-      "presentation": {
-        "reveal": "silent"
-      },
-      "problemMatcher": "$msCompile"
-    },
-    {
-      "label": "publish Debug",
-      "command": "dotnet",
-      "windows": {
-        "args": [
-          "publish",
-          "-f", "netcoreapp2.2",
-          "-c", "Debug",
-          "-o", "${workspaceFolder}\\build\\Debug",
-          "-property:GenerateFullPaths=true",
-          "-r", "win10-x64"
-        ]
-      },
-      "linux": {
-        "args": [
-          "publish",
-          "-f", "netcoreapp2.2",
-          "-c", "Debug",
-          "-o", "${workspaceFolder}/build/Debug",
-          "-property:GenerateFullPaths=true",
-          "-r", "linux-x64"
-        ]
-      },
-      "osx": {
-        "args": [
-          "publish",
-          "-f", "netcoreapp2.2",
-          "-c", "Debug",
-          "-o", "${workspaceFolder}/build/Debug",
-          "-property:GenerateFullPaths=true",
-          "-r", "osx-x64"
-        ]
-      },
-      "type": "shell",
-      "group": "build",
-      "presentation": {
-        "reveal": "silent"
-      },
-      "problemMatcher": "$msCompile"
-    },
-    {
-      "label": "publish Release",
-      "command": "dotnet",
-      "windows": {
-        "args": [
-          "publish",
-          "-f", "netcoreapp2.2",
-          "-c", "Release",
-          "-o", "${workspaceFolder}\\build\\Release",
-          "-property:GenerateFullPaths=true",
-          "-r", "win10-x64"
-        ]
-      },
-      "linux": {
-        "args": [
-          "publish",
-          "-f", "netcoreapp2.2",
-          "-c", "Release",
-          "-o", "${workspaceFolder}/build/Release",
-          "-property:GenerateFullPaths=true",
-          "-r", "linux-x64"
-        ]
-      },
-      "osx": {
-        "args": [
-          "publish",
-          "-f", "netcoreapp2.2",
-          "-c", "Release",
-          "-o", "${workspaceFolder}/build/Release",
-          "-property:GenerateFullPaths=true",
-          "-r", "osx-x64"
-        ]
-      },
-      "type": "shell",
-      "group": "build",
-      "presentation": {
-        "reveal": "silent"
-      },
-      "problemMatcher": "$msCompile"
-    },
-    {
-      "label": "marshal Debug",
-      "dependsOn": "build Debug",
-      "command": "python unity-marshal.py -c Debug",
-      "type": "shell",
-      "group": "none",
       "options": {
         "cwd": "${workspaceFolder}"
       },
@@ -129,20 +73,15 @@
         "reveal": "always"
       },
       "problemMatcher": "$msCompile"
-    },
+    }
+  ],
+  "inputs": [
     {
-      "label": "marshal Release",
-      "dependsOn": "build Release",
-      "command": "python unity-marshal.py -c Release",
-      "type": "shell",
-      "group": "none",
-      "options": {
-        "cwd": "${workspaceFolder}"
-      },
-      "presentation": {
-        "reveal": "always"
-      },
-      "problemMatcher": "$msCompile"
+      "id": "build_config",
+      "type": "pickString",
+      "options": [ "Debug", "Release" ],
+      "default": "Debug",
+      "description": "Build configuration selection."
     }
   ]
 }

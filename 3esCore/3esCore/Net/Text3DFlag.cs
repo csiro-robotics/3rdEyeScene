@@ -11,7 +11,7 @@ namespace Tes.Net
     /// <summary>
     /// Orient the text to face the screen
     /// </summary>
-    SceenFacing = ObjectFlag.User,
+    ScreenFacing = ObjectFlag.User,
   }
 }
 

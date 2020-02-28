@@ -14,7 +14,7 @@ namespace Tes.Shapes
   /// and may be shared between <see cref="PointCloudShape"/> shapes. The mesh resource should
   /// have a <see cref="MeshResource.DrawType"/> of <see cref="Tes.Net.MeshDrawType.Points"/>,
   /// or the behaviour may be undefined.
-  /// 
+  ///
   /// The <see cref="PointCloudShape"/> shape supports the view into the <see cref="MeshResource"/>
   /// by having its own set of indices (see <see cref="SetIndices(uint[])"/>).
   /// </remarks>
@@ -25,9 +25,9 @@ namespace Tes.Shapes
     /// </summary>
     public MeshResource PointCloud { get; protected set; }
     /// <summary>
-    /// Point render size request. Zero for the default.
+    /// Point render scale request. Zero for the default.
     /// </summary>
-    public byte PointSize { get; set; }
+    public float PointScale { get; set; }
 
     /// <summary>
     /// Default constructor for an empty, transient cloud.
@@ -43,12 +43,12 @@ namespace Tes.Shapes
     /// <param name="cloud">The cloud mesh resource.</param>
     /// <param name="id">The shape ID. Zero for transient.</param>
     /// <param name="category">Category to which the shape belongs.</param>
-    /// <param name="pointSize">Point size override. Zero for default.</param>
-    public PointCloudShape(MeshResource cloud, uint id = 0, ushort category = 0, byte pointSize = 0)
+    /// <param name="pointScale">Point scale override. Zero for default.</param>
+    public PointCloudShape(MeshResource cloud, uint id = 0, ushort category = 0, float pointScale = 0)
       : base((ushort)Tes.Net.ShapeID.PointCloud, id, category)
     {
       PointCloud = cloud;
-      PointSize = pointSize;
+      PointScale = pointScale;
       IsComplex = true;
     }
 
@@ -72,6 +72,22 @@ namespace Tes.Shapes
     /// the displayed points are limited to those referenced in the given array.
     /// </remarks>
     public PointCloudShape SetIndices(uint[] indices) { _indices = indices; return this; }
+    public PointCloudShape SetIndices(int[] indices)
+    {
+      if (indices == null)
+      {
+        _indices = null;
+        return this;
+      }
+
+      if (_indices == null || _indices.Length != indices.Length)
+      {
+        _indices = new uint[indices.Length];
+      }
+
+      Array.Copy(indices, _indices, indices.Length);
+      return this;
+    }
 
     /// <summary>
     /// Enumerate the shape's resources.
@@ -81,7 +97,7 @@ namespace Tes.Shapes
       get
       {
         if (PointCloud != null)
-        { 
+        {
           yield return PointCloud;
         }
       }
@@ -104,7 +120,7 @@ namespace Tes.Shapes
       packet.WriteBytes(BitConverter.GetBytes(valueU32), true);
       valueU32 = IndexCount;
       packet.WriteBytes(BitConverter.GetBytes(valueU32), true);
-      packet.WriteBytes(new byte[] { PointSize }, false);
+      packet.WriteBytes(BitConverter.GetBytes(PointScale), true);
       return true;
     }
 
@@ -157,20 +173,29 @@ namespace Tes.Shapes
     /// Reads additional data for the cloud and the cloud mesh ID. The cloud mesh is represented
     /// by a <see cref="PlaceholderMesh"/> as real mesh data cannot be resolved here.
     /// </remarks>
-    public override bool ReadCreate(BinaryReader reader)
+    public override bool ReadCreate(PacketBuffer packet, BinaryReader reader)
     {
-      if (!base.ReadCreate(reader))
+      if (!base.ReadCreate(packet, reader))
       {
         return false;
       }
 
       uint cloudID = reader.ReadUInt32();
       uint indexCount = reader.ReadUInt32();
-      byte pointSize = reader.ReadByte();
 
       PointCloud = new PlaceholderMesh(cloudID);
       _indices = (indexCount > 0) ? new uint[indexCount] : null;
-      PointSize = pointSize;
+
+      if (packet.Header.VersionMajor != 0 || packet.Header.VersionMajor == 0 && packet.Header.VersionMinor >= 2)
+      {
+        PointScale = reader.ReadSingle();
+      }
+      else
+      {
+       // Legacy support
+        byte pointSize = reader.ReadByte();
+        PointScale = (float)pointSize;
+      }
 
       return true;
     }
@@ -178,14 +203,15 @@ namespace Tes.Shapes
     /// <summary>
     /// Read additional index data for the cloud.
     /// </summary>
+    /// <param name="packet">The buffer from which the reader reads.</param>
     /// <param name="reader">Stream to read from</param>
     /// <returns>True on success.</returns>
     /// <remarks>
     /// Reads additional index data if required.
-    /// 
+    ///
     /// Fails if the <see cref="DataMessage.ObjectID"/> does not match <see cref="Shape.ID"/>.
     /// </remarks>
-    public override bool ReadData(BinaryReader reader)
+    public override bool ReadData(PacketBuffer packet, BinaryReader reader)
     {
       DataMessage msg = new DataMessage();
       if (!msg.Read(reader))
@@ -239,7 +265,7 @@ namespace Tes.Shapes
     {
       base.OnClone(copy);
       copy.PointCloud = PointCloud;
-      copy.PointSize = PointSize;
+      copy.PointScale = PointScale;
       if (_indices != null && _indices.Length != 0)
       {
         Array.Copy(_indices, copy._indices, _indices.Length);

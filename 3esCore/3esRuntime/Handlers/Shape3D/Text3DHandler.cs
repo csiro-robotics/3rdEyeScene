@@ -11,28 +11,29 @@ namespace Tes.Handlers.Shape3D
   /// <summary>
   /// Handles 3D text shapes.
   /// </summary>
-  public class Text3DHandler : ShapeHandler
+  public class Text3DHandler : ShapeHandler, IShapeData
   {
-    /// <summary>
-    /// No solid mesh.
-    /// </summary>
-    public override Mesh SolidMesh { get { return null; } }
-    /// <summary>
-    /// Irrelevant.
-    /// </summary>
-    public override Mesh WireframeMesh { get { return null; } }
+    public struct TextShapeData : IShapeData
+    {
+      public Mesh Mesh;
+      public Material Material;
+      public string Text;
+      public int FontSize;
+      public bool ScreenFacing;
+    }
+
+    public delegate bool CreateTextMeshDelegate(string text, int fontSize, Color colour,
+                                                ref Mesh mesh, ref Material material);
+
+    public CreateTextMeshDelegate CreateTextMeshHandler;
 
     /// <summary>
     /// Create the shape handler.
     /// </summary>
-    /// <param name="categoryCheck"></param>
-    public Text3DHandler(Runtime.CategoryCheckDelegate categoryCheck)
-      : base(categoryCheck)
+    public Text3DHandler()
     {
-      if (Root != null)
-      {
-        Root.name = Name;
-      }
+      _shapeCache.AddShapeDataType<TextShapeData>();
+      _transientCache.AddShapeDataType<TextShapeData>();
     }
 
     /// <summary>
@@ -45,113 +46,133 @@ namespace Tes.Handlers.Shape3D
     /// </summary>
     public override ushort RoutingID { get { return (ushort)Tes.Net.ShapeID.Text3D; } }
 
-    /// <summary>
-    /// Create an object for 3D text.
-    /// </summary>
-    /// <returns></returns>
-    protected override GameObject CreateObject()
+    public override void Render(CameraContext cameraContext)
     {
-      GameObject obj = new GameObject();
-      obj.AddComponent<TextMesh>();
-      //obj.AddComponent<MeshRenderer>();
-      obj.AddComponent<ShapeComponent>();
-      return obj;
+      Render(cameraContext, _transientCache);
+      Render(cameraContext, _shapeCache);
     }
 
-    /// <summary>
-    /// Initialise the shape handler by initialising the shape scene root and
-    /// fetching the default materials.
-    /// </summary>
-    /// <param name="root">The 3rd Eye Scene root object.</param>
-    /// <param name="serverRoot">The server scene root (transformed into the server reference frame).</param>
-    /// <param name="materials">Material library from which to resolve materials.</param>
-    public override void Initialise(GameObject root, GameObject serverRoot, MaterialLibrary materials)
+    protected void Render(CameraContext cameraContext, ShapeCache shapeCache)
     {
-      // Keep in Unity frame.
-      Root.transform.SetParent(root.transform, false);
-      if (Root.GetComponent<ScreenFacing>() == null)
-      {
-        Root.AddComponent<ScreenFacing>();
-      }
-    }
+      // TODO: (KS) verify material setup.
+      // TODO: (KS) incorporate the 3es scene transform.
+      // TODO: (KS) handle multiple cameras (code only tailored to one).
+      Vector3 cameraPosition = (Vector3)cameraContext.CameraToWorldTransform.GetColumn(3);
+      CategoriesState categories = this.CategoriesState;
 
-    /// <summary>
-    /// Encode transform attributes for text.
-    /// </summary>
-    /// <param name="attr"></param>
-    /// <param name="obj"></param>
-    /// <param name="comp"></param>
-    protected override void EncodeAttributes(ref ObjectAttributes attr, GameObject obj, ShapeComponent comp)
-    {
-      Transform transform = obj.transform;
-      // Convert position to Unity position.
-      Vector3 pos = FrameTransform.UnityToRemote(obj.transform.position, ServerInfo.CoordinateFrame);
-      attr.X = pos.x;
-      attr.Y = pos.y;
-      attr.Z = pos.z;
-      attr.RotationX = transform.localRotation.x;
-      attr.RotationY = transform.localRotation.y;
-      attr.RotationZ = transform.localRotation.z;
-      attr.RotationW = transform.localRotation.w;
-      attr.ScaleX = 1.0f;
-      attr.ScaleY = 1.0f;
-      attr.ScaleZ = 12.0f;
+      // Walk the items in the shape cache.
+      foreach (int shapeIndex in shapeCache.ShapeIndices)
+      {
+        // if (shapeCache.GetShapeDataByIndex<CreateMessage>(shapeIndex).Category)
+        CreateMessage shape = shapeCache.GetShapeByIndex(shapeIndex);
+        if (!categories.IsActive(shape.Category))
+        {
+          // Category not enabled.
+          continue;
+        }
 
-      TextMesh text = obj.GetComponent<TextMesh>();
-      if (text != null)
-      {
-        attr.ScaleZ = text.fontSize;
-      }
-      if (comp != null)
-      {
-        attr.Colour = ShapeComponent.ConvertColour(comp.Colour);
-      }
-      else
-      {
-        attr.Colour = 0xffffffu;
+        // Get transform and text data.
+        Matrix4x4 transform = shapeCache.GetShapeTransformByIndex(shapeIndex);
+        TextShapeData textData = shapeCache.GetShapeDataByIndex<TextShapeData>(shapeIndex);
+
+        if (textData.Mesh == null || textData.Material == null)
+        {
+          // No mesh/material. Try instantiate via the delegate.
+          if (CreateTextMeshHandler != null)
+          {
+            CreateTextMeshHandler(textData.Text, textData.FontSize,
+                                  Maths.ColourExt.ToUnity(new Maths.Colour(shape.Attributes.Colour)),
+                                  ref textData.Mesh, ref textData.Material);
+          }
+
+          if (textData.Mesh == null || textData.Material == null)
+          {
+            continue;
+          }
+
+          // Newly creates mesh/material. Store the changes.
+          shapeCache.SetShapeDataByIndex<TextShapeData>(shapeIndex, textData);
+        }
+
+        if (textData.Mesh == null || textData.Material == null)
+        {
+          continue;
+        }
+
+        if (textData.ScreenFacing)
+        {
+          Vector3 textPosition = cameraContext.TesSceneToWorldTransform * (Vector3)transform.GetColumn(3);
+          Vector3 toCamera = cameraPosition - textPosition;
+          // Remove any height component from the camera. Indexing using Unity's left handed, Y up system.
+          toCamera[1] = 0;
+
+          if (toCamera.sqrMagnitude > 1e-3f)
+          {
+            toCamera = toCamera.normalized;
+            Vector3 side = Vector3.Cross(toCamera, Vector3.up);
+            // Build new rotation axes using toCamera for forward and a new Up axis.
+            transform.SetColumn(0, new Vector4(side.x, side.y, side.z));
+            transform.SetColumn(1, new Vector4(Vector3.up.x, Vector3.up.y, Vector3.up.z));
+            transform.SetColumn(2, new Vector4(toCamera.x, toCamera.y, toCamera.z));
+            transform.SetColumn(3, new Vector4(textPosition.x, textPosition.y, textPosition.z, 1.0f));
+          }
+          // else too close to the camera to build a rotation.
+        }
+        else
+        {
+          // transform = cameraContext.TesSceneToWorldTransform * transform;
+          // Just extract the text position.
+          // TODO: (KS) will have to look at allowing users to orient the text from the server.
+          Vector3 textPosition = cameraContext.TesSceneToWorldTransform * (Vector3)transform.GetColumn(3);
+          transform = Matrix4x4.identity;
+          transform.SetColumn(3, new Vector4(textPosition.x, textPosition.y, textPosition.z, 1.0f));
+        }
+
+        cameraContext.TransparentBuffer.DrawMesh(textData.Mesh, transform, textData.Material);
+
+        // TODO: (KS) resolve procedural rendering without a game object. Consider TextMeshPro.
+        // TODO: (KS) select opaque layer.
+        // Graphics.DrawMesh(textData.Mesh, transform, material, 0);
       }
     }
 
     /// <summary>
     /// Handle additional <see cref="CreateMessage"/> data.
     /// </summary>
-    /// <param name="obj"></param>
     /// <param name="msg"></param>
     /// <param name="packet"></param>
     /// <param name="reader"></param>
+    /// <param name="cache"></param>
+    /// <param name="shapeIndex"></param>
     /// <returns></returns>
-    protected override Error PostHandleMessage(GameObject obj, CreateMessage msg, PacketBuffer packet, BinaryReader reader)
+    protected override Error PostHandleMessage(CreateMessage msg, PacketBuffer packet, BinaryReader reader,
+                                               ShapeCache cache, int shapeIndex)
     {
-      // Convert position to Unity position.
-      obj.transform.localPosition = FrameTransform.RemoteToUnity(obj.transform.localPosition, ServerInfo.CoordinateFrame);
-
-      // Read the text in the buffer.
-      int textLength = reader.ReadUInt16();
-      if (textLength > 0)
+      if (shapeIndex >= 0)
       {
-        TextMesh textMesh = obj.GetComponent<TextMesh>();
-        if (textMesh == null)
+        // Read the text in the buffer.
+        TextShapeData textData = new TextShapeData();
+        int textLength = reader.ReadUInt16();
+        textData.Mesh = null;
+        textData.Text = string.Empty;
+        if (textLength > 0)
         {
-          textMesh = obj.AddComponent<TextMesh>();
+          byte[] textBytes = reader.ReadBytes(textLength);
+          textData.Text = System.Text.Encoding.UTF8.GetString(textBytes);
         }
 
-        byte[] textBytes = reader.ReadBytes(textLength);
-        textMesh.text = System.Text.Encoding.UTF8.GetString(textBytes);
-        ShapeComponent shapeComp = obj.GetComponent<ShapeComponent>();
-        if (shapeComp != null)
+        textData.FontSize = (int)msg.Attributes.ScaleZ;
+
+        if ((msg.Flags & (ushort)Text3DFlag.ScreenFacing) != 0)
         {
-          textMesh.fontSize = (int)msg.Attributes.ScaleZ;
-          textMesh.color = shapeComp.Colour;
+          // Need to use -forward for text.
+          // ScreenFacing.AddToManager(obj, -Vector3.forward, Vector3.up);
+          textData.ScreenFacing = true;
         }
+        cache.SetShapeDataByIndex(shapeIndex, textData);
       }
 
-      if ((msg.Flags & (ushort)Text3DFlag.SceenFacing) != 0)
-      {
-        // Need to use -forward for text.
-        ScreenFacing.AddToManager(obj, -Vector3.forward, Vector3.up);
-      }
-
-      return base.PostHandleMessage(obj, msg, packet, reader);
+      return base.PostHandleMessage(msg, packet, reader, cache, shapeIndex);
     }
 
     /// <summary>
@@ -162,34 +183,18 @@ namespace Tes.Handlers.Shape3D
     /// <param name="packet"></param>
     /// <param name="reader"></param>
     /// <returns></returns>
-    protected override Error PostHandleMessage(GameObject obj, UpdateMessage msg, PacketBuffer packet, BinaryReader reader)
+    protected override Error PostHandleMessage(UpdateMessage msg, PacketBuffer packet, BinaryReader reader,
+                                               ShapeCache cache, int shapeIndex)
     {
-      TextMesh textMesh = obj.GetComponent<TextMesh>();
-      ShapeComponent shapeComp = obj.GetComponent<ShapeComponent>();
-      if (textMesh != null && shapeComp != null)
-      {
-        textMesh.fontSize = (int)msg.Attributes.ScaleZ;
-        textMesh.color = shapeComp.Colour;
-      }
+      TextShapeData textData = cache.GetShapeDataByIndex<TextShapeData>(shapeIndex);
 
-      // Convert position to Unity position.
-      obj.transform.localPosition = FrameTransform.RemoteToUnity(obj.transform.localPosition, ServerInfo.CoordinateFrame);
+      // textData.Mesh.fontSize = (int)msg.Attributes.ScaleZ;
+      // textData.Mesh.color = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
+      textData.ScreenFacing = (msg.Flags & (ushort)Text3DFlag.ScreenFacing) != 0;
 
-      if (shapeComp != null && (msg.Flags & (ushort)Text3DFlag.SceenFacing) != (shapeComp.ObjectFlags & (ushort)Text3DFlag.SceenFacing))
-      {
-        // Screen facing flag changed.
-        if ((msg.Flags & (ushort)Text3DFlag.SceenFacing) != 0)
-        { 
-          // Need to use -forward for text.
-          ScreenFacing.AddToManager(obj, -Vector3.forward, Vector3.up);
-        }
-        else
-        {
-          // Need to use -forward for text.
-          ScreenFacing.RemoveFromManager(obj);
-        }
-      }
-      return new Error();
+      cache.SetShapeDataByIndex(shapeIndex, textData);
+
+      return base.PostHandleMessage(msg, packet, reader, cache, shapeIndex);
     }
 
     /// <summary>
@@ -197,16 +202,13 @@ namespace Tes.Handlers.Shape3D
     /// </summary>
     /// <param name="shapeComponent">The component to create a shape for.</param>
     /// <returns>A shape instance suitable for configuring to generate serialisation messages.</returns>
-    protected override Shapes.Shape CreateSerialisationShape(ShapeComponent shapeComponent)
+    protected override Shapes.Shape CreateSerialisationShape(ShapeCache cache, int shapeIndex, CreateMessage shape)
     {
-      TextMesh text = shapeComponent.GetComponent<TextMesh>();
-      if (text != null)
-      {
-        Shapes.Shape shape = new Shapes.Text3D(text.text);
-        ConfigureShape(shape, shapeComponent);
-        return shape;
-      }
-      return null;
+      TextShapeData textData = cache.GetShapeDataByIndex<TextShapeData>(shapeIndex);
+      // Note: initialise position to zero. SetAttributes() below will overwrite this.
+      var textShape = new Shapes.Text3D(textData.Text, shape.ObjectID, shape.Category, Maths.Vector3.Zero);
+      textShape.SetAttributes(shape.Attributes);
+      return textShape;
     }
   }
 }

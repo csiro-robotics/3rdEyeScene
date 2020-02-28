@@ -8,7 +8,9 @@ using Tes.Runtime;
 using Tes.Handlers;
 using Tes.Handlers.Shape2D;
 using Tes.Handlers.Shape3D;
+using TMPro;
 using UnityEngine;
+
 
 /// <summary>
 /// Primary component for instantiating the 3rd Eye Scene managers.
@@ -17,14 +19,17 @@ using UnityEngine;
 public class TesComponent : Router
 {
   public Tes.Net.CoordinateFrame Frame = Tes.Net.CoordinateFrame.ZXY;
-  public Material VertexColourLitMaterial;
-  public Material VertexColourUnlitMaterial;
-  public Material VertexColourLitTwoSidedMaterial;
-  public Material VertexColourUnlitTwoSidedMaterial;
-  public Material WireframeTriangles;
-  public Material VertexColourTransparent;
-  public Material PointsLitMaterial;
-  public Material PointsUnlitMaterial;
+  public Material OpaqueInstancedLeftHandedMaterial;
+  public Material WireframeInstancedLeftHandedMaterial;
+  public Material TransparentInstancedLeftHandedMaterial;
+  public Material OpaqueInstancedRightHandedMaterial;
+  public Material WireframeInstancedRightHandedMaterial;
+  public Material TransparentInstancedRightHandedMaterial;
+  public Material OpaqueMeshMaterial;
+  public Material OpaqueTwoSidedMeshMaterial;
+  public Material TransparentMeshMaterial;
+  public Material WireframeMeshMaterial;
+  public Material PointsMaterial;
   public Material VoxelsMaterial;
   public FileDialogUI FileDialogUI;
 
@@ -56,19 +61,29 @@ public class TesComponent : Router
       bounds.max.x, bounds.max.y, bounds.max.z));
   }
 
+  public bool GenerateTextMesh(string text, int fontSize, Color colour, ref Mesh mesh, ref Material material)
+  {
+    // Generate a mesh using TextMeshPro.
+    TMPro.TextMeshPro tmp = GetComponent<TMPro.TextMeshPro>();
+    if (tmp != null)
+    {
+      tmp.fontSize = fontSize;
+      tmp.text = text;
+      tmp.ForceMeshUpdate();
+      mesh = Mesh.Instantiate(tmp.mesh);
+      material = new Material(tmp.fontMaterial);
+      material.SetColor("_FaceColor", colour);
+      // material.SetColor("_OutlineColor", colour);
+      return true;
+    }
+    return false;
+  }
+
   protected override void Start()
   {
     base.Start();
 
-    Materials.Register(MaterialLibrary.VertexColourLit, VertexColourLitMaterial);
-    Materials.Register(MaterialLibrary.VertexColourUnlit, VertexColourUnlitMaterial);
-    Materials.Register(MaterialLibrary.VertexColourLitTwoSided, VertexColourLitTwoSidedMaterial);
-    Materials.Register(MaterialLibrary.VertexColourUnlitTwoSided, VertexColourUnlitTwoSidedMaterial);
-    Materials.Register(MaterialLibrary.WireframeTriangles, WireframeTriangles);
-    Materials.Register(MaterialLibrary.VertexColourTransparent, VertexColourTransparent);
-    Materials.Register(MaterialLibrary.PointsLit, PointsLitMaterial);
-    Materials.Register(MaterialLibrary.PointsUnlit, PointsUnlitMaterial);
-    Materials.Register(MaterialLibrary.Voxels, VoxelsMaterial);
+    UpdateMaterials();
 
     if (Scene != null && Scene.Root != null)
     {
@@ -80,21 +95,24 @@ public class TesComponent : Router
     Handlers.Register(meshCache);
     Handlers.Register(categories);
 
-    Handlers.Register(new CameraHandler(categories.IsActive));
+    Handlers.Register(new CameraHandler());
 
-    Handlers.Register(new ArrowHandler(categories.IsActive));
-    Handlers.Register(new BoxHandler(categories.IsActive));
-    Handlers.Register(new CapsuleHandler(categories.IsActive));
-    Handlers.Register(new ConeHandler(categories.IsActive));
-    Handlers.Register(new CylinderHandler(categories.IsActive));
-    Handlers.Register(new PlaneHandler(categories.IsActive));
-    Handlers.Register(new SphereHandler(categories.IsActive));
-    Handlers.Register(new StarHandler(categories.IsActive));
-    Handlers.Register(new MeshHandler(categories.IsActive));
-    Handlers.Register(new MeshSetHandler(categories.IsActive, meshCache));
-    Handlers.Register(new PointCloudHandler(categories.IsActive, meshCache));
-    Handlers.Register(new Text2DHandler(categories.IsActive));
-    Handlers.Register(new Text3DHandler(categories.IsActive));
+    Handlers.Register(new ArrowHandler());
+    Handlers.Register(new BoxHandler());
+    Handlers.Register(new CapsuleHandler());
+    Handlers.Register(new ConeHandler());
+    Handlers.Register(new CylinderHandler());
+    Handlers.Register(new PlaneHandler());
+    Handlers.Register(new SphereHandler());
+    Handlers.Register(new StarHandler());
+    Handlers.Register(new MeshHandler());
+    Handlers.Register(new MeshSetHandler(meshCache));
+    Handlers.Register(new PointCloudHandler(meshCache));
+    Handlers.Register(new PoseHandler());
+    Handlers.Register(new Text2DHandler());
+    Text3DHandler text3DHandler = new Text3DHandler();
+    text3DHandler.CreateTextMeshHandler = this.GenerateTextMesh;
+    Handlers.Register(text3DHandler);
 
     // Register handlers from plugins.
     string[] loadPaths = new string[]
@@ -107,7 +125,6 @@ public class TesComponent : Router
 #endif // UNITY_EDITOR
     };
 
-    CategoryCheckDelegate catDelegate = categories.IsActive;
     foreach (string loadPath in loadPaths)
     {
       string[] excludeList = new string[] {
@@ -117,20 +134,41 @@ public class TesComponent : Router
         "SharpCompress.dll",
         "System.*.dll"
       };
-      Handlers.LoadPlugins(loadPath, Plugins, excludeList, new object[] { catDelegate });
+      Handlers.LoadPlugins(loadPath, Plugins, excludeList, new object[] {});
     }
 
     InitialiseHandlers();
 
-    categories.OnActivationChange += (ushort categoryId, bool active) =>
-    {
-      foreach (MessageHandler handler in Handlers.Handlers)
-      {
-        handler.OnCategoryChange(categoryId, active);
-      }
-    };
-
     HandleCommandLineStart();
+  }
+
+  void UpdateMaterials()
+  {
+    // TODO: (KS) validate the mesh materials in left handed remote scenes.
+    if (Tes.Net.CoordinateFrameUtil.LeftHanded(ServerInfo.CoordinateFrame))
+    {
+      Materials.Register(MaterialLibrary.OpaqueInstanced, OpaqueInstancedLeftHandedMaterial);
+      Materials.Register(MaterialLibrary.WireframeInstanced, WireframeInstancedLeftHandedMaterial);
+      Materials.Register(MaterialLibrary.TransparentInstanced, TransparentInstancedLeftHandedMaterial);
+      Materials.Register(MaterialLibrary.OpaqueMesh, OpaqueMeshMaterial);
+      Materials.Register(MaterialLibrary.OpaqueTwoSidedMesh, OpaqueTwoSidedMeshMaterial);
+      Materials.Register(MaterialLibrary.TransparentMesh, TransparentMeshMaterial);
+      Materials.Register(MaterialLibrary.WireframeMesh, WireframeMeshMaterial);
+      Materials.Register(MaterialLibrary.Points, PointsMaterial);
+      Materials.Register(MaterialLibrary.Voxels, VoxelsMaterial);
+    }
+    else
+    {
+      Materials.Register(MaterialLibrary.OpaqueInstanced, OpaqueInstancedRightHandedMaterial);
+      Materials.Register(MaterialLibrary.WireframeInstanced, WireframeInstancedRightHandedMaterial);
+      Materials.Register(MaterialLibrary.TransparentInstanced, TransparentInstancedRightHandedMaterial);
+      Materials.Register(MaterialLibrary.OpaqueMesh, OpaqueMeshMaterial);
+      Materials.Register(MaterialLibrary.OpaqueTwoSidedMesh, OpaqueTwoSidedMeshMaterial);
+      Materials.Register(MaterialLibrary.TransparentMesh, TransparentMeshMaterial);
+      Materials.Register(MaterialLibrary.WireframeMesh, WireframeMeshMaterial);
+      Materials.Register(MaterialLibrary.Points, PointsMaterial);
+      Materials.Register(MaterialLibrary.Voxels, VoxelsMaterial);
+    }
   }
 
   void HandleCommandLineStart()
@@ -149,20 +187,10 @@ public class TesComponent : Router
     }
   }
 
-  void OnApplicationQuit()
+  void OnDestroy()
   {
-    // Try improve shut down time with a partial reset. Let Unity deal with the objects.
-    _quitting = true;
-    Reset(true);
-  }
-
-  void OnDisable()
-  {
-    // Reset already effected in OnApplicationQuit().
-    if (!_quitting)
-    {
-      Reset();
-    }
+    Reset();
+    GpuBufferManager.Instance.Reset();
   }
 
   public void RecordStop()
@@ -260,17 +288,4 @@ public class TesComponent : Router
 
     base.Update();
   }
-
-  private void OnCategoryActiveChange(ushort categoryId, bool active)
-  {
-    foreach (MessageHandler handler in Handlers.Handlers)
-    {
-      handler.OnCategoryChange(categoryId, active);
-    }
-  }
-
-  /// <summary>
-  /// True while quitting the application. Avoids a double reset.
-  /// </summary>
-  private bool _quitting = false;
 }

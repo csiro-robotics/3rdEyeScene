@@ -1,6 +1,6 @@
 ﻿// Upgrade NOTE: replaced '_Object2World' with 'unity_ObjectToWorld'
 
-Shader "Points/Voxel"
+Shader "Tes/Voxel"
 {
   Properties
   {
@@ -18,11 +18,11 @@ Shader "Points/Voxel"
       Cull Off
 
       CGPROGRAM
-#pragma target 4.0
-#pragma vertex vert
-#pragma fragment frag
-#pragma geometry geom
-#include "UnityCG.cginc"
+      #pragma target 4.0
+      #pragma vertex vert
+      #pragma fragment frag
+      #pragma geometry cubeGeom
+      #include "UnityCG.cginc"
 
       // **************************************************************
       // Data structures                        *
@@ -53,26 +53,35 @@ Shader "Points/Voxel"
       uniform float4 _Color;
       uniform float4 _Tint;
       uniform float _LineWidth;
+      StructuredBuffer<float3> _Vertices;
+      // Normals used as half-extents. Named normals for input consistency.
+      StructuredBuffer<float3> _Normals;
+      #ifdef WITH_COLOURS
+      StructuredBuffer<float4> _Colours;
+      #endif // WITH_COLOURS
 
       // **************************************************************
       // Shader Programs                        *
       // **************************************************************
 
       // Vertex Shader ------------------------------------------------
-      GeometryInput vert(VertexInput v)
+      GeometryInput vert(uint vid : SV_VertexID)
       {
         GeometryInput o;
-        o.pos = mul(unity_ObjectToWorld, v.vertex);
-        o.halfExtents = v.halfExtents;
-        o.colour = v.colour * _Color * _Tint;
+        o.pos = mul(unity_ObjectToWorld, float4(_Vertices[vid], 1));
+        o.halfExtents = _Normals[vid];
+        o.colour = _Color * _Tint
+          #ifdef WITH_COLOURS
+            * _Colours[vid]
+          #endif // WITH_COLOURS
+          ;
         return o;
       }
 
       // Geometry Shader -----------------------------------------------------
       // Generates a cube
-#define VERTCOUNT 24
-      [maxvertexcount(VERTCOUNT)]
-      void geom(point GeometryInput p[1], inout TriangleStream<FragmentInput> outStream)
+      [maxvertexcount(24)]
+      void cubeGeom(point GeometryInput p[1], inout TriangleStream<FragmentInput> outStream)
       {
         FragmentInput fin;
         const float3 voxelCentre = p[0].pos;
@@ -226,6 +235,97 @@ Shader "Points/Voxel"
         outStream.Append(fin);
 
         outStream.RestartStrip();
+      }
+
+      [maxvertexcount(18)]
+      void linesGeom(point GeometryInput p[1], inout LineStream<FragmentInput> outStream)
+      {
+        FragmentInput fin;
+        const float3 voxelCentre = p[0].pos;
+        //const half3 halfExt = half3(0.05f, 0.05f, 0.05f);// p[0].halfExtents;
+        const half3 halfExt = p[0].halfExtents;
+        float3 vert;
+
+        fin.colour = p[0].colour;
+
+        // Voxel base.
+        vert = voxelCentre + half3(-halfExt.x, -halfExt.y, -halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
+        vert = voxelCentre + half3( halfExt.x, -halfExt.y, -halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
+
+        vert = voxelCentre + half3( halfExt.x, -halfExt.y,  halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
+
+        vert = voxelCentre + half3(-halfExt.x, -halfExt.y,  halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
+
+        vert = voxelCentre + half3(-halfExt.x, -halfExt.y, -halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
+
+        outStream.RestartStrip();
+
+        // Voxel top.
+        vert = voxelCentre + half3(-halfExt.x,  halfExt.y, -halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
+
+        vert = voxelCentre + half3( halfExt.x,  halfExt.y, -halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
+
+        vert = voxelCentre + half3( halfExt.x, halfExt.y,  halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
+
+        vert = voxelCentre + half3(-halfExt.x, halfExt.y,  halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
+        vert = voxelCentre + half3(-halfExt.x, halfExt.y, -halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
+
+        outStream.RestartStrip();
+
+        // Connections.
+        vert = voxelCentre + half3(-halfExt.x, -halfExt.y, -halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
+        vert = voxelCentre + half3(-halfExt.x,  halfExt.y, -halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
+
+        outStream.RestartStrip();
+
+        vert = voxelCentre + half3( halfExt.x, -halfExt.y, -halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
+        vert = voxelCentre + half3( halfExt.x, halfExt.y, -halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
+
+        outStream.RestartStrip();
+
+        vert = voxelCentre + half3( halfExt.x, -halfExt.y,  halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
+        vert = voxelCentre + half3( halfExt.x, halfExt.y,  halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
+
+        outStream.RestartStrip();
+
+        vert = voxelCentre + half3(-halfExt.x, -halfExt.y, halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
+        vert = voxelCentre + half3(-halfExt.x, halfExt.y, halfExt.z);
+        fin.pos = mul(UNITY_MATRIX_VP, float4(vert, 1));
+        outStream.Append(fin);
       }
 
       static const float EdgeThreshold = 1.9f;

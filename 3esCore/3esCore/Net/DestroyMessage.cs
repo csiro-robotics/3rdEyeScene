@@ -8,6 +8,9 @@ namespace Tes.Net
   /// <summary>
   /// Defines an object destroy message.
   /// </summary>
+  /// <remarks>
+  /// Destroy messages are not allowed to carry any additional payload.
+  /// </remarks>
   [StructLayout(LayoutKind.Sequential, Pack = 1)]
   public struct DestroyMessage : IMessage
   {

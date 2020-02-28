@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net;
 using System.Collections.Generic;
@@ -16,7 +16,7 @@ using Tes.Runtime;
 namespace Tes.Main
 {
   /// <summary>
-  /// Active mode options for the <see cref="Rounter"/>.
+  /// Active mode options for the <see cref="Router"/>.
   /// </summary>
   public enum RouterMode
   {
@@ -475,7 +475,7 @@ namespace Tes.Main
         _recordingWriter = writer;
         _recordingFileStream = fileStream;
       }
-      catch (Exception e)
+      catch (System.Exception e)
       {
         Log.Exception(e);
       }
@@ -588,7 +588,7 @@ namespace Tes.Main
       }
     }
 
-    public void Reset(bool partialReset = false)
+    public void Reset()
     {
       StopRecording();
       if (_dataThread != null)
@@ -597,10 +597,7 @@ namespace Tes.Main
         _dataThread.Join();
         _dataThread = null;
       }
-      if (!partialReset)
-      {
-        ResetScene();
-      }
+      ResetScene();
       // No longer run in background. Will again once we have a DataThread
       Application.runInBackground = false;
     }
@@ -810,14 +807,6 @@ namespace Tes.Main
           }
         }
 
-        // This is better tied to a true pre-cull or pre-render, but this object has no visual
-        // so that doesn't get called. Instead we assume the Update() call is tightly bound to
-        // the render frame rate (as opposed to FixedUpdate()).
-        foreach (MessageHandler handler in Handlers.Handlers)
-        {
-          handler.PreRender();
-        }
-
         Log.Flush();
       }
       finally
@@ -836,6 +825,30 @@ namespace Tes.Main
           }
         }
         Application.runInBackground = runInBackground;
+      }
+    }
+
+    /// <summary>
+    /// Called from each 3es render camera to render the current shape data.
+    /// </summary>
+    /// <param name="cameraTransform">The transformation matrix of the camera in the world frame.</param>
+    /// <remarks>
+    /// This should be called explicitly for each camera which is visualising the scene. In Unity terms, this should
+    /// be called from <c>Camera.OnRender()</c>.
+    /// </remarks>
+    public void Render(CameraContext cameraContext)
+    {
+      // TODO: (KS) resolve category based culling.
+
+      // Update the 3es scene to unity world transform.
+      Runtime.FrameTransform.SetFrameRotation(ref cameraContext.TesSceneToWorldTransform, ServerInfo.CoordinateFrame);
+
+      // This is better tied to a true pre-cull or pre-render, but this object has no visual
+      // so that doesn't get called. Instead we assume the Update() call is tightly bound to
+      // the render frame rate (as opposed to FixedUpdate()).
+      foreach (MessageHandler handler in Handlers.Handlers)
+      {
+        handler.Render(cameraContext);
       }
     }
 
@@ -865,17 +878,6 @@ namespace Tes.Main
         }
       }
     }
-
-    ///// <summary>
-    ///// Triggers <see cref="Tes.Runtime.MessageHandler.PreRender()"/> calls in all handlers.
-    ///// </summary>
-    //public void OnPreRender()
-    //{
-    //  foreach (MessageHandler handler in Handlers.Handlers)
-    //  {
-    //    handler.PreRender();
-    //  }
-    //}
 
     public void HandleControlMessage(PacketBuffer packet, BinaryReader reader, bool catchingUp)
     {
@@ -1043,6 +1045,14 @@ namespace Tes.Main
                   ((ErrorCode)errorCode.Code).ToString() : errorCode.Code.ToString();
                 Log.Error($"Message handling error : {errorCodeString} : {errorCode.Value}, " +
                           $"RoutingID: {RoutingIDName(packet.Header.RoutingID)} , MessageID: {packet.Header.MessageID}");
+                // Pause playback.
+                if (PlaybackSettings.Instance.PauseOnError)
+                {
+                  if (Mode == RouterMode.Playing)
+                  {
+                    TogglePause();
+                  }
+                }
               }
             }
             else
@@ -1055,7 +1065,7 @@ namespace Tes.Main
           packet = null;
         }
       }
-      catch (Exception)
+      catch (System.Exception)
       {
         // Rethrow exceptions for now.
         throw;
@@ -1106,7 +1116,7 @@ namespace Tes.Main
         // Must be closed to ensure the compression stream finalises correctly.
         writer.Close();
       }
-      catch (Exception e)
+      catch (System.Exception e)
       {
         Debug.LogException(e);
         success = false;

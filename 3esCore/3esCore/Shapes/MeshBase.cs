@@ -24,7 +24,7 @@ namespace Tes.Shapes
     /// Unique ID for the mesh.
     /// </summary>
     public uint ID { get; set; }
-    
+
     /// <summary>
     /// The Mesh type ID.
     /// </summary>
@@ -117,7 +117,7 @@ namespace Tes.Shapes
     /// <param name="stream">For future use. Must be zero.</param>
     public abstract uint[] Colours(int stream = 0);
 
-  
+
     #region Resource transfer - write
     /// <summary>
     /// <see cref="Resource.Transfer(PacketBuffer, int, ref TransferProgress)"/> phases enumeration.
@@ -280,7 +280,7 @@ namespace Tes.Shapes
     /// Supports amortised transfer via the <paramref name="progress"/> argument.
     /// On first call, this is the default initialised structure (zero). On subsequent
     /// calls it is the last returned value unless <c>Failed</c> was true.
-    /// 
+    ///
     /// The semantics of this value are entirely dependent on the internal implementation.
     /// </remarks>
     public void Transfer(PacketBuffer packet, int byteLimit, ref TransferProgress progress)
@@ -495,13 +495,14 @@ namespace Tes.Shapes
     /// <summary>
     /// Read and handle the <see cref="MeshCreateMessage"/>.
     /// </summary>
+    /// <param name="packet">The buffer from which the reader reads.</param>
     /// <param name="reader">Stream to read from.</param>
     /// <returns>True on success.</returns>
     /// <remarks>
     /// Handling is deferred to <see cref="ProcessCreate(MeshCreateMessage)"/> which subclasses
     /// should implement.
     /// </remarks>
-    public bool ReadCreate(BinaryReader reader)
+    public bool ReadCreate(PacketBuffer packet, BinaryReader reader)
     {
       MeshCreateMessage msg = new MeshCreateMessage();
       if (!msg.Read(reader))
@@ -520,7 +521,7 @@ namespace Tes.Shapes
     /// <returns>True on success.</returns>
     /// <remarks>
     /// Handling is deferred to one of the process methods which subclasses should implement.
-    /// 
+    ///
     /// The <paramref name="messageType"/> identifies the mesh component being read, from the following set;
     /// <list type="bullet">
     /// <item><see cref="MeshMessageType.Vertex"/></item>
@@ -609,7 +610,7 @@ namespace Tes.Shapes
     /// <param name="msg">The message to process.</param>
     /// <returns>True on success</returns>
     /// <remarks>
-    /// Called from <see cref="ReadCreate(BinaryReader)"/> for subclasses to implement.
+    /// Called from <see cref="ReadCreate(PacketBuffer, BinaryReader)"/> for subclasses to implement.
     /// </remarks>
     protected virtual bool ProcessCreate(MeshCreateMessage msg)
     {

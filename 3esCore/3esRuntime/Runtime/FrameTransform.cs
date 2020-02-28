@@ -22,14 +22,14 @@ namespace Tes.Runtime
     {
       Matrix4x4 m = ToUnityTransforms[(int)frame];
       //Vector3 side = new Vector3();
-			Vector3 up = new Vector3();
-			Vector3 fwd = new Vector3();
+      Vector3 up = new Vector3();
+      Vector3 fwd = new Vector3();
       Vector3 scale = Vector3.one;
 
       SetFrameRotation(ref m, frame);
       //side = m.GetColumn(0);
-			up = m.GetColumn(1);
-			fwd = m.GetColumn(2);
+      up = m.GetColumn(1);
+      fwd = m.GetColumn(2);
 
       if ((int)frame < (int)CoordinateFrame.LeftHanded)
       {
@@ -52,7 +52,7 @@ namespace Tes.Runtime
     public static Vector3 RemoteToUnity(Vector3 v, CoordinateFrame frame)
     {
       // MultiplyPoint() or MultiplyVector() is irrelevant. We only have rotation.
-			return ToUnityTransforms[(int)frame].MultiplyPoint(v);
+      return ToUnityTransforms[(int)frame].MultiplyPoint(v);
     }
 
 
@@ -97,23 +97,23 @@ namespace Tes.Runtime
     /// Returns true if the given matrix represents a transformation from left to right or right to left handedness.
     /// </summary>
     /// <returns><c>true</c> when <paramref name="transform"/> switches handedness.</returns>
-		/// <param name="transform">The rigid body transformation matrix to check.</param>
+    /// <param name="transform">The rigid body transformation matrix to check.</param>
     /// <remarks>
     /// This only works for matrices representing a set of orthogonal basis vectors.
     /// </remarks>
     public static bool EffectsHandChange(Matrix4x4 transform)
     {
-			Vector3 x, y, z, xy;
+      Vector3 x, y, z, xy;
       float dot;
-			x = transform.GetColumn(0);
-			y = transform.GetColumn(1);
-			z = transform.GetColumn(2);
-			xy = Vector3.Cross(x, y);
+      x = transform.GetColumn(0);
+      y = transform.GetColumn(1);
+      z = transform.GetColumn(2);
+      xy = Vector3.Cross(x, y);
       // We are transforming from a right to left or left to right handed system when the
       // direction of the X/Y cross does not match the Z vector.
-			dot = Vector3.Dot(xy, z);
+      dot = Vector3.Dot(xy, z);
       return dot < 0;
-		}
+    }
 
     /// <summary>
     /// Builds a rotation matrix.
@@ -125,9 +125,9 @@ namespace Tes.Runtime
     private static Matrix4x4 BuildRotation(Vector3 r0, Vector3 r1, Vector3 r2)
     {
       Matrix4x4 m = new Matrix4x4();
-			m.SetRow(0, new Vector4(r0.x, r0.y, r0.z, 0));
-			m.SetRow(1, new Vector4(r1.x, r1.y, r1.z, 0));
-			m.SetRow(2, new Vector4(r2.x, r2.y, r2.z, 0));
+      m.SetRow(0, new Vector4(r0.x, r0.y, r0.z, 0));
+      m.SetRow(1, new Vector4(r1.x, r1.y, r1.z, 0));
+      m.SetRow(2, new Vector4(r2.x, r2.y, r2.z, 0));
       m.SetRow(3, new Vector4(0, 0, 0, 1));
       return m;
     }

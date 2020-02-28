@@ -7,40 +7,31 @@ namespace Tes.Runtime
   /// The <see cref="MaterialLibrary"/> provides a way to register and
   /// access Unity materials by name.
   /// </summary>
+  /// <remarks>
+  /// Material requirements:
+  /// - Must support rendering from a compute buffer containing float3 vertices.
+  /// - Keyword blocks (preprocessor style blocks):
+  ///   - WITH_COLOURS_UINT to support a per vertex uint32 colour (RGBA with high byte R, low byte A) stream.
+  ///   - WITH_NORMALS to support a per vertex float3 normal stream. This enables lighting.
+  ///   - WITH_UVS to support a per vertex float2 UV stream. This feature is not used yet.
+  /// - Material properties:
+  ///   - [_Color] global colour to apply
+  ///   - [_Tint] additional global colour tint to apply. Multiplied by _Color.
+  ///   - [_BackColor] global back face colour if rendering double sided.
+  ///   - [_PointSize] point size for point cloud materials.
+  ///   - [_PointHighlighting] point highlight factor.
+  ///   - [_LeftHanded] 0/1 marks whether the server coordinate frame is left handled (1) or right handled (0).
+  /// <remarks>
   public class MaterialLibrary
   {
-    /// <summary>
-    /// The name of a default material, supporting per vertex colour and lighting.
-    /// </summary>
-    public static string VertexColourLit { get { return "vertexLit"; } }
-    /// <summary>
-    /// The name of a default material, supporting per vertex colour with no lighting.
-    /// </summary>
-    public static string VertexColourUnlit { get { return "vertexUnlit"; } }
-    /// <summary>
-    /// The name of a default material, supporting per vertex colour and lighting with culling disabled.
-    /// </summary>
-    public static string VertexColourLitTwoSided { get { return "vertexLitTwoSided"; } }
-    /// <summary>
-    /// The name of a default material, supporting per vertex colour with no lighting and culling disabled.
-    /// </summary>
-    public static string VertexColourUnlitTwoSided { get { return "vertexUnlitTwoSided"; } }
-    /// <summary>
-    /// The name of a default wireframe triangle rendering material.
-    /// </summary>
-    public static string WireframeTriangles { get { return "wireframe"; } }
-    /// <summary>
-    /// The name of a default material, supporting per vertex colour with no lighting.
-    /// </summary>
-    public static string VertexColourTransparent { get { return "vertexTransparent"; } }
-    /// <summary>
-    /// The name of a default material for rendering unlit points. per vertex colour with no lighting.
-    /// </summary>
-    public static string PointsLit { get { return "pointsLit"; } }
-    /// <summary>
-    /// The name of a default material for rendering unlit points.
-    /// </summary>
-    public static string PointsUnlit { get { return "pointsUnlit"; } }
+    public static string OpaqueInstanced { get { return "OpaqueInstanced"; } }
+    public static string WireframeInstanced { get { return "WireframeInstanced"; } }
+    public static string TransparentInstanced { get { return "TransparentInstanced"; } }
+    public static string OpaqueMesh { get { return "OpaqueMesh"; } }
+    public static string OpaqueTwoSidedMesh { get { return "OpaqueTwoSidedMesh"; } }
+    public static string TransparentMesh { get { return "TransparentMesh"; } }
+    public static string WireframeMesh { get { return "WireframeMesh"; } }
+    public static string Points { get { return "Points"; } }
 
     /// <summary>
     /// The name of a default material for rendering geometry shader based voxels.
@@ -97,6 +88,29 @@ namespace Tes.Runtime
       else if (_map.ContainsKey(key))
       {
         _map.Remove(key);
+      }
+    }
+
+    /// <summary>
+    /// Setup <paramref name="material"/> to render the given <paramref name="mesh"/>.
+    /// </summary>
+    /// <param name="material"></param>
+    /// <param name="mesh"></param>
+    public static void SetupMaterial(Material material, RenderMesh mesh)
+    {
+      if (mesh.HasNormals)
+      {
+        material.EnableKeyword("WITH_NORMALS");
+      }
+
+      // if (mesh.HasUVs)
+      // {
+      //   material.EnableKeyword("WITH_UVS");
+      // }
+
+      if (mesh.HasColours)
+      {
+        material.EnableKeyword("WITH_COLOURS_UINT");
       }
     }
 

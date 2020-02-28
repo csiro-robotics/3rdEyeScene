@@ -13,11 +13,14 @@ namespace Tes.Shapes
   /// <remarks>
   /// This equates to so called "immediate mode" rendering and should only be used for
   /// small data sets.
-  /// 
+  ///
   /// The shape can be used to render triangles, lines or points. The vertex and/or index data
   /// must match the topology. That is, there must be three indices or vertices per triangle.
-  /// 
-  /// The shape does support splitting large data sets.
+  ///
+  /// For point types, the points are coloured by type when the colour value is zero (black, with zero alpha).
+  /// This is the default colour for points.
+  ///
+  /// The shape supports splitting large data sets for transmission.
   /// </remarks>
   public class MeshShape : Shape
   {
@@ -61,9 +64,9 @@ namespace Tes.Shapes
     /// <remarks>
     /// This interface is used to read data from <see cref="DataMessage"/> payloads. The <c>ReadDataComponent()</c> method
     /// uses this interface to prevent read overruns using <see cref="Count"/> and set individual elements via
-    /// <see cref="Set(int, T)"/>. For normals and clours, the <see cref="Count"/> property will also be set to ensure
+    /// <see cref="Set(int, T)"/>. For normals and colours, the <see cref="Count"/> property will also be set to ensure
     /// correct array sizing.
-    /// 
+    ///
     /// The adaptor may be used reading into a non-array container or to perform data conversion.
     /// </remarks>
     public interface ComponentAdaptor<T>
@@ -192,7 +195,7 @@ namespace Tes.Shapes
     /// <param name="rotation">Local rotation.</param>
     /// <param name="scale">Local scaling.</param>
     public MeshShape(MeshDrawType drawType, Vector3[] vertices, Vector3 position, Quaternion rotation, Vector3 scale)
-      : this(drawType, vertices, null, position, rotation, scale) { }
+      : this(drawType, vertices, null, position, rotation, scale) {}
 
     /// <summary>
     /// Create a mesh shape.
@@ -213,6 +216,11 @@ namespace Tes.Shapes
       Position = position;
       Rotation = rotation;
       Scale = scale;
+
+      if (drawType == MeshDrawType.Points)
+      {
+        ColourByHeight = true;
+      }
     }
 
     /// <summary>
@@ -246,6 +254,11 @@ namespace Tes.Shapes
       Position = position;
       Rotation = rotation;
       Scale = scale;
+
+      if (drawType == MeshDrawType.Points)
+      {
+        ColourByHeight = true;
+      }
     }
 
     /// <summary>
@@ -281,6 +294,11 @@ namespace Tes.Shapes
       Position = position;
       Rotation = rotation;
       Scale = scale;
+
+      if (drawType == MeshDrawType.Points)
+      {
+        ColourByHeight = true;
+      }
     }
 
     /// <summary>
@@ -450,6 +468,59 @@ namespace Tes.Shapes
     }
 
     /// <summary>
+    /// Colour <see cref="MeshDrawType.Points"/> by height.
+    /// </summary>
+    /// <remarks>
+    /// This sets the shape colour to zero (black, with zero alpha).
+    ///
+    /// Ignored for non point types.
+    /// </remarks>
+    public bool ColourByHeight
+    {
+      get
+      {
+        if (DrawType == MeshDrawType.Points)
+        {
+          return _data.Attributes.Colour == 0;
+        }
+        return false;
+      }
+
+      set
+      {
+        if (DrawType == MeshDrawType.Points)
+        {
+          if (value)
+          {
+            _data.Attributes.Colour = 0;
+          }
+          else if (_data.Attributes.Colour == 0)
+          {
+            _data.Attributes.Colour = 0xFFFFFFFFu;
+          }
+        }
+      }
+    }
+
+    /// <summary>
+    /// Access the draw weight used to (de)emphasise the rendering.
+    /// </summary>
+    /// <remarks>
+    /// This equates to point size for <see cref="MeshDrawType.Points"/> or line width for
+    /// <see cref="MeshDrawType.Lines"/>. A zero value indicates use of the viewer default drawing weight.
+    ///
+    /// The viewer is free to ignore this value.
+    /// </remarks>
+    public float DrawScale
+    {
+      get { return _drawWeight; }
+      set
+      {
+        _drawWeight = value;
+      }
+    }
+
+    /// <summary>
     /// Access vertex array.
     /// </summary>
     public Vector3[] Vertices { get { return _vertices; } }
@@ -476,10 +547,13 @@ namespace Tes.Shapes
     /// <summary>
     /// Optional 32-bit colours array. See <see cref="Colour"/>.
     /// </summary>
+    /// <remarks>
+    /// For points, this clears <see cref="ColourByHeight"/>.
+    /// </remarks>
     public UInt32[] Colours
     {
       get { return _colours; }
-      set { _colours = value; }
+      set { ColourByHeight = false; _colours = value; }
     }
 
     /// <summary>
@@ -528,6 +602,8 @@ namespace Tes.Shapes
       packet.WriteBytes(BitConverter.GetBytes(count), true);
       byte drawType = (byte)DrawType;
       packet.WriteBytes(new byte[] { drawType }, false);
+      packet.WriteBytes(BitConverter.GetBytes(_drawWeight), true);
+
       return true;
     }
 
@@ -674,14 +750,15 @@ namespace Tes.Shapes
     /// <summary>
     /// Read a <see cref="CreateMessage"/> and additional payload.
     /// </summary>
+    /// <param name="packet">The buffer from which the reader reads.</param>
     /// <param name="reader">Stream to read from</param>
     /// <returns>True on success.</returns>
     /// <remarks>
     /// Read the additional payload to resolve vertex and index counts.
     /// </remarks>
-    public override bool ReadCreate(BinaryReader reader)
+    public override bool ReadCreate(PacketBuffer packet, BinaryReader reader)
     {
-      if (!base.ReadCreate(reader))
+      if (!base.ReadCreate(packet, reader))
       {
         return false;
       }
@@ -710,6 +787,16 @@ namespace Tes.Shapes
       }
 
       _normals = null;
+
+      if (packet.Header.VersionMajor != 0 || packet.Header.VersionMajor == 0 && packet.Header.VersionMinor >= 2)
+      {
+        _drawWeight = reader.ReadSingle();
+      }
+      else
+      {
+        // Legacy support
+        _drawWeight = 0;
+      }
 
       return true;
     }
@@ -743,9 +830,10 @@ namespace Tes.Shapes
     /// <summary>
     /// Read <see cref="DataMessage"/> and payload generated by <see cref="WriteData(PacketBuffer, ref uint)"/>.
     /// </summary>
+    /// <param name="packet">The buffer from which the reader reads.</param>
     /// <param name="reader">Stream to read from</param>
     /// <returns>True on success.</returns>
-    public override bool ReadData(BinaryReader reader)
+    public override bool ReadData(PacketBuffer packet, BinaryReader reader)
     {
       DataMessage msg = new DataMessage();
 
@@ -929,6 +1017,115 @@ namespace Tes.Shapes
       return returnValue;
     }
 
+    public delegate uint ComponentBlockReader(SendDataType dataType, BinaryReader reader, uint offset, uint count);
+
+    /// <summary>
+    /// A utility function for reading the payload of a <see cref="DataMessage"/> for a <c>MeshShape</c>.
+    /// </summary>
+    /// <param name="reader"></param>
+    /// <param name="vertices"></param>
+    /// <param name="indices"></param>
+    /// <param name="normals"></param>
+    /// <param name="colours"></param>
+    /// <returns>Returns the updated component <see cref="SendDataType"/>. The <see cref="SendDataType.End"/>
+    /// flag is also set, or alone when done. Returns -1 on failure.</returns>
+    /// <remarks>
+    /// This may be called immediately after reading the <see cref="DataMessage"/> for a
+    /// <c>MeshShape</c> to decode the payload content. The method uses a set of
+    /// <see cref="ComponentAdaptor{T}"/> interfaces to resolve data adaption to the required type or
+    /// container. Each call will only interface with the adaptor relevant to the message payload
+    /// calling <see cref="ComponentAdaptor{T}.Set(int, T)"/> for the incoming data. Vertices and
+    /// indices must be correctly pre-sized, while other components may have the
+    /// <see cref="ComponentAdaptor{T}.Count"/> property set to ensure the correct size (matching
+    /// the vertex count, or 1 for uniform normals).
+    /// </remarks>
+    public static int ReadDataComponentDeferred(BinaryReader reader, uint vertexCount, uint indexCount,
+                                        ComponentBlockReader vertexReader,
+                                        ComponentBlockReader indexReader,
+                                        ComponentBlockReader normalsReader,
+                                        ComponentBlockReader coloursReader)
+    {
+      UInt32 offset;
+      UInt32 itemCount;
+      SendDataType dataType;
+
+      dataType = (SendDataType)reader.ReadUInt16();
+      offset = reader.ReadUInt32();
+      itemCount = reader.ReadUInt32();
+
+      // Record and mask out end flags.
+      SendDataType endFlags = dataType & (SendDataType.ExpectEnd | SendDataType.End);
+      dataType = dataType & ~endFlags;
+
+      bool ok = true;
+      bool complete = false;
+      uint endReadCount = 0;
+      switch (dataType)
+      {
+        case SendDataType.Vertices:
+          endReadCount = vertexReader(dataType, reader, offset, itemCount);
+          ok = ok && endReadCount != ~0u;
+
+          // Expect end marker.
+          if ((endFlags & SendDataType.End) != 0)
+          {
+            // Done.
+            complete = true;
+          }
+
+          // Check for completion.
+          if ((endFlags & SendDataType.ExpectEnd) == 0)
+          {
+            complete = endReadCount == vertexCount;
+          }
+          break;
+
+        case SendDataType.Indices:
+          endReadCount = indexReader(dataType, reader, offset, itemCount);
+          ok = ok && endReadCount != ~0u;
+          break;
+
+        // Normals handled together.
+        case SendDataType.Normals:
+        case SendDataType.UniformNormal:
+          if (normalsReader == null)
+          {
+            return -1;
+          }
+
+          endReadCount = normalsReader(dataType, reader, offset, itemCount);
+          ok = ok && endReadCount != ~0u;
+          break;
+
+        case SendDataType.Colours:
+          if (coloursReader == null)
+          {
+            return -1;
+          }
+
+          endReadCount = coloursReader(dataType, reader, offset, itemCount);
+          ok = ok && endReadCount != ~0u;
+          break;
+        default:
+          // Unknown data type.
+          ok = false;
+          break;
+      }
+
+      int returnValue = -1;
+
+      if (ok)
+      {
+        returnValue = (int)dataType;
+        if (complete)
+        {
+          returnValue |= (int)SendDataType.End;
+        }
+      }
+
+      return returnValue;
+    }
+
     /// <summary>
     /// Clone this shape.
     /// </summary>
@@ -956,5 +1153,9 @@ namespace Tes.Shapes
     /// Index data.
     /// </summary>
     private int[] _indices;
+    /// <summary>
+    /// Draw weight: equates to point size or line width.
+    /// </summary>
+    private float _drawWeight = 0.0f;
   }
 }

@@ -65,4 +65,12 @@ public class PlaybackSettings : Settings
     get { return PlayerPrefsX.GetBool("playback.looping", false); }
     set { PlayerPrefsX.SetBool("playback.looping", value); Notify("Looping"); }
   }
+
+  [Browsable(true),
+    Tooltip("Pause if an error occurs during playback? Only affects file playback.")]
+  public bool PauseOnError
+  {
+    get { return PlayerPrefsX.GetBool("playback.pauseOnError", true); }
+    set { PlayerPrefsX.SetBool("playback.pauseOnError", value); Notify("PauseOnError"); }
+  }
 }

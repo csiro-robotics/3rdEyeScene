@@ -42,10 +42,6 @@ namespace Tes.Handlers.Shape2D
       /// The text to display.
       /// </summary>
       public string Text;
-      /// <summary>
-      /// Is this entry currently in active, according to its category?
-      /// </summary>
-      public bool Active;
 
       /// <summary>
       /// True if located in 3D space and projected into screen space.
@@ -61,6 +57,8 @@ namespace Tes.Handlers.Shape2D
     /// </summary>
     public class Text2DManager : MonoBehaviour
     {
+      public Text2DHandler TextHandler { get; set; }
+
       /// <summary>
       /// Enumerate the text list.
       /// </summary>
@@ -82,6 +80,25 @@ namespace Tes.Handlers.Shape2D
       public void Add(TextEntry entry)
       {
         _text.Add(entry);
+      }
+
+      /// <summary>
+      /// Check if there is a text entry matching the given <paramref name="id"/>
+      /// </summary>
+      /// <param name="id">The ID to search for</param>
+      /// <returns>True if there is an entry present matching <paramref name="id"/>.</returns>
+      public bool ContainsEntry(uint id)
+      {
+        for (int i = 0; i < _text.Count; ++i)
+        {
+          if (_text[i].ID == id)
+          {
+            _text.RemoveAt(i);
+            return true;
+          }
+        }
+
+        return false;
       }
 
       /// <summary>
@@ -137,23 +154,6 @@ namespace Tes.Handlers.Shape2D
       }
 
       /// <summary>
-      /// Sets the active state of text matching <paramref name="categoryID"/>.
-      /// </summary>
-      /// <param name="categoryID">The category to (de)activate.</param>
-      /// <param name="active">True to activate.</param>
-      public void CategoryActive(ushort categoryID, bool active)
-      {
-        for (int i = 0; i < _text.Count; ++i)
-        {
-          TextEntry entry = _text[i];
-          if (entry.Category == categoryID)
-          {
-            entry.Active = active;
-          }
-        }
-      }
-
-      /// <summary>
       /// Text rendering entry point.
       /// </summary>
       /// <remarks>
@@ -168,8 +168,8 @@ namespace Tes.Handlers.Shape2D
         for (int i = 0; i < _text.Count; ++i)
         {
           TextEntry entry = _text[i];
-          
-          if (!entry.Active)
+
+          if (TextHandler.CategoriesState != null && !TextHandler.CategoriesState.IsActive(entry.Category))
           {
             continue;
           }
@@ -238,16 +238,16 @@ namespace Tes.Handlers.Shape2D
     /// <summary>
     /// Create a new handler.
     /// </summary>
-    /// <param name="categoryCheck"></param>
-    public Text2DHandler(CategoryCheckDelegate categoryCheck)
-      : base(categoryCheck)
+    public Text2DHandler()
     {
       Root = new GameObject(Name);
       Persistent = new GameObject("Persistent " + Name);
-      Persistent.AddComponent<Text2DManager>();
+      Text2DManager textManager = Persistent.AddComponent<Text2DManager>();
+      textManager.TextHandler = this;
       Persistent.transform.SetParent(Root.transform, false);
       Transient = new GameObject("Transient " + Name);
-      Transient.AddComponent<Text2DManager>();
+      textManager = Transient.AddComponent<Text2DManager>();
+      textManager.TextHandler = this;
       Transient.transform.SetParent(Root.transform, false);
     }
 
@@ -269,7 +269,7 @@ namespace Tes.Handlers.Shape2D
     public override void BeginFrame(uint frameNumber, bool maintainTransient)
     {
       if (!maintainTransient)
-      { 
+      {
         TransientText.Clear();
       }
     }
@@ -324,7 +324,7 @@ namespace Tes.Handlers.Shape2D
         {
           return new Error(ErrorCode.InvalidContent, packet.Header.MessageID);
         }
-        return HandleMessage(destroy, packet, reader);
+        return HandleMessage(destroy);
       }
     }
 
@@ -410,17 +410,6 @@ namespace Tes.Handlers.Shape2D
     }
 
     /// <summary>
-    /// Handle category activation changes.
-    /// </summary>
-    /// <param name="categoryId"></param>
-    /// <param name="active"></param>
-    public override void OnCategoryChange(ushort categoryId, bool active)
-    {
-      PersistentText.CategoryActive(categoryId, active);
-      TransientText.CategoryActive(categoryId, active);
-    }
-
-    /// <summary>
     /// Handle create messages.
     /// </summary>
     /// <param name="msg"></param>
@@ -434,8 +423,7 @@ namespace Tes.Handlers.Shape2D
       text.ObjectFlags = msg.Flags;
       text.Category = msg.Category;
       text.Position = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
-      text.Colour = ShapeComponent.ConvertColour(msg.Attributes.Colour);
-      text.Active = CategoryCheck(text.Category);
+      text.Colour = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
 
       // Read the text.
       int textLength = reader.ReadUInt16();
@@ -451,6 +439,18 @@ namespace Tes.Handlers.Shape2D
       }
       else
       {
+        if (PersistentText.ContainsEntry(text.ID))
+        {
+          // Object ID already present. Check for replace flag.
+          if ((msg.Flags & (ushort)ObjectFlag.Replace) == 0)
+          {
+            // Not replace flag => error.
+            return new Error(ErrorCode.DuplicateShape, msg.ObjectID);
+          }
+
+          // Replace.
+          PersistentText.Remove(text.ID);
+        }
         PersistentText.Add(text);
       }
 
@@ -470,8 +470,7 @@ namespace Tes.Handlers.Shape2D
       text.ID = msg.ObjectID;
       text.ObjectFlags = msg.Flags;
       text.Position = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
-      text.Colour = ShapeComponent.ConvertColour(msg.Attributes.Colour);
-      text.Active = true;
+      text.Colour = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
 
       // Read the text.
       int textLength = reader.ReadUInt16();
@@ -496,7 +495,7 @@ namespace Tes.Handlers.Shape2D
     /// <param name="packet"></param>
     /// <param name="reader"></param>
     /// <returns></returns>
-    protected virtual Error HandleMessage(DestroyMessage msg, PacketBuffer packet, BinaryReader reader)
+    protected virtual Error HandleMessage(DestroyMessage msg)
     {
       PersistentText.Remove(msg.ObjectID);
       return new Error();

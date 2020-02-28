@@ -67,14 +67,12 @@ public class SerialisationTest : MonoBehaviour
     _validationFlags.Add(typeof(Text3D),
                          ValidationFlag.Position | ValidationFlag.Scale | ValidationFlag.Colour | ValidationFlag.PositionConverted);
 
-    _specialObjectValidation = new Dictionary<Type, SpecialObjectValidation>();
-    _specialObjectValidation.Add(typeof(MeshShape), ValidateMesh);
-    _specialObjectValidation.Add(typeof(MeshSet), ValidateMeshSet);
-    _specialObjectValidation.Add(typeof(PointCloudShape), ValidateCloud);
-    _specialObjectValidation.Add(typeof(Text3D), ValidateText3D);
-
-    _specialValidation = new Dictionary<Type, SpecialValidation>();
-    _specialValidation.Add(typeof(Text2D), ValidateText2D);
+    _specialShapeValidation = new Dictionary<Type, SpecialShapeValidation>();
+    _specialShapeValidation.Add(typeof(MeshShape), ValidateMeshShape);
+    _specialShapeValidation.Add(typeof(MeshSet), ValidateMeshSet);
+    _specialShapeValidation.Add(typeof(PointCloudShape), ValidateCloud);
+    _specialShapeValidation.Add(typeof(Text3D), ValidateText3D);
+    _specialShapeValidation.Add(typeof(Text2D), ValidateText2D);
 
     _postCreationFunctions = new Dictionary<Type, ShapeDelegate>();
     _postCreationFunctions.Add(typeof(Cone), (Shape shape) =>
@@ -172,7 +170,8 @@ public class SerialisationTest : MonoBehaviour
 
     //--------------------------------------------------------
     // Validate client scene.
-    if (!ValidateScene(++validationCount, shapes))
+    ++validationCount;
+    if (!ValidateScene(shapes))
     {
       Debug.LogError(string.Format("Scene validation {0} failed.", validationCount));
       Done();
@@ -217,7 +216,8 @@ public class SerialisationTest : MonoBehaviour
 
     //--------------------------------------------------------
     // Validate client scene.
-    if (!ValidateScene(++validationCount, shapes))
+    ++validationCount;
+    if (!ValidateScene(shapes))
     {
       Debug.LogError(string.Format("Scene validation {0} failed.", validationCount));
       Done();
@@ -248,7 +248,8 @@ public class SerialisationTest : MonoBehaviour
 
     //--------------------------------------------------------
     // Validate client scene.
-    if (!ValidateScene(++validationCount, shapes))
+    ++validationCount;
+    if (!ValidateScene(shapes))
     {
       Debug.LogError(string.Format("Scene validation {0} failed.", validationCount));
       Done();
@@ -444,33 +445,39 @@ public class SerialisationTest : MonoBehaviour
     return text;
   }
 
-  bool ValidateScene(int validationCount, List<Shape> shapes)
+  /// <summary>
+  /// Validate that the given list of <paramref name="shapes"/> is correctly represented in the Unity scene.
+  /// </summary>
+  /// <param name="shapes">The list of shapes to validate.</param>
+  /// <returns>True on success, false if there are inconsistencies between <paramref name="shapes"/> and the scene.
+  /// </returns>
+  bool ValidateScene(List<Shape> shapes)
   {
     bool ok = true;
     ValidationFlag validationFlags = 0;
-    foreach (Shape shape in shapes)
+    foreach (Shape referenceShape in shapes)
     {
       // Find the associated handler.
-      MessageHandler handler = FindHandlerFor(shape);
+      MessageHandler handler = FindHandlerFor(referenceShape);
       if (handler != null)
       {
         bool validated = false;
-        GameObject obj = FindObjectFor(shape, handler);
-        if (obj != null)
+        Shape sceneShape = ExtractSceneRepresentation(referenceShape, handler);
+        if (sceneShape != null)
         {
-          if (!_validationFlags.TryGetValue(shape.GetType(), out validationFlags))
+          if (!_validationFlags.TryGetValue(referenceShape.GetType(), out validationFlags))
           {
             validationFlags = ValidationFlag.Default;
           }
-          validated = ValidateAgainstObject(shape, obj, validationFlags);
+          validated = ValidateShape(sceneShape, referenceShape, validationFlags, handler);
         }
-        else if (ValidateWithoutObject(shape, handler))
+        else if (ValidateWithoutReference(referenceShape, handler))
         {
           validated = true;
         }
         else
         {
-          Debug.LogError(string.Format("Failed to validate shape {0}", shape.GetType().Name));
+          Debug.LogError(string.Format("Failed to validate shape {0}", referenceShape.GetType().Name));
         }
 
         ok = ok && validated;
@@ -478,7 +485,7 @@ public class SerialisationTest : MonoBehaviour
       else
       {
         ok = false;
-        Debug.LogError(string.Format("Failed to find validation handler for shape {0}", shape.GetType().Name));
+        Debug.LogError(string.Format("Failed to find validation handler for shape {0}", referenceShape.GetType().Name));
       }
     }
     // Not implemented.
@@ -498,7 +505,13 @@ public class SerialisationTest : MonoBehaviour
     return null;
   }
 
-  GameObject FindObjectFor(Shape shape, MessageHandler handler)
+  /// <summary>
+  /// Extract the representation of <paramref name="shape"/> in the current Unity scene.
+  /// </summary>
+  /// <param name="shape">The reference shape.</param>
+  /// <param name="handler">The handler which should contain the scene representation.</param>
+  /// <returns></returns>
+  Shape ExtractSceneRepresentation(Shape shape, MessageHandler handler)
   {
     Tes.Handlers.ShapeHandler shapeHandler = handler as Tes.Handlers.ShapeHandler;
     if (shapeHandler == null)
@@ -506,95 +519,74 @@ public class SerialisationTest : MonoBehaviour
       return null;
     }
 
-    GameObject root = shapeHandler.Root;
-    // Search for a child object with ShapeComponent.
-    var shapeComponent = root.GetComponentInChildren<Tes.Handlers.ShapeComponent>();
-
-    if (shapeComponent == null)
-    {
-      return null;
-    }
-
-    return shapeComponent.gameObject;
+    // Extract a serialised version of the shape from the handler.
+    return shapeHandler.CreateSerialisationShapeFor(shape.ID);
   }
 
-  bool ValidateAgainstObject(Shape shape, GameObject obj, ValidationFlag flags)
+  bool ValidateShape(Shape shape, Shape referenceShape, ValidationFlag flags, MessageHandler handler)
   {
-    // Validate position and rotation. Can't do scale due to varying semantics.
-    var shapeComponent = obj.GetComponentInChildren<Tes.Handlers.ShapeComponent>();
-    var xform = obj.transform;
     bool ok = true;
-
-    if (shapeComponent.Category != shape.Category)
+    // Validate core data.
+    if (shape.ID != referenceShape.ID)
     {
-      Debug.LogError(string.Format("{0} Category mismatch.", obj.name));
-      ok = false;
-    }
-    if (shapeComponent.ObjectFlags != shape.Flags)
-    {
-      Debug.LogError(string.Format("{0} Flags mismatch", obj.name));
+      Debug.LogError($"{handler.Name} {shape.ID} does not match reference ID {referenceShape.ID}.");
       ok = false;
     }
 
-    // Convert to Unity position.
+    if (shape.Category != referenceShape.ID)
+    {
+      Debug.LogError($"{handler.Name} {shape.ID} category mismatch. Category {shape.Category} expect {referenceShape.ID}.");
+      ok = false;
+    }
+
+    if (shape.Flags != shape.Flags)
+    {
+      Debug.LogError($"{handler.Name} {shape.ID} flags mismatch. Flags {shape.Flags} expect ${referenceShape.Flags}");
+      ok = false;
+    }
+
+    // Validate position.
     if ((flags & ValidationFlag.Position) != 0)
     {
-      Vector3 shapePos = Tes.Maths.Vector3Ext.ToUnity(shape.Position);
-      if ((flags & ValidationFlag.PositionConverted) != 0)
+      if (shape.Position != referenceShape.Position)
       {
-        shapePos = Tes.Runtime.FrameTransform.RemoteToUnity(shapePos, ServerCoordinateFrame);
-      }
-
-      if (xform.localPosition != shapePos)
-      {
-        Debug.LogError(string.Format("{0} Position mismatch: {2} != {3}", obj.name, xform.localPosition, shapePos));
+        Debug.LogError($"{handler.Name} {shape.ID} position mismatch. Position {shape.Position} expect {referenceShape.Position}");
         ok = false;
       }
-    }
-    else if ((flags & ValidationFlag.PositionConverted) != 0)
-    {
-
     }
 
     if ((flags & ValidationFlag.Rotation) != 0)
     {
-      Quaternion shapeRot = Tes.Maths.QuaternionExt.ToUnity(shape.Rotation);
-      if ((flags & ValidationFlag.RotationAsNormal) != 0)
+      if (shape.Rotation != referenceShape.Rotation)
       {
-        // TODO:
-        shapeRot = xform.localRotation;
+        Debug.LogError($"{handler.Name} {shape.ID} rotation mismatch. Rotation {shape.Rotation} expect {referenceShape.Rotation}");
+        ok = false;
       }
+    }
 
-      if (xform.localRotation != shapeRot)
+    if ((flags & ValidationFlag.Scale) != 0)
+    {
+      if (shape.Scale != referenceShape.Scale)
       {
-        Debug.LogError(string.Format("{0} Rotation mismatch: {1} != {2}",
-                        xform.localRotation, Tes.Maths.QuaternionExt.ToUnity(shape.Rotation)));
+        Debug.LogError($"{handler.Name} {shape.ID} scale mismatch. Scale {shape.Scale} expect {referenceShape.Scale}");
         ok = false;
       }
     }
 
     if ((flags & ValidationFlag.Colour) != 0)
     {
-      Color32 c1 = shapeComponent.Colour;
-      Color32 c2 = Tes.Handlers.ShapeComponent.ConvertColour(shape.Colour);
-      if (c1.r != c2.r || c1.g != c2.g || c1.b != c2.b || c1.a != c2.a)
+      if (shape.Colour != referenceShape.Colour)
       {
-        Debug.LogError(string.Format("{0} Colour mismatch: {1} != {2}", obj.name, c1, c2));
+        Debug.LogError($"{handler.Name} {shape.ID} colour mismatch. Colour {shape.Colour} expect {referenceShape.Colour}");
         ok = false;
       }
     }
 
-    if (shape.ID != shapeComponent.ObjectID)
-    {
-      Debug.LogError(string.Format("{0} Shape ID mismatch: {1} != {2}", obj.name, shape.ID, shapeComponent.ObjectID));
-      ok = false;
-    }
-
     // Special validation.
-    SpecialObjectValidation specialValidation;
-    if (_specialObjectValidation.TryGetValue(shape.GetType(), out specialValidation))
+    SpecialShapeValidation specialValidation;
+    if (_specialShapeValidation.TryGetValue(shape.GetType(), out specialValidation))
     {
-      if (!specialValidation(shape, obj))
+      if (!specialValidation(shape, referenceShape, handler))
       {
         ok = false;
       }
@@ -603,7 +595,7 @@ public class SerialisationTest : MonoBehaviour
     return ok;
   }
 
-  bool ValidateWithoutObject(Shape shape, MessageHandler handler)
+  bool ValidateWithoutReference(Shape shape, MessageHandler handler)
   {
     SpecialValidation specialValidation;
     if (_specialValidation.TryGetValue(shape.GetType(), out specialValidation))
@@ -670,184 +662,173 @@ public class SerialisationTest : MonoBehaviour
     return ok;
   }
 
-  bool ValidateMesh(Shape shape, GameObject obj)
+  bool ValidateMeshShape(Shape shape, Shape referenceShape, MessageHandler handler)
   {
-    MeshHandler.MeshDataComponent meshData = obj.GetComponent<MeshHandler.MeshDataComponent>();
-    if (meshData == null)
-    {
-      Debug.LogError("Missing mesh data object.");
-      return false;
-    }
-
+    MeshHandler meshHandler = (MeshHandler)handler;
+    MeshHandler.MeshEntry meshEntry = meshHandler.ShapeCache.GetShapeData<MeshHandler.MeshEntry>(shape.ID);
+    MeshShape meshShapeReference = (MeshShape)referenceShape;
     bool ok = true;
 
-    ok = ValidateVectors("Vertex", meshData.Vertices, _sampleMesh.Vertices()) && ok;
-    ok = ValidateVectors("Normal", meshData.Normals, _sampleMesh.Normals()) && ok;
-    ok = ValidateIndices("Index", meshData.Indices, _sampleMesh.Indices4()) && ok;
-
-    return ok;
-  }
-
-  bool ValidateMeshSet(Shape shape, GameObject obj)
-  {
-    bool ok = true;
-    Tes.Handlers.MeshCache meshCache = (Tes.Handlers.MeshCache)tes.GetHandler((ushort)RoutingID.Mesh);
-
-    // First the first *child* ShapeComponent. This identfies the mesh.
-    var part = GetFirstChildComponent<Tes.Handlers.ShapeComponent>(obj);
-    if (part == null)
+    ok = ValidateVectors("Vertex", meshEntry.Mesh.Vertices, meshShapeReference.Vertices) && ok;
+    if (meshEntry.Mesh.HasNormals)
     {
-      Debug.LogError("Missing mesh set part resource.");
-      return false;
-    }
-
-    // Find the resource.
-    var meshDetails = meshCache.GetEntry(part.ObjectID);
-    if (meshDetails == null)
-    {
-      Debug.LogError(string.Format("Missing mesh {0}", part.ObjectID));
-      return false;
-    }
-
-    ok = ValidateVectors("Vertex", meshDetails.Builder.Vertices, _sampleMesh.Vertices()) && ok;
-    ok = ValidateVectors("Normal", meshDetails.Builder.Normals, _sampleMesh.Normals()) && ok;
-    ok = ValidateIndices("Index", meshDetails.Builder.Indices, _sampleMesh.Indices4()) && ok;
-
-    return ok;
-  }
-
-  T GetFirstChildComponent<T>(GameObject obj, bool includeInactive = false) where T : MonoBehaviour
-  {
-    foreach (T comp in obj.GetComponentsInChildren<T>())
-    {
-      if (comp.gameObject != obj)
+      Vector3[] normals = meshEntry.Mesh.Normals;
+      if (meshShapeReference.Normals.Length == 1)
       {
-        return comp;
+        // Single uniform normal will have been expanded. Extract just the first normal.
+        normals = new Vector3[] { meshEntry.Mesh.Normals[0] };
+      }
+      ok = ValidateVectors("Normal", normals, meshShapeReference.Normals) && ok;
+    }
+    else
+    {
+      if (meshShapeReference.Normals != null && meshShapeReference.Normals.Length > 0)
+      {
+        Debug.LogError("Missing normals.");
+        ok = false;
+      }
+    }
+    if (meshEntry.Mesh.IndexCount >0)
+    {
+      ok = ValidateIndices("Index", meshEntry.Mesh.Indices, meshShapeReference.Indices) && ok;
+    }
+    else
+    {
+      if (meshShapeReference.Indices != null && meshShapeReference.Indices.Length > 0)
+      {
+        Debug.LogError("Missing indices.");
+        ok = false;
       }
     }
 
-    return null;
+    return ok;
   }
 
-  bool ValidateCloud(Shape shape, GameObject obj)
+  bool ValidateMeshSet(Shape shape, Shape referenceShape, MessageHandler handler)
   {
-    PointsComponent points = obj.GetComponent<PointsComponent>();
-    if (points == null)
+    MeshSetHandler meshSetHandler = (MeshSetHandler)handler;
+    MeshSetHandler.PartSet parts = meshSetHandler.ShapeCache.GetShapeData<MeshSetHandler.PartSet>(shape.ID);
+    Tes.Handlers.MeshCache meshCache = (Tes.Handlers.MeshCache)tes.GetHandler((ushort)RoutingID.Mesh);
+    MeshSet meshSetReference = (MeshSet)referenceShape;
+    bool ok = true;
+
+    // Validate the number of parts.
+    if (parts.MeshIDs.Length != meshSetReference.PartCount)
     {
-      Debug.LogError("Missing mesh data object.");
+      Debug.LogError("Part count mismatch.");
+      return false;
+    }
+
+    // Validate each part.
+    for (int i = 0; i < meshSetReference.PartCount; ++i)
+    {
+      MeshResource referenceMesh = meshSetReference.PartResource(i);
+      if (parts.MeshIDs[i] != referenceMesh.ID)
+      {
+        Debug.LogError($"Part resource mismatch. {parts.MeshIDs[i]} != {meshSetReference.PartResource(i).ID}");
+        ok = false;
+        continue;
+      }
+
+      // Resolve the mesh resource from the cache.
+      Tes.Handlers.MeshCache.MeshDetails meshDetails = meshCache.GetEntry(parts.MeshIDs[i]);
+
+      if (meshDetails == null)
+      {
+        Debug.LogError($"Unable to resolve mesh resource {parts.MeshIDs[i]}");
+        ok = false;
+        continue;
+      }
+
+      // Validate mesh content.
+      ok = ValidateVectors("Vertex", meshDetails.Mesh.Vertices, referenceMesh.Vertices()) && ok;
+      if (meshDetails.Mesh.HasNormals)
+      {
+        Vector3[] normals = meshDetails.Mesh.Normals;
+        if (referenceMesh.Normals().Length == 1)
+        {
+          // Single uniform normal will have been expanded. Extract just the first normal.
+          normals = new Vector3[] { meshDetails.Mesh.Normals[0] };
+        }
+        ok = ValidateVectors("Normal", normals, referenceMesh.Normals()) && ok;
+      }
+      else
+      {
+        if (referenceMesh.Normals() != null && referenceMesh.Normals().Length > 0)
+        {
+          Debug.LogError("Missing normals.");
+          ok = false;
+        }
+      }
+      if (meshDetails.Mesh.IndexCount > 0)
+      {
+        ok = ValidateIndices("Index", meshDetails.Mesh.Indices, referenceMesh.Indices4()) && ok;
+      }
+      else
+      {
+        if (referenceMesh.Indices4() != null && referenceMesh.Indices4().Length > 0)
+        {
+          Debug.LogError("Missing indices.");
+          ok = false;
+        }
+      }
+    }
+
+    return ok;
+  }
+
+  bool ValidateCloud(Shape shape, Shape referenceShape, MessageHandler handler)
+  {
+    PointCloudHandler cloudHandler = (PointCloudHandler)handler;
+    PointsComponent pointsData = cloudHandler.ShapeCache.GetShapeData<PointsComponent>(shape.ID);
+    PointCloudShape cloudReference = (PointCloudShape)referenceShape;
+
+    if (pointsData == null)
+    {
+      Debug.LogError("Unable to resolve point cloud data.");
       return false;
     }
 
     bool ok = true;
 
-    Tes.Handlers.MeshCache meshCache = (Tes.Handlers.MeshCache)tes.GetHandler((ushort)RoutingID.Mesh);
-
-    // Find the resource.
-    var meshDetails = meshCache.GetEntry(points.MeshID);
-    if (meshDetails == null)
-    {
-      Debug.LogError(string.Format("Missing mesh {0}", points.MeshID));
-      return false;
-    }
-
-
-    ok = ValidateVectors("Point", meshDetails.Builder.Vertices, _sampleMesh.Vertices()) && ok;
+    // Only validate vertices.
+    ok = ValidateVectors("Point", pointsData.Mesh.Mesh.Vertices, cloudReference.PointCloud.Vertices()) && ok;
 
     return ok;
   }
 
-  bool ValidateText3D(Shape shape, GameObject obj)
+  bool ValidateText3D(Shape shape, Shape referenceShape, MessageHandler handler)
   {
     Text3D text3D = (Text3D)shape;
-    TextMesh textMesh = obj.GetComponent<TextMesh>();
-
-    if (textMesh == null)
-    {
-      Debug.LogError("Missing text mesh.");
-      return false;
-    }
+    Text3D text3DReference = (Text3D)referenceShape;
 
     bool ok = true;
-    if (string.Compare(textMesh.text, text3D.Text) != 0)
+    if (string.Compare(text3D.Text, text3DReference.Text) != 0)
     {
-      Debug.LogError(string.Format("Text mismatch : {0} != {1}", textMesh.text, text3D.Text));
+      Debug.LogError($"Text mismatch : {text3D.Text} != {text3DReference.Text}");
       ok = false;
     }
     return ok;
   }
 
-  bool ValidateText2D(Shape shape, MessageHandler handler)
+  bool ValidateText2D(Shape shape, Shape referenceShape, MessageHandler handler)
   {
-    bool ok = true;
     Text2D text2D = (Text2D)shape;
-    Text2DHandler textHandler = handler as Text2DHandler;
-    if (textHandler == null)
-    {
-      Debug.LogError(string.Format("Wrong handler for Text2D: {0}", textHandler.Name));
-      ok = false;
-      // Nothing more to test.
-      return false;
-    }
+    Text2D text2DReference = (Text2D)referenceShape;
 
-    Text2DHandler.Text2DManager textManager = textHandler.PersistentText;
-    Text2DHandler.TextEntry textEntry = null;
-    foreach (var text in textManager.Entries)
+    bool ok = true;
+    if (string.Compare(text2D.Text, text2DReference.Text) != 0)
     {
-      if (text.ID == text2D.ID)
-      {
-        textEntry = text;
-        break;
-      }
-    }
-
-    if (textEntry == null)
-    {
-      Debug.LogError("Failed to find matching text entry.");
-      ok = false;
-      // Nothing more to test.
-      return false;
-    }
-
-    if (textEntry.Category != text2D.Category)
-    {
-      Debug.LogError("Category mismatch.");
+      Debug.LogError($"Text mismatch : {text2D.Text} != {text2DReference.Text}");
       ok = false;
     }
-
-    if (textEntry.ObjectFlags != text2D.Flags)
-    {
-      Debug.LogError("Flags mismatch.");
-      ok = false;
-    }
-
-    if (textEntry.Position != Tes.Maths.Vector3Ext.ToUnity(shape.Position))
-    {
-      Debug.LogError(string.Format("Position mismatch: {0} != {1}",
-                      textEntry.Position, Tes.Maths.Vector3Ext.ToUnity(shape.Position)));
-      ok = false;
-    }
-
-    Color32 c1 = textEntry.Colour;
-    Color32 c2 = Tes.Handlers.ShapeComponent.ConvertColour(shape.Colour);
-    if (c1.r != c2.r || c1.g != c2.g || c1.b != c2.b || c1.a != c2.a)
-    {
-      Debug.LogError("Colour mismatch.");
-      ok = false;
-    }
-
-    if (string.Compare(textEntry.Text, text2D.Text) != 0)
-    {
-      Debug.LogError(string.Format("Text mismatch : {0} != {1}", textEntry.Text, text2D.Text));
-      ok = false;
-    }
-
     return ok;
   }
 
   private Dictionary<Type, ValidationFlag> _validationFlags = null;
 
-  delegate bool SpecialObjectValidation(Shape shape, GameObject obj);
-  private Dictionary<Type, SpecialObjectValidation> _specialObjectValidation = null;
+  delegate bool SpecialShapeValidation(Shape shape, Shape referenceShape, MessageHandler handler);
+  private Dictionary<Type, SpecialShapeValidation> _specialShapeValidation = null;
 
   delegate bool SpecialValidation(Shape shape, MessageHandler handler);
   private Dictionary<Type, SpecialValidation> _specialValidation = null;

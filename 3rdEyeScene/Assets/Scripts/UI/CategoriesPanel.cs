@@ -56,8 +56,8 @@ namespace UI
         // Add the default if available. It is skipped later.
         if (_categories != null && FindCategoryTreeItem(TreeUI.Root, 0) == null)
         {
-          CategoriesHandler.Category defaultCat = _categories.Lookup(0);
-          if (defaultCat != null)
+          CategoriesHandler.Category defaultCat;
+          if (_categories.Lookup(0, out defaultCat))
           {
             TreeViewItem treeItem = CreateTreeItem(defaultCat, false);
             TreeUI.Root.AddChild(treeItem);

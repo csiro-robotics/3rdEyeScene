@@ -148,14 +148,6 @@ public class EdlCamera : MonoBehaviour
   /// </summary>
   void Start()
   {
-    // Disable if we don't support image effects
-    if (!SystemInfo.supportsImageEffects)
-    {
-      Debug.Log("Doesn't support Image effects");
-      enabled = false;
-      return;
-    }
-
     // Disable the image effect if the shader can't
     // run on the users graphics card
     if (!_edlShader || !_edlShader.isSupported)
