@@ -126,7 +126,7 @@ namespace Tes.Handlers.Shape3D
       case 2:
       default:
         // No change.
-        return;
+        break;
       }
 
       Vector3[] vertices = mesh.vertices;
