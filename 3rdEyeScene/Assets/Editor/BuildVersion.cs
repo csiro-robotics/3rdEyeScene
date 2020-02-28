@@ -18,7 +18,7 @@ namespace Editor
           proc.StartInfo.UseShellExecute = false;
           proc.StartInfo.CreateNoWindow = false;
           proc.StartInfo.FileName = "git";
-          proc.StartInfo.Arguments = "describe";
+          proc.StartInfo.Arguments = "describe --tags";
           proc.StartInfo.RedirectStandardOutput = true;
           proc.StartInfo.RedirectStandardError = true;
           if (proc.Start())
@@ -27,6 +27,7 @@ namespace Editor
             string version = proc.StandardOutput.ReadLine();
             UnityEngine.Debug.Log($"Setting build version: ${version}");
             PlayerSettings.bundleVersion = version;
+            PlayerSettings.productName = $"3rd Eye Scene {version}";
           }
         }
       }
