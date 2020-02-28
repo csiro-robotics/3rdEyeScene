@@ -276,6 +276,7 @@ public class TesComponent : Router
   protected override void OnServerInfoUpdate()
   {
     Frame = ServerInfo.CoordinateFrame;
+    UpdateMaterials();
   }
 
   protected override void Update()

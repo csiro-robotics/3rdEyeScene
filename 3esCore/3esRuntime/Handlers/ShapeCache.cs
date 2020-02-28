@@ -551,15 +551,15 @@ namespace Tes.Handlers
           // not bearing this flag.
           if ((shape.Flags & (ushort)Tes.Net.ObjectFlag.MultiShape) == 0)
           {
-            if ((shape.Flags & (ushort)Tes.Net.ObjectFlag.Wireframe) != 0 && collectType == CollectType.Wireframe)
+            if ((shape.Flags & (ushort)Tes.Net.ObjectFlag.Wireframe) != 0)
             {
               // Collecting wireframe.
-              add = true;
+              add = collectType == CollectType.Wireframe;
             }
-            else if ((shape.Flags & (ushort)Tes.Net.ObjectFlag.Transparent) != 0 && collectType == CollectType.Transparent)
+            else if ((shape.Flags & (ushort)Tes.Net.ObjectFlag.Transparent) != 0)
             {
               // Collecting transparent.
-              add = true;
+              add = collectType == CollectType.Transparent;
             }
             else if (collectType == CollectType.Solid)
             {
