@@ -45,7 +45,7 @@ namespace Tes.Handlers
     /// <param name="transient">True to create a transient cache.</param>
     public ShapeCache(int initialCapacity, bool transient)
     {
-      _capacity = (initialCapacity > 0) ? initialCapacity : 128;
+      _capacity = (initialCapacity > 0) ? initialCapacity : 1024;
       _shapes = new CreateMessage[_capacity];
       _transforms = new Matrix4x4[_capacity];
       _parentTransforms = new Matrix4x4[_capacity];
