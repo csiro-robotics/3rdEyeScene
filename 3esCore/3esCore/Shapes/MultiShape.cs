@@ -97,7 +97,7 @@ namespace Tes.Shapes
 
       for (uint i = 0; i < blockCount; ++i)
       {
-        if (!_shapes[i].GetAttributes().Write(packet))
+        if (!_shapes[itemOffset + i].GetAttributes().Write(packet))
         {
           return -1;
         }
