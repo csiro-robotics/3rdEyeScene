@@ -434,7 +434,7 @@ namespace Tes.Main
             long moreBytesRead = 0;
             PacketBuffer packet = _packetStream.NextPacket(ref moreBytesRead);
             bytesRead += moreBytesRead;
-            _paused = _paused || moreBytesRead == 0 && !_loop;
+            _paused = _paused || _packetStream.EndOfStream && !_loop;
             allowYield = true;
 
             // Can we update the stream seek position?
