@@ -563,23 +563,15 @@ namespace Tes.Handlers
         // Handle multi-shape message.
         if ((msg.Flags & (ushort)ObjectFlag.MultiShape) != 0)
         {
-          Matrix4x4 parentTransform = Maths.Matrix4Ext.ToUnity(msg.Attributes.GetTransform());
           // Read the item count.
-          int itemCount = (int)reader.ReadUInt16();
-          CreateMessage multiShape = msg.Clone();
-          // Clear the multi-shape flag so these shapes are visualised.
-          multiShape.Flags &= (ushort)(~ObjectFlag.MultiShape);
-          multiShape.ObjectID = ShapeCache.MultiShapeID;
+          uint itemCount = (uint)reader.ReadUInt32();
+          uint blockItemCount = (uint)reader.ReadUInt16();
 
-          // Read each shape attributes.
-          for (int i = 0; i < itemCount; ++i)
+          // Real code.
+          Error error = ReadMultiShapeBlock(cache, shapeIndex, msg, packet, reader, blockItemCount, ref shapeIndex);
+          if (error.Failed)
           {
-            if (!multiShape.Attributes.Read(reader))
-            {
-              return new Error(ErrorCode.MalformedMessage, msg.ObjectID);
-            }
-
-            shapeIndex = CreateShape(cache, multiShape, shapeIndex, parentTransform);
+            return error;
           }
         }
 
@@ -766,12 +758,84 @@ namespace Tes.Handlers
     /// <param name="reader">The reader from which the message came.</param>
     /// <returns><see cref="ErrorCode.UnsupportedFeature"/></returns>
     /// <remarks>
-    /// Not implemented to properly handle the message, returning an appropriate
-    /// error code.
+    /// At this level, the function is only supported for handling <see cref="Tes.Shapes.MultiShape"/> data packets.
+    /// Otherwise it returns an error code.
     /// </remarks>
     protected virtual Error HandleMessage(DataMessage msg, PacketBuffer packet, BinaryReader reader)
     {
-      return new Error(ErrorCode.UnsupportedFeature);
+      // Retrieve the target shape.
+      ShapeCache cache = (msg.ObjectID == 0) ? _transientCache : _shapeCache;
+      int shapeIndex = (msg.ObjectID == 0) ? _lastTransientIndex : cache.GetShapeIndex(msg.ObjectID);
+
+      if (shapeIndex < 0)
+      {
+        return new Error(ErrorCode.InvalidObjectID, msg.ObjectID);
+      }
+
+      // Check this is is a multi-shape.
+      CreateMessage shape = cache.GetShapeByIndex(shapeIndex);
+      if ((shape.Flags & (ushort)ObjectFlag.MultiShape) == 0)
+      {
+        return new Error(ErrorCode.UnsupportedFeature);
+      }
+
+      // Add to the multi-shape chain.
+      int multiShapeHead = cache.GetMultiShapeChainByIndex(shapeIndex);
+
+      // Read new multi-shape block.
+      uint blockItemCount = (uint)reader.ReadUInt16();
+      int initialHead = multiShapeHead;
+      Error error = ReadMultiShapeBlock(cache, shapeIndex, shape, packet, reader, blockItemCount, ref multiShapeHead);
+
+      // Set the new multi shape chain head (even on failure for better clean up).
+      if (multiShapeHead != -1)
+      {
+        cache.SetMultiShapeChainByIndex(shapeIndex, multiShapeHead);
+      }
+
+      if (error.Failed)
+      {
+        return error;
+      }
+
+      return new Error();
+    }
+
+    /// <summary>
+    /// Read <see cref="Tes.Shapes.MultiShape"/> block.
+    /// </summary>
+    /// <param name="parentShape">The shape data defining the root of the multi-shape</param>
+    /// <param name="packet">The buffer containing the message.</param>
+    /// <param name="reader">The reader from which the message came.</param>
+    /// <param name="blockItemCount">The number of child items to read.</param>
+    /// <param name="multiChainHead">The head of the multi-shape linked list/chain.</param>
+    /// <returns>An error code on failure.</returns>
+    /// <remarks>
+    /// The <paramref name="multiChainHead"/> is expected to mark the start of the child item linked list. This is -1
+    /// when starting the list. The value is updated to mark the new head item index.
+    /// </remarks>
+    protected Error ReadMultiShapeBlock(ShapeCache cache, int shapeIndex, CreateMessage parentShape,
+                                        PacketBuffer packet, BinaryReader reader,
+                                        uint blockItemCount, ref int multiChainHead)
+    {
+      Matrix4x4 parentTransform = Maths.Matrix4Ext.ToUnity(parentShape.Attributes.GetTransform());
+      CreateMessage multiShape = parentShape.Clone();
+      // Clear the multi-shape flag so these shapes are visualised.
+      multiShape.Flags &= (ushort)(~ObjectFlag.MultiShape);
+      multiShape.ObjectID = ShapeCache.MultiShapeID;
+
+      // Read each shape attributes.
+      for (uint i = 0; i < blockItemCount; ++i)
+      {
+        if (!multiShape.Attributes.Read(reader))
+        {
+          return new Error(ErrorCode.MalformedMessage, parentShape.ObjectID);
+        }
+
+        multiChainHead = CreateShape(cache, multiShape, multiChainHead, parentTransform);
+      }
+
+      return new Error();
     }
 
     /// <summary>

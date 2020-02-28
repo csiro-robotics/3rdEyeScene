@@ -404,6 +404,20 @@ namespace Tes.Handlers
     }
 
     /// <summary>
+    /// Set the multi-shape chain index for a shape.
+    /// </summary>
+    /// <param name="index">Index of the shape (where to write).</param>
+    /// <param name="multiChainIndex">The multi-chain index value to write (what to write).</param>
+    /// <remarks>
+    /// This function should be used with great care in order to correctly maintain the linked list created by these
+    /// indices.
+    /// </remarks>
+    public void SetMultiShapeChainByIndex(int index, int multiChainIndex)
+    {
+      _multiShapeChain[index] = multiChainIndex;
+    }
+
+    /// <summary>
     /// Request data for a shape instance.
     /// </summary>
     /// <param name="objectID">ID of the the shape to request. Must be valid in the cache or zero for a transient

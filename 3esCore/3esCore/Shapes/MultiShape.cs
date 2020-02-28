@@ -8,9 +8,13 @@ namespace Tes.Shapes
   public class MultiShape : Shape
   {
     /// <summary>
-    /// Maximum number of shapes in a multi-shape. Limited by packet size.
+    /// Maximum number of shapes in a multi-shape packet. Limited by packet size.
     /// </summary>
-    public static readonly int ShapeCountLimit = 1024;
+    public static readonly int BlockCountLimit = 1024;
+    /// <summary>
+    /// Maximum number of shapes in a multi-shape.
+    /// </summary>
+    public static readonly int ShapeCountLimit = 0xffff;
 
     public MultiShape(Shape[] shapes, Vector3 position, Quaternion rotation, Vector3 scale)
       : base(shapes[0].RoutingID, shapes[0].ID, shapes[0].Category)
@@ -20,6 +24,8 @@ namespace Tes.Shapes
         // TODO: (KS) custom exception.
         throw new Exception($"Multi-shape limit exceeded: {shapes.Length} > {ShapeCountLimit}");
       }
+
+      IsComplex = true;
 
       _shapes = shapes;
       _data = shapes[0].Data.Clone();
@@ -53,10 +59,13 @@ namespace Tes.Shapes
       }
 
       // Write multi-shape details.
-      UInt16 itemCount = (UInt16)_shapes.Length;
+      UInt32 itemCount = (UInt32)_shapes.Length;
+      UInt16 blockCount = (UInt16)Math.Min(itemCount, BlockCountLimit);
       packet.WriteBytes(BitConverter.GetBytes(itemCount), true);
+      packet.WriteBytes(BitConverter.GetBytes(blockCount), true);
+
       // Write the multi-shape attributes.
-      for (int i = 0; i < _shapes.Length; ++i)
+      for (int i = 0; i < blockCount; ++i)
       {
         if (!_shapes[i].GetAttributes().Write(packet))
         {
@@ -65,6 +74,45 @@ namespace Tes.Shapes
       }
 
       return true;
+    }
+
+    public override int WriteData(PacketBuffer packet, ref uint progressMarker)
+    {
+      if (_shapes.Length <= BlockCountLimit)
+      {
+        // Nothing more to write. Creation packet was enough.
+        return 0;
+      }
+
+      DataMessage msg = new DataMessage();
+      msg.ObjectID = ID;
+      packet.Reset(RoutingID, DataMessage.MessageID);
+      msg.Write(packet);
+
+      UInt32 itemOffset = (progressMarker + (uint)BlockCountLimit);
+      UInt32 remainingItems = (uint)_shapes.Length - itemOffset;
+      UInt16 blockCount = (UInt16)(Math.Min(remainingItems, BlockCountLimit));
+
+      packet.WriteBytes(BitConverter.GetBytes(blockCount), true);
+
+      for (uint i = 0; i < blockCount; ++i)
+      {
+        if (!_shapes[i].GetAttributes().Write(packet))
+        {
+          return -1;
+        }
+      }
+
+      progressMarker += blockCount;
+
+      if (remainingItems > blockCount)
+      {
+        // More to come.
+        return 1;
+      }
+
+      // All done.
+      return 0;
     }
 
     private Shape[] _shapes = null;

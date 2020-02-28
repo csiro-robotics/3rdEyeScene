@@ -64,7 +64,7 @@ namespace Tes.Shapes
     /// <remarks>
     /// This interface is used to read data from <see cref="DataMessage"/> payloads. The <c>ReadDataComponent()</c> method
     /// uses this interface to prevent read overruns using <see cref="Count"/> and set individual elements via
-    /// <see cref="Set(int, T)"/>. For normals and clours, the <see cref="Count"/> property will also be set to ensure
+    /// <see cref="Set(int, T)"/>. For normals and colours, the <see cref="Count"/> property will also be set to ensure
     /// correct array sizing.
     ///
     /// The adaptor may be used reading into a non-array container or to perform data conversion.
