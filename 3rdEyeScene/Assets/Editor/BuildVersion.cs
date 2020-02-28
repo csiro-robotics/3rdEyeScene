@@ -2,12 +2,16 @@
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
+using UnityEditor.Callbacks;
 
 namespace Editor
 {
   class BuildVersion : IPreprocessBuildWithReport
   {
     public int callbackOrder { get { return 0; } }
+
+    private static string ProductName = "3rd Eye Scene";
+    private static string VersionString = "";
 
     public void OnPreprocessBuild(BuildReport report)
     {
@@ -26,8 +30,12 @@ namespace Editor
             proc.WaitForExit();
             string version = proc.StandardOutput.ReadLine();
             UnityEngine.Debug.Log($"Setting build version: ${version}");
-            PlayerSettings.bundleVersion = version;
+            // Cache the current name/version to restore later.
+            ProductName = PlayerSettings.productName;
+            VersionString = PlayerSettings.bundleVersion;
+            // Set the version information.
             PlayerSettings.productName = $"3rd Eye Scene {version}";
+            PlayerSettings.bundleVersion = version;
           }
         }
       }
@@ -35,6 +43,14 @@ namespace Editor
       {
         UnityEngine.Debug.LogWarning($"Failed to resolve build version using git: {e.Message}");
       }
+    }
+
+    [PostProcessBuildAttribute(1)]
+    public static void OnPostprocessBuild(BuildTarget target, string pathToBuiltProject)
+    {
+      // Restore the cached strings.
+      PlayerSettings.productName = ProductName;
+      PlayerSettings.bundleVersion = VersionString;
     }
   }
 }
