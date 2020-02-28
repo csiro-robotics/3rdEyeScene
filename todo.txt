@@ -4,12 +4,6 @@ Bugs:
 
 TODO for v1.0:
 - Consolidate C# shape constructors and improve consistency.
-- PROTOCOL CHANGE: Reduce object overhead. Creating many objects is expensive in data throughput and packet processing.
-  - Modify ObjectAttributes structure (for update messages only?) to have a 1-byte flag member which identifies which of colour, position, rotation and scale data are present.
-  - Consider moving major/minor version members of PacketHeader into ServerSettings message.
-  - Support batch object creation?
-- "Server" implementation which writes directly to a local file.
-- CollatedPackerDecoder for C++
 - Add buffer thread to server. Server send() commands move data into the buffer thread, which will collate, compress and send as required.
 - Support streams send in native Endian, rather than forcing network byte order. Use marker to resolve Endian.
 - Improve packet decoding performance for 3esrec and Unity client.
@@ -34,14 +28,10 @@ TODO:
 Maybe:
 - Convert geometry shaders to use vertex shader with vertex padding in the stream.
 - Support splitting recording files at around 2GB.
-- Consider adding batched object creation messages.
+- Convert to Unity ECS once it is more mature and can be linked to from outside of the Unity Editor.
 
 Performance improvements:
 - Need to investigate how to do more object management off the main thread. Not well supported by Unity as it doesn't allow objects to be created on other threads.
-- Support a native GZip implementation. Options:
-  - Use dynamic shared library loading in .Net to see if zlib is available. Use that version in preference to the .Net implementation if present.
-  - Use the System.IO.Compress version in all .Net uses except for the Unity case (tricky).
-  - Note this is all Moot if Unity support System.IO.Compress as that version already performs well.
 
 Pie in the sky:
 - Load in a mesh/scene for reference and/or context.
