@@ -10,7 +10,7 @@ This page describes how to build the 3esCore solution. This solution provides co
 - [Unity3D](https://unity3d.com/) editor installation.
   - A UnityHub installation is recommended.
     - [Experimental Linux Build](https://forum.unity.com/threads/unity-hub-v-1-3-2-is-now-available.594139/)
-  - Minimum version: `2018.4`
+  - Minimum version: `2019.3`
 - [Python 3](https://www.python.org/) recommended for `unity-marshal.py`
 
 # Build instructions
@@ -98,5 +98,5 @@ This section highlights some issues encountered in setting up the build for cros
 - `dotnet` uses both `netstandard2.0` and `netcoreapp2.2` to support Unity import and command line execution.
   - `netstandard2.0` is supported by Unity, while `netcoreapp2.2` is not currently compatible with Unity.
     - Only `netstandard2.0` DLLs should be marshalled for Unity
-    - Tested with `Unity 2018.4.1f1`
+    - Tested with `Unity 2019.3`
   - `netcoreapp2.2` is required for `dotnet publish` commands in order to build runnable utilities including executable files.
