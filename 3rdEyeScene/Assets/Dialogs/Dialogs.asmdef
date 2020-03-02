@@ -1,0 +1,15 @@
+{
+    "name": "Dialogs",
+    "references": [
+        "GUID:665c162de18c76c14945f2334ca66e6f"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

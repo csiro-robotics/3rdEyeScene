@@ -2,8 +2,6 @@
 using System.Collections;
 using System.IO;
 using System.Runtime.InteropServices;
-using SharpCompress.Compressors;
-using SharpCompress.Compressors.Deflate;
 using UnityEngine;
 using Tes.Collections;
 using Tes.IO;

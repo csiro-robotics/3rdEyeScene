@@ -131,7 +131,6 @@ public class TesComponent : Router
         "3esCore.dll",
         "3esRuntime.dll",
         "host*.dll",
-        "SharpCompress.dll",
         "System.*.dll"
       };
       Handlers.LoadPlugins(loadPath, Plugins, excludeList, new object[] {});

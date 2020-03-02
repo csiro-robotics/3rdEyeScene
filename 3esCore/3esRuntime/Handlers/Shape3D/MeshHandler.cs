@@ -244,10 +244,19 @@ namespace Tes.Handlers.Shape3D
       MeshEntry meshEntry = cache.GetShapeDataByIndex<MeshEntry>(shapeIndex);
       RenderMesh mesh = meshEntry.Mesh;
 
+      Debug.Log($"serialise mesh. Normals? {mesh.HasNormals}");
+
       Shapes.MeshShape meshShape = new Shapes.MeshShape(meshEntry.Mesh.DrawType,
                                                         Maths.Vector3Ext.FromUnity(mesh.Vertices),
                                                         mesh.Indices,
                                                         shapeData.ObjectID, shapeData.Category);
+
+      if (mesh.HasNormals && !meshEntry.CalculateNormals)
+      {
+        // We have normals which were not locally calculated.
+        meshShape.Normals = Tes.Maths.Vector3Ext.FromUnity(mesh.Normals);
+      }
+
       meshShape.SetAttributes(shapeData.Attributes);
       return meshShape;
     }

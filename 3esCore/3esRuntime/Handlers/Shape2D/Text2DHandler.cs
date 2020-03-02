@@ -361,6 +361,31 @@ namespace Tes.Handlers.Shape2D
       return new Error();
     }
 
+    public Shapes.Shape CreateSerialisationShapeFor(uint objectID)
+    {
+      foreach (TextEntry entry in PersistentText.Entries)
+      {
+        if (entry.ID == objectID)
+        {
+          Shapes.Text2D shape = new Shapes.Text2D(null);
+          ConvertToShape(shape, entry);
+          return shape;
+        }
+      }
+
+      return null;
+    }
+
+    private static bool ConvertToShape(Shapes.Text2D shape, TextEntry entry)
+    {
+      shape.ID = entry.ID;
+      shape.Category = entry.Category;
+      shape.Flags = entry.ObjectFlags;
+      shape.SetPosition(entry.Position.x, entry.Position.y, entry.Position.z);
+      shape.Text = entry.Text;
+      return true;
+    }
+
     private static bool Serialise(Text2DManager textManager, PacketBuffer packet, BinaryWriter writer, ref uint count)
     {
       Shapes.Text2D shape = new Shapes.Text2D(null);
@@ -371,11 +396,7 @@ namespace Tes.Handlers.Shape2D
       foreach (TextEntry entry in textManager.Entries)
       {
         ++count;
-        shape.ID = entry.ID;
-        shape.Category = entry.Category;
-        shape.Flags = entry.ObjectFlags;
-        shape.SetPosition(entry.Position.x, entry.Position.y, entry.Position.z);
-        shape.Text = entry.Text;
+        ConvertToShape(shape, entry);
         shape.WriteCreate(packet);
 
         shapeOk = packet.FinalisePacket();

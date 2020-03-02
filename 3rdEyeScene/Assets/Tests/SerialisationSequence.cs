@@ -30,7 +30,7 @@ using UnityEngine;
 /// <item>Compare serialised files.</item>
 /// </list>
 /// </remarks>
-public class SerialisationTest : MonoBehaviour
+public class SerialisationSequence
 {
   [Flags]
   public enum ValidationFlag
@@ -46,16 +46,21 @@ public class SerialisationTest : MonoBehaviour
     Default = Position | Rotation | Scale | Colour
   }
 
-  public TesComponent tes = null;
-  public ushort TestPort = 35035;
-  public float ConnectWaitTime = 5.0f;
-  public float StreamWaitTime = 1.0f;
-  public CoordinateFrame ServerCoordinateFrame = CoordinateFrame.XYZ;
-  private MeshResource _sampleMesh = null;
+  public ushort TestPort { get; set; }  =35035;
+  public float ConnectWaitTime { get; set; } = 5.0f;
+  public float StreamWaitTime { get; set; } = 1.0f;
+  public CoordinateFrame ServerCoordinateFrame { get; set; } = CoordinateFrame.XYZ;
 
-  void Start()
+  // public TesComponent TesComponent { get { return _tes; } }
+  public MeshResource SampleMesh { get { return _sampleMesh; } }
+
+  public SerialisationSequence()
   {
-    _validationFlags = new Dictionary<Type, ValidationFlag>();
+    var tesCandidates = GameObject.FindObjectsOfType<TesComponent>();
+    Debug.Assert(tesCandidates != null);
+    Debug.Assert(tesCandidates.Length == 1);
+    _tes = tesCandidates[0];
+
     // Planes use rotation as a normal.
     _validationFlags.Add(typeof(Tes.Shapes.Plane),
                          ValidationFlag.Default | ValidationFlag.RotationAsNormal);
@@ -67,25 +72,19 @@ public class SerialisationTest : MonoBehaviour
     _validationFlags.Add(typeof(Text3D),
                          ValidationFlag.Position | ValidationFlag.Scale | ValidationFlag.Colour | ValidationFlag.PositionConverted);
 
-    _specialShapeValidation = new Dictionary<Type, SpecialShapeValidation>();
     _specialShapeValidation.Add(typeof(MeshShape), ValidateMeshShape);
     _specialShapeValidation.Add(typeof(MeshSet), ValidateMeshSet);
     _specialShapeValidation.Add(typeof(PointCloudShape), ValidateCloud);
     _specialShapeValidation.Add(typeof(Text3D), ValidateText3D);
-    _specialShapeValidation.Add(typeof(Text2D), ValidateText2D);
 
-    _postCreationFunctions = new Dictionary<Type, ShapeDelegate>();
+    _specialValidation.Add(typeof(Text2D), ValidateText2D);
+
     _postCreationFunctions.Add(typeof(Cone), (Shape shape) =>
     {
       Cone cone = (Cone)shape;
       cone.Length = 2.0f;
       cone.Angle = 15.0f / 180.0f * Mathf.PI;
     });
-
-    if (CanStart())
-    {
-      StartCoroutine(TestRoutine());
-    }
   }
 
   public bool CanStart()
@@ -94,22 +93,11 @@ public class SerialisationTest : MonoBehaviour
     Debug.LogError("3rd Eye Scene must be configured to use TRUE_THREADS in order to support the network communication required by this test.");
     return false;
 #else  // !TRUE_THREADS
-    return tes != null;
+    return _tes != null;
 #endif // !TRUE_THREADS
   }
 
-  /// <summary>
-  /// Quit the application if in standalone mode.
-  /// </summary>
-  void Done(bool success = false)
-  {
-    if (!success || !Options.Current.Persist)
-    {
-      Application.Quit();
-    }
-  }
-
-  IEnumerator TestRoutine()
+  public IEnumerator Run()
   {
     List<Shape> shapes = new List<Shape>();
     float elapsedTime = 0;
@@ -126,7 +114,7 @@ public class SerialisationTest : MonoBehaviour
 
     //--------------------------------------------------------
     // Connect sever.
-    tes.Connect(new IPEndPoint(IPAddress.Loopback, TestPort), true);
+    _tes.Connect(new IPEndPoint(IPAddress.Loopback, TestPort), true);
     Debug.Log("Connecting...");
 
     elapsedTime = 0;
@@ -138,16 +126,11 @@ public class SerialisationTest : MonoBehaviour
       server.ConnectionMonitor.CommitConnections(null);
       yield return null;
       elapsedTime += Time.deltaTime;
-      connected = tes.Connected && server.ConnectionCount > 0;
+      connected = _tes.Connected && server.ConnectionCount > 0;
     } while (!connected && (elapsedTime < ConnectWaitTime || attempt++ < minConnectAttempts));
 
-    if (!tes.Connected || server.ConnectionCount == 0)
-    {
-      Debug.LogError("Connection failed.");
-      Done();
-      yield break;
-    }
-
+    Debug.Assert(_tes.Connected);
+    Debug.Assert(server.ConnectionCount > 0);
     Debug.Log("Connected");
 
     //--------------------------------------------------------
@@ -155,17 +138,18 @@ public class SerialisationTest : MonoBehaviour
     if (!CreateShapes(server, shapes))
     {
       Debug.LogError("Shape creation failed.");
-      Done();
+      Debug.Assert(false);
       yield break;
     }
-    server.UpdateTransfers(0);
-    server.UpdateFrame(Time.deltaTime);
+
+    Debug.Assert(server.UpdateTransfers(0) >= 0);
+    Debug.Assert(server.UpdateFrame(Time.deltaTime) >= 0);
     Debug.Log("Shapes created.");
     yield return null;
 
     // Delay a frame to ensure data propagation (in case we have script execution order issues).
-    server.UpdateFrame(Time.deltaTime);
-    Debug.Log("Delay");
+    Debug.Assert(server.UpdateFrame(Time.deltaTime) >= 0);;
+    Debug.Log("Delayed");
     yield return null;
 
     //--------------------------------------------------------
@@ -174,26 +158,34 @@ public class SerialisationTest : MonoBehaviour
     if (!ValidateScene(shapes))
     {
       Debug.LogError(string.Format("Scene validation {0} failed.", validationCount));
-      Done();
+      Debug.Assert(false);
       yield break;
     }
     yield return null;
 
     //--------------------------------------------------------
-    // Serialise client scene.
-    string sceneFile1 = Path.GetFullPath(Path.Combine("temp", "test-scene01.3es"));
-    string sceneFile2 = Path.GetFullPath(Path.Combine("temp", "test-scene02.3es"));
+    // Serialise client scene file in the Unity Temp directory.
+    string sceneFile1 = Path.GetFullPath(Path.Combine("Temp", "test-scene01.3es"));
+    string sceneFile2 = Path.GetFullPath(Path.Combine("Temp", "test-scene02.3es"));
     // Note: compression is very slow in debug builds.
     // TODO: re-enable compression. The GZipStream we use seems to generate incomplete streams on larger streams
     // possibly due to usage issues here.
-    // tes.SerialiseScene(sceneFile1, true);
-    tes.SerialiseScene(sceneFile1, false);
+    // Debug.Assert(_tes.SerialiseScene(sceneFile1, true));
+    Debug.Assert(_tes.SerialiseScene(sceneFile1, false));
     Debug.Log("Serialised scene");
     yield return null;
 
     //--------------------------------------------------------
     // Disconnect.
-    tes.Disconnect();
+    _tes.Disconnect();
+    // Wait for disconnect.
+    yield return new WaitForSeconds(0.5f);
+
+    // server.ConnectionMonitor.MonitorConnections();
+    // server.ConnectionMonitor.CommitConnections(null);
+    // Debug.Log($"connections: {server.ConnectionCount}");
+    // Debug.Assert(server.ConnectionCount == 0);
+
     //server.Destroy();
     server.ConnectionMonitor.Stop();
     server = null;
@@ -202,17 +194,12 @@ public class SerialisationTest : MonoBehaviour
 
     //--------------------------------------------------------
     // Reset and load the scene.
-    tes.OpenFile(sceneFile1);
+    Debug.Assert(_tes.OpenFile(sceneFile1));
     Debug.Log("Restored scene 1");
     yield return null;
 
     // Give the stream thread a chance to read.
-    elapsedTime = 0;
-    do
-    {
-      yield return null;
-      elapsedTime += Time.deltaTime;
-    } while (elapsedTime < StreamWaitTime && tes.CurrentFrame == 0);
+    yield return new WaitForSeconds(StreamWaitTime);
 
     //--------------------------------------------------------
     // Validate client scene.
@@ -220,7 +207,7 @@ public class SerialisationTest : MonoBehaviour
     if (!ValidateScene(shapes))
     {
       Debug.LogError(string.Format("Scene validation {0} failed.", validationCount));
-      Done();
+      Debug.Assert(false);
       yield break;
     }
     yield return null;
@@ -228,23 +215,18 @@ public class SerialisationTest : MonoBehaviour
     //--------------------------------------------------------
     // Serialise again.
     // TODO: push a keyframe message instead and validate against that.
-    tes.SerialiseScene(sceneFile2, false);
+    Debug.Assert(_tes.SerialiseScene(sceneFile2, false));
     Debug.Log("Serialised scene again");
     yield return null;
 
     //--------------------------------------------------------
     // Reset and load the scene.
-    tes.OpenFile(sceneFile2);
+    Debug.Assert(_tes.OpenFile(sceneFile2));
     Debug.Log("Restored scene 2");
     yield return null;
 
     // Give the stream thread a chance to read.
-    elapsedTime = 0;
-    do
-    {
-      yield return null;
-      elapsedTime += Time.deltaTime;
-    } while (elapsedTime < StreamWaitTime && tes.CurrentFrame == 0);
+    yield return new WaitForSeconds(StreamWaitTime);
 
     //--------------------------------------------------------
     // Validate client scene.
@@ -252,13 +234,12 @@ public class SerialisationTest : MonoBehaviour
     if (!ValidateScene(shapes))
     {
       Debug.LogError(string.Format("Scene validation {0} failed.", validationCount));
-      Done();
+      Debug.Assert(false);
       yield break;
     }
     yield return null;
 
     Debug.Log("Test OK");
-    Done(true);
   }
 
   IServer InitialiseServer()
@@ -494,7 +475,7 @@ public class SerialisationTest : MonoBehaviour
 
   MessageHandler FindHandlerFor(Shape shape)
   {
-    foreach (var handler in tes.Handlers.Handlers)
+    foreach (var handler in _tes.Handlers.Handlers)
     {
       if (handler.RoutingID == shape.RoutingID)
       {
@@ -533,7 +514,7 @@ public class SerialisationTest : MonoBehaviour
       ok = false;
     }
 
-    if (shape.Category != referenceShape.ID)
+    if (shape.Category != referenceShape.Category)
     {
       Debug.LogError($"{handler.Name} {shape.ID} category mismatch. Category {shape.Category} expect {referenceShape.ID}.");
       ok = false;
@@ -708,7 +689,7 @@ public class SerialisationTest : MonoBehaviour
   {
     MeshSetHandler meshSetHandler = (MeshSetHandler)handler;
     MeshSetHandler.PartSet parts = meshSetHandler.ShapeCache.GetShapeData<MeshSetHandler.PartSet>(shape.ID);
-    Tes.Handlers.MeshCache meshCache = (Tes.Handlers.MeshCache)tes.GetHandler((ushort)RoutingID.Mesh);
+    Tes.Handlers.MeshCache meshCache = (Tes.Handlers.MeshCache)_tes.GetHandler((ushort)RoutingID.Mesh);
     MeshSet meshSetReference = (MeshSet)referenceShape;
     bool ok = true;
 
@@ -811,10 +792,11 @@ public class SerialisationTest : MonoBehaviour
     return ok;
   }
 
-  bool ValidateText2D(Shape shape, Shape referenceShape, MessageHandler handler)
+  bool ValidateText2D(Shape shape, MessageHandler handler)
   {
+    Text2DHandler textHandler = (Text2DHandler)handler;
+    Text2D text2DReference = (Text2D)textHandler.CreateSerialisationShapeFor(shape.ID);
     Text2D text2D = (Text2D)shape;
-    Text2D text2DReference = (Text2D)referenceShape;
 
     bool ok = true;
     if (string.Compare(text2D.Text, text2DReference.Text) != 0)
@@ -825,14 +807,17 @@ public class SerialisationTest : MonoBehaviour
     return ok;
   }
 
-  private Dictionary<Type, ValidationFlag> _validationFlags = null;
+  private TesComponent _tes = null;
+  private MeshResource _sampleMesh = null;
+  private Dictionary<Type, ValidationFlag> _validationFlags = new Dictionary<Type, ValidationFlag>();
 
   delegate bool SpecialShapeValidation(Shape shape, Shape referenceShape, MessageHandler handler);
-  private Dictionary<Type, SpecialShapeValidation> _specialShapeValidation = null;
+  private Dictionary<Type, SpecialShapeValidation> _specialShapeValidation =
+    new Dictionary<Type, SpecialShapeValidation>();
 
   delegate bool SpecialValidation(Shape shape, MessageHandler handler);
-  private Dictionary<Type, SpecialValidation> _specialValidation = null;
+  private Dictionary<Type, SpecialValidation> _specialValidation = new Dictionary<Type, SpecialValidation>();
 
   delegate void ShapeDelegate(Shape shape);
-  private Dictionary<Type, ShapeDelegate> _postCreationFunctions = null;
+  private Dictionary<Type, ShapeDelegate> _postCreationFunctions = new Dictionary<Type, ShapeDelegate>();
 }
