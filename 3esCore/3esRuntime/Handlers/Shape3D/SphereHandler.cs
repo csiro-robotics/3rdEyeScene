@@ -33,13 +33,11 @@ namespace Tes.Handlers.Shape3D
     protected override void DecodeTransform(ObjectAttributes attributes, out Matrix4x4 transform)
     {
       transform = Matrix4x4.identity;
-
-      float radius = attributes.ScaleX;
       transform.SetColumn(3, new Vector4(attributes.X, attributes.Y, attributes.Z, 1.0f));
       var pureRotation = Matrix4x4.Rotate(new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW));
-      transform.SetColumn(0, pureRotation.GetColumn(0) * radius);
-      transform.SetColumn(1, pureRotation.GetColumn(1) * radius);
-      transform.SetColumn(2, pureRotation.GetColumn(2) * radius);
+      transform.SetColumn(0, pureRotation.GetColumn(0) * attributes.ScaleX);
+      transform.SetColumn(1, pureRotation.GetColumn(1) * attributes.ScaleY);
+      transform.SetColumn(2, pureRotation.GetColumn(2) * attributes.ScaleZ);
     }
   }
 }
