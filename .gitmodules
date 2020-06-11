@@ -1,4 +1,4 @@
 [submodule "cpp"]
 	path = cpp
-	url = https://github.com/data61/3es-core.git
+	url = https://github.com/csiro-robotics/3es-core.git
 	branch = devel
