@@ -12,12 +12,97 @@ using Tes.Buffers;
 using Tes.IO;
 using Tes.Net;
 using Tes.Maths;
-using Tes.Shapes;
+using Tes.TestSupport;
 
 namespace Tes.CoreTests
 {
   public class Buffers
   {
+    private void TestPacktised(VertexBuffer referenceBuffer, DataStreamType sendType, double quantisationUnit = 1e-1)
+    {
+      // Prepare the packet buffer.
+      // Keep a relatively small size to ensure we need more than one cycle.
+      PacketBuffer packet = new PacketBuffer(16 * 1024);
+
+      // Create a receiving buffer.
+      VertexBuffer recvBuffer = new VertexBuffer();
+
+      // Start write/read cycle.
+      uint offset = 0;
+      while (offset < referenceBuffer.AddressableCount)
+      {
+        // We will cheat here by having no specific message type and only focus on the payload.
+        packet.Reset(0, 0);
+        uint written = 0;
+        if (sendType != DataStreamType.PackedFloat16 && sendType != DataStreamType.PackedFloat32)
+        {
+          written = referenceBuffer.Write(packet, offset, sendType, (uint)(packet.Data.Length - packet.Count));
+        }
+        else
+        {
+          written = referenceBuffer.WritePacked(packet, offset, sendType, (uint)(packet.Data.Length - packet.Count), quantisationUnit);
+        }
+        Assert.True(written > 0);
+        offset += written;
+
+        // Read the data we just wrote.
+        NetworkReader packetReader = new NetworkReader(packet.CreateReadStream(true));
+        recvBuffer.Read(packet, packetReader);
+      }
+
+      // Validate the data.
+      Assert.Equal(referenceBuffer.AddressableCount, recvBuffer.AddressableCount);
+
+      for (int i = 0; i < referenceBuffer.AddressableCount; ++i)
+      {
+        // This will definitely fail. need to assert near.
+        for (int c = 0; c < referenceBuffer.ComponentCount; ++c)
+        {
+          int refIndex = i * referenceBuffer.ElementStride + c;
+          int testIndex = i * recvBuffer.ElementStride + c;
+          switch (sendType)
+          {
+            case DataStreamType.Int8:
+              Assert.Equal(referenceBuffer.GetSByte(refIndex), recvBuffer.GetSByte(testIndex));
+              break;
+            case DataStreamType.UInt8:
+              Assert.Equal(referenceBuffer.GetByte(refIndex), recvBuffer.GetByte(testIndex));
+              break;
+            case DataStreamType.Int16:
+              Assert.Equal(referenceBuffer.GetInt16(refIndex), recvBuffer.GetInt16(testIndex));
+              break;
+            case DataStreamType.UInt16:
+              Assert.Equal(referenceBuffer.GetUInt16(refIndex), recvBuffer.GetUInt16(testIndex));
+              break;
+            case DataStreamType.Int32:
+              Assert.Equal(referenceBuffer.GetInt32(refIndex), recvBuffer.GetInt32(testIndex));
+              break;
+            case DataStreamType.UInt32:
+              Assert.Equal(referenceBuffer.GetUInt32(refIndex), recvBuffer.GetUInt32(testIndex));
+              break;
+            case DataStreamType.Int64:
+              Assert.Equal(referenceBuffer.GetInt64(refIndex), recvBuffer.GetInt64(testIndex));
+              break;
+            case DataStreamType.UInt64:
+              Assert.Equal(referenceBuffer.GetUInt64(refIndex), recvBuffer.GetUInt64(testIndex));
+              break;
+            case DataStreamType.Float32:
+              Assert.Equal(referenceBuffer.GetSingle(refIndex), recvBuffer.GetSingle(testIndex));
+              break;
+            case DataStreamType.Float64:
+              Assert.Equal(referenceBuffer.GetDouble(refIndex), recvBuffer.GetDouble(testIndex));
+              break;
+            case DataStreamType.PackedFloat16:
+              AssertExt.Near(referenceBuffer.GetSingle(refIndex), recvBuffer.GetSingle(testIndex), (float)quantisationUnit);
+              break;
+            case DataStreamType.PackedFloat32:
+              AssertExt.Near(referenceBuffer.GetDouble(refIndex), recvBuffer.GetDouble(testIndex), quantisationUnit);
+              break;
+          }
+        }
+      }
+    }
+
     private void TestReadSByte<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, sbyte> compare)
     {
       List<sbyte> readItems = new List<sbyte>();
@@ -180,6 +265,9 @@ namespace Tes.CoreTests
       TestReadUInt64(buffer, reference, (i, refList, val) => Assert.Equal((ulong)refList[i], val));
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
+
+      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      TestPacktised(referenceBuffer, DataStreamType.Int8);
     }
 
     [Fact]
@@ -214,6 +302,9 @@ namespace Tes.CoreTests
       TestReadUInt64(buffer, reference, (i, refList, val) => Assert.Equal((ulong)refList[i], val));
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
+
+      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      TestPacktised(referenceBuffer, DataStreamType.UInt8);
     }
 
     [Fact]
@@ -248,6 +339,9 @@ namespace Tes.CoreTests
       TestReadUInt64(buffer, reference, (i, refList, val) => Assert.Equal((ulong)refList[i], val));
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
+
+      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      TestPacktised(referenceBuffer, DataStreamType.Int16);
     }
 
     [Fact]
@@ -282,6 +376,9 @@ namespace Tes.CoreTests
       TestReadUInt64(buffer, reference, (i, refList, val) => Assert.Equal((ulong)refList[i], val));
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
+
+      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      TestPacktised(referenceBuffer, DataStreamType.UInt16);
     }
 
     [Fact]
@@ -316,6 +413,9 @@ namespace Tes.CoreTests
       TestReadUInt64(buffer, reference, (i, refList, val) => Assert.Equal((ulong)refList[i], val));
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
+
+      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      TestPacktised(referenceBuffer, DataStreamType.Int32);
     }
 
     [Fact]
@@ -350,13 +450,16 @@ namespace Tes.CoreTests
       TestReadUInt64(buffer, reference, (i, refList, val) => Assert.Equal((ulong)refList[i], val));
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
+
+      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      TestPacktised(referenceBuffer, DataStreamType.UInt32);
     }
 
     [Fact]
     public void Single()
     {
       List<float> reference = new List<float>();
-      for (float i = -128000.0f; i < 128000.0f; i += 2.5f)
+      for (float i = -64000.0f; i < 64000.0f; i += 2.5f)
       {
         reference.Add(i);
       }
@@ -384,6 +487,10 @@ namespace Tes.CoreTests
       TestReadUInt64(buffer, reference, (i, refList, val) => Assert.Equal((ulong)refList[i], val));
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
+
+      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      TestPacktised(referenceBuffer, DataStreamType.Float32);
+      TestPacktised(referenceBuffer, DataStreamType.PackedFloat16, 2.5f);
     }
 
     [Fact]
@@ -418,6 +525,10 @@ namespace Tes.CoreTests
       TestReadUInt64(buffer, reference, (i, refList, val) => Assert.Equal((ulong)refList[i], val));
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
+
+      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      TestPacktised(referenceBuffer, DataStreamType.Float64);
+      TestPacktised(referenceBuffer, DataStreamType.PackedFloat32, 2.5);
     }
 
     [Fact]
@@ -489,31 +600,47 @@ namespace Tes.CoreTests
     }
 
     [Fact]
-    public void Packed()
+    public void PacketConversion()
     {
       // Build a reference array.
       List<float> reference = new List<float>();
-      for (float i = -128.0f; i < 128.0f; i += 2.5f)
+      const float increment = 2.5f;
+      // Ensure we remain in byte range.
+      float value = 0.0f;
+      for (; value < 127.0f; value += increment)
       {
-        reference.Add(i);
+        reference.Add(value);
+      }
+      // Wrap the buffer.
+      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      TestPacktised(referenceBuffer, DataStreamType.Int8);
+      TestPacktised(referenceBuffer, DataStreamType.UInt8);
+
+      // Expand into short range
+      for (; value < 16000.0f; value += increment)
+      {
+        reference.Add(value);
       }
 
-      // Write into a packed stream.
-      PacketBuffer packet = new PacketBuffer(64 * 1024);
-      VertexBuffer sendBuffer = VertexBuffer.Wrap(reference);
-      // For now presize correctly.
-      List<float> testList = new List<float>(reference.Count);
-      VertexBuffer recvBuffer = VertexBuffer.Wrap(testList);
+      TestPacktised(referenceBuffer, DataStreamType.Int16);
+      TestPacktised(referenceBuffer, DataStreamType.UInt16);
 
-      sendBuffer.Write(packet, 0, DataStreamType.Float32, 32 * 1024);
-      NetworkReader packetReader = new NetworkReader(packet.CreateReadStream(true));
-      recvBuffer.Read(packet, packetReader);
+      // This is also before the limit of a 16-bit quantised buffer.
+      TestPacktised(referenceBuffer, DataStreamType.PackedFloat16, increment);
 
-      for (int i = 0; i < reference.Count; ++i)
+      // Expand into int range
+      for (; value < 128000.0f; value += increment)
       {
-        // This will definitely fail. need to assert near.
-        Assert.Equal(reference[i], testList[i]);
+        reference.Add(value);
       }
+
+      TestPacktised(referenceBuffer, DataStreamType.Int32);
+      TestPacktised(referenceBuffer, DataStreamType.UInt32);
+      TestPacktised(referenceBuffer, DataStreamType.Int64);
+      TestPacktised(referenceBuffer, DataStreamType.UInt64);
+      TestPacktised(referenceBuffer, DataStreamType.Float32);
+      TestPacktised(referenceBuffer, DataStreamType.Float64);
+      TestPacktised(referenceBuffer, DataStreamType.PackedFloat32, increment);
     }
   }
 }
