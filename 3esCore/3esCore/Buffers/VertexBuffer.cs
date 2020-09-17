@@ -1,7 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using Tes.Buffers.Converters;
+using Tes.IO;
+using Tes.Net;
 
 namespace Tes.Buffers
 {
@@ -33,7 +36,7 @@ namespace Tes.Buffers
   /// index 3 to Vector3[0].X and so on. Similarly, the extracted count must be a multiple of 3 in order to extract
   /// full <c>Vector3</c> items.
   /// 
-  /// The <see cref="Count"/> has similar semantics. However, the <see cref="StridedCount"/> corresponds to the
+  /// The <see cref="Count"/> has similar semantics. However, the <see cref="AddressableCount"/> corresponds to the
   /// number of @c <c>Vector3</c> item count.
   /// </remarks>
   public class VertexBuffer
@@ -42,7 +45,7 @@ namespace Tes.Buffers
     /// Query the number of addressable elements in the buffer.
     /// </summary>
     /// <remarks>
-    /// This is equivalent to <c>StridedCount * ComponentCount</c>.
+    /// This is equivalent to <c>ElementStride * ComponentCount</c>.
     /// </remarks>
     public int AddressableCount { get { return _converter.AddressableCount(_buffer); } }
 
@@ -50,9 +53,9 @@ namespace Tes.Buffers
     /// The number of data components or data channels in the buffer. For example, <c>Vector3</c> has 3.
     /// </summary>
     public int ComponentCount { get { return _componentCount; } }
-    
+
     /// <summary>
-    /// The number of padding channes channels in the buffer.
+    /// The number of channels in the buffer including padding.
     /// </summary>
     /// <remarks>
     /// For example, a <c>Vector4[]</c> where only XYZ are to be packed would have a stride of 4 to skip the W channel.
@@ -110,6 +113,333 @@ namespace Tes.Buffers
       return new VertexBuffer(list, typeof(Maths.Vector3), ConverterSet.Get(typeof(Maths.Vector3)), 3);
     }
 
+    /// <summary>
+    /// Estimate the number of elements which can be transferred at the given <paramref name="byteLimit"/>
+    /// </summary>
+    /// <param name="elementSize">The byte size of each element.</param>
+    /// <param name="byteLimit">The maximum number of bytes to transfer. Note: a hard limit of 0xffff is
+    ///   enforced.</param>
+    /// <param name="overhead">Additional byte overhead to a account for. This reduces the effectivel, total byte limit.</param>
+    /// <returns>The maximum number of elements which can be accommodated in the byte limit (conservative).</returns>
+    public static ushort EstimateTransferCount(uint elementSize, uint byteLimit, uint overhead = 0)
+    {
+      uint maxTransfer = (uint)((0xffff - (PacketHeader.Size + overhead + Crc16.CrcSize)) / elementSize);
+      uint count = (byteLimit > 0) ? byteLimit / elementSize : maxTransfer;
+      if (count < 1)
+      {
+        count = 1;
+      }
+      else if (count > maxTransfer)
+      {
+        count = maxTransfer;
+      }
+
+      return (ushort)count;
+    }
+
+    public uint Write(PacketBuffer packet, uint offset, DataStreamType writeAsType, uint byteLimit)
+    {
+      if (writeAsType == DataStreamType.PackedFloat16 || writeAsType == DataStreamType.PackedFloat32)
+      {
+        // TODO(KS): throw an exception here.
+        return 0;
+      }
+
+      uint itemSize = DataStreamTypeInfo.SizeoOf(writeAsType) * (uint)ComponentCount;
+
+      // Overhead: account for:
+      // - uint32_t offset
+      // - uint16_t count
+      // - uint8_t element stride
+      // - uint8_t data type
+      const uint overhead = 4 +                             // offset
+                            2 +                             // count
+                            1 +                             // element stride
+                            1;                              // data type
+
+      ushort count = (ushort)Math.Min(EstimateTransferCount(itemSize, byteLimit, overhead), (uint)AddressableCount - offset);
+
+      // To write:
+      // - uint32 strided element offset
+      // - uint16 strided element count
+      // - uint8 channel/component count
+      // - uint8 write type
+      // if packed, also write:
+      // - float32/64 quantisation unit. 32 for PackedFloat16, 64 for PackedFloat32
+      // - float32/64[3] packing origin. 32 for PackedFloat16, 64 for PackedFloat32
+
+      packet.WriteBytes(BitConverter.GetBytes(offset), true);
+      packet.WriteBytes(BitConverter.GetBytes(count), true);
+      byte byteValue = (byte)ComponentCount;
+      packet.WriteBytes(BitConverter.GetBytes(byteValue), true);
+      byteValue = (byte)writeAsType;
+      packet.WriteBytes(BitConverter.GetBytes(byteValue), true);
+
+      switch (writeAsType)
+      {
+        case DataStreamType.Float32:
+          WriteFloat32(packet, offset, count);
+          break;
+          // case DataStreamType.Float64:
+          //   WriteFloat64(packet, offset, count);
+          //   break;
+      }
+
+      return count;
+    }
+
+    public uint WritePacked(PacketBuffer packet, uint offset, DataStreamType writeAsType, uint byteLimit, double quantisationUnit)
+    {
+      if (writeAsType != DataStreamType.PackedFloat16 && writeAsType != DataStreamType.PackedFloat32)
+      {
+        // TODO(KS): throw an exception here.
+        return 0;
+      }
+
+      uint itemSize = DataStreamTypeInfo.SizeoOf(writeAsType) * (uint)ComponentCount;
+      uint floatSize = writeAsType == DataStreamType.PackedFloat16 ? 4u : 8u;
+
+      // Overhead: account for:
+      // - uint32_t offset
+      // - uint16_t count
+      // - uint8_t element stride
+      // - uint8_t data type
+      // - FloatType quantisationUnit
+      // - FloatType[stream.componentCount()] packingOrigin
+      uint overhead = 4 +                             // offset
+                      2 +                             // count
+                      1 +                              // element stride
+                      1 +                               // data type
+                      floatSize +                // quantisation unit
+                      floatSize * 3;             // packing origin.
+
+      ushort count = (ushort)Math.Min(EstimateTransferCount(itemSize, byteLimit, overhead), (uint)AddressableCount - offset);
+
+      // To write:
+      // - uint32 strided element offset
+      // - uint16 strided element count
+      // - uint8 channel/component count
+      // - uint8 write type
+      // if packed, also write:
+      // - float32/64 quantisation unit. 32 for PackedFloat16, 64 for PackedFloat32
+      // - float32/64[3] packing origin. 32 for PackedFloat16, 64 for PackedFloat32
+
+      packet.WriteBytes(BitConverter.GetBytes(offset), true);
+      packet.WriteBytes(BitConverter.GetBytes(count), true);
+      byte byteValue = (byte)ComponentCount;
+      packet.WriteBytes(BitConverter.GetBytes(byteValue), true);
+      byteValue = (byte)writeAsType;
+      packet.WriteBytes(BitConverter.GetBytes(byteValue), true);
+
+      if (writeAsType == DataStreamType.PackedFloat16)
+      {
+        // Write quantisation and origin info as floats
+        float quantisationFloat = (float)quantisationUnit;
+        packet.WriteBytes(BitConverter.GetBytes(quantisationFloat), true);
+
+        float[] packedOrigin = new float[ComponentCount];
+        for (int i = 0; i < packedOrigin.Length; ++i)
+        {
+          packedOrigin[i] = 0.0f;
+          packet.WriteBytes(BitConverter.GetBytes(packedOrigin[i]), true);
+        }
+
+        // Now write result.
+        WritePackedFloat16(packet, offset, count, packedOrigin, quantisationFloat);
+      }
+      else
+      {
+        packet.WriteBytes(BitConverter.GetBytes(quantisationUnit), true);
+
+        double[] packedOrigin = new double[ComponentCount];
+        for (int i = 0; i < packedOrigin.Length; ++i)
+        {
+          packedOrigin[i] = 0.0f;
+          packet.WriteBytes(BitConverter.GetBytes(packedOrigin[i]), true);
+        }
+        WritePackedFloat32(packet, offset, count, packedOrigin, quantisationUnit);
+      }
+      return count;
+    }
+
+
+    private void WriteFloat32(PacketBuffer packet, uint offset, uint count)
+    {
+      for (int i = 0; i < (int)count; ++i)
+      {
+        for (int c = 0; c < ComponentCount; ++c)
+        {
+          packet.WriteBytes(BitConverter.GetBytes(GetSingle((int)offset * ComponentCount + i * ComponentCount + c)), true);
+        }
+      }
+    }
+
+
+    private void WritePackedFloat16(PacketBuffer packet, uint offset, uint count, float[] packedOrigin, float quantisationUnit)
+    {
+      // Write quantisation
+      packet.WriteBytes(BitConverter.GetBytes(quantisationUnit), true);
+
+      // Write the packed origin.
+      for (int c = 0; c < ComponentCount; ++c)
+      {
+        packet.WriteBytes(BitConverter.GetBytes(packedOrigin[c]), true);
+      }
+
+      float quantisationInverse = 1.0f / quantisationUnit;
+      for (int i = 0; i < (int)count; ++i)
+      {
+        for (int c = 0; c < ComponentCount; ++c)
+        {
+          float value = GetSingle((int)offset * ComponentCount + i * ComponentCount + c) - packedOrigin[c];
+          short quantisedValue = (short)(value * quantisationUnit);
+          packet.WriteBytes(BitConverter.GetBytes(quantisedValue), true);
+        }
+      }
+    }
+
+
+    private void WritePackedFloat32(PacketBuffer packet, uint offset, uint count, double[] packedOrigin, double quantisationUnit)
+    {
+      // Write quantisation
+      packet.WriteBytes(BitConverter.GetBytes(quantisationUnit), true);
+
+      // Write the packed origin.
+      for (int c = 0; c < ComponentCount; ++c)
+      {
+        packet.WriteBytes(BitConverter.GetBytes(packedOrigin[c]), true);
+      }
+
+      double quantisationInverse = 1.0 / quantisationUnit;
+      for (int i = 0; i < (int)count; ++i)
+      {
+        for (int c = 0; c < ComponentCount; ++c)
+        {
+          double value = GetDouble((int)offset * ComponentCount + i * ComponentCount + c) - packedOrigin[c];
+          int quantisedValue = (int)(value * quantisationInverse);
+          packet.WriteBytes(BitConverter.GetBytes(quantisedValue), true);
+        }
+      }
+    }
+
+    public void Read(PacketBuffer packet, BinaryReader reader)
+    {
+      // reader.Read();
+
+      uint offset = reader.ReadUInt32();
+      int count = reader.ReadUInt16();
+      int componentCount = reader.ReadByte();
+      int dataType = reader.ReadByte();
+
+      if (componentCount != _componentCount)
+      {
+        // TODO: throw invalid component count
+        return;
+      }
+
+      if (count + offset >= AddressableCount)
+      {
+        // TODO: throw insufficient allocation
+        return;
+      }
+
+      switch ((DataStreamType)dataType)
+      {
+        case DataStreamType.Float32:
+          ReadFloat32(packet, reader, offset, count, componentCount);
+          break;
+        case DataStreamType.PackedFloat16:
+          ReadPackedFloat16(packet, reader, offset, count, componentCount);
+          break;
+      }
+
+      // - uint32 strided element offset
+      // - uint16 strided element count
+      // - uint8 channel/component count
+      // - uint8 write type
+      // if packed, also write:
+      // - float32/64 quantisation unit. 32 for PackedFloat16, 64 for PackedFloat32
+      // - float32/64[3] packing origin. 32 for PackedFloat16, 64 for PackedFloat32
+    }
+
+    private void ReadFloat32(PacketBuffer packet, BinaryReader reader, uint offset, int count, int componentCount)
+    {
+      // Won't work for vector2/3
+      IList<float> buffer = (IList<float>)_buffer;
+
+      for (int i = 0; i < count; ++i)
+      {
+        for (int c = 0; c < componentCount; ++c)
+        {
+          buffer[((int)offset + i) * AddressableCount + c] = reader.ReadSingle();
+        }
+      }
+    }
+
+    private void ReadFloat64(PacketBuffer packet, BinaryReader reader, uint offset, int count, int componentCount)
+    {
+      // Won't work for vector2/3
+      IList<double> buffer = (IList<double>)_buffer;
+
+      for (int i = 0; i < count; ++i)
+      {
+        for (int c = 0; c < componentCount; ++c)
+        {
+          buffer[((int)offset + i) * AddressableCount + c] = reader.ReadDouble();
+        }
+      }
+    }
+    private void ReadPackedFloat16(PacketBuffer packet, BinaryReader reader, uint offset, int count, int componentCount)
+    {
+      // Won't work for vector2/3
+      IList<float> buffer = (IList<float>)_buffer;
+
+      // Read the quantisation and offset values.
+      float quantisationUnit = reader.ReadSingle();
+      float[] packedOrigin = new float[componentCount];
+
+      for (int i = 0; i < componentCount; ++i)
+      {
+        packedOrigin[i] = reader.ReadSingle();
+      }
+
+      for (int i = 0; i < count; ++i)
+      {
+        for (int c = 0; c < componentCount; ++c)
+        {
+          // Read packed value.
+          short packedValue = reader.ReadInt16();
+          float value = (float)packedValue * quantisationUnit + packedOrigin[c];
+          buffer[((int)offset + i) * AddressableCount + c] = value;
+        }
+      }
+    }
+
+    private void ReadPackedFloat32(PacketBuffer packet, BinaryReader reader, uint offset, int count, int componentCount)
+    {
+      // Won't work for vector2/3
+      IList<double> buffer = (IList<double>)_buffer;
+
+      // Read the quantisation and offset values.
+      double quantisationUnit = reader.ReadDouble();
+      double[] packedOrigin = new double[componentCount];
+
+      for (int i = 0; i < componentCount; ++i)
+      {
+        packedOrigin[i] = reader.ReadDouble();
+      }
+
+      for (int i = 0; i < count; ++i)
+      {
+        for (int c = 0; c < componentCount; ++c)
+        {
+          // Read packed value.
+          int packedValue = reader.ReadInt32();
+          double value = (double)packedValue * quantisationUnit + packedOrigin[c];
+          buffer[((int)offset + i) * AddressableCount + c] = value;
+        }
+      }
+    }
     #region Get<Type> functions
 
     public sbyte GetSByte(int index)

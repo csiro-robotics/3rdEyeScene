@@ -487,5 +487,33 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i / 3][i % 3], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i / 3][i % 3], val));
     }
+
+    [Fact]
+    public void Packed()
+    {
+      // Build a reference array.
+      List<float> reference = new List<float>();
+      for (float i = -128.0f; i < 128.0f; i += 2.5f)
+      {
+        reference.Add(i);
+      }
+
+      // Write into a packed stream.
+      PacketBuffer packet = new PacketBuffer(64 * 1024);
+      VertexBuffer sendBuffer = VertexBuffer.Wrap(reference);
+      // For now presize correctly.
+      List<float> testList = new List<float>(reference.Count);
+      VertexBuffer recvBuffer = VertexBuffer.Wrap(testList);
+
+      sendBuffer.Write(packet, 0, DataStreamType.Float32, 32 * 1024);
+      NetworkReader packetReader = new NetworkReader(packet.CreateReadStream(true));
+      recvBuffer.Read(packet, packetReader);
+
+      for (int i = 0; i < reference.Count; ++i)
+      {
+        // This will definitely fail. need to assert near.
+        Assert.Equal(reference[i], testList[i]);
+      }
+    }
   }
 }
