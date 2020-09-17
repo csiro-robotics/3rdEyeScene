@@ -37,10 +37,17 @@ namespace Tes.Buffers
   /// full <c>Vector3</c> items.
   ///
   /// The <see cref="Count"/> has similar semantics. However, the <see cref="AddressableCount"/> corresponds to the
-  /// number of @c <c>Vector3</c> item count.
+  /// number of channeled elements which can be addressed in the buffer.<!-- For-->
   /// </remarks>
   public class VertexBuffer
   {
+    /// <summary>
+    /// Query the number of addressable elements in the buffer.
+    /// </summary>
+    /// <remarks>
+    /// This is equivalent to <c>ElementStride * ComponentCount</c>.
+    /// </remarks>
+    public int Count { get { return AddressableCount / ComponentCount; } }
     /// <summary>
     /// Query the number of addressable elements in the buffer.
     /// </summary>
@@ -172,7 +179,7 @@ namespace Tes.Buffers
                             1 +                             // element stride
                             1;                              // data type
 
-      ushort count = (ushort)Math.Min(EstimateTransferCount(itemSize, byteLimit, overhead), (uint)AddressableCount - offset);
+      ushort count = (ushort)Math.Min(EstimateTransferCount(itemSize, byteLimit, overhead), (uint)Count - offset);
 
       // To write:
       // - uint32 strided element offset
@@ -243,7 +250,7 @@ namespace Tes.Buffers
                       floatSize +                // quantisation unit
                       floatSize * (uint)ComponentCount;             // packing origin.
 
-      ushort count = (ushort)Math.Min(EstimateTransferCount(itemSize, byteLimit, overhead), (uint)AddressableCount - offset);
+      ushort count = (ushort)Math.Min(EstimateTransferCount(itemSize, byteLimit, overhead), (uint)Count - offset);
 
       // Write 32-bit offset
       packet.WriteBytes(BitConverter.GetBytes(offset), true);
@@ -381,7 +388,7 @@ namespace Tes.Buffers
           return;
         }
 
-        if (count + offset > AddressableCount)
+        if (count + offset > Count)
         {
           // Increase the buffer capacity.
           Expand((int)(count + offset));
@@ -559,9 +566,12 @@ namespace Tes.Buffers
     private void ExpandOfType<T>(int capacity, T defaultValue)
     {
       IList<T> buffer = (IList<T>)_buffer;
-      for (int i = AddressableCount; i < capacity; ++i)
+      for (int i = Count; i < capacity; ++i)
       {
-        buffer.Add(defaultValue);
+        for (int c = 0; c < ComponentCount; ++c)
+        {
+          buffer.Add(defaultValue);
+        }
       }
     }
 

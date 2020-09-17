@@ -18,7 +18,7 @@ namespace Tes.CoreTests
 {
   public class Buffers
   {
-    private void TestPacktised(VertexBuffer referenceBuffer, DataStreamType sendType, double quantisationUnit = 1e-1)
+    private VertexBuffer TestPacktised(VertexBuffer referenceBuffer, DataStreamType sendType, double quantisationUnit = 1e-1)
     {
       // Prepare the packet buffer.
       // Keep a relatively small size to ensure we need more than one cycle.
@@ -29,7 +29,7 @@ namespace Tes.CoreTests
 
       // Start write/read cycle.
       uint offset = 0;
-      while (offset < referenceBuffer.AddressableCount)
+      while (offset < referenceBuffer.Count)
       {
         // We will cheat here by having no specific message type and only focus on the payload.
         packet.Reset(0, 0);
@@ -53,7 +53,7 @@ namespace Tes.CoreTests
       // Validate the data.
       Assert.Equal(referenceBuffer.AddressableCount, recvBuffer.AddressableCount);
 
-      for (int i = 0; i < referenceBuffer.AddressableCount; ++i)
+      for (int i = 0; i < referenceBuffer.Count; ++i)
       {
         // This will definitely fail. need to assert near.
         for (int c = 0; c < referenceBuffer.ComponentCount; ++c)
@@ -101,6 +101,8 @@ namespace Tes.CoreTests
           }
         }
       }
+
+      return recvBuffer;
     }
 
     private void TestReadSByte<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, sbyte> compare)
@@ -641,6 +643,57 @@ namespace Tes.CoreTests
       TestPacktised(referenceBuffer, DataStreamType.Float32);
       TestPacktised(referenceBuffer, DataStreamType.Float64);
       TestPacktised(referenceBuffer, DataStreamType.PackedFloat32, increment);
+    }
+
+    [Fact]
+    void PacketVector3()
+    {
+      // Generate a Vector3 array.
+      List<Vector3> reference = new List<Vector3>();
+      for (float i = -200.0f; i < 200.0f; i += 0.12f)
+      {
+        reference.Add(new Vector3(i, 0.5f * i, -0.5f * i));
+      }
+
+      // Wrap into a VertexBuffer
+      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      // Test unpacking into various formats.
+      // Pack/unpack as is.
+      VertexBuffer recvBuffer = TestPacktised(referenceBuffer, DataStreamType.Float32);
+      Assert.Equal(reference.Count, recvBuffer.Count);
+      Assert.Equal(3, recvBuffer.ComponentCount);
+      // Pack using doubles
+      recvBuffer = TestPacktised(referenceBuffer, DataStreamType.Float64);
+      Assert.Equal(reference.Count, recvBuffer.Count);
+      Assert.Equal(3, recvBuffer.ComponentCount);
+      // Pack into a quantised, 32-bit buffer
+      recvBuffer = TestPacktised(referenceBuffer, DataStreamType.PackedFloat32, 0.5 * 0.12);
+      Assert.Equal(reference.Count, recvBuffer.Count);
+      Assert.Equal(3, recvBuffer.ComponentCount);
+      // Pack into a quantised, 16-bit buffer
+      recvBuffer = TestPacktised(referenceBuffer, DataStreamType.PackedFloat16, 0.5f * 0.12f);
+      Assert.Equal(reference.Count, recvBuffer.Count);
+      Assert.Equal(3, recvBuffer.ComponentCount);
+
+      // Now try extract a Vector3 array and ensure we haven't destroyed out data.
+      Vector3[] vectorArray = new Vector3[recvBuffer.Count];
+      for (int i = 0; i < recvBuffer.Count; ++i)
+      {
+        for (int c = 0; c < 3; ++c)
+        {
+          vectorArray[i][c] = recvBuffer.GetSingle(i * 3 + c);
+        }
+      }
+      Assert.Equal(reference.Count, vectorArray.Length);
+
+      // Compare the array.
+      float epsilon = 0.5f * 0.12f;
+      for (int i = 0; i < vectorArray.Length; ++i)
+      {
+        AssertExt.Near(reference[i].X, vectorArray[i].X, epsilon);
+        AssertExt.Near(reference[i].Y, vectorArray[i].Y, epsilon);
+        AssertExt.Near(reference[i].Z, vectorArray[i].Z, epsilon);
+      }
     }
   }
 }
