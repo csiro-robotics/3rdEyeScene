@@ -9,6 +9,8 @@ using Tes.Maths;
 using Tes.Shapes;
 using Tes.TestSupport;
 
+#pragma warning disable xUnit1013
+
 namespace Tes.CoreTests
 {
   public class Shapes
@@ -568,3 +570,5 @@ namespace Tes.CoreTests
     }
   }
 }
+
+#pragma warning restore xUnit1013
