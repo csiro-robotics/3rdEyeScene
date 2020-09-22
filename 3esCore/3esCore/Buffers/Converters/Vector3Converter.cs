@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using Tes.Maths;
 
 namespace Tes.Buffers.Converters
@@ -15,6 +16,11 @@ namespace Tes.Buffers.Converters
     /// Query the supported buffer type.
     /// </summary>
     public Type Type { get { return typeof(Vector3); } }
+
+    /// <summary>
+    /// Query the default packing data type.
+    /// </summary>
+    public Tes.Net.DataStreamType DefaultPackingType { get { return Tes.Net.DataStreamType.Single; } }
 
     /// <summary>
     /// Query the number of addressable elements in the array. This includes addressing individual data components.
@@ -57,6 +63,33 @@ namespace Tes.Buffers.Converters
     }
 
     /// <summary>
+    /// Read a range of SByte values from a <c>System.IO.BinaryReader</c>.
+    /// </summary>
+    /// <param name="dst">The list to read into. The stored type must match the implementation type.</param>
+    /// <param name="reader">The binary reader from which to read data.</param>
+    /// <param name="offset">The offset into dst at which to start writing. This offset is element based, so must be
+    /// multiplied by the <paramref name="componentCount"/>.</param>
+    /// <param name="count">The number of elements to read. Must be multiplied by the <paramref name="componentCount"/>
+    ///   to calculate the total number of SByte items to read from <paramref name="reader"/>.</param>
+    /// <param name="componentCount">The number of SByte items to read for each <paramref name="count"/></param>
+    public int ReadSByte(IList dst, BinaryReader reader, int offset, int count, int componentCount)
+    {
+      IList<Vector3> dstList = (IList<Vector3>)dst;
+      int readCount = 0;
+      Vector3 value = new Vector3();
+      for (int i = 0; i < count; ++i)
+      {
+        for (int c = 0; c < componentCount; ++c)
+        {
+          value[c] = (float)reader.ReadSByte();
+        }
+        dstList[i + offset] = value;
+        ++readCount;
+      }
+      return readCount;
+    }
+
+    /// <summary>
     /// Extract <paramref name="count"/> values of type <c>byte</c> from <paramref name="src"/>.
     /// </summary>
     /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
@@ -86,6 +119,33 @@ namespace Tes.Buffers.Converters
     {
       IList<Vector3> srcList = (IList<Vector3>)src;
       return (byte)srcList[srcOffset / 3][srcOffset % 3];
+    }
+
+    /// <summary>
+    /// Read a range of Byte values from a <c>System.IO.BinaryReader</c>.
+    /// </summary>
+    /// <param name="dst">The list to read into. The stored type must match the implementation type.</param>
+    /// <param name="reader">The binary reader from which to read data.</param>
+    /// <param name="offset">The offset into dst at which to start writing. This offset is element based, so must be
+    /// multiplied by the <paramref name="componentCount"/>.</param>
+    /// <param name="count">The number of elements to read. Must be multiplied by the <paramref name="componentCount"/>
+    ///   to calculate the total number of Byte items to read from <paramref name="reader"/>.</param>
+    /// <param name="componentCount">The number of Byte items to read for each <paramref name="count"/></param>
+    public int ReadByte(IList dst, BinaryReader reader, int offset, int count, int componentCount)
+    {
+      IList<Vector3> dstList = (IList<Vector3>)dst;
+      int readCount = 0;
+      Vector3 value = new Vector3();
+      for (int i = 0; i < count; ++i)
+      {
+        for (int c = 0; c < componentCount; ++c)
+        {
+          value[c] = (float)reader.ReadByte();
+        }
+        dstList[i + offset] = value;
+        ++readCount;
+      }
+      return readCount;
     }
 
     /// <summary>
@@ -121,6 +181,33 @@ namespace Tes.Buffers.Converters
     }
 
     /// <summary>
+    /// Read a range of Int16 values from a <c>System.IO.BinaryReader</c>.
+    /// </summary>
+    /// <param name="dst">The list to read into. The stored type must match the implementation type.</param>
+    /// <param name="reader">The binary reader from which to read data.</param>
+    /// <param name="offset">The offset into dst at which to start writing. This offset is element based, so must be
+    /// multiplied by the <paramref name="componentCount"/>.</param>
+    /// <param name="count">The number of elements to read. Must be multiplied by the <paramref name="componentCount"/>
+    ///   to calculate the total number of Int16 items to read from <paramref name="reader"/>.</param>
+    /// <param name="componentCount">The number of Int16 items to read for each <paramref name="count"/></param>
+    public int ReadInt16(IList dst, BinaryReader reader, int offset, int count, int componentCount)
+    {
+      IList<Vector3> dstList = (IList<Vector3>)dst;
+      int readCount = 0;
+      Vector3 value = new Vector3();
+      for (int i = 0; i < count; ++i)
+      {
+        for (int c = 0; c < componentCount; ++c)
+        {
+          value[c] = (float)reader.ReadInt16();
+        }
+        dstList[i + offset] = value;
+        ++readCount;
+      }
+      return readCount;
+    }
+
+    /// <summary>
     /// Extract <paramref name="count"/> values of type <c>ushort</c> from <paramref name="src"/>.
     /// </summary>
     /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
@@ -150,6 +237,33 @@ namespace Tes.Buffers.Converters
     {
       IList<Vector3> srcList = (IList<Vector3>)src;
       return (ushort)srcList[srcOffset / 3][srcOffset % 3];
+    }
+
+    /// <summary>
+    /// Read a range of UInt16 values from a <c>System.IO.BinaryReader</c>.
+    /// </summary>
+    /// <param name="dst">The list to read into. The stored type must match the implementation type.</param>
+    /// <param name="reader">The binary reader from which to read data.</param>
+    /// <param name="offset">The offset into dst at which to start writing. This offset is element based, so must be
+    /// multiplied by the <paramref name="componentCount"/>.</param>
+    /// <param name="count">The number of elements to read. Must be multiplied by the <paramref name="componentCount"/>
+    ///   to calculate the total number of UInt16 items to read from <paramref name="reader"/>.</param>
+    /// <param name="componentCount">The number of UInt16 items to read for each <paramref name="count"/></param>
+    public int ReadUInt16(IList dst, BinaryReader reader, int offset, int count, int componentCount)
+    {
+      IList<Vector3> dstList = (IList<Vector3>)dst;
+      int readCount = 0;
+      Vector3 value = new Vector3();
+      for (int i = 0; i < count; ++i)
+      {
+        for (int c = 0; c < componentCount; ++c)
+        {
+          value[c] = (float)reader.ReadUInt16();
+        }
+        dstList[i + offset] = value;
+        ++readCount;
+      }
+      return readCount;
     }
 
     /// <summary>
@@ -185,6 +299,33 @@ namespace Tes.Buffers.Converters
     }
 
     /// <summary>
+    /// Read a range of Int32 values from a <c>System.IO.BinaryReader</c>.
+    /// </summary>
+    /// <param name="dst">The list to read into. The stored type must match the implementation type.</param>
+    /// <param name="reader">The binary reader from which to read data.</param>
+    /// <param name="offset">The offset into dst at which to start writing. This offset is element based, so must be
+    /// multiplied by the <paramref name="componentCount"/>.</param>
+    /// <param name="count">The number of elements to read. Must be multiplied by the <paramref name="componentCount"/>
+    ///   to calculate the total number of Int32 items to read from <paramref name="reader"/>.</param>
+    /// <param name="componentCount">The number of Int32 items to read for each <paramref name="count"/></param>
+    public int ReadInt32(IList dst, BinaryReader reader, int offset, int count, int componentCount)
+    {
+      IList<Vector3> dstList = (IList<Vector3>)dst;
+      int readCount = 0;
+      Vector3 value = new Vector3();
+      for (int i = 0; i < count; ++i)
+      {
+        for (int c = 0; c < componentCount; ++c)
+        {
+          value[c] = (float)reader.ReadInt32();
+        }
+        dstList[i + offset] = value;
+        ++readCount;
+      }
+      return readCount;
+    }
+
+    /// <summary>
     /// Extract <paramref name="count"/> values of type <c>uint</c> from <paramref name="src"/>.
     /// </summary>
     /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
@@ -214,6 +355,33 @@ namespace Tes.Buffers.Converters
     {
       IList<Vector3> srcList = (IList<Vector3>)src;
       return (uint)srcList[srcOffset / 3][srcOffset % 3];
+    }
+
+    /// <summary>
+    /// Read a range of UInt32 values from a <c>System.IO.BinaryReader</c>.
+    /// </summary>
+    /// <param name="dst">The list to read into. The stored type must match the implementation type.</param>
+    /// <param name="reader">The binary reader from which to read data.</param>
+    /// <param name="offset">The offset into dst at which to start writing. This offset is element based, so must be
+    /// multiplied by the <paramref name="componentCount"/>.</param>
+    /// <param name="count">The number of elements to read. Must be multiplied by the <paramref name="componentCount"/>
+    ///   to calculate the total number of UInt32 items to read from <paramref name="reader"/>.</param>
+    /// <param name="componentCount">The number of UInt32 items to read for each <paramref name="count"/></param>
+    public int ReadUInt32(IList dst, BinaryReader reader, int offset, int count, int componentCount)
+    {
+      IList<Vector3> dstList = (IList<Vector3>)dst;
+      int readCount = 0;
+      Vector3 value = new Vector3();
+      for (int i = 0; i < count; ++i)
+      {
+        for (int c = 0; c < componentCount; ++c)
+        {
+          value[c] = (float)reader.ReadUInt32();
+        }
+        dstList[i + offset] = value;
+        ++readCount;
+      }
+      return readCount;
     }
 
     /// <summary>
@@ -249,6 +417,33 @@ namespace Tes.Buffers.Converters
     }
 
     /// <summary>
+    /// Read a range of Int64 values from a <c>System.IO.BinaryReader</c>.
+    /// </summary>
+    /// <param name="dst">The list to read into. The stored type must match the implementation type.</param>
+    /// <param name="reader">The binary reader from which to read data.</param>
+    /// <param name="offset">The offset into dst at which to start writing. This offset is element based, so must be
+    /// multiplied by the <paramref name="componentCount"/>.</param>
+    /// <param name="count">The number of elements to read. Must be multiplied by the <paramref name="componentCount"/>
+    ///   to calculate the total number of Int64 items to read from <paramref name="reader"/>.</param>
+    /// <param name="componentCount">The number of Int64 items to read for each <paramref name="count"/></param>
+    public int ReadInt64(IList dst, BinaryReader reader, int offset, int count, int componentCount)
+    {
+      IList<Vector3> dstList = (IList<Vector3>)dst;
+      int readCount = 0;
+      Vector3 value = new Vector3();
+      for (int i = 0; i < count; ++i)
+      {
+        for (int c = 0; c < componentCount; ++c)
+        {
+          value[c] = (float)reader.ReadInt64();
+        }
+        dstList[i + offset] = value;
+        ++readCount;
+      }
+      return readCount;
+    }
+
+    /// <summary>
     /// Extract <paramref name="count"/> values of type <c>ulong</c> from <paramref name="src"/>.
     /// </summary>
     /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
@@ -278,6 +473,33 @@ namespace Tes.Buffers.Converters
     {
       IList<Vector3> srcList = (IList<Vector3>)src;
       return (ulong)srcList[srcOffset / 3][srcOffset % 3];
+    }
+
+    /// <summary>
+    /// Read a range of UInt64 values from a <c>System.IO.BinaryReader</c>.
+    /// </summary>
+    /// <param name="dst">The list to read into. The stored type must match the implementation type.</param>
+    /// <param name="reader">The binary reader from which to read data.</param>
+    /// <param name="offset">The offset into dst at which to start writing. This offset is element based, so must be
+    /// multiplied by the <paramref name="componentCount"/>.</param>
+    /// <param name="count">The number of elements to read. Must be multiplied by the <paramref name="componentCount"/>
+    ///   to calculate the total number of UInt64 items to read from <paramref name="reader"/>.</param>
+    /// <param name="componentCount">The number of UInt64 items to read for each <paramref name="count"/></param>
+    public int ReadUInt64(IList dst, BinaryReader reader, int offset, int count, int componentCount)
+    {
+      IList<Vector3> dstList = (IList<Vector3>)dst;
+      int readCount = 0;
+      Vector3 value = new Vector3();
+      for (int i = 0; i < count; ++i)
+      {
+        for (int c = 0; c < componentCount; ++c)
+        {
+          value[c] = (float)reader.ReadUInt64();
+        }
+        dstList[i + offset] = value;
+        ++readCount;
+      }
+      return readCount;
     }
 
     /// <summary>
@@ -313,6 +535,33 @@ namespace Tes.Buffers.Converters
     }
 
     /// <summary>
+    /// Read a range of Single values from a <c>System.IO.BinaryReader</c>.
+    /// </summary>
+    /// <param name="dst">The list to read into. The stored type must match the implementation type.</param>
+    /// <param name="reader">The binary reader from which to read data.</param>
+    /// <param name="offset">The offset into dst at which to start writing. This offset is element based, so must be
+    /// multiplied by the <paramref name="componentCount"/>.</param>
+    /// <param name="count">The number of elements to read. Must be multiplied by the <paramref name="componentCount"/>
+    ///   to calculate the total number of Single items to read from <paramref name="reader"/>.</param>
+    /// <param name="componentCount">The number of Single items to read for each <paramref name="count"/></param>
+    public int ReadSingle(IList dst, BinaryReader reader, int offset, int count, int componentCount)
+    {
+      IList<Vector3> dstList = (IList<Vector3>)dst;
+      int readCount = 0;
+      Vector3 value = new Vector3();
+      for (int i = 0; i < count; ++i)
+      {
+        for (int c = 0; c < componentCount; ++c)
+        {
+          value[c] = (float)reader.ReadSingle();
+        }
+        dstList[i + offset] = value;
+        ++readCount;
+      }
+      return readCount;
+    }
+
+    /// <summary>
     /// Extract <paramref name="count"/> values of type <c>double</c> from <paramref name="src"/>.
     /// </summary>
     /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
@@ -342,6 +591,33 @@ namespace Tes.Buffers.Converters
     {
       IList<Vector3> srcList = (IList<Vector3>)src;
       return (double)srcList[srcOffset / 3][srcOffset % 3];
+    }
+
+    /// <summary>
+    /// Read a range of Double values from a <c>System.IO.BinaryReader</c>.
+    /// </summary>
+    /// <param name="dst">The list to read into. The stored type must match the implementation type.</param>
+    /// <param name="reader">The binary reader from which to read data.</param>
+    /// <param name="offset">The offset into dst at which to start writing. This offset is element based, so must be
+    /// multiplied by the <paramref name="componentCount"/>.</param>
+    /// <param name="count">The number of elements to read. Must be multiplied by the <paramref name="componentCount"/>
+    ///   to calculate the total number of Double items to read from <paramref name="reader"/>.</param>
+    /// <param name="componentCount">The number of Double items to read for each <paramref name="count"/></param>
+    public int ReadDouble(IList dst, BinaryReader reader, int offset, int count, int componentCount)
+    {
+      IList<Vector3> dstList = (IList<Vector3>)dst;
+      int readCount = 0;
+      Vector3 value = new Vector3();
+      for (int i = 0; i < count; ++i)
+      {
+        for (int c = 0; c < componentCount; ++c)
+        {
+          value[c] = (float)reader.ReadDouble();
+        }
+        dstList[i + offset] = value;
+        ++readCount;
+      }
+      return readCount;
     }
   }
 }

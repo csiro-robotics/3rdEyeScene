@@ -43,15 +43,42 @@ get_func_template = '''
     {{
       IList<{2}> srcList = (IList<{2}>)src;
       return ({0})srcList[srcOffset];
+    }}
+
+    /// <summary>
+    /// Read a range of {1} values from a <c>System.IO.BinaryReader</c>.
+    /// </summary>
+    /// <param name="dst">The list to read into. The stored type must match the implementation type.</param>
+    /// <param name="reader">The binary reader from which to read data.</param>
+    /// <param name="offset">The offset into dst at which to start writing. This offset is element based, so must be
+    /// multiplied by the <paramref name="componentCount"/>.</param>
+    /// <param name="count">The number of elements to read. Must be multiplied by the <paramref name="componentCount"/>
+    ///   to calculate the total number of {1} items to read from <paramref name="reader"/>.</param>
+    /// <param name="componentCount">The number of {1} items to read for each <paramref name="count"/></param>
+    public int Read{1}(IList dst, BinaryReader reader, int offset, int count, int componentCount)
+    {{
+      IList<{2}> dstList = (IList<{2}>)dst;
+      int readCount = 0;
+      for (int i = 0; i < count; ++i)
+      {{
+        for (int c = 0; c < componentCount; ++c)
+        {{
+          dstList[(i + offset) * componentCount + c] = ({2})reader.Read{1}();
+        }}
+        ++readCount;
+      }}
+      return readCount;
     }}'''
 
 getters_template = ''
 for to_build_in, to_system_type in source_types:
-    getters_template += get_func_template.format(to_build_in, to_system_type, '@0@')
+    getters_template += get_func_template.format(
+        to_build_in, to_system_type, '@0@')
 
 file_template = '''using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Tes.Buffers.Converters
 {{
@@ -66,11 +93,16 @@ namespace Tes.Buffers.Converters
     public Type Type {{ get {{ return typeof({0}); }} }}
 
     /// <summary>
+    /// Query the default packing data type.
+    /// </summary>
+    public Tes.Net.DataStreamType DefaultPackingType {{ get {{ return Tes.Net.DataStreamType.{1}; }} }}
+
+    /// <summary>
     /// Query the number of addressable elements in the array. This includes addressing individual data components.
     /// </summary>
     public int AddressableCount(IList list)
     {{
-      return ((IList<{0}>)list).Count;
+      return (list != null) ? ((IList<{0}>)list).Count : 0;
     }}{2}
   }}
 }}
@@ -90,8 +122,8 @@ for from_built_in, from_system_type in source_types:
 
 ####
 vector_converters = [
-  ('Vector2', 2),
-  ('Vector3', 3),
+    ('Vector2', 2),
+    ('Vector3', 3),
 ]
 
 vector_get_func_template = '''
@@ -126,15 +158,44 @@ vector_get_func_template = '''
     {{
       IList<{2}> srcList = (IList<{2}>)src;
       return ({0})srcList[srcOffset / {3}][srcOffset % {3}];
+    }}
+
+    /// <summary>
+    /// Read a range of {1} values from a <c>System.IO.BinaryReader</c>.
+    /// </summary>
+    /// <param name="dst">The list to read into. The stored type must match the implementation type.</param>
+    /// <param name="reader">The binary reader from which to read data.</param>
+    /// <param name="offset">The offset into dst at which to start writing. This offset is element based, so must be
+    /// multiplied by the <paramref name="componentCount"/>.</param>
+    /// <param name="count">The number of elements to read. Must be multiplied by the <paramref name="componentCount"/>
+    ///   to calculate the total number of {1} items to read from <paramref name="reader"/>.</param>
+    /// <param name="componentCount">The number of {1} items to read for each <paramref name="count"/></param>
+    public int Read{1}(IList dst, BinaryReader reader, int offset, int count, int componentCount)
+    {{
+      IList<{2}> dstList = (IList<{2}>)dst;
+      int readCount = 0;
+      {2} value = new {2}();
+      for (int i = 0; i < count; ++i)
+      {{
+        for (int c = 0; c < componentCount; ++c)
+        {{
+          value[c] = (float)reader.Read{1}();
+        }}
+        dstList[i + offset] = value;
+        ++readCount;
+      }}
+      return readCount;
     }}'''
 
 vector_getters_template = ''
 for to_build_in, to_system_type in source_types:
-    vector_getters_template += vector_get_func_template.format(to_build_in, to_system_type, '@0@', '@1@')
+    vector_getters_template += vector_get_func_template.format(
+        to_build_in, to_system_type, '@0@', '@1@')
 
 vector_converter_template = '''using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using Tes.Maths;
 
 namespace Tes.Buffers.Converters
@@ -150,6 +211,11 @@ namespace Tes.Buffers.Converters
     public Type Type {{ get {{ return typeof({0}); }} }}
 
     /// <summary>
+    /// Query the default packing data type.
+    /// </summary>
+    public Tes.Net.DataStreamType DefaultPackingType {{ get {{ return Tes.Net.DataStreamType.Single; }} }}
+
+    /// <summary>
     /// Query the number of addressable elements in the array. This includes addressing individual data components.
     /// </summary>
     public int AddressableCount(IList list)
@@ -161,7 +227,8 @@ namespace Tes.Buffers.Converters
 '''
 
 for vector_type, component_count in vector_converters:
-    template_content = vector_converter_template.format('@0@', '@1@', vector_getters_template)
+    template_content = vector_converter_template.format(
+        '@0@', '@1@', vector_getters_template)
     template_content = template_content.replace('{', '{{')
     template_content = template_content.replace('}', '}}')
     template_content = template_content.replace(r'@0@', '{0}')
@@ -187,11 +254,23 @@ get_func_proto_template = '''
     /// <param name="src">The source container to read from.</param>
     /// <param name="srcOffset">The index offset into <paramref name="source"/> to read from.</param>
     /// <return>The value at the requested offset.</return>
-    {0} Get{1}(IList src, int srcOffset);'''
+    {0} Get{1}(IList src, int srcOffset);
+    /// <summary>
+    /// Read a range of {1} values from a <c>System.IO.BinaryReader</c>.
+    /// </summary>
+    /// <param name="dst">The list to read into. The stored type must match the implementation type.</param>
+    /// <param name="reader">The binary reader from which to read data.</param>
+    /// <param name="offset">The offset into dst at which to start writing. This offset is element based, so must be
+    /// multiplied by the <paramref name="componentCount"/>.</param>
+    /// <param name="count">The number of elements to read. Must be multiplied by the <paramref name="componentCount"/>
+    ///   to calculate the total number of {1} items to read from <paramref name="reader"/>.</param>
+    /// <param name="componentCount">The number of {1} items to read for each <paramref name="count"/></param>
+    int Read{1}(IList dst, BinaryReader reader, int offset, int count, int componentCount);'''
 
 interface_template = '''using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 
 namespace Tes.Buffers.Converters
 {{
@@ -212,6 +291,11 @@ namespace Tes.Buffers.Converters
     Type Type {{ get; }}
 
     /// <summary>
+    /// Query the default packing data type.
+    /// </summary>
+    Tes.Net.DataStreamType DefaultPackingType {{ get; }}
+
+    /// <summary>
     /// Query the number of addressable elements in the array. This includes addressing individual data components.
     /// </summary>
     int AddressableCount(IList list);
@@ -223,7 +307,8 @@ namespace Tes.Buffers.Converters
 with open('BufferConverter.cs', 'w') as source_file:
     getters_proto = ''
     for to_build_in, to_system_type in source_types:
-        getters_proto += get_func_proto_template.format(to_build_in, to_system_type)
+        getters_proto += get_func_proto_template.format(
+            to_build_in, to_system_type)
     interface_content = interface_template.format(getters_proto)
     source_file.write(file_header)
     source_file.write(interface_content)
@@ -276,13 +361,16 @@ with open('ConverterSet.cs', 'w') as source_file:
     type_list = ''
     type_list_append = ''
     for from_built_in, from_system_type in source_types:
-        add_converters += add_converter_template.format(from_built_in, from_system_type)
+        add_converters += add_converter_template.format(
+            from_built_in, from_system_type)
         type_list += type_list_append + from_built_in
         type_list_append = ', '
     for vector_type, _ in vector_converters:
-        add_converters += add_converter_template.format(vector_type, vector_type)
+        add_converters += add_converter_template.format(
+            vector_type, vector_type)
         type_list += type_list_append + from_built_in
         type_list_append = ', '
-    converter_set_content = converter_set_template.format(add_converters, type_list)
+    converter_set_content = converter_set_template.format(
+        add_converters, type_list)
     source_file.write(file_header)
     source_file.write(converter_set_content)
