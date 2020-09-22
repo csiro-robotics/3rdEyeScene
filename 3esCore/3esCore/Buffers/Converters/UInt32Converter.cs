@@ -36,12 +36,28 @@ namespace Tes.Buffers.Converters
     /// <param name="src">The source container to read from.</param>
     /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
     /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
-    public void GetRangeSByte(IList<sbyte> dst, IList src, int srcOffset, int count)
+    public void GetRange(List<sbyte> dst, IList src, int srcOffset, int count)
     {
       IList<uint> srcList = (IList<uint>)src;
       for (int i = 0; i < count; ++i)
       {
         dst.Add((sbyte)srcList[i + srcOffset]);
+      }
+    }
+
+    /// <summary>
+    /// Extract <paramref name="count"/> values of type <c>sbyte</c> from <paramref name="src"/>.
+    /// </summary>
+    /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
+    /// <param name="src">The source container to read from.</param>
+    /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
+    /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
+    public void GetRange(sbyte[] dst, IList src, int srcOffset, int count)
+    {
+      IList<uint> srcList = (IList<uint>)src;
+      for (int i = 0; i < count; ++i)
+      {
+        dst[i] = (sbyte)srcList[i + srcOffset];
       }
     }
 
@@ -89,12 +105,28 @@ namespace Tes.Buffers.Converters
     /// <param name="src">The source container to read from.</param>
     /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
     /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
-    public void GetRangeByte(IList<byte> dst, IList src, int srcOffset, int count)
+    public void GetRange(List<byte> dst, IList src, int srcOffset, int count)
     {
       IList<uint> srcList = (IList<uint>)src;
       for (int i = 0; i < count; ++i)
       {
         dst.Add((byte)srcList[i + srcOffset]);
+      }
+    }
+
+    /// <summary>
+    /// Extract <paramref name="count"/> values of type <c>byte</c> from <paramref name="src"/>.
+    /// </summary>
+    /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
+    /// <param name="src">The source container to read from.</param>
+    /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
+    /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
+    public void GetRange(byte[] dst, IList src, int srcOffset, int count)
+    {
+      IList<uint> srcList = (IList<uint>)src;
+      for (int i = 0; i < count; ++i)
+      {
+        dst[i] = (byte)srcList[i + srcOffset];
       }
     }
 
@@ -142,12 +174,28 @@ namespace Tes.Buffers.Converters
     /// <param name="src">The source container to read from.</param>
     /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
     /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
-    public void GetRangeInt16(IList<short> dst, IList src, int srcOffset, int count)
+    public void GetRange(List<short> dst, IList src, int srcOffset, int count)
     {
       IList<uint> srcList = (IList<uint>)src;
       for (int i = 0; i < count; ++i)
       {
         dst.Add((short)srcList[i + srcOffset]);
+      }
+    }
+
+    /// <summary>
+    /// Extract <paramref name="count"/> values of type <c>short</c> from <paramref name="src"/>.
+    /// </summary>
+    /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
+    /// <param name="src">The source container to read from.</param>
+    /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
+    /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
+    public void GetRange(short[] dst, IList src, int srcOffset, int count)
+    {
+      IList<uint> srcList = (IList<uint>)src;
+      for (int i = 0; i < count; ++i)
+      {
+        dst[i] = (short)srcList[i + srcOffset];
       }
     }
 
@@ -195,12 +243,28 @@ namespace Tes.Buffers.Converters
     /// <param name="src">The source container to read from.</param>
     /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
     /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
-    public void GetRangeUInt16(IList<ushort> dst, IList src, int srcOffset, int count)
+    public void GetRange(List<ushort> dst, IList src, int srcOffset, int count)
     {
       IList<uint> srcList = (IList<uint>)src;
       for (int i = 0; i < count; ++i)
       {
         dst.Add((ushort)srcList[i + srcOffset]);
+      }
+    }
+
+    /// <summary>
+    /// Extract <paramref name="count"/> values of type <c>ushort</c> from <paramref name="src"/>.
+    /// </summary>
+    /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
+    /// <param name="src">The source container to read from.</param>
+    /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
+    /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
+    public void GetRange(ushort[] dst, IList src, int srcOffset, int count)
+    {
+      IList<uint> srcList = (IList<uint>)src;
+      for (int i = 0; i < count; ++i)
+      {
+        dst[i] = (ushort)srcList[i + srcOffset];
       }
     }
 
@@ -248,12 +312,28 @@ namespace Tes.Buffers.Converters
     /// <param name="src">The source container to read from.</param>
     /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
     /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
-    public void GetRangeInt32(IList<int> dst, IList src, int srcOffset, int count)
+    public void GetRange(List<int> dst, IList src, int srcOffset, int count)
     {
       IList<uint> srcList = (IList<uint>)src;
       for (int i = 0; i < count; ++i)
       {
         dst.Add((int)srcList[i + srcOffset]);
+      }
+    }
+
+    /// <summary>
+    /// Extract <paramref name="count"/> values of type <c>int</c> from <paramref name="src"/>.
+    /// </summary>
+    /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
+    /// <param name="src">The source container to read from.</param>
+    /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
+    /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
+    public void GetRange(int[] dst, IList src, int srcOffset, int count)
+    {
+      IList<uint> srcList = (IList<uint>)src;
+      for (int i = 0; i < count; ++i)
+      {
+        dst[i] = (int)srcList[i + srcOffset];
       }
     }
 
@@ -301,12 +381,28 @@ namespace Tes.Buffers.Converters
     /// <param name="src">The source container to read from.</param>
     /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
     /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
-    public void GetRangeUInt32(IList<uint> dst, IList src, int srcOffset, int count)
+    public void GetRange(List<uint> dst, IList src, int srcOffset, int count)
     {
       IList<uint> srcList = (IList<uint>)src;
       for (int i = 0; i < count; ++i)
       {
         dst.Add((uint)srcList[i + srcOffset]);
+      }
+    }
+
+    /// <summary>
+    /// Extract <paramref name="count"/> values of type <c>uint</c> from <paramref name="src"/>.
+    /// </summary>
+    /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
+    /// <param name="src">The source container to read from.</param>
+    /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
+    /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
+    public void GetRange(uint[] dst, IList src, int srcOffset, int count)
+    {
+      IList<uint> srcList = (IList<uint>)src;
+      for (int i = 0; i < count; ++i)
+      {
+        dst[i] = (uint)srcList[i + srcOffset];
       }
     }
 
@@ -354,12 +450,28 @@ namespace Tes.Buffers.Converters
     /// <param name="src">The source container to read from.</param>
     /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
     /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
-    public void GetRangeInt64(IList<long> dst, IList src, int srcOffset, int count)
+    public void GetRange(List<long> dst, IList src, int srcOffset, int count)
     {
       IList<uint> srcList = (IList<uint>)src;
       for (int i = 0; i < count; ++i)
       {
         dst.Add((long)srcList[i + srcOffset]);
+      }
+    }
+
+    /// <summary>
+    /// Extract <paramref name="count"/> values of type <c>long</c> from <paramref name="src"/>.
+    /// </summary>
+    /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
+    /// <param name="src">The source container to read from.</param>
+    /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
+    /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
+    public void GetRange(long[] dst, IList src, int srcOffset, int count)
+    {
+      IList<uint> srcList = (IList<uint>)src;
+      for (int i = 0; i < count; ++i)
+      {
+        dst[i] = (long)srcList[i + srcOffset];
       }
     }
 
@@ -407,12 +519,28 @@ namespace Tes.Buffers.Converters
     /// <param name="src">The source container to read from.</param>
     /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
     /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
-    public void GetRangeUInt64(IList<ulong> dst, IList src, int srcOffset, int count)
+    public void GetRange(List<ulong> dst, IList src, int srcOffset, int count)
     {
       IList<uint> srcList = (IList<uint>)src;
       for (int i = 0; i < count; ++i)
       {
         dst.Add((ulong)srcList[i + srcOffset]);
+      }
+    }
+
+    /// <summary>
+    /// Extract <paramref name="count"/> values of type <c>ulong</c> from <paramref name="src"/>.
+    /// </summary>
+    /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
+    /// <param name="src">The source container to read from.</param>
+    /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
+    /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
+    public void GetRange(ulong[] dst, IList src, int srcOffset, int count)
+    {
+      IList<uint> srcList = (IList<uint>)src;
+      for (int i = 0; i < count; ++i)
+      {
+        dst[i] = (ulong)srcList[i + srcOffset];
       }
     }
 
@@ -460,12 +588,28 @@ namespace Tes.Buffers.Converters
     /// <param name="src">The source container to read from.</param>
     /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
     /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
-    public void GetRangeSingle(IList<float> dst, IList src, int srcOffset, int count)
+    public void GetRange(List<float> dst, IList src, int srcOffset, int count)
     {
       IList<uint> srcList = (IList<uint>)src;
       for (int i = 0; i < count; ++i)
       {
         dst.Add((float)srcList[i + srcOffset]);
+      }
+    }
+
+    /// <summary>
+    /// Extract <paramref name="count"/> values of type <c>float</c> from <paramref name="src"/>.
+    /// </summary>
+    /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
+    /// <param name="src">The source container to read from.</param>
+    /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
+    /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
+    public void GetRange(float[] dst, IList src, int srcOffset, int count)
+    {
+      IList<uint> srcList = (IList<uint>)src;
+      for (int i = 0; i < count; ++i)
+      {
+        dst[i] = (float)srcList[i + srcOffset];
       }
     }
 
@@ -513,12 +657,28 @@ namespace Tes.Buffers.Converters
     /// <param name="src">The source container to read from.</param>
     /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
     /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
-    public void GetRangeDouble(IList<double> dst, IList src, int srcOffset, int count)
+    public void GetRange(List<double> dst, IList src, int srcOffset, int count)
     {
       IList<uint> srcList = (IList<uint>)src;
       for (int i = 0; i < count; ++i)
       {
         dst.Add((double)srcList[i + srcOffset]);
+      }
+    }
+
+    /// <summary>
+    /// Extract <paramref name="count"/> values of type <c>double</c> from <paramref name="src"/>.
+    /// </summary>
+    /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
+    /// <param name="src">The source container to read from.</param>
+    /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
+    /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
+    public void GetRange(double[] dst, IList src, int srcOffset, int count)
+    {
+      IList<uint> srcList = (IList<uint>)src;
+      for (int i = 0; i < count; ++i)
+      {
+        dst[i] = (double)srcList[i + srcOffset];
       }
     }
 

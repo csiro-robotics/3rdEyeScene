@@ -24,12 +24,28 @@ get_func_template = '''
     /// <param name="src">The source container to read from.</param>
     /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
     /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
-    public void GetRange{1}(IList<{0}> dst, IList src, int srcOffset, int count)
+    public void GetRange(List<{0}> dst, IList src, int srcOffset, int count)
     {{
       IList<{2}> srcList = (IList<{2}>)src;
       for (int i = 0; i < count; ++i)
       {{
         dst.Add(({0})srcList[i + srcOffset]);
+      }}
+    }}
+
+    /// <summary>
+    /// Extract <paramref name="count"/> values of type <c>{0}</c> from <paramref name="src"/>.
+    /// </summary>
+    /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
+    /// <param name="src">The source container to read from.</param>
+    /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
+    /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
+    public void GetRange({0}[] dst, IList src, int srcOffset, int count)
+    {{
+      IList<{2}> srcList = (IList<{2}>)src;
+      for (int i = 0; i < count; ++i)
+      {{
+        dst[i] = ({0})srcList[i + srcOffset];
       }}
     }}
 
@@ -135,7 +151,7 @@ vector_get_func_template = '''
     /// <param name="src">The source container to read from.</param>
     /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
     /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
-    public void GetRange{1}(IList<{0}> dst, IList src, int srcOffset, int count)
+    public void GetRange(List<{0}> dst, IList src, int srcOffset, int count)
     {{
       IList<{2}> srcList = (IList<{2}>)src;
       int initialComponent = srcOffset % {3};
@@ -144,6 +160,26 @@ vector_get_func_template = '''
         for (int j = initialComponent; j < {3} && j + i * {3} < count; ++j)
         {{
           dst.Add(({0})srcList[i + srcOffset / {3}][j]);
+        }}
+      }}
+    }}
+
+    /// <summary>
+    /// Extract <paramref name="count"/> values of type <c>{0}</c> from <paramref name="src"/>.
+    /// </summary>
+    /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
+    /// <param name="src">The source container to read from.</param>
+    /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
+    /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
+    public void GetRange({0}[] dst, IList src, int srcOffset, int count)
+    {{
+      IList<{2}> srcList = (IList<{2}>)src;
+      int initialComponent = srcOffset % {3};
+      for (int i = 0; i < count / {3}; ++i)
+      {{
+        for (int j = initialComponent; j < {3} && j + i * {3} < count; ++j)
+        {{
+          dst[i * {3} + j] = ({0})srcList[i + srcOffset / {3}][j];
         }}
       }}
     }}
@@ -247,7 +283,16 @@ get_func_proto_template = '''
     /// <param name="src">The source container to read from.</param>
     /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
     /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
-    void GetRange{1}(IList<{0}> dst, IList src, int srcOffset, int count);
+    void GetRange(List<{0}> dst, IList src, int srcOffset, int count);
+    /// <summary>
+    /// Extract <paramref name="count"/> values of type <c>{0}</c> from <paramref name="src"/>.
+    /// </summary>
+    /// <param name="dst">The list to add values to using <c>IList.Add()</c>.</param>
+    /// <param name="src">The source container to read from.</param>
+    /// <param name="srcOffset">The index offset into <paramref name="source"/> to start reading at.</param>
+    /// <param name="count">The number of items to read into <paramref name="dst"/>.</param>
+    void GetRange({0}[] dst, IList src, int srcOffset, int count);
+
     /// <summary>
     /// Read a single <c>{0}</c> value from <paramref name="src"/>.
     /// </summary>
@@ -278,7 +323,7 @@ namespace Tes.Buffers.Converters
   /// Interface for converting from <c>IList</c> wrapped in a <c><see cref="VertexBuffer"/></c>.
   /// </summary>
   /// <remarks>
-  /// The interface consists of a series of <c>Get&lt;Type&gt;()</c> and <c>GetRange&lt;Type&gt;()</c> functions.
+  /// The interface consists of a series of <c>Get&lt;Type&gt;()</c> and <c>GetRange()</c> functions.
   /// As this the converter operates with the internals of a <c><see cref="VertexBuffer"/></c>, the supported source
   /// list arguments will generally be simple types, or of known types with data channels. See
   /// <see cref="VertexBuffer"/> for details on how index and count arguments are treated.

@@ -78,7 +78,7 @@ namespace Tes.Buffers
 
     public bool IsValid { get { return _buffer != null; } }
 
-    public bool ReadOnly { get { return _readOnly; } set { _readOnly = value;  } }
+    public bool ReadOnly { get { return _readOnly; } set { _readOnly = value; } }
 
     /// <summary>
     /// Create VertexBuffer to use with Read methods. The buffer type is set on the first read call.
@@ -637,9 +637,14 @@ namespace Tes.Buffers
       return _converter.GetSByte(_buffer, index);
     }
 
-    public void GetRangeSByte(IList<sbyte> range, int startElementIndex, int count)
+    public void GetRange(List<sbyte> range, int startElementIndex, int count)
     {
-      _converter.GetRangeSByte(range, _buffer, startElementIndex, count);
+      _converter.GetRange(range, _buffer, startElementIndex, count);
+    }
+
+    public void GetRange(sbyte[] range, int startElementIndex, int count)
+    {
+      _converter.GetRange(range, _buffer, startElementIndex, count);
     }
 
     public byte GetByte(int index)
@@ -647,9 +652,14 @@ namespace Tes.Buffers
       return _converter.GetByte(_buffer, index);
     }
 
-    public void GetRangeByte(IList<byte> range, int startElementIndex, int count)
+    public void GetRange(List<byte> range, int startElementIndex, int count)
     {
-      _converter.GetRangeByte(range, _buffer, startElementIndex, count);
+      _converter.GetRange(range, _buffer, startElementIndex, count);
+    }
+
+    public void GetRange(byte[] range, int startElementIndex, int count)
+    {
+      _converter.GetRange(range, _buffer, startElementIndex, count);
     }
 
     public short GetInt16(int index)
@@ -657,9 +667,14 @@ namespace Tes.Buffers
       return _converter.GetInt16(_buffer, index);
     }
 
-    public void GetRangeInt16(IList<short> range, int startElementIndex, int count)
+    public void GetRange(List<short> range, int startElementIndex, int count)
     {
-      _converter.GetRangeInt16(range, _buffer, startElementIndex, count);
+      _converter.GetRange(range, _buffer, startElementIndex, count);
+    }
+
+    public void GetRange(short[] range, int startElementIndex, int count)
+    {
+      _converter.GetRange(range, _buffer, startElementIndex, count);
     }
 
     public ushort GetUInt16(int index)
@@ -667,9 +682,14 @@ namespace Tes.Buffers
       return _converter.GetUInt16(_buffer, index);
     }
 
-    public void GetRangeUInt16(IList<ushort> range, int startElementIndex, int count)
+    public void GetRange(List<ushort> range, int startElementIndex, int count)
     {
-      _converter.GetRangeUInt16(range, _buffer, startElementIndex, count);
+      _converter.GetRange(range, _buffer, startElementIndex, count);
+    }
+
+    public void GetRange(ushort[] range, int startElementIndex, int count)
+    {
+      _converter.GetRange(range, _buffer, startElementIndex, count);
     }
 
     public int GetInt32(int index)
@@ -677,9 +697,14 @@ namespace Tes.Buffers
       return _converter.GetInt32(_buffer, index);
     }
 
-    public void GetRangeInt32(IList<int> range, int startElementIndex, int count)
+    public void GetRange(List<int> range, int startElementIndex, int count)
     {
-      _converter.GetRangeInt32(range, _buffer, startElementIndex, count);
+      _converter.GetRange(range, _buffer, startElementIndex, count);
+    }
+
+    public void GetRange(int[] range, int startElementIndex, int count)
+    {
+      _converter.GetRange(range, _buffer, startElementIndex, count);
     }
 
     public uint GetUInt32(int index)
@@ -687,9 +712,14 @@ namespace Tes.Buffers
       return _converter.GetUInt32(_buffer, index);
     }
 
-    public void GetRangeUInt32(IList<uint> range, int startElementIndex, int count)
+    public void GetRange(List<uint> range, int startElementIndex, int count)
     {
-      _converter.GetRangeUInt32(range, _buffer, startElementIndex, count);
+      _converter.GetRange(range, _buffer, startElementIndex, count);
+    }
+
+    public void GetRange(uint[] range, int startElementIndex, int count)
+    {
+      _converter.GetRange(range, _buffer, startElementIndex, count);
     }
 
     public long GetInt64(int index)
@@ -697,9 +727,14 @@ namespace Tes.Buffers
       return _converter.GetInt64(_buffer, index);
     }
 
-    public void GetRangeInt64(IList<long> range, int startElementIndex, int count)
+    public void GetRange(List<long> range, int startElementIndex, int count)
     {
-      _converter.GetRangeInt64(range, _buffer, startElementIndex, count);
+      _converter.GetRange(range, _buffer, startElementIndex, count);
+    }
+
+    public void GetRange(long[] range, int startElementIndex, int count)
+    {
+      _converter.GetRange(range, _buffer, startElementIndex, count);
     }
 
     public ulong GetUInt64(int index)
@@ -707,9 +742,14 @@ namespace Tes.Buffers
       return _converter.GetUInt64(_buffer, index);
     }
 
-    public void GetRangeUInt64(IList<ulong> range, int startElementIndex, int count)
+    public void GetRange(List<ulong> range, int startElementIndex, int count)
     {
-      _converter.GetRangeUInt64(range, _buffer, startElementIndex, count);
+      _converter.GetRange(range, _buffer, startElementIndex, count);
+    }
+
+    public void GetRange(ulong[] range, int startElementIndex, int count)
+    {
+      _converter.GetRange(range, _buffer, startElementIndex, count);
     }
 
     public float GetSingle(int index)
@@ -717,9 +757,14 @@ namespace Tes.Buffers
       return _converter.GetSingle(_buffer, index);
     }
 
-    public void GetRangeSingle(IList<float> range, int startElementIndex, int count)
+    public void GetRange(List<float> range, int startElementIndex, int count)
     {
-      _converter.GetRangeSingle(range, _buffer, startElementIndex, count);
+      _converter.GetRange(range, _buffer, startElementIndex, count);
+    }
+
+    public void GetRange(float[] range, int startElementIndex, int count)
+    {
+      _converter.GetRange(range, _buffer, startElementIndex, count);
     }
 
     public double GetDouble(int index)
@@ -727,9 +772,14 @@ namespace Tes.Buffers
       return _converter.GetDouble(_buffer, index);
     }
 
-    public void GetRangeDouble(IList<double> range, int startElementIndex, int count)
+    public void GetRange(List<double> range, int startElementIndex, int count)
     {
-      _converter.GetRangeDouble(range, _buffer, startElementIndex, count);
+      _converter.GetRange(range, _buffer, startElementIndex, count);
+    }
+
+    public void GetRange(double[] range, int startElementIndex, int count)
+    {
+      _converter.GetRange(range, _buffer, startElementIndex, count);
     }
 
     #endregion
