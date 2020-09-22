@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using Tes.Buffers;
 using Tes.IO;
 using Tes.Maths;
 using Tes.Net;
@@ -167,43 +168,43 @@ namespace Tes.Shapes
         phase = (Phase)((int)phase + 1);
         switch (phase)
         {
-        case Phase.Vertex:
-          selected = (Components & MeshComponentFlag.Vertex) == MeshComponentFlag.Vertex && Vertices() != null;
-          break;
-        case Phase.Index:
-          {
-            switch (IndexSize)
+          case Phase.Vertex:
+            selected = (Components & MeshComponentFlag.Vertex) == MeshComponentFlag.Vertex && Vertices() != null;
+            break;
+          case Phase.Index:
             {
-            default:
-            case 0:
-              selected = false;
-              break;
+              switch (IndexSize)
+              {
+                default:
+                case 0:
+                  selected = false;
+                  break;
 
-            case 2:
-              selected = (Components & MeshComponentFlag.Index) == MeshComponentFlag.Index && Indices2() != null;
-              break;
+                case 2:
+                  selected = (Components & MeshComponentFlag.Index) == MeshComponentFlag.Index && Indices2() != null;
+                  break;
 
-            case 4:
-              selected = (Components & MeshComponentFlag.Index) == MeshComponentFlag.Index && Indices4() != null;
-              break;
+                case 4:
+                  selected = (Components & MeshComponentFlag.Index) == MeshComponentFlag.Index && Indices4() != null;
+                  break;
+              }
             }
-          }
-          break;
-        case Phase.Normal:
-          selected = (Components & MeshComponentFlag.Normal) == MeshComponentFlag.Normal && Normals() != null;
-          break;
-        case Phase.Colour:
-          selected = (Components & MeshComponentFlag.Colour) == MeshComponentFlag.Colour && Colours() != null;
-          break;
-        case Phase.UV:
-          selected = (Components & MeshComponentFlag.UV) == MeshComponentFlag.UV && UVs() != null;
-          break;
-        case Phase.Finalise:
-          selected = true;
-          break;
-        case Phase.End:
-          selected = true;
-          break;
+            break;
+          case Phase.Normal:
+            selected = (Components & MeshComponentFlag.Normal) == MeshComponentFlag.Normal && Normals() != null;
+            break;
+          case Phase.Colour:
+            selected = (Components & MeshComponentFlag.Colour) == MeshComponentFlag.Colour && Colours() != null;
+            break;
+          case Phase.UV:
+            selected = (Components & MeshComponentFlag.UV) == MeshComponentFlag.UV && UVs() != null;
+            break;
+          case Phase.Finalise:
+            selected = true;
+            break;
+          case Phase.End:
+            selected = true;
+            break;
         }
       }
 
@@ -289,41 +290,41 @@ namespace Tes.Shapes
       bool phaseComplete = false;
       switch (progress.Phase)
       {
-      case (int)Phase.Vertex:
-        phaseComplete = Transfer(packet, MeshMessageType.Vertex, Vertices(), byteLimit, ref progress);
-        break;
-      case (int)Phase.Index:
-        if (IndexSize == 2)
-        {
-          phaseComplete = Transfer(packet, MeshMessageType.Index, Indices2(), byteLimit, ref progress);
-        }
-        else if (IndexSize == 4)
-        {
-          phaseComplete = Transfer(packet, MeshMessageType.Index, Indices4(), byteLimit, ref progress);
-        }
-        break;
-      case (int)Phase.Normal:
-        phaseComplete = Transfer(packet, MeshMessageType.Normal, Normals(), byteLimit, ref progress);
-        break;
-      case (int)Phase.Colour:
-        phaseComplete = Transfer(packet, MeshMessageType.VertexColour, Colours(), byteLimit, ref progress);
-        break;
-      case (int)Phase.UV:
-        phaseComplete = Transfer(packet, MeshMessageType.UV, UVs(), byteLimit, ref progress);
-        break;
-      case (int)Phase.Finalise:
-        MeshFinaliseMessage msg = new MeshFinaliseMessage();
-        msg.MeshID = ID;
-        msg.Flags = 0;
-        if (CalculateNormals && (Components & MeshComponentFlag.Normal) != MeshComponentFlag.Normal)
-        {
-          msg.Flags |= (uint)MeshFinaliseFlag.CalculateNormals;
-        }
-        packet.Reset((ushort)RoutingID.Mesh, MeshFinaliseMessage.MessageID);
-        msg.Write(packet);
-        progress.Phase = (int)Phase.End;
-        phaseComplete = true;
-        break;
+        case (int)Phase.Vertex:
+          phaseComplete = Transfer(packet, MeshMessageType.Vertex, VertexBuffer.Wrap(Vertices()), byteLimit, ref progress);
+          break;
+        case (int)Phase.Index:
+          if (IndexSize == 2)
+          {
+            phaseComplete = Transfer(packet, MeshMessageType.Index, VertexBuffer.Wrap(Indices2()), byteLimit, ref progress);
+          }
+          else if (IndexSize == 4)
+          {
+            phaseComplete = Transfer(packet, MeshMessageType.Index, VertexBuffer.Wrap(Indices4()), byteLimit, ref progress);
+          }
+          break;
+        case (int)Phase.Normal:
+          phaseComplete = Transfer(packet, MeshMessageType.Normal, VertexBuffer.Wrap(Normals()), byteLimit, ref progress);
+          break;
+        case (int)Phase.Colour:
+          phaseComplete = Transfer(packet, MeshMessageType.VertexColour, VertexBuffer.Wrap(Colours()), byteLimit, ref progress);
+          break;
+        case (int)Phase.UV:
+          phaseComplete = Transfer(packet, MeshMessageType.UV, VertexBuffer.Wrap(UVs()), byteLimit, ref progress);
+          break;
+        case (int)Phase.Finalise:
+          MeshFinaliseMessage msg = new MeshFinaliseMessage();
+          msg.MeshID = ID;
+          msg.Flags = 0;
+          if (CalculateNormals && (Components & MeshComponentFlag.Normal) != MeshComponentFlag.Normal)
+          {
+            msg.Flags |= (uint)MeshFinaliseFlag.CalculateNormals;
+          }
+          packet.Reset((ushort)RoutingID.Mesh, MeshFinaliseMessage.MessageID);
+          msg.Write(packet);
+          progress.Phase = (int)Phase.End;
+          phaseComplete = true;
+          break;
       }
 
       if (!progress.Failed)
@@ -338,156 +339,27 @@ namespace Tes.Shapes
     }
 
     /// <summary>
-    /// Data transfer helper for packing <see cref="Vector3"/> data.
+    /// Data transfer helper for packing <see cref="VertexBuffer"/> data.
     /// </summary>
     /// <param name="packet">The packet buffer in which to compose the transfer message.</param>
     /// <param name="component">The component type.</param>
     /// <param name="items">Data to transfer.</param>
     /// <param name="byteLimit">An advisory byte limit used to restrict how much data should be sent (in bytes).</param>
     /// <param name="progress">Track the transfer progress between calls.</param>
-    protected bool Transfer(PacketBuffer packet, MeshMessageType component, Vector3[] items, int byteLimit, ref TransferProgress progress)
+    protected bool Transfer(PacketBuffer packet, MeshMessageType component, VertexBuffer buffer, int byteLimit, ref TransferProgress progress)
     {
       // Compose component message.
-      int elementSize = 12; // 3 * 4 byte floats
       MeshComponentMessage msg = new MeshComponentMessage();
       msg.MeshID = ID;
-      msg.Offset = (uint)progress.Progress;
-      msg.Reserved = 0;
-      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit, MeshComponentMessage.Size), (uint)items.Length - msg.Offset);
 
       packet.Reset((ushort)RoutingID.Mesh, (ushort)component);
       msg.Write(packet);
-      uint ii = msg.Offset;
-      for (int i = 0; i < msg.Count; ++i, ++ii)
-      {
-        packet.WriteBytes(BitConverter.GetBytes(items[ii].X), true);
-        packet.WriteBytes(BitConverter.GetBytes(items[ii].Y), true);
-        packet.WriteBytes(BitConverter.GetBytes(items[ii].Z), true);
-      }
 
-      progress.Progress += msg.Count;
-      return progress.Progress == items.Length;
-    }
+      int offset = (int)progress.Progress;
+      int written = buffer.Write(packet, offset, buffer.NativePackingType, 0xffff);
 
-    /// <summary>
-    /// Data transfer helper for packing <see cref="Vector2"/> data.
-    /// </summary>
-    /// <param name="packet">The packet buffer in which to compose the transfer message.</param>
-    /// <param name="component">The component type.</param>
-    /// <param name="items">Data to transfer.</param>
-    /// <param name="byteLimit">An advisory byte limit used to restrict how much data should be sent (in bytes).</param>
-    /// <param name="progress">Track the transfer progress between calls.</param>
-    protected bool Transfer(PacketBuffer packet, MeshMessageType component, Vector2[] items, int byteLimit, ref TransferProgress progress)
-    {
-      // Compose component message.
-      MeshComponentMessage msg = new MeshComponentMessage();
-      int elementSize = 8; // 2 * 4 byte floats
-      msg.MeshID = ID;
-      msg.Offset = (uint)progress.Progress;
-      msg.Reserved = 0;
-      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit, MeshComponentMessage.Size), (uint)items.Length - msg.Offset);
-
-      packet.Reset(TypeID, (ushort)component);
-      msg.Write(packet);
-      uint ii = msg.Offset;
-      for (int i = 0; i < msg.Count; ++i, ++ii)
-      {
-        packet.WriteBytes(BitConverter.GetBytes(items[ii].X), true);
-        packet.WriteBytes(BitConverter.GetBytes(items[ii].Y), true);
-      }
-
-      progress.Progress += msg.Count;
-      return progress.Progress == items.Length;
-    }
-
-    /// <summary>
-    /// Data transfer helper for packing <c>ushort</c> data.
-    /// </summary>
-    /// <param name="packet">The packet buffer in which to compose the transfer message.</param>
-    /// <param name="component">The component type.</param>
-    /// <param name="items">Data to transfer.</param>
-    /// <param name="byteLimit">An advisory byte limit used to restrict how much data should be sent (in bytes).</param>
-    /// <param name="progress">Track the transfer progress between calls.</param>
-    protected bool Transfer(PacketBuffer packet, MeshMessageType component, ushort[] items, int byteLimit, ref TransferProgress progress)
-    {
-      // Compose component message.
-      MeshComponentMessage msg = new MeshComponentMessage();
-      int elementSize = 2; // 2 bytes
-      msg.MeshID = ID;
-      msg.Offset = (uint)progress.Progress;
-      msg.Reserved = 0;
-      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit, MeshComponentMessage.Size), (uint)items.Length - msg.Offset);
-
-      packet.Reset(TypeID, (ushort)component);
-      msg.Write(packet);
-      uint ii = msg.Offset;
-      for (int i = 0; i < msg.Count; ++i, ++ii)
-      {
-        packet.WriteBytes(BitConverter.GetBytes(items[ii]), true);
-      }
-
-      progress.Progress += msg.Count;
-      return progress.Progress == items.Length;
-    }
-
-    /// <summary>
-    /// Data transfer helper for packing <c>int</c> data.
-    /// </summary>
-    /// <param name="packet">The packet buffer in which to compose the transfer message.</param>
-    /// <param name="component">The component type.</param>
-    /// <param name="items">Data to transfer.</param>
-    /// <param name="byteLimit">An advisory byte limit used to restrict how much data should be sent (in bytes).</param>
-    /// <param name="progress">Track the transfer progress between calls.</param>
-    protected bool Transfer(PacketBuffer packet, MeshMessageType component, int[] items, int byteLimit, ref TransferProgress progress)
-    {
-      // Compose component message.
-      MeshComponentMessage msg = new MeshComponentMessage();
-      int elementSize = 4; // 4 bytes
-      msg.MeshID = ID;
-      msg.Offset = (uint)progress.Progress;
-      msg.Reserved = 0;
-      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit, MeshComponentMessage.Size), (uint)items.Length - msg.Offset);
-
-      packet.Reset(TypeID, (ushort)component);
-      msg.Write(packet);
-      uint ii = msg.Offset;
-      for (int i = 0; i < msg.Count; ++i, ++ii)
-      {
-        packet.WriteBytes(BitConverter.GetBytes(items[ii]), true);
-      }
-
-      progress.Progress += msg.Count;
-      return progress.Progress == items.Length;
-    }
-
-    /// <summary>
-    /// Data transfer helper for packing <c>uint</c> data.
-    /// </summary>
-    /// <param name="packet">The packet buffer in which to compose the transfer message.</param>
-    /// <param name="component">The component type.</param>
-    /// <param name="items">Data to transfer.</param>
-    /// <param name="byteLimit">An advisory byte limit used to restrict how much data should be sent (in bytes).</param>
-    /// <param name="progress">Track the transfer progress between calls.</param>
-    protected bool Transfer(PacketBuffer packet, MeshMessageType component, uint[] items, int byteLimit, ref TransferProgress progress)
-    {
-      // Compose component message.
-      MeshComponentMessage msg = new MeshComponentMessage();
-      int elementSize = 4; // 4 bytes
-      msg.MeshID = ID;
-      msg.Offset = (uint)progress.Progress;
-      msg.Reserved = 0;
-      msg.Count = (ushort)Math.Min(EstimateTransferCount(elementSize, byteLimit, MeshComponentMessage.Size), (uint)items.Length - msg.Offset);
-
-      packet.Reset(TypeID, (ushort)component);
-      msg.Write(packet);
-      uint ii = msg.Offset;
-      for (int i = 0; i < msg.Count; ++i, ++ii)
-      {
-        packet.WriteBytes(BitConverter.GetBytes(items[ii]), true);
-      }
-
-      progress.Progress += msg.Count;
-      return progress.Progress == items.Length;
+      progress.Progress += written;
+      return progress.Progress == buffer.Count;
     }
     #endregion
 
@@ -540,61 +412,29 @@ namespace Tes.Shapes
         return false;
       }
 
+      // Read offset and count
+      int offset = (int)reader.ReadUInt32();
+      int count = reader.ReadUInt16();
+
+      VertexBuffer readBuffer = new VertexBuffer();
+      readBuffer.Read(reader, 0, count);
+
       switch (messageType)
       {
         case (int)MeshMessageType.Vertex:
-          Vector3[] newVertices = new Vector3[msg.Count];
-          for (int i = 0; i < msg.Count; ++i)
-          {
-            newVertices[i] = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
-          }
-          return ProcessVertices(msg, newVertices);
+          return ProcessVertices(msg, offset, readBuffer);
 
         case (int)MeshMessageType.Index:
-          if (IndexSize == 2)
-          {
-            ushort[] newInds = new ushort[msg.Count];
-            for (int i = 0; i < msg.Count; ++i)
-            {
-              newInds[i] = reader.ReadUInt16();
-            }
-            return ProcessIndices(msg, newInds);
-          }
-          else if (IndexSize == 4)
-          {
-            int[] newInds = new int[msg.Count];
-            for (int i = 0; i < msg.Count; ++i)
-            {
-              newInds[i] = reader.ReadInt32();
-            }
-            return ProcessIndices(msg, newInds);
-          }
-          // Unknown index size.
-          return false;
+          return ProcessIndices(msg, offset, readBuffer);
 
         case (int)MeshMessageType.VertexColour:
-          uint[] newColours = new uint[msg.Count];
-          for (int i = 0; i < msg.Count; ++i)
-          {
-            newColours[i] = reader.ReadUInt32();
-          }
-          return ProcessColours(msg, newColours);
+          return ProcessColours(msg, offset, readBuffer);
 
         case (int)MeshMessageType.Normal:
-          Vector3[] newNormals = new Vector3[msg.Count];
-          for (int i = 0; i < msg.Count; ++i)
-          {
-            newNormals[i] = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());
-          }
-          return ProcessNormals(msg, newNormals);
+          return ProcessNormals(msg, offset, readBuffer);
 
         case (int)MeshMessageType.UV:
-          Vector2[] newUVs = new Vector2[msg.Count];
-          for (int i = 0; i < msg.Count; ++i)
-          {
-            newUVs[i] = new Vector2(reader.ReadSingle());
-          }
-          return ProcessUVs(msg, newUVs);
+          return ProcessUVs(msg, offset, readBuffer);
 
         default:
           // Unknown message type.
@@ -623,7 +463,7 @@ namespace Tes.Shapes
     /// <param name="msg">Message details.</param>
     /// <param name="vertices">New vertices read from the message payload.</param>
     /// <returns>True on success.</returns>
-    protected virtual bool ProcessVertices(MeshComponentMessage msg, Vector3[] vertices)
+    protected virtual bool ProcessVertices(MeshComponentMessage msg, int offset, VertexBuffer readBuffer)
     {
       return false;
     }
@@ -634,18 +474,7 @@ namespace Tes.Shapes
     /// <param name="msg">Message details.</param>
     /// <param name="indices">New 2-byte indices read from the message payload.</param>
     /// <returns>True on success.</returns>
-    protected virtual bool ProcessIndices(MeshComponentMessage msg, ushort[] indices)
-    {
-      return false;
-    }
-
-    /// <summary>
-    /// Process data for a <see cref="MeshMessageType.Index"/> message when receiving 4-byte indices.
-    /// </summary>
-    /// <param name="msg">Message details.</param>
-    /// <param name="indices">New 4-byte indices read from the message payload.</param>
-    /// <returns>True on success.</returns>
-    protected virtual bool ProcessIndices(MeshComponentMessage msg, int[] indices)
+    protected virtual bool ProcessIndices(MeshComponentMessage msg, int offset, VertexBuffer readBuffer)
     {
       return false;
     }
@@ -659,7 +488,7 @@ namespace Tes.Shapes
     /// <remarks>
     /// Colours may be decoded using the <see cref="Colour"/> class.
     /// </remarks>
-    protected virtual bool ProcessColours(MeshComponentMessage msg, uint[] colours)
+    protected virtual bool ProcessColours(MeshComponentMessage msg, int offset, VertexBuffer readBuffer)
     {
       return false;
     }
@@ -670,7 +499,7 @@ namespace Tes.Shapes
     /// <param name="msg">Message details.</param>
     /// <param name="normals">New normals read from the message payload.</param>
     /// <returns>True on success.</returns>
-    protected virtual bool ProcessNormals(MeshComponentMessage msg, Vector3[] normals)
+    protected virtual bool ProcessNormals(MeshComponentMessage msg, int offset, VertexBuffer readBuffer)
     {
       return false;
     }
@@ -681,7 +510,7 @@ namespace Tes.Shapes
     /// <param name="msg">Message details.</param>
     /// <param name="uvs">New uvs read from the message payload.</param>
     /// <returns>True on success.</returns>
-    protected virtual bool ProcessUVs(MeshComponentMessage msg, Vector2[] uvs)
+    protected virtual bool ProcessUVs(MeshComponentMessage msg, int offset, VertexBuffer readBuffer)
     {
       return false;
     }

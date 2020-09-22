@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using Tes.Buffers;
 using Tes.Net;
 using Tes.Runtime;
 using Tes.Shapes;
@@ -239,16 +240,16 @@ namespace Tes.Handlers
     {
       switch (drawType)
       {
-      case MeshDrawType.Points:
+        case MeshDrawType.Points:
         // No break.
-      case MeshDrawType.Voxels:
-        return MeshTopology.Points;
-      case MeshDrawType.Lines:
-        return MeshTopology.Lines;
-      case MeshDrawType.Triangles:
-        return MeshTopology.Triangles;
-      default:
-        break;
+        case MeshDrawType.Voxels:
+          return MeshTopology.Points;
+        case MeshDrawType.Lines:
+          return MeshTopology.Lines;
+        case MeshDrawType.Triangles:
+          return MeshTopology.Triangles;
+        default:
+          break;
       }
       throw new NotImplementedException("Unsupported draw type.");
     }
@@ -315,32 +316,32 @@ namespace Tes.Handlers
 
       switch (packet.Header.MessageID)
       {
-      case (ushort)MeshMessageType.Invalid:
-        return new Error(ErrorCode.NullMessageCode);
+        case (ushort)MeshMessageType.Invalid:
+          return new Error(ErrorCode.NullMessageCode);
 
-      case (ushort)MeshMessageType.Destroy:
-        return DestroyMesh(packet, reader);
-      case (ushort)MeshMessageType.Create:
-        return CreateMesh(packet, reader);
-      case (ushort)MeshMessageType.Vertex:
-        return AddVertices(packet, reader);
-      case (ushort)MeshMessageType.VertexColour:
-        return AddVertexColours(packet, reader);
-      case (ushort)MeshMessageType.Index:
-        return AddIndices(packet, reader);
-      case (ushort)MeshMessageType.Normal:
-        return AddNormals(packet, reader);
-      case (ushort)MeshMessageType.UV:
-        return AddUVs(packet, reader);
-      case (ushort)MeshMessageType.SetMaterial:
-        return new Error(ErrorCode.UnsupportedFeature); // NYI
-      case (ushort)MeshMessageType.Redefine:
-        return RedefineMesh(packet, reader);
-      case (ushort)MeshMessageType.Finalise:
-        return FinaliseMesh(packet, reader);
+        case (ushort)MeshMessageType.Destroy:
+          return DestroyMesh(packet, reader);
+        case (ushort)MeshMessageType.Create:
+          return CreateMesh(packet, reader);
+        case (ushort)MeshMessageType.Vertex:
+          return AddVertices(packet, reader);
+        case (ushort)MeshMessageType.VertexColour:
+          return AddVertexColours(packet, reader);
+        case (ushort)MeshMessageType.Index:
+          return AddIndices(packet, reader);
+        case (ushort)MeshMessageType.Normal:
+          return AddNormals(packet, reader);
+        case (ushort)MeshMessageType.UV:
+          return AddUVs(packet, reader);
+        case (ushort)MeshMessageType.SetMaterial:
+          return new Error(ErrorCode.UnsupportedFeature); // NYI
+        case (ushort)MeshMessageType.Redefine:
+          return RedefineMesh(packet, reader);
+        case (ushort)MeshMessageType.Finalise:
+          return FinaliseMesh(packet, reader);
 
-      default:
-        break;
+        default:
+          break;
       }
 
       return new Error(ErrorCode.InvalidMessageID, packet.Header.MessageID);
@@ -435,58 +436,6 @@ namespace Tes.Handlers
       }
 
       return new Error();
-    }
-
-    /// <summary>
-    /// Write a <see cref="MeshComponentMessage"/> to serialise <c>Vector3</c> data.
-    /// </summary>
-    /// <param name="meshID">Mesh resource ID we are serialising for.</param>
-    /// <param name="type">The mesh component type; e.g., <see cref="MeshMessageType.Vertex"/>.</param>
-    /// <param name="data">The <c>Vector3</c> data array.</param>
-    /// <param name="packet">Packet buffer to compose messages in</param>
-    /// <param name="writer">Writer to export completed message packets to.</param>
-    /// <param name="blockSize">The maximum number of elements per message.</param>
-    /// <remarks>
-    /// Writes multiple messages to <paramref name="writer"/> as required to ensure all
-    /// <paramref name="data"/> are written.
-    /// </remarks>
-    protected void WriteMeshComponent(uint meshID, MeshMessageType type, Vector3[] data,
-                                      PacketBuffer packet, BinaryWriter writer, uint blockSize)
-    {
-      if (data == null || data.Length == 0)
-      {
-        return;
-      }
-
-      MeshComponentMessage cmsg = new MeshComponentMessage();
-      cmsg.MeshID = meshID;
-      cmsg.Offset = 0;
-      cmsg.Reserved = 0;
-      cmsg.Count = 0;
-
-      while (cmsg.Offset < data.Length)
-      {
-        Vector3 v;
-        cmsg.Count = (ushort)Math.Min(blockSize, (uint)data.Length - cmsg.Offset);
-        packet.Reset((ushort)RoutingID, (ushort)type);
-        cmsg.Write(packet);
-        for (int i = 0; i < cmsg.Count; ++i)
-        {
-          v = data[i + cmsg.Offset];
-          packet.WriteBytes(BitConverter.GetBytes(v.x), true);
-          packet.WriteBytes(BitConverter.GetBytes(v.y), true);
-          packet.WriteBytes(BitConverter.GetBytes(v.z), true);
-        }
-
-        if (cmsg.Count > 0)
-        {
-          packet.FinalisePacket();
-          packet.ExportTo(writer);
-        }
-
-        cmsg.Offset += cmsg.Count;
-        cmsg.Count = 0;
-      }
     }
 
     /// <summary>
@@ -588,66 +537,34 @@ namespace Tes.Handlers
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
 
-      if (msg.Count == 0)
+      int count = (int)reader.ReadUInt32();
+      int offset = reader.ReadUInt16();
+
+      if (count == 0)
       {
         return new Error();
       }
 
-      int voffset = (int)msg.Offset;
+      VertexBuffer readBuffer = new VertexBuffer();
+      readBuffer.Read(reader, offset, count);
+
       // Bounds check.
       int vertexCount = meshEntry.Mesh.VertexCount;
-      if (voffset >= vertexCount || voffset + msg.Count > vertexCount)
+      if (offset >= vertexCount || offset + count > vertexCount)
       {
         return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Vertex);
       }
 
-      // Check for settings initial bounds.
-      bool ok = true;
-      Vector3 v = Vector3.zero;
-      _v3Buffer.Clear();
-      Vector3 minBounds = Vector3.zero;
-      Vector3 maxBounds = Vector3.zero;
-      for (int vInd = 0; ok && vInd < msg.Count; ++vInd)
+      if (readBuffer.ComponentCount != 3)
       {
-        v.x = reader.ReadSingle();
-        v.y = reader.ReadSingle();
-        v.z = reader.ReadSingle();
-        if (vInd > 0)
-        {
-          minBounds.x = Mathf.Min(minBounds.x, v.x);
-          minBounds.y = Mathf.Min(minBounds.y, v.z);
-          minBounds.z = Mathf.Min(minBounds.z, v.y);
-          maxBounds.x = Mathf.Max(maxBounds.x, v.x);
-          maxBounds.y = Mathf.Max(maxBounds.y, v.z);
-          maxBounds.z = Mathf.Max(maxBounds.z, v.y);
-        }
-        else
-        {
-          minBounds = maxBounds = v;
-        }
-        _v3Buffer.Add(v);
+        return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Vertex);
       }
-      meshEntry.Mesh.SetVertices(_v3Buffer, 0, voffset, _v3Buffer.Count);
-      _v3Buffer.Clear();
+
+      meshEntry.Mesh.SetVertices(readBuffer, offset, true);
 
       // Update bounds.
-      if (meshEntry.Mesh.BoundsSet)
-      {
-        minBounds.x = Mathf.Min(minBounds.x, meshEntry.Mesh.MinBounds.x);
-        minBounds.y = Mathf.Min(minBounds.y, meshEntry.Mesh.MinBounds.z);
-        minBounds.z = Mathf.Min(minBounds.z, meshEntry.Mesh.MinBounds.y);
-        maxBounds.x = Mathf.Max(maxBounds.x, meshEntry.Mesh.MaxBounds.x);
-        maxBounds.y = Mathf.Max(maxBounds.y, meshEntry.Mesh.MaxBounds.z);
-        maxBounds.z = Mathf.Max(maxBounds.z, meshEntry.Mesh.MaxBounds.y);
-      }
-
-      meshEntry.Mesh.MinBounds = minBounds;
-      meshEntry.Mesh.MaxBounds = maxBounds;
-
-      if (!ok)
-      {
-        return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.Vertex);
-      }
+      meshEntry.Mesh.MinBounds = meshEntry.Mesh.MinBounds;
+      meshEntry.Mesh.MaxBounds = meshEntry.Mesh.MaxBounds;
 
       return new Error();
     }
@@ -664,7 +581,7 @@ namespace Tes.Handlers
 
       if (!msg.Read(reader))
       {
-        return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.VertexColour);
+        return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.Vertex);
       }
 
       MeshDetails meshEntry;
@@ -673,35 +590,30 @@ namespace Tes.Handlers
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
 
-      if (msg.Count == 0)
+      int count = (int)reader.ReadUInt32();
+      int offset = reader.ReadUInt16();
+
+      if (count == 0)
       {
         return new Error();
       }
 
-      int voffset = (int)msg.Offset;
+      VertexBuffer readBuffer = new VertexBuffer();
+      readBuffer.Read(reader, offset, count);
+
       // Bounds check.
-      int vertexCount = (int)meshEntry.Mesh.VertexCount;
-      if (voffset >= vertexCount || voffset + msg.Count > vertexCount)
+      int vertexCount = meshEntry.Mesh.VertexCount;
+      if (offset >= vertexCount || offset + count > vertexCount)
       {
-        return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.VertexColour);
+        return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Vertex);
       }
 
-      // Check for settings initial bounds.
-      bool ok = true;
-      uint colour;
-      _uintBuffer.Clear();
-      for (int vInd = 0; ok && vInd < msg.Count; ++vInd)
+      if (readBuffer.ComponentCount != 1)
       {
-        colour = reader.ReadUInt32();
-        _uintBuffer.Add(colour);
+        return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Vertex);
       }
-      meshEntry.Mesh.SetColours(_uintBuffer, 0, voffset, _uintBuffer.Count);
-      _uintBuffer.Clear();
 
-      if (!ok)
-      {
-        return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.VertexColour);
-      }
+      meshEntry.Mesh.SetColours(readBuffer, offset);
 
       return new Error();
     }
@@ -718,7 +630,7 @@ namespace Tes.Handlers
 
       if (!msg.Read(reader))
       {
-        return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.Index);
+        return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.Vertex);
       }
 
       MeshDetails meshEntry;
@@ -727,35 +639,30 @@ namespace Tes.Handlers
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
 
-      if (msg.Count == 0)
+      int count = (int)reader.ReadUInt32();
+      int offset = reader.ReadUInt16();
+
+      if (count == 0)
       {
         return new Error();
       }
 
-      int ioffset = (int)msg.Offset;
+      VertexBuffer readBuffer = new VertexBuffer();
+      readBuffer.Read(reader, offset, count);
+
       // Bounds check.
-      int indexCount = (int)meshEntry.Mesh.IndexCount;
-      if (ioffset >= indexCount || ioffset + msg.Count > indexCount)
+      int indexCount = meshEntry.Mesh.IndexCount;
+      if (offset >= indexCount || offset + count > indexCount)
       {
-        return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Index);
+        return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Vertex);
       }
 
-      // Check for settings initial bounds.
-      bool ok = true;
-      int index;
-      _intBuffer.Clear();
-      for (int iInd = 0; ok && iInd < msg.Count; ++iInd)
+      if (readBuffer.ComponentCount != 1)
       {
-        index = reader.ReadInt32();
-        _intBuffer.Add(index);
+        return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Vertex);
       }
-      meshEntry.Mesh.SetIndices(_intBuffer, 0, ioffset, _intBuffer.Count);
-      _intBuffer.Clear();
 
-      if (!ok)
-      {
-        return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.Index);
-      }
+      meshEntry.Mesh.SetIndices(readBuffer, offset);
 
       return new Error();
     }
@@ -772,7 +679,7 @@ namespace Tes.Handlers
 
       if (!msg.Read(reader))
       {
-        return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.Normal);
+        return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.Vertex);
       }
 
       MeshDetails meshEntry;
@@ -781,50 +688,45 @@ namespace Tes.Handlers
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
 
-      if (msg.Count == 0)
+      int count = (int)reader.ReadUInt32();
+      int offset = reader.ReadUInt16();
+
+      if (count == 0)
       {
         return new Error();
       }
 
-      int voffset = (int)msg.Offset;
+      VertexBuffer readBuffer = new VertexBuffer();
+      readBuffer.Read(reader, offset, count);
+
       // Bounds check.
-      int vertexCount = (int)meshEntry.Mesh.VertexCount;
-      if (voffset >= vertexCount || voffset + msg.Count > vertexCount)
+      int vertexCount = meshEntry.Mesh.VertexCount;
+      if (offset >= vertexCount || offset + count > vertexCount)
       {
-        return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Normal);
+        return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Vertex);
       }
 
-      // Check for settings initial bounds.
-      bool ok = true;
-      Vector3 n = Vector3.zero;
-      _v3Buffer.Clear();
-      Vector3 boundsPadding = Vector3.zero;
-      for (int vInd = 0; ok && vInd < (int)msg.Count; ++vInd)
+      if (readBuffer.ComponentCount != 3)
       {
-        n.x = reader.ReadSingle();
-        n.y = reader.ReadSingle();
-        n.z = reader.ReadSingle();
-        _v3Buffer.Add(n);
-        // Bounds padding used to cater for voxel rendering.
-        boundsPadding.x = Mathf.Max(boundsPadding.x, Mathf.Abs(n.x));
-        boundsPadding.y = Mathf.Max(boundsPadding.y, Mathf.Abs(n.y));
-        boundsPadding.z = Mathf.Max(boundsPadding.z, Mathf.Abs(n.z));
+        return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Vertex);
       }
-      meshEntry.Mesh.SetNormals(_v3Buffer, 0, voffset, _v3Buffer.Count);
-      _v3Buffer.Clear();
+
+      meshEntry.Mesh.SetNormals(readBuffer, offset);
 
       // Pad the bounds by largest the normal for voxels.
       if (meshEntry.Mesh.DrawType == MeshDrawType.Voxels)
       {
-        boundsPadding.x = Mathf.Max(boundsPadding.x, Mathf.Abs(meshEntry.Mesh.BoundsPadding.x));
-        boundsPadding.y = Mathf.Max(boundsPadding.y, Mathf.Abs(meshEntry.Mesh.BoundsPadding.y));
-        boundsPadding.z = Mathf.Max(boundsPadding.z, Mathf.Abs(meshEntry.Mesh.BoundsPadding.z));
+        // Calculate bounds padding used to cater for voxel rendering.
+        Vector3 boundsPadding = meshEntry.Mesh.BoundsPadding;
+        for (int i = offset; offset < meshEntry.Mesh.Normals.Length; ++i)
+        {
+          // Bounds padding used to cater for voxel rendering.
+          Vector3 n = meshEntry.Mesh.Normals[i];
+          boundsPadding.x = Mathf.Max(boundsPadding.x, Mathf.Abs(n.x));
+          boundsPadding.y = Mathf.Max(boundsPadding.y, Mathf.Abs(n.y));
+          boundsPadding.z = Mathf.Max(boundsPadding.z, Mathf.Abs(n.z));
+        }
         meshEntry.Mesh.BoundsPadding = boundsPadding;
-      }
-
-      if (!ok)
-      {
-        return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.Normal);
       }
 
       return new Error();
@@ -842,7 +744,7 @@ namespace Tes.Handlers
 
       if (!msg.Read(reader))
       {
-        return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.UV);
+        return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.Vertex);
       }
 
       MeshDetails meshEntry;
@@ -851,36 +753,30 @@ namespace Tes.Handlers
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
 
-      if (msg.Count == 0)
+      int count = (int)reader.ReadUInt32();
+      int offset = reader.ReadUInt16();
+
+      if (count == 0)
       {
         return new Error();
       }
 
-      int voffset = (int)msg.Offset;
+      VertexBuffer readBuffer = new VertexBuffer();
+      readBuffer.Read(reader, offset, count);
+
       // Bounds check.
-      int vertexCount = (int)meshEntry.Mesh.VertexCount;
-      _v2Buffer.Clear();
-      if (voffset >= vertexCount || voffset + msg.Count > vertexCount)
+      int vertexCount = meshEntry.Mesh.VertexCount;
+      if (offset >= vertexCount || offset + count > vertexCount)
       {
-        return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.UV);
+        return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Vertex);
       }
 
-      // Check for settings initial bounds.
-      bool ok = true;
-      Vector2 uv = Vector2.zero;
-      for (int vInd = 0; ok && vInd < msg.Count; ++vInd)
+      if (readBuffer.ComponentCount != 2)
       {
-        uv.x = reader.ReadSingle();
-        uv.y = reader.ReadSingle();
-        _v2Buffer.Add(uv);
+        return new Error(ErrorCode.IndexingOutOfRange, (ushort)MeshMessageType.Vertex);
       }
-      meshEntry.Mesh.SetUVs(_v2Buffer, 0, voffset, _v2Buffer.Count);
-      _v2Buffer.Clear();
 
-      if (!ok)
-      {
-        return new Error(ErrorCode.MalformedMessage, (ushort)MeshMessageType.UV);
-      }
+      meshEntry.Mesh.SetUVs(readBuffer, offset);
 
       return new Error();
     }
@@ -973,29 +869,9 @@ namespace Tes.Handlers
     {
       switch (mesh.Topology)
       {
-      case MeshTopology.Triangles:
-      case MeshTopology.Quads:
-        mesh.Material = new Material(SingleSidedMaterial);
-
-        if (mesh.HasNormals)
-        {
-          mesh.Material.EnableKeyword("WITH_NORMALS");
-        }
-
-        if (mesh.HasColours)
-        {
-          mesh.Material.EnableKeyword("WITH_COLOURS_UINT");
-        }
-        break;
-      case MeshTopology.Points:
-        if (mesh.DrawType == MeshDrawType.Voxels)
-        {
-          mesh.Material = new Material(VoxelsMaterial);
-        }
-        else
-        {
-          mesh.Material = new Material(PointsMaterial);
-          mesh.Material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
+        case MeshTopology.Triangles:
+        case MeshTopology.Quads:
+          mesh.Material = new Material(SingleSidedMaterial);
 
           if (mesh.HasNormals)
           {
@@ -1006,20 +882,40 @@ namespace Tes.Handlers
           {
             mesh.Material.EnableKeyword("WITH_COLOURS_UINT");
           }
+          break;
+        case MeshTopology.Points:
+          if (mesh.DrawType == MeshDrawType.Voxels)
+          {
+            mesh.Material = new Material(VoxelsMaterial);
+          }
+          else
+          {
+            mesh.Material = new Material(PointsMaterial);
+            mesh.Material.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
 
-          int pointSize = (Materials != null) ? Materials.DefaultPointSize : 4;
-          mesh.Material.SetInt("_PointSize", pointSize);
-        }
-        break;
-      default:
-      case MeshTopology.Lines:
-      case MeshTopology.LineStrip:
-        mesh.Material = new Material(SingleSidedMaterial);
-        if (mesh.HasColours)
-        {
-          mesh.Material.EnableKeyword("WITH_COLOURS_UINT");
-        }
-        break;
+            if (mesh.HasNormals)
+            {
+              mesh.Material.EnableKeyword("WITH_NORMALS");
+            }
+
+            if (mesh.HasColours)
+            {
+              mesh.Material.EnableKeyword("WITH_COLOURS_UINT");
+            }
+
+            int pointSize = (Materials != null) ? Materials.DefaultPointSize : 4;
+            mesh.Material.SetInt("_PointSize", pointSize);
+          }
+          break;
+        default:
+        case MeshTopology.Lines:
+        case MeshTopology.LineStrip:
+          mesh.Material = new Material(SingleSidedMaterial);
+          if (mesh.HasColours)
+          {
+            mesh.Material.EnableKeyword("WITH_COLOURS_UINT");
+          }
+          break;
       }
     }
 
@@ -1043,16 +939,16 @@ namespace Tes.Handlers
     {
       switch (topology)
       {
-      case MeshTopology.Triangles:
-        return 3;
-      case MeshTopology.Quads:
-        return 4;
-      case MeshTopology.Lines:
-        return 2;
-      case MeshTopology.LineStrip:
-        return 1;
-      case MeshTopology.Points:
-        return 1;
+        case MeshTopology.Triangles:
+          return 3;
+        case MeshTopology.Quads:
+          return 4;
+        case MeshTopology.Lines:
+          return 2;
+        case MeshTopology.LineStrip:
+          return 1;
+        case MeshTopology.Points:
+          return 1;
       }
       return 1;
     }

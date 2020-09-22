@@ -32,7 +32,7 @@ namespace Tes.CoreTests
 
       MeshShape mesh = new MeshShape(Net.MeshDrawType.Triangles, vertices.ToArray(), indices.ToArray());
       mesh.ID = 42;
-      mesh.Normals = normals.ToArray();
+      mesh.SetNormals(normals.ToArray());
 
       // Use the encoder as a connection.
       // The Create() call will pack the mesh create message and multiple data messages.

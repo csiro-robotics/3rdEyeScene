@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
+using Tes.Buffers;
 using Tes.Net;
 using UnityEngine;
 
@@ -23,16 +23,16 @@ namespace Tes.Runtime
       {
         switch (DrawType)
         {
-        case MeshDrawType.Points:
+          case MeshDrawType.Points:
           // No break.
-        case MeshDrawType.Voxels:
-          return MeshTopology.Points;
-        case MeshDrawType.Lines:
-          return MeshTopology.Lines;
-        case MeshDrawType.Triangles:
-          return MeshTopology.Triangles;
-        default:
-          break;
+          case MeshDrawType.Voxels:
+            return MeshTopology.Points;
+          case MeshDrawType.Lines:
+            return MeshTopology.Lines;
+          case MeshDrawType.Triangles:
+            return MeshTopology.Triangles;
+          default:
+            break;
         }
         // Programmatic error if this happens.
         throw new System.Exception("Unsupported draw type");
@@ -253,7 +253,7 @@ namespace Tes.Runtime
       get { return _materialDirty; }
     }
 
-    public RenderMesh() {}
+    public RenderMesh() { }
 
     public RenderMesh(MeshDrawType drawType, int vertexCount, int indexCount = 0)
     {
@@ -378,6 +378,17 @@ namespace Tes.Runtime
       Array.Copy(indices, listStartIndex, _indices, bufferStartIndex, count);
     }
 
+    public void SetIndices(VertexBuffer buffer, int offset)
+    {
+      Debug.Assert(0 <= offset && offset + buffer.Count <= IndexCount && buffer.ComponentCount == 1);
+
+      for (int i = 0; i < buffer.Count; ++i)
+      {
+        _indices[offset + i] = buffer.GetInt32(i);
+      }
+      _indicesDirty = true;
+    }
+
     public int[] Indices { get { return _indices; } }
 
     public void SetVertices(List<Vector3> vertices, bool adjustBounds = false)
@@ -482,7 +493,52 @@ namespace Tes.Runtime
       _verticesDirty = true;
     }
 
+    public void SetVertices(VertexBuffer buffer, int offset, bool adjustBounds = false)
+    {
+      Debug.Assert(0 <= offset && offset + buffer.Count <= VertexCount && buffer.ComponentCount == 3);
+      Vector3 v = new Vector3();
+      for (int i = 0; i < buffer.Count; ++i)
+      {
+        v.x = buffer.GetSingle(i * 3 + 0);
+        v.y = buffer.GetSingle(i * 3 + 0);
+        v.z = buffer.GetSingle(i * 3 + 0);
+        _vertices[offset + i] = v;
+
+        if (adjustBounds)
+        {
+          if (i + offset > 0)
+          {
+            _minBounds.x = Mathf.Min(v.x, _minBounds.x);
+            _minBounds.y = Mathf.Min(v.y, _minBounds.y);
+            _minBounds.z = Mathf.Min(v.z, _minBounds.z);
+            _maxBounds.x = Mathf.Max(v.x, _maxBounds.x);
+            _maxBounds.y = Mathf.Max(v.y, _maxBounds.y);
+            _maxBounds.z = Mathf.Max(v.z, _maxBounds.z);
+          }
+          else
+          {
+            _minBounds = _maxBounds = v;
+          }
+        }
+      }
+      _verticesDirty = true;
+    }
+
     public Vector3[] Vertices { get { return _vertices; } }
+
+    public void SetUniformNormal(Vector3 normal)
+    {
+      if (_normals == null)
+      {
+        _normals = new Vector3[VertexCount];
+      }
+
+      for (int i = 0; i < _normals.Length; ++i)
+      {
+        _normals[i] = normal;
+      }
+      _normalsDirty = true;
+    }
 
     public void SetNormals(List<Vector3> normals)
     {
@@ -543,6 +599,25 @@ namespace Tes.Runtime
       }
 
       Array.Copy(normals, listStartIndex, _normals, bufferStartIndex, count);
+      _normalsDirty = true;
+    }
+
+    public void SetNormals(VertexBuffer buffer, int offset)
+    {
+      if (_normals == null)
+      {
+        _normals = new Vector3[VertexCount];
+      }
+      Debug.Assert(0 <= offset && offset + buffer.Count <= VertexCount && buffer.ComponentCount == 3);
+
+      Vector3 n = new Vector3();
+      for (int i = 0; i < buffer.Count; ++i)
+      {
+        n.x = buffer.GetSingle(i * 3 + 0);
+        n.y = buffer.GetSingle(i * 3 + 0);
+        n.z = buffer.GetSingle(i * 3 + 0);
+        _normals[offset + i] = n;
+      }
       _normalsDirty = true;
     }
 
@@ -610,6 +685,21 @@ namespace Tes.Runtime
       _coloursDirty = true;
     }
 
+    public void SetColours(VertexBuffer buffer, int offset)
+    {
+      if (_colours == null)
+      {
+        _colours = new uint[VertexCount];
+      }
+      Debug.Assert(0 <= offset && offset + buffer.Count <= VertexCount && buffer.ComponentCount == 1);
+
+      for (int i = 0; i < buffer.Count; ++i)
+      {
+        _colours[offset + i] = buffer.GetUInt32(i);
+      }
+      _coloursDirty = true;
+    }
+
     public uint[] Colours { get { return _colours; } }
 
     public void SetUVs(List<Vector2> uvs)
@@ -671,6 +761,24 @@ namespace Tes.Runtime
       }
 
       Array.Copy(uvs, listStartIndex, _uvs, bufferStartIndex, count);
+      _uvsDirty = true;
+    }
+
+    public void SetUVs(VertexBuffer buffer, int offset)
+    {
+      if (_uvs == null)
+      {
+        _uvs = new Vector2[VertexCount];
+      }
+      Debug.Assert(0 <= offset && offset + buffer.Count <= VertexCount && buffer.ComponentCount == 2);
+
+      Vector2 uv = new Vector2();
+      for (int i = 0; i < buffer.Count; ++i)
+      {
+        uv.x = buffer.GetSingle(i * 2 + 0);
+        uv.y = buffer.GetSingle(i * 2 + 0);
+        _uvs[offset + i] = uv;
+      }
       _uvsDirty = true;
     }
 

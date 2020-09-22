@@ -207,16 +207,16 @@ namespace Tes.Handlers.Shape3D
           material.SetColor("_BackColour", Color.white);
           switch (CoordinateFrameUtil.AxisIndex(ServerInfo.CoordinateFrame, 2))
           {
-          case 0:
-            material.EnableKeyword("WITH_COLOURS_RANGE_X");
-            break;
-          case 1:
-            material.EnableKeyword("WITH_COLOURS_RANGE_Y");
-            break;
-          default:
-          case 2:
-            material.EnableKeyword("WITH_COLOURS_RANGE_Z");
-            break;
+            case 0:
+              material.EnableKeyword("WITH_COLOURS_RANGE_X");
+              break;
+            case 1:
+              material.EnableKeyword("WITH_COLOURS_RANGE_Y");
+              break;
+            default:
+            case 2:
+              material.EnableKeyword("WITH_COLOURS_RANGE_Z");
+              break;
           }
         }
       }
@@ -254,7 +254,7 @@ namespace Tes.Handlers.Shape3D
       if (mesh.HasNormals && !meshEntry.CalculateNormals)
       {
         // We have normals which were not locally calculated.
-        meshShape.Normals = Tes.Maths.Vector3Ext.FromUnity(mesh.Normals);
+        meshShape.SetNormals(Tes.Maths.Vector3Ext.FromUnity(mesh.Normals));
       }
 
       meshShape.SetAttributes(shapeData.Attributes);
@@ -324,62 +324,48 @@ namespace Tes.Handlers.Shape3D
       // - In order.
       MeshEntry meshEntry = cache.GetShapeDataByIndex<MeshEntry>(shapeIndex);
 
-      // Well, this is confusing indirection...
-      int readComponent = MeshShape.ReadDataComponentDeferred(
-        reader, (uint)meshEntry.Mesh.VertexCount, (uint)meshEntry.Mesh.IndexCount,
-        // Vertex handler.
-        new MeshShape.ComponentBlockReader((MeshShape.SendDataType dataType, BinaryReader reader2, uint offset, uint count) =>
-        {
-          return ReadMeshVector3Data(reader2, offset, count, (Vector3[] buffer, int writeOffset, int writeCount) =>
-          {
-            meshEntry.Mesh.SetVertices(buffer, 0, writeOffset, writeCount, true);
-          });
-        }),
-        // Index handler
-        new MeshShape.ComponentBlockReader((MeshShape.SendDataType dataType, BinaryReader reader2, uint offset, uint count) =>
-        {
-          return ReadIndexComponent(reader2, offset, count, meshEntry.Mesh);
-        }),
-        // Normals handler.
-        new MeshShape.ComponentBlockReader((MeshShape.SendDataType dataType, BinaryReader reader2, uint offset, uint count) =>
-        {
-          return ReadMeshVector3Data(reader2, offset, count, (Vector3[] buffer, int writeOffset, int writeCount) =>
-          {
-            if (dataType == MeshShape.SendDataType.UniformNormal)
-            {
-              // Only one normal for the whole mesh.
-              // Fill the buffer and write in chunks.
-              for (int i = 1; i < buffer.Length; ++i)
-              {
-                buffer[i] = buffer[0];
-              }
-              int localOffset = 0;
-              for (int i = 0; i < meshEntry.Mesh.VertexCount; i += buffer.Length)
-              {
-                int blockCount = Math.Min(buffer.Length, meshEntry.Mesh.VertexCount - localOffset);
-                meshEntry.Mesh.SetNormals(buffer, 0, localOffset, blockCount);
-                writeOffset += blockCount;
-              }
-            }
-            else
-            {
-              meshEntry.Mesh.SetNormals(buffer, 0, writeOffset, writeCount);
-            }
-          });
-        }),
-        // Colours handler.
-        new MeshShape.ComponentBlockReader((MeshShape.SendDataType dataType, BinaryReader reader2, uint offset, uint count) =>
-        {
-          return ReadColourComponent(reader2, offset, count, meshEntry.Mesh);
-        })
-      );
+      // What are we reading?
+      int readComponent = reader.ReadUInt16();
+      int offset = (int)reader.ReadUInt32();
+      int count = reader.ReadUInt16();
 
-      if (readComponent == -1)
+      // Read buffer data.
+      Buffers.VertexBuffer readBuffer = new Buffers.VertexBuffer();
+      if (count > 0)
       {
-        return new Error(ErrorCode.MalformedMessage, DataMessage.MessageID);
+        readBuffer.Read(reader, offset, count);
       }
 
-      if (readComponent == (int)(MeshShape.SendDataType.Vertices |  MeshShape.SendDataType.End))
+      // Now work out what has been sent. Mask out the special flags.
+      MeshShape.SendDataType componentType = (MeshShape.SendDataType)(readComponent &
+        ~(int)((MeshShape.SendDataType.End)));
+      // Mask out the special flags.
+      readComponent &= ~(int)componentType;
+      switch (componentType)
+      {
+        case MeshShape.SendDataType.Vertices:
+          meshEntry.Mesh.SetVertices(readBuffer, offset, true);
+          break;
+        case MeshShape.SendDataType.Indices:
+          meshEntry.Mesh.SetIndices(readBuffer, offset);
+          break;
+        case MeshShape.SendDataType.Normals:
+          meshEntry.Mesh.SetNormals(readBuffer, offset);
+          break;
+        case MeshShape.SendDataType.UniformNormal:
+          // Only one normal for the whole data set. Apply it across the entire mesh.
+          Vector3 normal = new Vector3();
+          normal.x = readBuffer.GetSingle(0);
+          normal.y = readBuffer.GetSingle(1);
+          normal.z = readBuffer.GetSingle(2);
+          meshEntry.Mesh.SetUniformNormal(normal);
+          break;
+        case MeshShape.SendDataType.Colours:
+          meshEntry.Mesh.SetColours(readBuffer, offset);
+          break;
+      }
+
+      if ((readComponent & (int)MeshShape.SendDataType.End) != 0)
       {
         // Finalise the material.
         meshEntry.Material = CreateMaterial(cache.GetShapeByIndex(shapeIndex), meshEntry);
@@ -510,46 +496,46 @@ namespace Tes.Handlers.Shape3D
       Material mat;
       switch (meshEntry.Mesh.DrawType)
       {
-      case MeshDrawType.Points:
-        mat = new Material(Materials[MaterialLibrary.Points]);
-        MaterialLibrary.SetupMaterial(mat, meshEntry.Mesh);
-        int pointSize = (Materials != null) ? Materials.DefaultPointSize : 4;
-        mat.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
-        break;
-      case MeshDrawType.Voxels:
-        mat = new Material(Materials[MaterialLibrary.Voxels]);
-        MaterialLibrary.SetupMaterial(mat, meshEntry.Mesh);
-        mat.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
-        break;
-      default:
-      case MeshDrawType.Lines:
-        mat = new Material(Materials[MaterialLibrary.OpaqueMesh]);
-        if (meshEntry.Mesh.HasColours)
-        {
-          mat.EnableKeyword("WITH_COLOURS_UINT");
-        }
-        break;
-      case MeshDrawType.Triangles:
-        // Check wire frame.
-        if ((shape.Flags & (uint)ObjectFlag.Wireframe) != 0u)
-        {
-          mat = new Material(Materials[MaterialLibrary.WireframeMesh]);
-        }
-        else if ((shape.Flags & (uint)ObjectFlag.Transparent) != 0u)
-        {
-          mat = new Material(Materials[MaterialLibrary.TransparentMesh]);
-        }
-        else if ((shape.Flags & (uint)ObjectFlag.TwoSided) != 0u)
-        {
-          mat = new Material(Materials[MaterialLibrary.OpaqueTwoSidedMesh]);
-        }
-        else
-        {
-          //mat = new Material(Materials[MaterialLibrary.OpaqueTwoSidedMesh]);
+        case MeshDrawType.Points:
+          mat = new Material(Materials[MaterialLibrary.Points]);
+          MaterialLibrary.SetupMaterial(mat, meshEntry.Mesh);
+          int pointSize = (Materials != null) ? Materials.DefaultPointSize : 4;
+          mat.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
+          break;
+        case MeshDrawType.Voxels:
+          mat = new Material(Materials[MaterialLibrary.Voxels]);
+          MaterialLibrary.SetupMaterial(mat, meshEntry.Mesh);
+          mat.SetInt("_LeftHanded", ServerInfo.IsLeftHanded ? 1 : 0);
+          break;
+        default:
+        case MeshDrawType.Lines:
           mat = new Material(Materials[MaterialLibrary.OpaqueMesh]);
-        }
-        MaterialLibrary.SetupMaterial(mat, meshEntry.Mesh);
-        break;
+          if (meshEntry.Mesh.HasColours)
+          {
+            mat.EnableKeyword("WITH_COLOURS_UINT");
+          }
+          break;
+        case MeshDrawType.Triangles:
+          // Check wire frame.
+          if ((shape.Flags & (uint)ObjectFlag.Wireframe) != 0u)
+          {
+            mat = new Material(Materials[MaterialLibrary.WireframeMesh]);
+          }
+          else if ((shape.Flags & (uint)ObjectFlag.Transparent) != 0u)
+          {
+            mat = new Material(Materials[MaterialLibrary.TransparentMesh]);
+          }
+          else if ((shape.Flags & (uint)ObjectFlag.TwoSided) != 0u)
+          {
+            mat = new Material(Materials[MaterialLibrary.OpaqueTwoSidedMesh]);
+          }
+          else
+          {
+            //mat = new Material(Materials[MaterialLibrary.OpaqueTwoSidedMesh]);
+            mat = new Material(Materials[MaterialLibrary.OpaqueMesh]);
+          }
+          MaterialLibrary.SetupMaterial(mat, meshEntry.Mesh);
+          break;
       }
 
       if (mat.HasProperty("_Color"))

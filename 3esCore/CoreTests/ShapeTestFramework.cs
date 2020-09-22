@@ -293,56 +293,60 @@ namespace Tes.CoreTests
       if (reference.Vertices != null)
       {
         Assert.NotNull(shape.Vertices);
-        Assert.Equal(reference.Vertices.Length, shape.Vertices.Length);
+        Assert.Equal(reference.Vertices.Count, shape.Vertices.Count);
+        Assert.Equal(reference.Vertices.ComponentCount, shape.Vertices.ComponentCount);
       }
 
       if (reference.Normals != null)
       {
         Assert.NotNull(shape.Normals);
-        Assert.Equal(reference.Normals.Length, shape.Normals.Length);
+        Assert.Equal(reference.Normals.Count, shape.Normals.Count);
+        Assert.Equal(reference.Normals.ComponentCount, shape.Normals.ComponentCount);
       }
 
       if (reference.Colours != null)
       {
         Assert.NotNull(shape.Colours);
-        Assert.Equal(reference.Colours.Length, shape.Colours.Length);
+        Assert.Equal(reference.Colours.Count, shape.Colours.Count);
+        Assert.Equal(reference.Colours.ComponentCount, shape.Colours.ComponentCount);
       }
 
       if (reference.Indices != null)
       {
         Assert.NotNull(shape.Indices);
-        Assert.Equal(reference.Indices.Length, shape.Indices.Length);
+        Assert.Equal(reference.Indices.Count, shape.Indices.Count);
+        Assert.Equal(reference.Indices.ComponentCount, shape.Indices.ComponentCount);
       }
 
       if (reference.Vertices != null)
       {
-        for (int i = 0; i < reference.Vertices.Length; ++i)
+        for (int i = 0; i < reference.Vertices.Count * reference.Vertices.ComponentCount; ++i)
         {
-          Assert.Equal(reference.Vertices[i], shape.Vertices[i]);
+          Assert.Equal(reference.Vertices.GetSingle(i), shape.Vertices.GetSingle(i));
         }
       }
 
       if (reference.Normals != null)
       {
-        for (int i = 0; i < reference.Normals.Length; ++i)
+        for (int i = 0; i < reference.Normals.Count * reference.Normals.ComponentCount; ++i)
         {
-          Assert.Equal(reference.Normals[i], shape.Normals[i]);
+          Assert.Equal(reference.Normals.GetSingle(i), shape.Normals.GetSingle(i));
         }
       }
 
       if (reference.Colours != null)
       {
-        for (int i = 0; i < reference.Colours.Length; ++i)
+        for (int i = 0; i < reference.Colours.Count * reference.Colours.ComponentCount; ++i)
         {
-          Assert.Equal(reference.Colours[i], shape.Colours[i]);
+          Assert.Equal(reference.Colours.GetUInt32(i), shape.Colours.GetUInt32(i));
         }
       }
 
       if (reference.Indices != null)
       {
-        for (int i = 0; i < reference.Indices.Length; ++i)
+        for (int i = 0; i < reference.Indices.Count * reference.Indices.ComponentCount; ++i)
         {
-          Assert.Equal(reference.Indices[i], shape.Indices[i]);
+          Assert.Equal(reference.Indices.GetUInt32(i), shape.Indices.GetUInt32(i));
         }
       }
     }

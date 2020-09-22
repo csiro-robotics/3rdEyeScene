@@ -16,12 +16,18 @@ namespace Tes.Net
     Float32,
     Float64,
     PackedFloat16,
-    PackedFloat32
+    PackedFloat32,
+
+    // Aliases matching .Net types.
+    SByte = Int8,
+    Byte = UInt8,
+    Single = Float32,
+    Double = Float64
   }
 
   public static class DataStreamTypeInfo
   {
-    public static uint SizeoOf(DataStreamType type)
+    public static int SizeoOf(DataStreamType type)
     {
       switch (type)
       {

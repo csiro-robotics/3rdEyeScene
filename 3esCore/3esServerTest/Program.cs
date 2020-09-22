@@ -293,7 +293,7 @@ namespace Tes
           Colour.Colours[(int)PredefinedColour.White].Value, Colour.Colours[(int)PredefinedColour.White].Value, Colour.Colours[(int)PredefinedColour.White].Value,
         };
         Shapes.MeshShape triangles = new Shapes.MeshShape(MeshDrawType.Triangles, triangleSet, ids.NextShapeId++);
-        triangles.Colours = colours;
+        triangles.SetColours(colours);
         shapes.Add(triangles);
         // if (!noMove)
         // {
@@ -334,7 +334,7 @@ namespace Tes
           Colour.Colours[(int)PredefinedColour.White].Value
         };
         Shapes.MeshShape points = new Shapes.MeshShape(MeshDrawType.Points, pts, ids.NextShapeId++);
-        points.Colours = colours;
+        points.SetColours(colours);
         shapes.Add(points);
         // if (!noMove)
         // {

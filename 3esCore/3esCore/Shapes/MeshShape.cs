@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using Tes.Buffers;
 using Tes.IO;
 using Tes.Maths;
 using Tes.Net;
@@ -27,6 +28,10 @@ namespace Tes.Shapes
     /// <summary>
     /// Codes for <see cref="WriteData(PacketBuffer, ref uint)"/>.
     /// </summary>
+    /// <remarks>
+    /// This ordering is fixed and assumptions are made in sending and receiving code about this order. In particular,
+    /// the relationship between Normals and UniformNormal is important.
+    /// </remarks>
     public enum SendDataType : ushort
     {
       /// <summary>
@@ -56,135 +61,10 @@ namespace Tes.Shapes
       End = ((ushort)1u << 15)
     };
 
-    #region Data read adaptors
-    /// <summary>
-    /// Interface for use with the helper method
-    /// <see cref="ReadDataComponent(BinaryReader, ComponentAdaptor&lt;Vector3&gt;, ComponentAdaptor&lt;int&gt;, ComponentAdaptor&lt;Vector3&gt;, ComponentAdaptor&lt;Colour&gt;)">ReadDataComponent()</see>.
-    /// </summary>
-    /// <remarks>
-    /// This interface is used to read data from <see cref="DataMessage"/> payloads. The <c>ReadDataComponent()</c> method
-    /// uses this interface to prevent read overruns using <see cref="Count"/> and set individual elements via
-    /// <see cref="Set(int, T)"/>. For normals and colours, the <see cref="Count"/> property will also be set to ensure
-    /// correct array sizing.
-    ///
-    /// The adaptor may be used reading into a non-array container or to perform data conversion.
-    /// </remarks>
-    public interface ComponentAdaptor<T>
-    {
-      /// <summary>
-      /// Gets or sets the number of elements in the data set.
-      /// </summary>
-      int Count { get; set; }
-
-      /// <summary>
-      /// Set the element at index <paramref name="at"/>.
-      /// </summary>
-      /// <param name="at">The index to set a value at.</param>
-      /// <param name="val">The value to set.</param>
-      void Set(int at, T val);
-
-      /// <summary>
-      /// Retrieve the value at index <paramref name="at"/>.
-      /// </summary>
-      /// <param name="at">The index to retrieve a value at.</param>
-			/// <returns>The requested value.</returns>
-      T Get(int at);
-    }
-
-
-    /// <summary>
-    /// An array adaptor implementation interfacing with an array.
-    /// </summary>
-    public class ArrayComponentAdaptor<T> : ComponentAdaptor<T>
-    {
-      /// <summary>
-      /// Accesses the underlying array.
-      /// </summary>
-      /// <value>The array.</value>
-      public T[] Array { get; protected set; }
-
-      /// <summary>
-      /// Create a wrapper around <paramref name="array."/>.
-      /// </summary>
-      /// <param name="array">Array.</param>
-      public ArrayComponentAdaptor(T[] array)
-      {
-        Array = array;
-      }
-
-      /// <summary>
-      /// Retrieve the array length or resize the array (data lost).
-      /// </summary>
-      public int Count
-      {
-        get { return (Array != null) ? Array.Length : 0; }
-        set { if (Count != value) { Array = new T[value]; } }
-      }
-
-      /// <summary>
-      /// Set the element at index <paramref name="at"/>.
-      /// </summary>
-      /// <param name="at">The index to set a value at.</param>
-      /// <param name="val">The value to set.</param>
-      public void Set(int at, T val) { Array[at] = val; }
-
-      /// <summary>
-      /// Retrieve the value at index <paramref name="at"/>.
-      /// </summary>
-      /// <param name="at">The index to retrieve a value at.</param>
-      /// <returns>The requested value.</returns>
-      public T Get(int at) { return Array[at]; }
-    }
-
-    /// <summary>
-    /// An array adaptor to read <see cref="Colour"/> and store as <c>uint</c>.
-    /// </summary>
-    public class ColoursAdaptor : ComponentAdaptor<Colour>
-    {
-      /// <summary>
-      /// Accesses the underlying array.
-      /// </summary>
-      /// <value>The array.</value>
-      public UInt32[] Array { get; protected set; }
-
-      /// <summary>
-      /// Create a wrapper around <paramref name="array"/>.
-      /// </summary>
-      /// <param name="array">Array.</param>
-      public ColoursAdaptor(UInt32[] array)
-      {
-        Array = array;
-      }
-
-      /// <summary>
-      /// Retrieve the array length or resize the array (data lost).
-      /// </summary>
-      public int Count
-      {
-        get { return (Array != null) ? Array.Length : 0; }
-        set { if (Count != value) { Array = new UInt32[value]; } }
-      }
-
-      /// <summary>
-      /// Set the element at index <paramref name="at"/>.
-      /// </summary>
-      /// <param name="at">The index to set a value at.</param>
-      /// <param name="val">The value to set.</param>
-      public void Set(int at, Colour val) { Array[at] = val.Value; }
-
-      /// <summary>
-      /// Retrieve the value at index <paramref name="at"/>.
-      /// </summary>
-      /// <param name="at">The index to retrieve a value at.</param>
-      /// <returns>The requested value.</returns>
-      public Colour Get(int at) { return new Colour(Array[at]); }
-    }
-    #endregion
-
     /// <summary>
     /// Default constructor creating a transient, empty mesh shape.
     /// </summary>
-    public MeshShape() : this(MeshDrawType.Points, new Vector3[0]) { }
+    public MeshShape() : this(MeshDrawType.Points, new Vector3[0]) { _vertices.ReadOnly = false; }
 
     /// <summary>
     /// Create a mesh shape.
@@ -195,7 +75,7 @@ namespace Tes.Shapes
     /// <param name="rotation">Local rotation.</param>
     /// <param name="scale">Local scaling.</param>
     public MeshShape(MeshDrawType drawType, Vector3[] vertices, Vector3 position, Quaternion rotation, Vector3 scale)
-      : this(drawType, vertices, null, position, rotation, scale) {}
+      : this(drawType, vertices, null, position, rotation, scale) { }
 
     /// <summary>
     /// Create a mesh shape.
@@ -210,8 +90,8 @@ namespace Tes.Shapes
       : base((ushort)Tes.Net.ShapeID.Mesh)
     {
       IsComplex = true;
-      _vertices = vertices;
-      _indices = indices ?? new int[0];
+      _vertices = VertexBuffer.Wrap(vertices);
+      _indices = VertexBuffer.Wrap(indices) ?? VertexBuffer.Wrap(new int[0]);
       DrawType = drawType;
       Position = position;
       Rotation = rotation;
@@ -234,6 +114,7 @@ namespace Tes.Shapes
     /// <param name="scale">Local scaling.</param>
     public MeshShape(MeshDrawType drawType, Vector3[] vertices, uint id, Vector3 position, Quaternion rotation, Vector3 scale)
       : this(drawType, vertices, null, id, position, rotation, scale) { }
+
     /// <summary>
     /// Create a mesh shape.
     /// </summary>
@@ -248,8 +129,8 @@ namespace Tes.Shapes
       : base((ushort)Tes.Net.ShapeID.Mesh, id)
     {
       IsComplex = true;
-      _vertices = vertices;
-      _indices = indices ?? new int[0];
+      _vertices = VertexBuffer.Wrap(vertices);
+      _indices = VertexBuffer.Wrap(indices) ?? VertexBuffer.Wrap(new int[0]);
       DrawType = drawType;
       Position = position;
       Rotation = rotation;
@@ -273,6 +154,7 @@ namespace Tes.Shapes
     /// <param name="scale">Local scaling.</param>
     public MeshShape(MeshDrawType drawType, Vector3[] vertices, uint id, ushort category, Vector3 position, Quaternion rotation, Vector3 scale)
       : this(drawType, vertices, null, id, category, position, rotation, scale) { }
+
     /// <summary>
     /// Create a mesh shape.
     /// </summary>
@@ -288,8 +170,8 @@ namespace Tes.Shapes
       : base((ushort)Tes.Net.ShapeID.Mesh, id, category)
     {
       IsComplex = true;
-      _vertices = vertices;
-      _indices = indices ?? new int[0];
+      _vertices = VertexBuffer.Wrap(vertices);
+      _indices = VertexBuffer.Wrap(indices) ?? VertexBuffer.Wrap(new int[0]);
       DrawType = drawType;
       Position = position;
       Rotation = rotation;
@@ -310,6 +192,7 @@ namespace Tes.Shapes
     /// <param name="rotation">Local rotation.</param>
     public MeshShape(MeshDrawType drawType, Vector3[] vertices, Vector3 position, Quaternion rotation)
       : this(drawType, vertices, null, position, rotation) { }
+
     /// <summary>
     /// Create a mesh shape.
     /// </summary>
@@ -321,6 +204,7 @@ namespace Tes.Shapes
     public MeshShape(MeshDrawType drawType, Vector3[] vertices, int[] indices, Vector3 position, Quaternion rotation)
       : this(drawType, vertices, indices, position, rotation, Vector3.One)
     { }
+
     /// <summary>
     /// Create a mesh shape.
     /// </summary>
@@ -329,6 +213,7 @@ namespace Tes.Shapes
     /// <param name="position">Local position.</param>
     public MeshShape(MeshDrawType drawType, Vector3[] vertices, Vector3 position)
       : this(drawType, vertices, null, position) { }
+
     /// <summary>
     /// Create a mesh shape.
     /// </summary>
@@ -350,6 +235,7 @@ namespace Tes.Shapes
     /// <param name="rotation">Local rotation.</param>
     public MeshShape(MeshDrawType drawType, Vector3[] vertices, uint id, Vector3 position, Quaternion rotation)
       : this(drawType, vertices, null, id, position, rotation) { }
+
     /// <summary>
     /// Create a mesh shape.
     /// </summary>
@@ -362,6 +248,7 @@ namespace Tes.Shapes
     public MeshShape(MeshDrawType drawType, Vector3[] vertices, int[] indices, uint id, Vector3 position, Quaternion rotation)
       : this(drawType, vertices, indices, id, position, rotation, Vector3.One)
     { }
+
     /// <summary>
     /// Create a mesh shape.
     /// </summary>
@@ -371,6 +258,7 @@ namespace Tes.Shapes
     /// <param name="position">Local position.</param>
     public MeshShape(MeshDrawType drawType, Vector3[] vertices, uint id, Vector3 position)
       : this(drawType, vertices, null, id, position) { }
+
     /// <summary>
     /// Create a mesh shape.
     /// </summary>
@@ -382,6 +270,7 @@ namespace Tes.Shapes
     public MeshShape(MeshDrawType drawType, Vector3[] vertices, int[] indices, uint id, Vector3 position)
       : this(drawType, vertices, indices, id, position, Quaternion.Identity, Vector3.One)
     { }
+
     /// <summary>
     /// Create a mesh shape.
     /// </summary>
@@ -403,6 +292,7 @@ namespace Tes.Shapes
     /// <param name="rotation">Local rotation.</param>
     public MeshShape(MeshDrawType drawType, Vector3[] vertices, uint id, ushort category, Vector3 position, Quaternion rotation)
       : this(drawType, vertices, null, id, category, position, rotation) { }
+
     /// <summary>
     /// Create a mesh shape.
     /// </summary>
@@ -416,6 +306,7 @@ namespace Tes.Shapes
     public MeshShape(MeshDrawType drawType, Vector3[] vertices, int[] indices, uint id, ushort category, Vector3 position, Quaternion rotation)
       : this(drawType, vertices, indices, id, category, position, rotation, Vector3.One)
     { }
+
     /// <summary>
     /// Create a mesh shape.
     /// </summary>
@@ -426,6 +317,7 @@ namespace Tes.Shapes
     /// <param name="position">Local position.</param>
     public MeshShape(MeshDrawType drawType, Vector3[] vertices, uint id, ushort category, Vector3 position)
       : this(drawType, vertices, null, id, category, position) { }
+
     /// <summary>
     /// Create a mesh shape.
     /// </summary>
@@ -438,6 +330,7 @@ namespace Tes.Shapes
     public MeshShape(MeshDrawType drawType, Vector3[] vertices, int[] indices, uint id, ushort category, Vector3 position)
       : this(drawType, vertices, indices, id, category, position, Quaternion.Identity, Vector3.One)
     { }
+
     /// <summary>
     /// Create a mesh shape.
     /// </summary>
@@ -523,15 +416,27 @@ namespace Tes.Shapes
     /// <summary>
     /// Access vertex array.
     /// </summary>
-    public Vector3[] Vertices { get { return _vertices; } }
+    public VertexBuffer Vertices { get { return _vertices; } }
 
     /// <summary>
     /// Optional normals access.
     /// </summary>
-    public Vector3[] Normals
+    public VertexBuffer Normals
     {
       get { return _normals; }
-      set { _normals = value; if (_normals != null) { CalculateNormals = false; } }
+      // set { _normals = value; if (_normals != null) { CalculateNormals = false; } }
+    }
+
+    public MeshShape SetNormals(Vector3[] normals)
+    {
+      _normals = VertexBuffer.Wrap(normals);
+      return this;
+    }
+
+    public MeshShape SetNormals(List<Vector3> normals)
+    {
+      _normals = VertexBuffer.Wrap(normals);
+      return this;
     }
 
     /// <summary>
@@ -540,7 +445,7 @@ namespace Tes.Shapes
     /// <param name="normal">The shared normal.</param>
     public MeshShape SetUniformNormal(Vector3 normal)
     {
-      Normals = new Vector3[] { normal };
+      _normals = VertexBuffer.Wrap(new Vector3[] { normal });
       return this;
     }
 
@@ -550,10 +455,24 @@ namespace Tes.Shapes
     /// <remarks>
     /// For points, this clears <see cref="ColourByHeight"/>.
     /// </remarks>
-    public UInt32[] Colours
+    public VertexBuffer Colours
     {
       get { return _colours; }
-      set { ColourByHeight = false; _colours = value; }
+      // set { ColourByHeight = false; _colours = value; }
+    }
+
+    public MeshShape SetColours(UInt32[] colours)
+    {
+      ColourByHeight = false;
+      _colours = VertexBuffer.Wrap(colours);
+      return this;
+    }
+
+    public MeshShape SetColours(List<UInt32> colours)
+    {
+      ColourByHeight = false;
+      _colours = VertexBuffer.Wrap(colours);
+      return this;
     }
 
     /// <summary>
@@ -565,9 +484,9 @@ namespace Tes.Shapes
       {
         if (_colours != null)
         {
-          for (int i = 0; i < _colours.Length; ++i)
+          for (int i = 0; i < _colours.Count; ++i)
           {
-            yield return new Colour(_colours[i]);
+            yield return new Colour(_colours.GetUInt32(i));
           }
         }
       }
@@ -576,7 +495,7 @@ namespace Tes.Shapes
     /// <summary>
     /// Access indices array.
     /// </summary>
-    public int[] Indices { get { return _indices; } }
+    public VertexBuffer Indices { get { return _indices; } }
 
     /// <summary>
     /// Defines the mesh topology.
@@ -596,9 +515,9 @@ namespace Tes.Shapes
       }
       // Write number of vertices and indices.
       // Index support to come.
-      uint count = (uint)_vertices.Length;
+      int count = _vertices.Count;
       packet.WriteBytes(BitConverter.GetBytes(count), true);
-      count = (uint)_indices.Length;
+      count = _indices.Count;
       packet.WriteBytes(BitConverter.GetBytes(count), true);
       byte drawType = (byte)DrawType;
       packet.WriteBytes(new byte[] { drawType }, false);
@@ -607,22 +526,71 @@ namespace Tes.Shapes
       return true;
     }
 
+    /// <summary>
+    /// A helper structure used to manage data packing in <see cref="WriteData()"/>
+    /// </summary>
     struct DataPhase
     {
-      public SendDataType Type;
-      public uint ItemCount;
-      public int DataSizeBytes;
-      public int TupleSize;
-      public delegate void WriteElementDelegate(uint index);
-      public WriteElementDelegate WriteElement;
+      /// <summary>
+      /// The buffer being packed.
+      /// </summary>
+      public VertexBuffer Buffer;
+      /// <summary>
+      /// The target data type to packed.
+      /// </summary>
+      /// <remarks>
+      /// This should be the widest target data type. For example, Float64 encompases both double and float types
+      /// and UInt64 would allow all UInt widths from { 8, 4, 2, 1 }. The type may be explicit by setting
+      /// <see cref="Explicit"/>.
+      /// </remarks>
+      public DataStreamType TargetType;
+      /// <summary>
+      /// Allow writing a PackedFloat style buffer?
+      /// </summary>
+      /// <remarks>
+      /// When true, a Float32 buffer will be written as a PackedFloat16 and a Float64 as PackedFloat32.
+      /// </remarks>
+      public bool AllowPacked;
+      /// <summary>
+      /// Is the <see cref="TargetType" explicit, disallowing narrower types.
+      /// </summary>
+      public bool Explicit;
 
-      public DataPhase(SendDataType type, int itemCount, WriteElementDelegate write, int dataSizeBytes, int tupleSize = 1)
+      /// <summary>
+      /// Resolve the data type to pack and send as. This deals with data packing and narrowing.
+      /// </summary>
+      /// <param name="quantisationUnit"></param>
+      /// <returns></returns>
+      public DataStreamType GetStreamType(double quantisationUnit)
       {
-        Type = type;
-        ItemCount = (uint)itemCount;
-        DataSizeBytes = dataSizeBytes;
-        TupleSize = tupleSize;
-        WriteElement = write;
+        if (Buffer == null || Explicit)
+        {
+          // No wiggle room.
+          return TargetType;
+        }
+
+        // For now, just handle narrowing float types.
+        // Later we may add UInt narrowing for index buffers.
+        if (TargetType == DataStreamType.Float64)
+        {
+          if (Buffer.NativePackingType != DataStreamType.Float64)
+          {
+            // Handle quantisation requests
+            if (quantisationUnit == 0)
+            {
+              return DataStreamType.Float32;
+            }
+            return DataStreamType.PackedFloat16;
+          }
+        }
+
+        // Handle quantisation requests
+        if (quantisationUnit != 0)
+        {
+          return DataStreamType.PackedFloat32;
+        }
+
+        return TargetType;
       }
     };
 
@@ -640,12 +608,9 @@ namespace Tes.Shapes
     /// <remarks>Call recursively until zero is returned. Packet does not get finalised here.</remarks>
     public static int WriteData(ushort routingID, uint objectID,
                                 PacketBuffer packet, ref uint progressMarker,
-                                Vector3[] vertices, Vector3[] normals, int[] indices, UInt32[] colours)
+                                VertexBuffer vertices, VertexBuffer normals, VertexBuffer indices, VertexBuffer colours)
     {
       DataMessage msg = new DataMessage();
-      // Local byte overhead needs to account for the size of sendType, offset and itemCount.
-      // Use a larger value as I haven't got the edge cases quite right yet.
-      const int localByteOverhead = 100;
       msg.ObjectID = objectID;
       packet.Reset(routingID, DataMessage.MessageID);
       msg.Write(packet);
@@ -654,71 +619,59 @@ namespace Tes.Shapes
       uint itemCount;
       ushort sendType;
 
-      int verticesLength = (vertices != null) ? vertices.Length : 0;
-      int normalsLength = (normals != null) ? normals.Length : 0;
-      int coloursLength = (colours != null) ? colours.Length : 0;
-      int indicesLength = (indices != null) ? indices.Length : 0;
-      DataPhase[] phases = new DataPhase[]
-      {
-        new DataPhase((normalsLength == 1) ? SendDataType.UniformNormal : SendDataType.Normals, normalsLength,
-                      (uint index) => {
-                        Vector3 n = normals[index];
-                        packet.WriteBytes(BitConverter.GetBytes(n.X), true);
-                        packet.WriteBytes(BitConverter.GetBytes(n.Y), true);
-                        packet.WriteBytes(BitConverter.GetBytes(n.Z), true);
-                      },
-                      4, 3),
-        new DataPhase(SendDataType.Colours, coloursLength,
-                      (uint index) => { packet.WriteBytes(BitConverter.GetBytes(colours[index]), true); },
-                      4),
-        new DataPhase(SendDataType.Vertices, verticesLength,
-                      (uint index) => {
-                        Vector3 v = vertices[index];
-                        packet.WriteBytes(BitConverter.GetBytes(v.X), true);
-                        packet.WriteBytes(BitConverter.GetBytes(v.Y), true);
-                        packet.WriteBytes(BitConverter.GetBytes(v.Z), true);
-                      },
-                      4, 3),
-        new DataPhase(SendDataType.Indices, indicesLength,
-                      (uint index) => { packet.WriteBytes(BitConverter.GetBytes(indices[index]), true); },
-                      4),
-      };
-
-      int phaseIndex = 0;
+      short phaseIndex = 0;
       uint previousPhaseOffset = 0u;
 
+      // This ordering matches the SendDataType
+      DataPhase[] phases = new DataPhase[] {
+        new DataPhase{ Buffer = vertices, TargetType = DataStreamType.Float64, AllowPacked = true },
+        new DataPhase{ Buffer = indices, TargetType = DataStreamType.UInt32 },
+        new DataPhase{ Buffer = normals, TargetType = DataStreamType.Float32, AllowPacked = true },
+        // Duplicate the normals to handle SendDataType.UniformNormal . We'll only use this item if the normals
+        // count is set to 1
+        new DataPhase{ Buffer = normals, TargetType = DataStreamType.Float32, AllowPacked = false },
+        new DataPhase{ Buffer = colours, TargetType = DataStreamType.UInt32, Explicit = true }
+      };
+
       // While progressMarker is greater than or equal to the sum of the previous phase counts and the current phase count.
-      // Also terminate of out of phases.
+      // Also terminate of out of phases. Note: we always skip SendDataType.Normals as that's handled differently when
+      // the phaseIndex matches SendDataType.Normals.
       while (phaseIndex < phases.Length &&
-             progressMarker >= previousPhaseOffset + phases[phaseIndex].ItemCount)
+            (phaseIndex == (int)SendDataType.UniformNormal ||
+             phases[phaseIndex].Buffer == null ||
+             progressMarker >= previousPhaseOffset + phases[phaseIndex].Buffer.Count))
       {
-        previousPhaseOffset += phases[phaseIndex].ItemCount;
+        previousPhaseOffset += (phases[phaseIndex].Buffer != null && phaseIndex != (int)SendDataType.UniformNormal) ?
+            (uint)phases[phaseIndex].Buffer.Count : 0u;
+        ++phaseIndex;
+      }
+
+      // Handle uniform normals.
+      if (phaseIndex == (int)SendDataType.Normals && phases[phaseIndex].Buffer.Count == 1)
+      {
         ++phaseIndex;
       }
 
       bool done = false;
-      // Check if we have anything to send.
-      if (phaseIndex < phases.Length)
+      int byteLimit = 0xffff;
+      // TODO: quantisation support.
+      double quantisationUnit = 0.0;
+      if (phaseIndex < phases.Length /* && phases[phaseIndex].Buffer != null  */)
       {
-        DataPhase phase = phases[phaseIndex];
-        // Send part of current phase.
-        // Estimate element count limit.
-        int maxItemCount = MeshBase.EstimateTransferCount(phase.DataSizeBytes * phase.TupleSize, 0, DataMessage.Size + localByteOverhead);
-        offset = progressMarker - previousPhaseOffset;
-        itemCount = (uint)Math.Min(phase.ItemCount - offset, maxItemCount);
-
-        sendType = (ushort)((int)phase.Type | (int)SendDataType.ExpectEnd);
-
+        sendType = (ushort)phaseIndex;
         packet.WriteBytes(BitConverter.GetBytes(sendType), true);
-        packet.WriteBytes(BitConverter.GetBytes(offset), true);
-        packet.WriteBytes(BitConverter.GetBytes(itemCount), true);
-
-        for (uint i = offset; i < offset + itemCount; ++i)
+        offset = progressMarker - previousPhaseOffset;
+        DataStreamType packingType = phases[phaseIndex].GetStreamType(quantisationUnit);
+        if (packingType != DataStreamType.PackedFloat16 && packingType != DataStreamType.PackedFloat32)
         {
-          phase.WriteElement(i);
+          progressMarker += (uint)phases[phaseIndex].Buffer.Write(packet, (int)offset, packingType,
+                                                                  byteLimit - packet.Count);
         }
-
-        progressMarker += itemCount;
+        else
+        {
+          progressMarker += (uint)phases[phaseIndex].Buffer.WritePacked(packet, (int)offset, packingType,
+                                                                        byteLimit - packet.Count, quantisationUnit);
+        }
       }
       else
       {
@@ -771,60 +724,23 @@ namespace Tes.Shapes
       indexCount = reader.ReadUInt32();
       drawType = reader.ReadByte();
       DrawType = (MeshDrawType)drawType;
+      _drawWeight = reader.ReadSingle();
 
-      if (_vertices == null || _vertices.Length != vertexCount)
+      if (_vertices == null || _vertices.Count != vertexCount)
       {
-        _vertices = new Vector3[vertexCount];
+        _vertices = VertexBuffer.Wrap(new Vector3[vertexCount]);
+        _vertices.ReadOnly = false;
       }
 
-      if (_indices == null || _indices.Length != indexCount)
+      if (_indices == null || _indices.Count != indexCount)
       {
-        _indices = null;
-        if (indexCount > 0)
-        {
-          _indices = new int[indexCount];
-        }
+        _indices = VertexBuffer.Wrap(new uint[indexCount]);
+        _indices.ReadOnly = false;
       }
 
       _normals = null;
 
-      if (packet.Header.VersionMajor != 0 || packet.Header.VersionMajor == 0 && packet.Header.VersionMinor >= 2)
-      {
-        _drawWeight = reader.ReadSingle();
-      }
-      else
-      {
-        // Legacy support
-        _drawWeight = 0;
-      }
-
       return true;
-    }
-
-    private delegate void ElementReaderDelegate(uint index);
-    private static uint ReadElements(uint offset, uint itemCount, uint maxItems, ElementReaderDelegate read)
-    {
-      if (offset > maxItems)
-      {
-        return ~0u;
-      }
-
-      if (itemCount == 0)
-      {
-        return offset + itemCount;
-      }
-
-      if (offset + itemCount > maxItems)
-      {
-        itemCount = maxItems - itemCount;
-      }
-
-      for (uint i = offset; i < offset + itemCount; ++i)
-      {
-        read(i);
-      }
-
-      return offset + itemCount;
     }
 
     /// <summary>
@@ -847,30 +763,36 @@ namespace Tes.Shapes
         return false;
       }
 
-      ArrayComponentAdaptor<Vector3> normalsAdaptor = new ArrayComponentAdaptor<Vector3>(_normals);
-      ColoursAdaptor coloursAdaptor = new ColoursAdaptor(_colours);
-      int readComponent = ReadDataComponent(reader,
-                                            new ArrayComponentAdaptor<Vector3>(_vertices),
-                                            new ArrayComponentAdaptor<int>(_indices),
-                                            normalsAdaptor, coloursAdaptor);
+      int sendDataType = reader.ReadUInt16();
+      // Extract special flags and mask out.
+      int endFlags = sendDataType & ((int)SendDataType.ExpectEnd | (int)SendDataType.End);
+      sendDataType &= ~endFlags;
 
-      if (readComponent == -1)
+      switch ((SendDataType)sendDataType)
       {
-        return false;
-      }
-
-      // Normals and colours may have been (re)allocated. Store the results.
-      switch (readComponent & ~(int)(SendDataType.End | SendDataType.ExpectEnd))
-      {
-        case (int)SendDataType.Normals:
-        case (int)SendDataType.UniformNormal:
-          // Normals array may have been (re)allocated.
-          _normals = normalsAdaptor.Array;
+        case SendDataType.Vertices:
+          _vertices.Read(reader);
           break;
-
-        case (int)SendDataType.Colours:
-          // Colours array may have been (re)allocated.
-          _colours = coloursAdaptor.Array;
+        case SendDataType.Indices:
+          _indices.Read(reader);
+          break;
+        case SendDataType.Normals:
+        case SendDataType.UniformNormal:
+          if (_normals == null)
+          {
+            int normalCount = ((SendDataType)sendDataType == SendDataType.Normals) ? _vertices.Count : 1;
+            _normals = VertexBuffer.Wrap(new Vector3[normalCount]);
+            _normals.ReadOnly = false;
+          }
+          _normals.Read(reader);
+          break;
+        case SendDataType.Colours:
+          if (_colours == null)
+          {
+            _colours = new VertexBuffer();
+            _colours.ReadOnly = false;
+          }
+          _colours.Read(reader);
           break;
       }
 
@@ -880,279 +802,95 @@ namespace Tes.Shapes
       return true;
     }
 
-
-    /// <summary>
-    /// A utility function for reading the payload of a <see cref="DataMessage"/> for a <c>MeshShape</c>.
-    /// </summary>
-    /// <param name="reader"></param>
-    /// <param name="vertices"></param>
-    /// <param name="indices"></param>
-    /// <param name="normals"></param>
-    /// <param name="colours"></param>
-    /// <returns>Returns the updated component <see cref="SendDataType"/>. The <see cref="SendDataType.End"/>
-    /// flag is also set, or alone when done. Returns -1 on failure.</returns>
-    /// <remarks>
-    /// This may be called immediately after reading the <see cref="DataMessage"/> for a
-    /// <c>MeshShape</c> to decode the payload content. The method uses a set of
-    /// <see cref="ComponentAdaptor{T}"/> interfaces to resolve data adaption to the required type or
-    /// container. Each call will only interface with the adaptor relevant to the message payload
-    /// calling <see cref="ComponentAdaptor{T}.Set(int, T)"/> for the incoming data. Vertices and
-    /// indices must be correctly pre-sized, while other components may have the
-    /// <see cref="ComponentAdaptor{T}.Count"/> property set to ensure the correct size (matching
-    /// the vertex count, or 1 for uniform normals).
-    /// </remarks>
-    public static int ReadDataComponent(BinaryReader reader,
-                                        ComponentAdaptor<Vector3> vertices,
-                                        ComponentAdaptor<int> indices,
-                                        ComponentAdaptor<Vector3> normals,
-                                        ComponentAdaptor<Colour> colours)
-    {
-      UInt32 offset;
-      UInt32 itemCount;
-      UInt16 dataType;
-
-      dataType = reader.ReadUInt16();
-      offset = reader.ReadUInt32();
-      itemCount = reader.ReadUInt32();
-
-      // Record and mask out end flags.
-      UInt16 endFlags = (ushort)(dataType & ((int)SendDataType.ExpectEnd | (int)SendDataType.End));
-      dataType = (ushort)(dataType & ~endFlags);
-
-      bool ok = true;
-      bool complete = false;
-      uint endReadCount = 0;
-      switch ((SendDataType)dataType)
-      {
-        case SendDataType.Vertices:
-          endReadCount = ReadElements(offset, itemCount, (uint)vertices.Count,
-                                      (uint index) =>
-                                      {
-                                        Vector3 v = new Vector3();
-                                        v.X = reader.ReadSingle();
-                                        v.Y = reader.ReadSingle();
-                                        v.Z = reader.ReadSingle();
-                                        vertices.Set((int)index, v);
-                                      });
-          ok = ok && endReadCount != ~0u;
-
-          // Expect end marker.
-          if ((endFlags & (int)SendDataType.End) != 0)
-          {
-            // Done.
-            complete = true;
-          }
-
-          // Check for completion.
-          if ((endFlags & (int)SendDataType.ExpectEnd) == 0)
-          {
-            complete = endReadCount == vertices.Count;
-          }
-          break;
-
-        case SendDataType.Indices:
-          endReadCount = ReadElements(offset, itemCount, (uint)indices.Count,
-                                      (uint index) => { indices.Set((int)index, reader.ReadInt32()); });
-          ok = ok && endReadCount != ~0u;
-          break;
-
-        // Normals handled together.
-        case SendDataType.Normals:
-        case SendDataType.UniformNormal:
-          if (normals == null)
-          {
-            return -1;
-          }
-
-          int normalsCount = ((SendDataType)dataType == SendDataType.Normals) ? vertices.Count : 1;
-          if (normals.Count != normalsCount)
-          {
-            normals.Count = normalsCount;
-          }
-
-          endReadCount = ReadElements(offset, itemCount, (uint)normals.Count,
-                                      (uint index) =>
-                                      {
-                                        Vector3 n = new Vector3();
-                                        n.X = reader.ReadSingle();
-                                        n.Y = reader.ReadSingle();
-                                        n.Z = reader.ReadSingle();
-                                        normals.Set((int)index, n);
-                                      });
-          ok = ok && endReadCount != ~0u;
-          break;
-
-        case SendDataType.Colours:
-          if (colours == null)
-          {
-            return -1;
-          }
-
-          if (colours.Count != vertices.Count)
-          {
-            colours.Count = vertices.Count;
-          }
-
-          endReadCount = ReadElements(offset, itemCount, (uint)colours.Count,
-                                      (uint index) => { colours.Set((int)index, new Colour(reader.ReadUInt32())); });
-          ok = ok && endReadCount != ~0u;
-          break;
-        default:
-          // Unknown data type.
-          ok = false;
-          break;
-      }
-
-      int returnValue = -1;
-
-      if (ok)
-      {
-        returnValue = dataType;
-        if (complete)
-        {
-          returnValue |= (int)SendDataType.End;
-        }
-      }
-
-      return returnValue;
-    }
-
-    public delegate uint ComponentBlockReader(SendDataType dataType, BinaryReader reader, uint offset, uint count);
-
-    /// <summary>
-    /// A utility function for reading the payload of a <see cref="DataMessage"/> for a <c>MeshShape</c>.
-    /// </summary>
-    /// <param name="reader"></param>
-    /// <param name="vertices"></param>
-    /// <param name="indices"></param>
-    /// <param name="normals"></param>
-    /// <param name="colours"></param>
-    /// <returns>Returns the updated component <see cref="SendDataType"/>. The <see cref="SendDataType.End"/>
-    /// flag is also set, or alone when done. Returns -1 on failure.</returns>
-    /// <remarks>
-    /// This may be called immediately after reading the <see cref="DataMessage"/> for a
-    /// <c>MeshShape</c> to decode the payload content. The method uses a set of
-    /// <see cref="ComponentAdaptor{T}"/> interfaces to resolve data adaption to the required type or
-    /// container. Each call will only interface with the adaptor relevant to the message payload
-    /// calling <see cref="ComponentAdaptor{T}.Set(int, T)"/> for the incoming data. Vertices and
-    /// indices must be correctly pre-sized, while other components may have the
-    /// <see cref="ComponentAdaptor{T}.Count"/> property set to ensure the correct size (matching
-    /// the vertex count, or 1 for uniform normals).
-    /// </remarks>
-    public static int ReadDataComponentDeferred(BinaryReader reader, uint vertexCount, uint indexCount,
-                                        ComponentBlockReader vertexReader,
-                                        ComponentBlockReader indexReader,
-                                        ComponentBlockReader normalsReader,
-                                        ComponentBlockReader coloursReader)
-    {
-      UInt32 offset;
-      UInt32 itemCount;
-      SendDataType dataType;
-
-      dataType = (SendDataType)reader.ReadUInt16();
-      offset = reader.ReadUInt32();
-      itemCount = reader.ReadUInt32();
-
-      // Record and mask out end flags.
-      SendDataType endFlags = dataType & (SendDataType.ExpectEnd | SendDataType.End);
-      dataType = dataType & ~endFlags;
-
-      bool ok = true;
-      bool complete = false;
-      uint endReadCount = 0;
-      switch (dataType)
-      {
-        case SendDataType.Vertices:
-          endReadCount = vertexReader(dataType, reader, offset, itemCount);
-          ok = ok && endReadCount != ~0u;
-
-          // Expect end marker.
-          if ((endFlags & SendDataType.End) != 0)
-          {
-            // Done.
-            complete = true;
-          }
-
-          // Check for completion.
-          if ((endFlags & SendDataType.ExpectEnd) == 0)
-          {
-            complete = endReadCount == vertexCount;
-          }
-          break;
-
-        case SendDataType.Indices:
-          endReadCount = indexReader(dataType, reader, offset, itemCount);
-          ok = ok && endReadCount != ~0u;
-          break;
-
-        // Normals handled together.
-        case SendDataType.Normals:
-        case SendDataType.UniformNormal:
-          if (normalsReader == null)
-          {
-            return -1;
-          }
-
-          endReadCount = normalsReader(dataType, reader, offset, itemCount);
-          ok = ok && endReadCount != ~0u;
-          break;
-
-        case SendDataType.Colours:
-          if (coloursReader == null)
-          {
-            return -1;
-          }
-
-          endReadCount = coloursReader(dataType, reader, offset, itemCount);
-          ok = ok && endReadCount != ~0u;
-          break;
-        default:
-          // Unknown data type.
-          ok = false;
-          break;
-      }
-
-      int returnValue = -1;
-
-      if (ok)
-      {
-        returnValue = (int)dataType;
-        if (complete)
-        {
-          returnValue |= (int)SendDataType.End;
-        }
-      }
-
-      return returnValue;
-    }
-
     /// <summary>
     /// Clone this shape.
     /// </summary>
     /// <returns>A deep copy of this object.</returns>
     public override object Clone()
     {
-      MeshShape triangles = new MeshShape(DrawType, _vertices, _indices);
-      OnClone(triangles);
-      return triangles;
+      // Clone the data buffers. We could consider sharing data.
+      Vector3[] vertices = null;
+      int[] indices = null;
+      Vector3[] normals = null;
+      uint[] colours = null;
+
+      Vector3 v = new Vector3();
+      if (_vertices != null)
+      {
+        vertices = new Vector3[_vertices.Count];
+        for (int i = 0; i < vertices.Length; ++i)
+        {
+          v.X = _vertices.GetSingle(i * 3 + 0);
+          v.Y = _vertices.GetSingle(i * 3 + 1);
+          v.Z = _vertices.GetSingle(i * 3 + 2);
+        }
+      }
+
+      if (_indices != null)
+      {
+        indices = new int[_indices.Count];
+        _indices.GetRange(indices, 0, indices.Length);
+      }
+
+      if (_normals != null)
+      {
+        normals = new Vector3[_normals.Count];
+        for (int i = 0; i < normals.Length; ++i)
+        {
+          v.X = _normals.GetSingle(i * 3 + 0);
+          v.Y = _normals.GetSingle(i * 3 + 1);
+          v.Z = _normals.GetSingle(i * 3 + 2);
+        }
+      }
+
+      if (_colours != null)
+      {
+        colours = new uint[_colours.Count];
+        _colours.GetRange(colours, 0, colours.Length);
+      }
+
+      // Create the clone
+      MeshShape shape = new MeshShape(DrawType, vertices, indices);
+      shape.DrawScale = DrawScale;
+      if (normals != null)
+      {
+        if (normals.Length != 1)
+        {
+          shape.SetNormals(normals);
+        }
+        else
+        {
+          shape.SetUniformNormal(normals[0]);
+        }
+      }
+      if (colours != null)
+      {
+        shape.SetColours(colours);
+      }
+      OnClone(shape);
+      return shape;
     }
 
     /// <summary>
     /// Vertex data.
     /// </summary>
-    private Vector3[] _vertices;
+    // private Vector3[] _vertices;
+    private VertexBuffer _vertices;
     /// <summary>
     /// Normals data. May contain a single normal, in which case it is applied to all vertices (e.g., for voxels).
     /// </summary>
-    private Vector3[] _normals;
+    // private Vector3[] _normals;
+    private VertexBuffer _normals;
     /// <summary>
     /// Per vertex colours.
     /// </summary>
-    private UInt32[] _colours;
+    // private UInt32[] _colours;
+    private VertexBuffer _colours;
     /// <summary>
     /// Index data.
     /// </summary>
-    private int[] _indices;
+    // private int[] _indices;
+    private VertexBuffer _indices;
     /// <summary>
     /// Draw weight: equates to point size or line width.
     /// </summary>

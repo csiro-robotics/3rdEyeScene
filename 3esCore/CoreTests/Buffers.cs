@@ -28,26 +28,29 @@ namespace Tes.CoreTests
       VertexBuffer recvBuffer = new VertexBuffer();
 
       // Start write/read cycle.
-      uint offset = 0;
+      int packetCapacity = packet.Data.Length;
+      int offset = 0;
       while (offset < referenceBuffer.Count)
       {
         // We will cheat here by having no specific message type and only focus on the payload.
         packet.Reset(0, 0);
-        uint written = 0;
+        int written = 0;
         if (sendType != DataStreamType.PackedFloat16 && sendType != DataStreamType.PackedFloat32)
         {
-          written = referenceBuffer.Write(packet, offset, sendType, (uint)(packet.Data.Length - packet.Count));
+          written = referenceBuffer.Write(packet, offset, sendType, packet.Data.Length - packet.Count);
         }
         else
         {
-          written = referenceBuffer.WritePacked(packet, offset, sendType, (uint)(packet.Data.Length - packet.Count), quantisationUnit);
+          written = referenceBuffer.WritePacked(packet, offset, sendType, packet.Data.Length - packet.Count, quantisationUnit);
         }
         Assert.True(written > 0);
+        // Ensure we haven't overrun.
+        Assert.Equal(packetCapacity, packet.Data.Length);
         offset += written;
 
         // Read the data we just wrote.
         NetworkReader packetReader = new NetworkReader(packet.CreateReadStream(true));
-        recvBuffer.Read(packet, packetReader);
+        recvBuffer.Read(packetReader);
       }
 
       // Validate the data.
@@ -108,7 +111,7 @@ namespace Tes.CoreTests
     private void TestReadSByte<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, sbyte> compare)
     {
       List<sbyte> readItems = new List<sbyte>();
-      buffer.GetRangeSByte(readItems, 0, buffer.AddressableCount);
+      buffer.GetRange(readItems, 0, buffer.AddressableCount);
 
       Assert.Equal(buffer.AddressableCount, readItems.Count);
       for (int i = 0; i < readItems.Count; ++i)
@@ -121,7 +124,7 @@ namespace Tes.CoreTests
     private void TestReadByte<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, byte> compare)
     {
       List<byte> readItems = new List<byte>();
-      buffer.GetRangeByte(readItems, 0, buffer.AddressableCount);
+      buffer.GetRange(readItems, 0, buffer.AddressableCount);
 
       Assert.Equal(buffer.AddressableCount, readItems.Count);
       for (int i = 0; i < readItems.Count; ++i)
@@ -134,7 +137,7 @@ namespace Tes.CoreTests
     private void TestReadInt16<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, short> compare)
     {
       List<short> readItems = new List<short>();
-      buffer.GetRangeInt16(readItems, 0, buffer.AddressableCount);
+      buffer.GetRange(readItems, 0, buffer.AddressableCount);
 
       Assert.Equal(buffer.AddressableCount, readItems.Count);
       for (int i = 0; i < readItems.Count; ++i)
@@ -147,7 +150,7 @@ namespace Tes.CoreTests
     private void TestReadUInt16<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, ushort> compare)
     {
       List<ushort> readItems = new List<ushort>();
-      buffer.GetRangeUInt16(readItems, 0, buffer.AddressableCount);
+      buffer.GetRange(readItems, 0, buffer.AddressableCount);
 
       Assert.Equal(buffer.AddressableCount, readItems.Count);
       for (int i = 0; i < readItems.Count; ++i)
@@ -160,7 +163,7 @@ namespace Tes.CoreTests
     private void TestReadInt32<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, int> compare)
     {
       List<int> readItems = new List<int>();
-      buffer.GetRangeInt32(readItems, 0, buffer.AddressableCount);
+      buffer.GetRange(readItems, 0, buffer.AddressableCount);
 
       Assert.Equal(buffer.AddressableCount, readItems.Count);
       for (int i = 0; i < readItems.Count; ++i)
@@ -173,7 +176,7 @@ namespace Tes.CoreTests
     private void TestReadUInt32<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, uint> compare)
     {
       List<uint> readItems = new List<uint>();
-      buffer.GetRangeUInt32(readItems, 0, buffer.AddressableCount);
+      buffer.GetRange(readItems, 0, buffer.AddressableCount);
 
       Assert.Equal(buffer.AddressableCount, readItems.Count);
       for (int i = 0; i < readItems.Count; ++i)
@@ -186,7 +189,7 @@ namespace Tes.CoreTests
     private void TestReadInt64<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, long> compare)
     {
       List<long> readItems = new List<long>();
-      buffer.GetRangeInt64(readItems, 0, buffer.AddressableCount);
+      buffer.GetRange(readItems, 0, buffer.AddressableCount);
 
       Assert.Equal(buffer.AddressableCount, readItems.Count);
       for (int i = 0; i < readItems.Count; ++i)
@@ -199,7 +202,7 @@ namespace Tes.CoreTests
     private void TestReadUInt64<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, ulong> compare)
     {
       List<ulong> readItems = new List<ulong>();
-      buffer.GetRangeUInt64(readItems, 0, buffer.AddressableCount);
+      buffer.GetRange(readItems, 0, buffer.AddressableCount);
 
       Assert.Equal(buffer.AddressableCount, readItems.Count);
       for (int i = 0; i < readItems.Count; ++i)
@@ -212,7 +215,7 @@ namespace Tes.CoreTests
     private void TestReadSingle<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, float> compare)
     {
       List<float> readItems = new List<float>();
-      buffer.GetRangeSingle(readItems, 0, buffer.AddressableCount);
+      buffer.GetRange(readItems, 0, buffer.AddressableCount);
 
       Assert.Equal(buffer.AddressableCount, readItems.Count);
       for (int i = 0; i < readItems.Count; ++i)
@@ -225,7 +228,7 @@ namespace Tes.CoreTests
     private void TestReadDouble<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, double> compare)
     {
       List<double> readItems = new List<double>();
-      buffer.GetRangeDouble(readItems, 0, buffer.AddressableCount);
+      buffer.GetRange(readItems, 0, buffer.AddressableCount);
 
       Assert.Equal(buffer.AddressableCount, readItems.Count);
       for (int i = 0; i < readItems.Count; ++i)
