@@ -70,7 +70,15 @@ namespace Tes.Buffers
     /// <value></value>
     public int ElementStride { get { return _elementStride; } }
 
+    /// <summary>
+    /// Query the native type contained in the buffer as a <see cref="Tes.Net.DataStreamType"/>
+    /// </summary>
+    /// <value></value>
+    public DataStreamType NativePackingType { get { return _converter.DefaultPackingType; } }
+
     public bool IsValid { get { return _buffer != null; } }
+
+    public bool ReadOnly { get { return _readOnly; } set { _readOnly = value;  } }
 
     /// <summary>
     /// Create VertexBuffer to use with Read methods. The buffer type is set on the first read call.
@@ -143,23 +151,15 @@ namespace Tes.Buffers
     ///   enforced.</param>
     /// <param name="overhead">Additional byte overhead to a account for. This reduces the effectivel, total byte limit.</param>
     /// <returns>The maximum number of elements which can be accommodated in the byte limit (conservative).</returns>
-    public static ushort EstimateTransferCount(uint elementSize, uint byteLimit, uint overhead = 0)
+    public static ushort EstimateTransferCount(int elementSize, int byteLimit, int overhead = 0)
     {
-      uint maxTransfer = (uint)((0xffff - (PacketHeader.Size + overhead + Crc16.CrcSize)) / elementSize);
-      uint count = (byteLimit > 0) ? byteLimit / elementSize : maxTransfer;
-      if (count < 1)
-      {
-        count = 1;
-      }
-      else if (count > maxTransfer)
-      {
-        count = maxTransfer;
-      }
-
-      return (ushort)count;
+      // Set a default byte limit
+      byteLimit = (byteLimit > 0) ? byteLimit : 0xff00;
+      int maxTransfer = ((byteLimit - (PacketHeader.Size + overhead + Crc16.CrcSize)) / elementSize);
+      return (ushort)maxTransfer;
     }
 
-    public uint Write(PacketBuffer packet, uint offset, DataStreamType writeAsType, uint byteLimit)
+    public int Write(PacketBuffer packet, int offset, DataStreamType writeAsType, int byteLimit)
     {
       if (writeAsType == DataStreamType.PackedFloat16 || writeAsType == DataStreamType.PackedFloat32)
       {
@@ -167,19 +167,19 @@ namespace Tes.Buffers
         return 0;
       }
 
-      uint itemSize = DataStreamTypeInfo.SizeoOf(writeAsType) * (uint)ComponentCount;
+      int itemSize = DataStreamTypeInfo.SizeoOf(writeAsType) * ComponentCount;
 
       // Overhead: account for:
       // - uint32_t offset
       // - uint16_t count
       // - uint8_t element stride
       // - uint8_t data type
-      const uint overhead = 4 +                             // offset
+      const int overhead = 4 +                             // offset
                             2 +                             // count
                             1 +                             // element stride
                             1;                              // data type
 
-      ushort count = (ushort)Math.Min(EstimateTransferCount(itemSize, byteLimit, overhead), (uint)Count - offset);
+      ushort count = (ushort)Math.Min(EstimateTransferCount(itemSize, byteLimit, overhead), Count - offset);
 
       // To write:
       // - uint32 strided element offset
@@ -225,7 +225,7 @@ namespace Tes.Buffers
       return 0;
     }
 
-    public uint WritePacked(PacketBuffer packet, uint offset, DataStreamType writeAsType, uint byteLimit, double quantisationUnit)
+    public int WritePacked(PacketBuffer packet, int offset, DataStreamType writeAsType, int byteLimit, double quantisationUnit)
     {
       if (writeAsType != DataStreamType.PackedFloat16 && writeAsType != DataStreamType.PackedFloat32)
       {
@@ -233,8 +233,8 @@ namespace Tes.Buffers
         return 0;
       }
 
-      uint itemSize = DataStreamTypeInfo.SizeoOf(writeAsType) * (uint)ComponentCount;
-      uint floatSize = writeAsType == DataStreamType.PackedFloat16 ? 4u : 8u;
+      int itemSize = DataStreamTypeInfo.SizeoOf(writeAsType) * ComponentCount;
+      int floatSize = writeAsType == DataStreamType.PackedFloat16 ? 4 : 8;
 
       // Overhead: account for:
       // - uint32_t offset
@@ -243,14 +243,14 @@ namespace Tes.Buffers
       // - uint8_t data type
       // - FloatType quantisationUnit
       // - FloatType[ComponentCount] packingOrigin
-      uint overhead = 4 +                             // offset
+      int overhead = 4 +                             // offset
                       2 +                             // count
                       1 +                              // element stride
                       1 +                               // data type
                       floatSize +                // quantisation unit
-                      floatSize * (uint)ComponentCount;             // packing origin.
+                      floatSize * ComponentCount;             // packing origin.
 
-      ushort count = (ushort)Math.Min(EstimateTransferCount(itemSize, byteLimit, overhead), (uint)Count - offset);
+      ushort count = (ushort)Math.Min(EstimateTransferCount(itemSize, byteLimit, overhead), Count - offset);
 
       // Write 32-bit offset
       packet.WriteBytes(BitConverter.GetBytes(offset), true);
@@ -280,7 +280,7 @@ namespace Tes.Buffers
         double[] packedOrigin = new double[ComponentCount];
         for (int i = 0; i < packedOrigin.Length; ++i)
         {
-          packedOrigin[i] = 0.0f;
+          packedOrigin[i] = 0.0;
         }
         return WritePackedFloat32(packet, offset, count, packedOrigin, quantisationUnit);
       }
@@ -288,9 +288,9 @@ namespace Tes.Buffers
     }
 
 
-    private uint WritePayload(PacketBuffer packet, uint offset, uint count, Func<int, byte[]> getComponent)
+    private int WritePayload(PacketBuffer packet, int offset, int count, Func<int, byte[]> getComponent)
     {
-      uint written = 0;
+      int written = 0;
       for (int i = 0; i < (int)count; ++i)
       {
         for (int c = 0; c < ComponentCount; ++c)
@@ -304,7 +304,7 @@ namespace Tes.Buffers
     }
 
 
-    private uint WritePackedFloat16(PacketBuffer packet, uint offset, uint count, float[] packedOrigin, float quantisationUnit)
+    private int WritePackedFloat16(PacketBuffer packet, int offset, int count, float[] packedOrigin, float quantisationUnit)
     {
       // Write quantisation
       packet.WriteBytes(BitConverter.GetBytes(quantisationUnit), true);
@@ -316,7 +316,7 @@ namespace Tes.Buffers
       }
 
       float quantisationInverse = 1.0f / quantisationUnit;
-      uint written = 0;
+      int written = 0;
       for (int i = 0; i < (int)count; ++i)
       {
         for (int c = 0; c < ComponentCount; ++c)
@@ -332,7 +332,7 @@ namespace Tes.Buffers
     }
 
 
-    private uint WritePackedFloat32(PacketBuffer packet, uint offset, uint count, double[] packedOrigin, double quantisationUnit)
+    private int WritePackedFloat32(PacketBuffer packet, int offset, int count, double[] packedOrigin, double quantisationUnit)
     {
       // Write quantisation
       packet.WriteBytes(BitConverter.GetBytes(quantisationUnit), true);
@@ -344,7 +344,7 @@ namespace Tes.Buffers
       }
 
       double quantisationInverse = 1.0 / quantisationUnit;
-      uint written = 0;
+      int written = 0;
       for (int i = 0; i < (int)count; ++i)
       {
         for (int c = 0; c < ComponentCount; ++c)
@@ -359,12 +359,15 @@ namespace Tes.Buffers
       return written;
     }
 
-    public void Read(PacketBuffer packet, BinaryReader reader)
+    public void Read(BinaryReader reader)
     {
-      // reader.Read();
-
-      uint offset = reader.ReadUInt32();
+      int offset = (int)reader.ReadUInt32();
       int count = reader.ReadUInt16();
+      Read(reader, offset, count);
+    }
+
+    public void Read(BinaryReader reader, int offset, int count)
+    {
       int componentCount = reader.ReadByte();
       int dataType = reader.ReadByte();
 
@@ -395,48 +398,52 @@ namespace Tes.Buffers
         }
       }
 
+
       switch ((DataStreamType)dataType)
       {
         case DataStreamType.Int8:
-          ReadPayload<sbyte>(offset, count, componentCount, () => reader.ReadSByte());
+          _converter.ReadSByte(_buffer, reader, offset, count, componentCount);
           break;
         case DataStreamType.UInt8:
-          ReadPayload<byte>(offset, count, componentCount, () => reader.ReadByte());
+          _converter.ReadByte(_buffer, reader, offset, count, componentCount);
           break;
         case DataStreamType.Int16:
-          ReadPayload<short>(offset, count, componentCount, () => reader.ReadInt16());
+          _converter.ReadInt16(_buffer, reader, offset, count, componentCount);
           break;
         case DataStreamType.UInt16:
-          ReadPayload<ushort>(offset, count, componentCount, () => reader.ReadUInt16());
+          _converter.ReadUInt16(_buffer, reader, offset, count, componentCount);
           break;
         case DataStreamType.Int32:
-          ReadPayload<int>(offset, count, componentCount, () => reader.ReadInt32());
+          _converter.ReadInt32(_buffer, reader, offset, count, componentCount);
           break;
         case DataStreamType.UInt32:
-          ReadPayload<uint>(offset, count, componentCount, () => reader.ReadUInt32());
+          _converter.ReadUInt32(_buffer, reader, offset, count, componentCount);
           break;
         case DataStreamType.Int64:
-          ReadPayload<long>(offset, count, componentCount, () => reader.ReadInt64());
+          _converter.ReadInt64(_buffer, reader, offset, count, componentCount);
           break;
         case DataStreamType.UInt64:
-          ReadPayload<ulong>(offset, count, componentCount, () => reader.ReadUInt64());
+          _converter.ReadUInt64(_buffer, reader, offset, count, componentCount);
           break;
         case DataStreamType.Float32:
-          ReadPayload<float>(offset, count, componentCount, () => reader.ReadSingle());
+          _converter.ReadSingle(_buffer, reader, offset, count, componentCount);
           break;
         case DataStreamType.PackedFloat16:
-          ReadPackedFloat16(packet, reader, offset, count, componentCount);
+          // Read values via a proxy reader which deals with the data conversion.
+          _converter.ReadSingle(_buffer, new PackedFloat16Reader(reader, componentCount), offset, count,
+                                componentCount);
           break;
         case DataStreamType.Float64:
-          ReadPayload<double>(offset, count, componentCount, () => reader.ReadDouble());
+          _converter.ReadDouble(_buffer, reader, offset, count, componentCount);
           break;
         case DataStreamType.PackedFloat32:
-          ReadPackedFloat32(packet, reader, offset, count, componentCount);
+          _converter.ReadDouble(_buffer, new PackedFloat32Reader(reader, componentCount), offset, count,
+                                componentCount);
           break;
       }
     }
 
-    private void ReadPayload<T>(uint offset, int count, int componentCount, Func<T> readNext)
+    private void ReadPayload<T>(int offset, int count, int componentCount, Func<T> readNext)
     {
       // Won't work for vector2/3
       IList<T> buffer = (IList<T>)_buffer;
@@ -450,7 +457,7 @@ namespace Tes.Buffers
       }
     }
 
-    private void ReadPackedFloat16(PacketBuffer packet, BinaryReader reader, uint offset, int count, int componentCount)
+    private void ReadPackedFloat16(BinaryReader reader, int offset, int count, int componentCount)
     {
       // Won't work for vector2/3
       IList<float> buffer = (IList<float>)_buffer;
@@ -476,7 +483,7 @@ namespace Tes.Buffers
       }
     }
 
-    private void ReadPackedFloat32(PacketBuffer packet, BinaryReader reader, uint offset, int count, int componentCount)
+    private void ReadPackedFloat32(BinaryReader reader, int offset, int count, int componentCount)
     {
       // Won't work for vector2/3
       IList<double> buffer = (IList<double>)_buffer;
@@ -630,7 +637,7 @@ namespace Tes.Buffers
       return _converter.GetSByte(_buffer, index);
     }
 
-    public void GetRangeSByte(List<sbyte> range, int startElementIndex, int count)
+    public void GetRangeSByte(IList<sbyte> range, int startElementIndex, int count)
     {
       _converter.GetRangeSByte(range, _buffer, startElementIndex, count);
     }
@@ -640,7 +647,7 @@ namespace Tes.Buffers
       return _converter.GetByte(_buffer, index);
     }
 
-    public void GetRangeByte(List<byte> range, int startElementIndex, int count)
+    public void GetRangeByte(IList<byte> range, int startElementIndex, int count)
     {
       _converter.GetRangeByte(range, _buffer, startElementIndex, count);
     }
@@ -650,7 +657,7 @@ namespace Tes.Buffers
       return _converter.GetInt16(_buffer, index);
     }
 
-    public void GetRangeInt16(List<short> range, int startElementIndex, int count)
+    public void GetRangeInt16(IList<short> range, int startElementIndex, int count)
     {
       _converter.GetRangeInt16(range, _buffer, startElementIndex, count);
     }
@@ -660,7 +667,7 @@ namespace Tes.Buffers
       return _converter.GetUInt16(_buffer, index);
     }
 
-    public void GetRangeUInt16(List<ushort> range, int startElementIndex, int count)
+    public void GetRangeUInt16(IList<ushort> range, int startElementIndex, int count)
     {
       _converter.GetRangeUInt16(range, _buffer, startElementIndex, count);
     }
@@ -670,7 +677,7 @@ namespace Tes.Buffers
       return _converter.GetInt32(_buffer, index);
     }
 
-    public void GetRangeInt32(List<int> range, int startElementIndex, int count)
+    public void GetRangeInt32(IList<int> range, int startElementIndex, int count)
     {
       _converter.GetRangeInt32(range, _buffer, startElementIndex, count);
     }
@@ -680,7 +687,7 @@ namespace Tes.Buffers
       return _converter.GetUInt32(_buffer, index);
     }
 
-    public void GetRangeUInt32(List<uint> range, int startElementIndex, int count)
+    public void GetRangeUInt32(IList<uint> range, int startElementIndex, int count)
     {
       _converter.GetRangeUInt32(range, _buffer, startElementIndex, count);
     }
@@ -690,7 +697,7 @@ namespace Tes.Buffers
       return _converter.GetInt64(_buffer, index);
     }
 
-    public void GetRangeInt64(List<long> range, int startElementIndex, int count)
+    public void GetRangeInt64(IList<long> range, int startElementIndex, int count)
     {
       _converter.GetRangeInt64(range, _buffer, startElementIndex, count);
     }
@@ -700,7 +707,7 @@ namespace Tes.Buffers
       return _converter.GetUInt64(_buffer, index);
     }
 
-    public void GetRangeUInt64(List<ulong> range, int startElementIndex, int count)
+    public void GetRangeUInt64(IList<ulong> range, int startElementIndex, int count)
     {
       _converter.GetRangeUInt64(range, _buffer, startElementIndex, count);
     }
@@ -710,7 +717,7 @@ namespace Tes.Buffers
       return _converter.GetSingle(_buffer, index);
     }
 
-    public void GetRangeSingle(List<float> range, int startElementIndex, int count)
+    public void GetRangeSingle(IList<float> range, int startElementIndex, int count)
     {
       _converter.GetRangeSingle(range, _buffer, startElementIndex, count);
     }
@@ -720,7 +727,7 @@ namespace Tes.Buffers
       return _converter.GetDouble(_buffer, index);
     }
 
-    public void GetRangeDouble(List<double> range, int startElementIndex, int count)
+    public void GetRangeDouble(IList<double> range, int startElementIndex, int count)
     {
       _converter.GetRangeDouble(range, _buffer, startElementIndex, count);
     }
