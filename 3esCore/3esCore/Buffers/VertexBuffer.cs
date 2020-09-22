@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using Tes.Buffers.Converters;
 using Tes.IO;
+using Tes.Maths;
 using Tes.Net;
 
 namespace Tes.Buffers
@@ -80,6 +81,8 @@ namespace Tes.Buffers
 
     public bool ReadOnly { get { return _readOnly; } set { _readOnly = value; } }
 
+    public IList Buffer { get { return _buffer; } }
+
     /// <summary>
     /// Create VertexBuffer to use with Read methods. The buffer type is set on the first read call.
     /// </summary>
@@ -141,6 +144,146 @@ namespace Tes.Buffers
     public static VertexBuffer Wrap(Maths.Vector3[] list)
     {
       return new VertexBuffer(list, typeof(Maths.Vector3), ConverterSet.Get(typeof(Maths.Vector3)), 3);
+    }
+
+    public T[] ToArray<T>()
+    {
+      if (_buffer != null)
+      {
+        T[] array = _buffer as T[];
+        if (array == null)
+        {
+          List<T> list = _buffer as List<T>;
+          if (list != null)
+          {
+            array = list.ToArray();
+          }
+        }
+
+        return array;
+      }
+
+      return null;
+    }
+
+    public Vector2[] UnpackVector2Array()
+    {
+      if (_buffer != null && ComponentCount == 2)
+      {
+        Vector2[] array = ToArray<Vector2>();
+
+        if (array == null)
+        {
+          array = new Vector2[Count];
+          Vector2 v = new Vector2();
+          for (int i = 0; i < Count; ++i)
+          {
+            v.X = GetSingle(i * 2 + 0);
+            v.Y = GetSingle(i * 2 + 1);
+            array[i] = v;
+          }
+        }
+
+        return array;
+      }
+
+      return null;
+    }
+
+    public Vector3[] UnpackVector3Array()
+    {
+      if (_buffer != null && ComponentCount == 3)
+      {
+        Vector3[] array = ToArray<Vector3>();
+
+        if (array == null)
+        {
+          array = new Vector3[Count];
+          Vector3 v = new Vector3();
+          for (int i = 0; i < Count; ++i)
+          {
+            v.X = GetSingle(i * 3 + 0);
+            v.Y = GetSingle(i * 3 + 1);
+            v.Z = GetSingle(i * 3 + 2);
+            array[i] = v;
+          }
+        }
+
+        return array;
+      }
+
+      return null;
+    }
+
+    protected T[] UnpackArray<T>(Func<int, T> getItem)
+    {
+      if (_buffer != null)
+      {
+        T[] array = ToArray<T>();
+
+        if (array == null)
+        {
+          array = new T[Count * ComponentCount];
+          for (int i = 0; i < array.Length; ++i)
+          {
+            array[i] = getItem(i);
+          }
+        }
+
+        return array;
+      }
+
+      return null;
+    }
+
+    public sbyte[] UnpackInt8Array()
+    {
+      return UnpackArray<sbyte>((index) => GetSByte(index));
+    }
+
+    public byte[] UnpackUInt8Array()
+    {
+      return UnpackArray<byte>((index) => GetByte(index));
+    }
+
+    public short[] UnpackInt16Array()
+    {
+      return UnpackArray<short>((index) => GetInt16(index));
+    }
+
+    public ushort[] UnpackUInt16Array()
+    {
+      return UnpackArray<ushort>((index) => GetUInt16(index));
+    }
+
+    public int[] UnpackInt32Array()
+    {
+      return UnpackArray<int>((index) => GetInt32(index));
+    }
+
+    public uint[] UnpackUInt32Array()
+    {
+      return UnpackArray<uint>((index) => GetUInt32(index));
+    }
+
+    public long[] UnpackInt64Array()
+    {
+      return UnpackArray<long>((index) => GetInt64(index));
+    }
+
+    public ulong[] UnpackUInt64Array()
+    {
+      return UnpackArray<ulong>((index) => GetUInt64(index));
+    }
+
+    public float[] UnpackSingleArray()
+    {
+      return UnpackArray<float>((index) => GetSingle(index));
+    }
+
+    public double[] UnpackDoubleArray()
+    {
+      return UnpackArray<double>((index) => GetDouble(index));
     }
 
     /// <summary>
@@ -394,7 +537,7 @@ namespace Tes.Buffers
         if (count + offset > Count)
         {
           // Increase the buffer capacity.
-          Expand((int)(count + offset));
+          Expand(count + offset);
         }
       }
 
