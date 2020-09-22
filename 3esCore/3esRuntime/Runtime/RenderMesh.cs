@@ -500,8 +500,8 @@ namespace Tes.Runtime
       for (int i = 0; i < buffer.Count; ++i)
       {
         v.x = buffer.GetSingle(i * 3 + 0);
-        v.y = buffer.GetSingle(i * 3 + 0);
-        v.z = buffer.GetSingle(i * 3 + 0);
+        v.y = buffer.GetSingle(i * 3 + 1);
+        v.z = buffer.GetSingle(i * 3 + 2);
         _vertices[offset + i] = v;
 
         if (adjustBounds)
@@ -614,8 +614,8 @@ namespace Tes.Runtime
       for (int i = 0; i < buffer.Count; ++i)
       {
         n.x = buffer.GetSingle(i * 3 + 0);
-        n.y = buffer.GetSingle(i * 3 + 0);
-        n.z = buffer.GetSingle(i * 3 + 0);
+        n.y = buffer.GetSingle(i * 3 + 1);
+        n.z = buffer.GetSingle(i * 3 + 2);
         _normals[offset + i] = n;
       }
       _normalsDirty = true;
@@ -776,7 +776,7 @@ namespace Tes.Runtime
       for (int i = 0; i < buffer.Count; ++i)
       {
         uv.x = buffer.GetSingle(i * 2 + 0);
-        uv.y = buffer.GetSingle(i * 2 + 0);
+        uv.y = buffer.GetSingle(i * 2 + 1);
         _uvs[offset + i] = uv;
       }
       _uvsDirty = true;

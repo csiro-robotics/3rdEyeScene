@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Reflection;
+using Tes.Buffers;
 using Tes.Handlers.Shape2D;
 using Tes.Handlers.Shape3D;
 using Tes.Logging;
@@ -390,7 +391,7 @@ public class SerialisationSequence
     MeshShape mesh = new MeshShape(MeshDrawType.Triangles, verts,
         indices.ToArray(), new Tes.Maths.Vector3((float)id));
     mesh.ID = id;
-    mesh.Normals = normals;
+    mesh.SetNormals(normals);
     mesh.Position = new Tes.Maths.Vector3((float)id);
 
     return mesh;
@@ -650,20 +651,20 @@ public class SerialisationSequence
     MeshShape meshShapeReference = (MeshShape)referenceShape;
     bool ok = true;
 
-    ok = ValidateVectors("Vertex", meshEntry.Mesh.Vertices, meshShapeReference.Vertices) && ok;
+    ok = ValidateVectors("Vertex", meshEntry.Mesh.Vertices, meshShapeReference.Vertices.UnpackVector3Array()) && ok;
     if (meshEntry.Mesh.HasNormals)
     {
       Vector3[] normals = meshEntry.Mesh.Normals;
-      if (meshShapeReference.Normals.Length == 1)
+      if (meshShapeReference.Normals.Count == 1)
       {
         // Single uniform normal will have been expanded. Extract just the first normal.
         normals = new Vector3[] { meshEntry.Mesh.Normals[0] };
       }
-      ok = ValidateVectors("Normal", normals, meshShapeReference.Normals) && ok;
+      ok = ValidateVectors("Normal", normals, meshShapeReference.Normals.UnpackVector3Array()) && ok;
     }
     else
     {
-      if (meshShapeReference.Normals != null && meshShapeReference.Normals.Length > 0)
+      if (meshShapeReference.Normals != null && meshShapeReference.Normals.Count > 0)
       {
         Debug.LogError("Missing normals.");
         ok = false;
@@ -671,11 +672,11 @@ public class SerialisationSequence
     }
     if (meshEntry.Mesh.IndexCount >0)
     {
-      ok = ValidateIndices("Index", meshEntry.Mesh.Indices, meshShapeReference.Indices) && ok;
+      ok = ValidateIndices("Index", meshEntry.Mesh.Indices, meshShapeReference.Indices.UnpackInt32Array()) && ok;
     }
     else
     {
-      if (meshShapeReference.Indices != null && meshShapeReference.Indices.Length > 0)
+      if (meshShapeReference.Indices != null && meshShapeReference.Indices.Count > 0)
       {
         Debug.LogError("Missing indices.");
         ok = false;

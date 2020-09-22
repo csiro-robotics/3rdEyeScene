@@ -115,8 +115,11 @@ namespace Tes.Handlers
         // Copy arrays into the correct format.
         _vertices = Maths.Vector3Ext.FromUnity(mesh.Vertices);
 
-        _indices = new int[mesh.IndexCount];
-        Array.Copy(mesh.Indices, _indices, _indices.Length);
+        if (mesh.Indices != null)
+        {
+          _indices = new int[mesh.IndexCount];
+          Array.Copy(mesh.Indices, _indices, _indices.Length);
+        }
 
         if (mesh.HasNormals)
         {
@@ -537,8 +540,8 @@ namespace Tes.Handlers
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
 
-      int count = (int)reader.ReadUInt32();
-      int offset = reader.ReadUInt16();
+      int offset = (int)reader.ReadUInt32();
+      int count = reader.ReadUInt16();
 
       if (count == 0)
       {
@@ -546,7 +549,9 @@ namespace Tes.Handlers
       }
 
       VertexBuffer readBuffer = new VertexBuffer();
-      readBuffer.Read(reader, offset, count);
+      // We read into a temporary buffer with a zero offset.
+      // We use the offset later to place in the destination buffer.
+      readBuffer.Read(reader, 0, count);
 
       // Bounds check.
       int vertexCount = meshEntry.Mesh.VertexCount;
@@ -590,8 +595,8 @@ namespace Tes.Handlers
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
 
-      int count = (int)reader.ReadUInt32();
-      int offset = reader.ReadUInt16();
+      int offset = (int)reader.ReadUInt32();
+      int count = reader.ReadUInt16();
 
       if (count == 0)
       {
@@ -599,7 +604,9 @@ namespace Tes.Handlers
       }
 
       VertexBuffer readBuffer = new VertexBuffer();
-      readBuffer.Read(reader, offset, count);
+      // We read into a temporary buffer with a zero offset.
+      // We use the offset later to place in the destination buffer.
+      readBuffer.Read(reader, 0, count);
 
       // Bounds check.
       int vertexCount = meshEntry.Mesh.VertexCount;
@@ -639,8 +646,8 @@ namespace Tes.Handlers
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
 
-      int count = (int)reader.ReadUInt32();
-      int offset = reader.ReadUInt16();
+      int offset = (int)reader.ReadUInt32();
+      int count = reader.ReadUInt16();
 
       if (count == 0)
       {
@@ -648,7 +655,9 @@ namespace Tes.Handlers
       }
 
       VertexBuffer readBuffer = new VertexBuffer();
-      readBuffer.Read(reader, offset, count);
+      // We read into a temporary buffer with a zero offset.
+      // We use the offset later to place in the destination buffer.
+      readBuffer.Read(reader, 0, count);
 
       // Bounds check.
       int indexCount = meshEntry.Mesh.IndexCount;
@@ -688,8 +697,8 @@ namespace Tes.Handlers
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
 
-      int count = (int)reader.ReadUInt32();
-      int offset = reader.ReadUInt16();
+      int offset = (int)reader.ReadUInt32();
+      int count = reader.ReadUInt16();
 
       if (count == 0)
       {
@@ -697,7 +706,9 @@ namespace Tes.Handlers
       }
 
       VertexBuffer readBuffer = new VertexBuffer();
-      readBuffer.Read(reader, offset, count);
+      // We read into a temporary buffer with a zero offset.
+      // We use the offset later to place in the destination buffer.
+      readBuffer.Read(reader, 0, count);
 
       // Bounds check.
       int vertexCount = meshEntry.Mesh.VertexCount;
@@ -753,8 +764,8 @@ namespace Tes.Handlers
         return new Error(ErrorCode.InvalidObjectID, msg.MeshID);
       }
 
-      int count = (int)reader.ReadUInt32();
-      int offset = reader.ReadUInt16();
+      int offset = (int)reader.ReadUInt32();
+      int count = reader.ReadUInt16();
 
       if (count == 0)
       {
@@ -762,7 +773,9 @@ namespace Tes.Handlers
       }
 
       VertexBuffer readBuffer = new VertexBuffer();
-      readBuffer.Read(reader, offset, count);
+      // We read into a temporary buffer with a zero offset.
+      // We use the offset later to place in the destination buffer.
+      readBuffer.Read(reader, 0, count);
 
       // Bounds check.
       int vertexCount = meshEntry.Mesh.VertexCount;

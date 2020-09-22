@@ -333,7 +333,9 @@ namespace Tes.Handlers.Shape3D
       Buffers.VertexBuffer readBuffer = new Buffers.VertexBuffer();
       if (count > 0)
       {
-        readBuffer.Read(reader, offset, count);
+        // We read with a zero ofset into the temporary read buffer.
+        // We will use the offset for the final location.
+        readBuffer.Read(reader, 0, count);
       }
 
       // Now work out what has been sent. Mask out the special flags.
