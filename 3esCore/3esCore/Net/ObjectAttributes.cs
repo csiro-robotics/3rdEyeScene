@@ -30,43 +30,43 @@ namespace Tes.Net
     /// <summary>
     /// The position X coordinate.
     /// </summary>
-    public float X;
+    public double X;
     /// <summary>
     /// The position X coordinate.
     /// </summary>
-    public float Y;
+    public double Y;
     /// <summary>
     /// The position X coordinate.
     /// </summary>
-    public float Z;
+    public double Z;
     /// <summary>
     /// Quaternion rotation X value.
     /// </summary>
-    public float RotationX;
+    public double RotationX;
     /// <summary>
     /// Quaternion rotation Y value.
     /// </summary>
-    public float RotationY;
+    public double RotationY;
     /// <summary>
     /// Quaternion rotation Z value.
     /// </summary>
-    public float RotationZ;
+    public double RotationZ;
     /// <summary>
     /// Quaternion rotation Z value (angle component).
     /// </summary>
-    public float RotationW;
+    public double RotationW;
     /// <summary>
     /// Scale along the X axis.
     /// </summary>
-    public float ScaleX;
+    public double ScaleX;
     /// <summary>
     /// Scale along the Y axis.
     /// </summary>
-    public float ScaleY;
+    public double ScaleY;
     /// <summary>
     /// Scale along the Z axis.
     /// </summary>
-    public float ScaleZ;
+    public double ScaleZ;
 
     /// <summary>
     /// Alias the <see cref="Colour"/> member.
@@ -78,19 +78,35 @@ namespace Tes.Net
     /// </summary>
     /// <param name="reader">The reader to read from.</param>
     /// <returns>True</returns>
-    public bool Read(BinaryReader reader)
+    public bool Read(BinaryReader reader, bool readDoublePrecision)
     {
       Colour = reader.ReadUInt32();
-      X = reader.ReadSingle();
-      Y = reader.ReadSingle();
-      Z = reader.ReadSingle();
-      RotationX = reader.ReadSingle();
-      RotationY = reader.ReadSingle();
-      RotationZ = reader.ReadSingle();
-      RotationW = reader.ReadSingle();
-      ScaleX = reader.ReadSingle();
-      ScaleY = reader.ReadSingle();
-      ScaleZ = reader.ReadSingle();
+      if (readDoublePrecision)
+      {
+        X = reader.ReadDouble();
+        Y = reader.ReadDouble();
+        Z = reader.ReadDouble();
+        RotationX = reader.ReadDouble();
+        RotationY = reader.ReadDouble();
+        RotationZ = reader.ReadDouble();
+        RotationW = reader.ReadDouble();
+        ScaleX = reader.ReadDouble();
+        ScaleY = reader.ReadDouble();
+        ScaleZ = reader.ReadDouble();
+      }
+      else
+      {
+        X = reader.ReadSingle();
+        Y = reader.ReadSingle();
+        Z = reader.ReadSingle();
+        RotationX = reader.ReadSingle();
+        RotationY = reader.ReadSingle();
+        RotationZ = reader.ReadSingle();
+        RotationW = reader.ReadSingle();
+        ScaleX = reader.ReadSingle();
+        ScaleY = reader.ReadSingle();
+        ScaleZ = reader.ReadSingle();
+      }
 
       return true;
     }
@@ -100,19 +116,46 @@ namespace Tes.Net
     /// </summary>
     /// <param name="packet">The packet to write to.</param>
     /// <returns>True</returns>
-    public bool Write(PacketBuffer packet)
+    public bool Write(PacketBuffer packet, bool writeDouble)
     {
       packet.WriteBytes(BitConverter.GetBytes(Colour), true);
-      packet.WriteBytes(BitConverter.GetBytes(X), true);
-      packet.WriteBytes(BitConverter.GetBytes(Y), true);
-      packet.WriteBytes(BitConverter.GetBytes(Z), true);
-      packet.WriteBytes(BitConverter.GetBytes(RotationX), true);
-      packet.WriteBytes(BitConverter.GetBytes(RotationY), true);
-      packet.WriteBytes(BitConverter.GetBytes(RotationZ), true);
-      packet.WriteBytes(BitConverter.GetBytes(RotationW), true);
-      packet.WriteBytes(BitConverter.GetBytes(ScaleX), true);
-      packet.WriteBytes(BitConverter.GetBytes(ScaleY), true);
-      packet.WriteBytes(BitConverter.GetBytes(ScaleZ), true);
+      if (writeDouble)
+      {
+        packet.WriteBytes(BitConverter.GetBytes(X), true);
+        packet.WriteBytes(BitConverter.GetBytes(Y), true);
+        packet.WriteBytes(BitConverter.GetBytes(Z), true);
+        packet.WriteBytes(BitConverter.GetBytes(RotationX), true);
+        packet.WriteBytes(BitConverter.GetBytes(RotationY), true);
+        packet.WriteBytes(BitConverter.GetBytes(RotationZ), true);
+        packet.WriteBytes(BitConverter.GetBytes(RotationW), true);
+        packet.WriteBytes(BitConverter.GetBytes(ScaleX), true);
+        packet.WriteBytes(BitConverter.GetBytes(ScaleY), true);
+        packet.WriteBytes(BitConverter.GetBytes(ScaleZ), true);
+      }
+      else
+      {
+        float value;
+        value = (float)X;
+        packet.WriteBytes(BitConverter.GetBytes(value), true);
+        value = (float)Y;
+        packet.WriteBytes(BitConverter.GetBytes(value), true);
+        value = (float)Z;
+        packet.WriteBytes(BitConverter.GetBytes(value), true);
+        value = (float)RotationX;
+        packet.WriteBytes(BitConverter.GetBytes(value), true);
+        value = (float)RotationY;
+        packet.WriteBytes(BitConverter.GetBytes(value), true);
+        value = (float)RotationZ;
+        packet.WriteBytes(BitConverter.GetBytes(value), true);
+        value = (float)RotationW;
+        packet.WriteBytes(BitConverter.GetBytes(value), true);
+        value = (float)ScaleX;
+        packet.WriteBytes(BitConverter.GetBytes(value), true);
+        value = (float)ScaleY;
+        packet.WriteBytes(BitConverter.GetBytes(value), true);
+        value = (float)ScaleZ;
+        packet.WriteBytes(BitConverter.GetBytes(value), true);
+      }
       return true;
     }
 
@@ -147,9 +190,10 @@ namespace Tes.Net
     /// <returns>The extracted transformation matrix.</returns>
     public Matrix4 GetTransform()
     {
-      Matrix4 trans = Rotation.ToMatrix4(new Quaternion(RotationX, RotationY, RotationZ, RotationW));
-      trans.Translation = new Vector3(X, Y, Z);
-      trans.ApplyScaling(new Vector3(ScaleX, ScaleY, ScaleZ));
+      Matrix4 trans = Rotation.ToMatrix4(
+        new Quaternion((float)RotationX, (float)RotationY, (float)RotationZ, (float)RotationW));
+      trans.Translation = new Vector3((float)X, (float)Y, (float)Z);
+      trans.ApplyScaling(new Vector3((float)ScaleX, (float)ScaleY, (float)ScaleZ));
       return trans;
     }
 

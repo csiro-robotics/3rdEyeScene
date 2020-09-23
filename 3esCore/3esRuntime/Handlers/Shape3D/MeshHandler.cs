@@ -339,8 +339,7 @@ namespace Tes.Handlers.Shape3D
       }
 
       // Now work out what has been sent. Mask out the special flags.
-      MeshShape.SendDataType componentType = (MeshShape.SendDataType)(readComponent &
-        ~(int)((MeshShape.SendDataType.End)));
+      MeshShape.SendDataType componentType = (MeshShape.SendDataType)readComponent;
       // Mask out the special flags.
       readComponent &= ~(int)componentType;
       switch (componentType)
@@ -352,26 +351,29 @@ namespace Tes.Handlers.Shape3D
           meshEntry.Mesh.SetIndices(readBuffer, offset);
           break;
         case MeshShape.SendDataType.Normals:
-          meshEntry.Mesh.SetNormals(readBuffer, offset);
-          break;
-        case MeshShape.SendDataType.UniformNormal:
-          // Only one normal for the whole data set. Apply it across the entire mesh.
-          Vector3 normal = new Vector3();
-          normal.x = readBuffer.GetSingle(0);
-          normal.y = readBuffer.GetSingle(1);
-          normal.z = readBuffer.GetSingle(2);
-          meshEntry.Mesh.SetUniformNormal(normal);
+          // Check for single, uniform normal case.
+          if (readBuffer.Count != 1)
+          {
+            meshEntry.Mesh.SetNormals(readBuffer, offset);
+          }
+          else
+          {
+            // Only one normal for the whole data set. Apply it across the entire mesh.
+            Vector3 normal = new Vector3();
+            normal.x = readBuffer.GetSingle(0);
+            normal.y = readBuffer.GetSingle(1);
+            normal.z = readBuffer.GetSingle(2);
+            meshEntry.Mesh.SetUniformNormal(normal);
+          }
           break;
         case MeshShape.SendDataType.Colours:
           meshEntry.Mesh.SetColours(readBuffer, offset);
           break;
-      }
-
-      if ((readComponent & (int)MeshShape.SendDataType.End) != 0)
-      {
-        // Finalise the material.
-        meshEntry.Material = CreateMaterial(cache.GetShapeByIndex(shapeIndex), meshEntry);
-        cache.SetShapeDataByIndex(shapeIndex, meshEntry);
+        case MeshShape.SendDataType.End:
+          // Finalise the material.
+          meshEntry.Material = CreateMaterial(cache.GetShapeByIndex(shapeIndex), meshEntry);
+          cache.SetShapeDataByIndex(shapeIndex, meshEntry);
+          break;
       }
 
       return new Error();

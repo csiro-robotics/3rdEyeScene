@@ -240,11 +240,12 @@ namespace Tes.Handlers.Shape3D
       parts.MaterialOverrides = new Material[meshPartCount];
       parts.ObjectFlags = (ObjectFlag)msg.Flags;
 
+      ObjectAttributes attributes = new ObjectAttributes();
+      bool readDoublePrecision = (msg.Flags & (ushort)ObjectFlag.DoublePrecision) != 0;
       for (ushort i = 0; i < meshPartCount; ++i)
       {
         parts.MeshIDs[i] = reader.ReadUInt32();
-        ObjectAttributes attributes = new ObjectAttributes();
-        if (!attributes.Read(reader))
+        if (!attributes.Read(reader, readDoublePrecision))
         {
           return new Error(ErrorCode.MalformedMessage, (int)ObjectMessageID.Create);
         }

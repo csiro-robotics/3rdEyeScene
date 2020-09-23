@@ -43,13 +43,13 @@ namespace Tes.Shapes
     }
 
     public MultiShape(Shape[] shapes, Vector3 position, Quaternion rotation)
-      : this(shapes, position, rotation, Vector3.One) {}
+      : this(shapes, position, rotation, Vector3.One) { }
 
     public MultiShape(Shape[] shapes, Vector3 position)
-      : this(shapes, position, Quaternion.Identity, Vector3.One) {}
+      : this(shapes, position, Quaternion.Identity, Vector3.One) { }
 
     public MultiShape(Shape[] shapes)
-      : this(shapes, Vector3.Zero, Quaternion.Identity, Vector3.One) {}
+      : this(shapes, Vector3.Zero, Quaternion.Identity, Vector3.One) { }
 
     public override bool WriteCreate(PacketBuffer packet)
     {
@@ -64,10 +64,11 @@ namespace Tes.Shapes
       packet.WriteBytes(BitConverter.GetBytes(itemCount), true);
       packet.WriteBytes(BitConverter.GetBytes(blockCount), true);
 
+      bool writeDoublePrecision = (_data.Flags & (ushort)ObjectFlag.DoublePrecision) != 0;
       // Write the multi-shape attributes.
       for (int i = 0; i < blockCount; ++i)
       {
-        if (!_shapes[i].GetAttributes().Write(packet))
+        if (!_shapes[i].GetAttributes().Write(packet, writeDoublePrecision))
         {
           return false;
         }
@@ -95,9 +96,10 @@ namespace Tes.Shapes
 
       packet.WriteBytes(BitConverter.GetBytes(blockCount), true);
 
+      bool writeDoublePrecision = (_data.Flags & (ushort)ObjectFlag.DoublePrecision) != 0;
       for (uint i = 0; i < blockCount; ++i)
       {
-        if (!_shapes[itemOffset + i].GetAttributes().Write(packet))
+        if (!_shapes[itemOffset + i].GetAttributes().Write(packet, writeDoublePrecision))
         {
           return -1;
         }

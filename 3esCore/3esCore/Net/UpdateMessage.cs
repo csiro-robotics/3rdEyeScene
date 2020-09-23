@@ -37,7 +37,8 @@ namespace Tes.Net
     {
       ObjectID = reader.ReadUInt32();
       Flags = reader.ReadUInt16();
-      return Attributes.Read(reader);
+      bool readDoublePrecision = ((Flags & (ushort)ObjectFlag.DoublePrecision) != 0);
+      return Attributes.Read(reader, readDoublePrecision);
     }
 
     /// <summary>
@@ -49,8 +50,9 @@ namespace Tes.Net
     {
       packet.WriteBytes(BitConverter.GetBytes(ObjectID), true);
       packet.WriteBytes(BitConverter.GetBytes(Flags), true);
-      return Attributes.Write(packet);
-   }
+      bool writeDoublePrecision = ((Flags & (ushort)ObjectFlag.DoublePrecision) != 0);
+      return Attributes.Write(packet, writeDoublePrecision);
+    }
   }
 }
 

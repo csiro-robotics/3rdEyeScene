@@ -83,7 +83,7 @@ namespace Tes.Shapes
       Category = category;
       Colour = 0xFFFFFFFFu;
       IsComplex = false;
-      ScaleX = ScaleY = ScaleZ = _data.Attributes.RotationW = 1.0f;
+      _data.Attributes.ScaleX = _data.Attributes.ScaleY = _data.Attributes.ScaleZ = _data.Attributes.RotationW = 1.0;
     }
 
     /// <summary>
@@ -181,8 +181,8 @@ namespace Tes.Shapes
       set
       {
         _data.Flags &=
-          (ushort)~ObjectFlag.SkipResources; _data.Flags |= value ?(ushort)ObjectFlag.SkipResources : (ushort)0;
-        }
+          (ushort)~ObjectFlag.SkipResources; _data.Flags |= value ? (ushort)ObjectFlag.SkipResources : (ushort)0;
+      }
     }
 
     public CreateMessage Data { get { return _data; } }
@@ -208,15 +208,15 @@ namespace Tes.Shapes
     /// <summary>
     /// Position X coordinate.
     /// </summary>
-    public float X { get { return _data.Attributes.X; } set { _data.Attributes.X = value; } }
+    public float X { get { return (float)_data.Attributes.X; } set { _data.Attributes.X = value; } }
     /// <summary>
     /// Position Y coordinate.
     /// </summary>
-    public float Y { get { return _data.Attributes.Y; } set { _data.Attributes.Y = value; } }
+    public float Y { get { return (float)_data.Attributes.Y; } set { _data.Attributes.Y = value; } }
     /// <summary>
     /// Position Z coordinate.
     /// </summary>
-    public float Z { get { return _data.Attributes.Z; } set { _data.Attributes.Z = value; } }
+    public float Z { get { return (float)_data.Attributes.Z; } set { _data.Attributes.Z = value; } }
 
     /// <summary>
     /// Collated position vector.
@@ -232,7 +232,7 @@ namespace Tes.Shapes
     /// </summary>
     public float ScaleX
     {
-      get { return _data.Attributes.ScaleX; }
+      get { return (float)_data.Attributes.ScaleX; }
       set { _data.Attributes.ScaleX = value; }
     }
 
@@ -241,7 +241,7 @@ namespace Tes.Shapes
     /// </summary>
     public float ScaleY
     {
-      get { return _data.Attributes.ScaleY; }
+      get { return (float)_data.Attributes.ScaleY; }
       set { _data.Attributes.ScaleY = value; }
     }
 
@@ -250,7 +250,7 @@ namespace Tes.Shapes
     /// </summary>
     public float ScaleZ
     {
-      get { return _data.Attributes.ScaleZ; }
+      get { return (float)_data.Attributes.ScaleZ; }
       set { _data.Attributes.ScaleZ = value; }
     }
 
@@ -259,7 +259,7 @@ namespace Tes.Shapes
     /// </summary>
     public Vector3 Scale
     {
-      get { return new Vector3 { X = _data.Attributes.ScaleX, Y = _data.Attributes.ScaleY, Z = _data.Attributes.ScaleZ }; }
+      get { return new Vector3 { X = ScaleX, Y = ScaleY, Z = ScaleZ }; }
       set { _data.Attributes.ScaleX = value.X; _data.Attributes.ScaleY = value.Y; _data.Attributes.ScaleZ = value.Z; }
     }
 
@@ -273,8 +273,10 @@ namespace Tes.Shapes
       {
         return new Quaternion
         {
-          X = _data.Attributes.RotationX, Y = _data.Attributes.RotationY,
-          Z = _data.Attributes.RotationZ, W = _data.Attributes.RotationW,
+          X = (float)_data.Attributes.RotationX,
+          Y = (float)_data.Attributes.RotationY,
+          Z = (float)_data.Attributes.RotationZ,
+          W = (float)_data.Attributes.RotationW,
         };
       }
 

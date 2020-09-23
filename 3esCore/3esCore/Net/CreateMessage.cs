@@ -63,7 +63,8 @@ namespace Tes.Net
       Category = reader.ReadUInt16();
       Flags = reader.ReadUInt16();
       Reserved = reader.ReadUInt16();
-      return Attributes.Read(reader);
+      bool readDoublePrecision = ((Flags & (ushort)ObjectFlag.DoublePrecision) != 0);
+      return Attributes.Read(reader, readDoublePrecision);
     }
 
     /// <summary>
@@ -77,7 +78,8 @@ namespace Tes.Net
       packet.WriteBytes(BitConverter.GetBytes(Category), true);
       packet.WriteBytes(BitConverter.GetBytes(Flags), true);
       packet.WriteBytes(BitConverter.GetBytes(Reserved), true);
-      return Attributes.Write(packet);
+      bool writeDoublePrecision = ((Flags & (ushort)ObjectFlag.DoublePrecision) != 0);
+      return Attributes.Write(packet, writeDoublePrecision);
     }
 
     public CreateMessage Clone()

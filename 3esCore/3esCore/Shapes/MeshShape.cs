@@ -47,18 +47,12 @@ namespace Tes.Shapes
       /// </summary>
       Normals,
       /// <summary>
-      /// Sending a single normals for all vertices (voxel extents).
-      /// </summary>
-      UniformNormal,
-      /// <summary>
       /// Sending per vertex, 4 byte colours. See <see cref="Colour"/>.
       /// </summary>
       Colours,
 
-      /// Should the received expect a message with an explicit finalisation marker?
-      ExpectEnd = ((ushort)1u << 14),
       /// Last send message?
-      End = ((ushort)1u << 15)
+      End = ((ushort)0xffffu)
     };
 
     /// <summary>
@@ -627,9 +621,6 @@ namespace Tes.Shapes
         new DataPhase{ Buffer = vertices, TargetType = DataStreamType.Float64, AllowPacked = true },
         new DataPhase{ Buffer = indices, TargetType = DataStreamType.UInt32 },
         new DataPhase{ Buffer = normals, TargetType = DataStreamType.Float32, AllowPacked = true },
-        // Duplicate the normals to handle SendDataType.UniformNormal . We'll only use this item if the normals
-        // count is set to 1
-        new DataPhase{ Buffer = normals, TargetType = DataStreamType.Float32, AllowPacked = false },
         new DataPhase{ Buffer = colours, TargetType = DataStreamType.UInt32, Explicit = true }
       };
 
@@ -637,18 +628,10 @@ namespace Tes.Shapes
       // Also terminate of out of phases. Note: we always skip SendDataType.Normals as that's handled differently when
       // the phaseIndex matches SendDataType.Normals.
       while (phaseIndex < phases.Length &&
-            (phaseIndex == (int)SendDataType.UniformNormal ||
-             phases[phaseIndex].Buffer == null ||
+            (phases[phaseIndex].Buffer == null ||
              progressMarker >= previousPhaseOffset + phases[phaseIndex].Buffer.Count))
       {
-        previousPhaseOffset += (phases[phaseIndex].Buffer != null && phaseIndex != (int)SendDataType.UniformNormal) ?
-            (uint)phases[phaseIndex].Buffer.Count : 0u;
-        ++phaseIndex;
-      }
-
-      // Handle uniform normals.
-      if (phaseIndex == (int)SendDataType.Normals && phases[phaseIndex].Buffer.Count == 1)
-      {
+        previousPhaseOffset += (phases[phaseIndex].Buffer != null) ? (uint)phases[phaseIndex].Buffer.Count : 0u;
         ++phaseIndex;
       }
 
@@ -678,7 +661,7 @@ namespace Tes.Shapes
         // Either all done or no data to send.
         // In the latter case, we need to populate the message anyway.
         offset = itemCount = 0;
-        sendType = (int)SendDataType.ExpectEnd | (int)SendDataType.End;
+        sendType = (ushort)SendDataType.End;
         packet.WriteBytes(BitConverter.GetBytes(sendType), true);
         packet.WriteBytes(BitConverter.GetBytes(offset), true);
         packet.WriteBytes(BitConverter.GetBytes(itemCount), true);
@@ -764,9 +747,6 @@ namespace Tes.Shapes
       }
 
       int sendDataType = reader.ReadUInt16();
-      // Extract special flags and mask out.
-      int endFlags = sendDataType & ((int)SendDataType.ExpectEnd | (int)SendDataType.End);
-      sendDataType &= ~endFlags;
 
       switch ((SendDataType)sendDataType)
       {
@@ -777,14 +757,16 @@ namespace Tes.Shapes
           _indices.Read(reader);
           break;
         case SendDataType.Normals:
-        case SendDataType.UniformNormal:
+          int offset = (int)reader.ReadUInt32();
+          int count = reader.ReadUInt16();
           if (_normals == null)
           {
-            int normalCount = ((SendDataType)sendDataType == SendDataType.Normals) ? _vertices.Count : 1;
+            // If receving just one normal, then we have a single uniform normal for the mesh.
+            int normalCount = (offset > 0 || count != 1) ? _vertices.Count : 1;
             _normals = VertexBuffer.Wrap(new Vector3[normalCount]);
             _normals.ReadOnly = false;
           }
-          _normals.Read(reader);
+          _normals.Read(reader, offset, count);
           break;
         case SendDataType.Colours:
           if (_colours == null)
@@ -794,10 +776,10 @@ namespace Tes.Shapes
           }
           _colours.Read(reader);
           break;
+        case SendDataType.End:
+          // Data completion message.
+          break;
       }
-
-      // Check for finalisation.
-      // Complete if ((readComponent & (int)SendDataType.End) != 0)
 
       return true;
     }

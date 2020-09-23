@@ -51,6 +51,10 @@ namespace Tes.Net
     /// </remarks>
     SkipResources = (1 << 5),
     /// <summary>
+    /// Indicates <see cref="ObjectAttributes"/> is in double precision.
+    /// </summary>
+    DoublePrecision = (1 << 6),
+    /// <summary>
     /// User flags start here.
     /// </summary>
     User = (1 << 8)

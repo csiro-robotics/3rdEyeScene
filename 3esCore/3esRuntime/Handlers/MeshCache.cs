@@ -507,9 +507,11 @@ namespace Tes.Handlers
       meshEntry.Mesh = renderMesh;
 
       meshEntry.ID = msg.MeshID;
-      meshEntry.LocalPosition = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
-      meshEntry.LocalRotation = new Quaternion(msg.Attributes.RotationX, msg.Attributes.RotationY, msg.Attributes.RotationZ, msg.Attributes.RotationW);
-      meshEntry.LocalScale = new Vector3(msg.Attributes.ScaleX, msg.Attributes.ScaleY, msg.Attributes.ScaleZ);
+      meshEntry.LocalPosition = new Vector3((float)msg.Attributes.X, (float)msg.Attributes.Y, (float)msg.Attributes.Z);
+      meshEntry.LocalRotation = new Quaternion((float)msg.Attributes.RotationX, (float)msg.Attributes.RotationY,
+                                               (float)msg.Attributes.RotationZ, (float)msg.Attributes.RotationW);
+      meshEntry.LocalScale = new Vector3((float)msg.Attributes.ScaleX, (float)msg.Attributes.ScaleY,
+                                        (float)msg.Attributes.ScaleZ);
       meshEntry.Tint = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
       meshEntry.Finalised = false;
       _meshes.Add(meshEntry.ID, meshEntry);
@@ -828,9 +830,11 @@ namespace Tes.Handlers
       }
 
       meshEntry.ID = msg.MeshID;
-      meshEntry.LocalPosition = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
-      meshEntry.LocalRotation = new Quaternion(msg.Attributes.RotationX, msg.Attributes.RotationY, msg.Attributes.RotationZ, msg.Attributes.RotationW);
-      meshEntry.LocalScale = new Vector3(msg.Attributes.ScaleX, msg.Attributes.ScaleY, msg.Attributes.ScaleZ);
+      meshEntry.LocalPosition = new Vector3((float)msg.Attributes.X, (float)msg.Attributes.Y, (float)msg.Attributes.Z);
+      meshEntry.LocalRotation = new Quaternion((float)msg.Attributes.RotationX, (float)msg.Attributes.RotationY,
+                                               (float)msg.Attributes.RotationZ, (float)msg.Attributes.RotationW);
+      meshEntry.LocalScale = new Vector3((float)msg.Attributes.ScaleX, (float)msg.Attributes.ScaleY,
+                                         (float)msg.Attributes.ScaleZ);
       meshEntry.Tint = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
 
       return new Error();

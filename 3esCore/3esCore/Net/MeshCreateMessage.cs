@@ -6,6 +6,17 @@ using Tes.IO;
 namespace Tes.Net
 {
   /// <summary>
+  /// Flag values for <see cref="MeshCreateMessage"/>.
+  /// </summary>
+  public enum MeshCreateFlag
+  {
+    /// <summary>
+    /// Indicates the use of double precision floating point values.
+    /// </summary>
+    DoublePrecision = (1 << 0),
+  };
+
+  /// <summary>
   /// Message used to define a new mesh resource.
   /// </summary>
   [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -29,6 +40,10 @@ namespace Tes.Net
     /// </summary>
     public uint IndexCount;
     /// <summary>
+    /// <see cref="MeshCreateFlag"/> values.
+    /// </summary>
+    public ushort Flags;
+    /// <summary>
     /// Defines the topology. See <see cref="MeshDrawType"/>.
     /// </summary>
     public byte DrawType;
@@ -47,8 +62,10 @@ namespace Tes.Net
       MeshID = reader.ReadUInt32();
       VertexCount = reader.ReadUInt32();
       IndexCount = reader.ReadUInt32();
+      Flags = reader.ReadUInt16();
       DrawType = reader.ReadByte();
-      return Attributes.Read(reader);
+      bool readDoublePrecision = ((Flags & (ushort)MeshCreateFlag.DoublePrecision) != 0);
+      return Attributes.Read(reader, readDoublePrecision);
     }
 
     /// <summary>
@@ -61,9 +78,10 @@ namespace Tes.Net
       packet.WriteBytes(BitConverter.GetBytes(MeshID), true);
       packet.WriteBytes(BitConverter.GetBytes(VertexCount), true);
       packet.WriteBytes(BitConverter.GetBytes(IndexCount), true);
-      //packet.WriteBytes(BitConverter.GetBytes(DrawType), true);
+      packet.WriteBytes(BitConverter.GetBytes(Flags), true);
       packet.WriteBytes(new byte[] { DrawType }, true);
-      return Attributes.Write(packet);
+      bool writeDoublePrecision = ((Flags & (ushort)MeshCreateFlag.DoublePrecision) != 0);
+      return Attributes.Write(packet, writeDoublePrecision);
     }
   }
 }
