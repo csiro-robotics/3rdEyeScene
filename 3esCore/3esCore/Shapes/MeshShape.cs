@@ -747,18 +747,18 @@ namespace Tes.Shapes
       }
 
       int sendDataType = reader.ReadUInt16();
+      int offset = (int)reader.ReadUInt32();
+      int count = reader.ReadUInt16();
 
       switch ((SendDataType)sendDataType)
       {
         case SendDataType.Vertices:
-          _vertices.Read(reader);
+          _vertices.Read(reader, offset, count);
           break;
         case SendDataType.Indices:
-          _indices.Read(reader);
+          _indices.Read(reader, offset, count);
           break;
         case SendDataType.Normals:
-          int offset = (int)reader.ReadUInt32();
-          int count = reader.ReadUInt16();
           if (_normals == null)
           {
             // If receving just one normal, then we have a single uniform normal for the mesh.
@@ -774,10 +774,15 @@ namespace Tes.Shapes
             _colours = new VertexBuffer();
             _colours.ReadOnly = false;
           }
-          _colours.Read(reader);
+          _colours.Read(reader, offset, count);
           break;
         case SendDataType.End:
           // Data completion message.
+          if (offset != 0 || count != 0)
+          {
+            // Unexpected offset/count
+            return false;
+          }
           break;
       }
 
