@@ -550,7 +550,7 @@ namespace Tes.Handlers
         return new Error();
       }
 
-      VertexBuffer readBuffer = new VertexBuffer();
+      DataBuffer readBuffer = new DataBuffer();
       // We read into a temporary buffer with a zero offset.
       // We use the offset later to place in the destination buffer.
       readBuffer.Read(reader, 0, count);
@@ -605,7 +605,7 @@ namespace Tes.Handlers
         return new Error();
       }
 
-      VertexBuffer readBuffer = new VertexBuffer();
+      DataBuffer readBuffer = new DataBuffer();
       // We read into a temporary buffer with a zero offset.
       // We use the offset later to place in the destination buffer.
       readBuffer.Read(reader, 0, count);
@@ -656,7 +656,7 @@ namespace Tes.Handlers
         return new Error();
       }
 
-      VertexBuffer readBuffer = new VertexBuffer();
+      DataBuffer readBuffer = new DataBuffer();
       // We read into a temporary buffer with a zero offset.
       // We use the offset later to place in the destination buffer.
       readBuffer.Read(reader, 0, count);
@@ -707,7 +707,7 @@ namespace Tes.Handlers
         return new Error();
       }
 
-      VertexBuffer readBuffer = new VertexBuffer();
+      DataBuffer readBuffer = new DataBuffer();
       // We read into a temporary buffer with a zero offset.
       // We use the offset later to place in the destination buffer.
       readBuffer.Read(reader, 0, count);
@@ -774,7 +774,7 @@ namespace Tes.Handlers
         return new Error();
       }
 
-      VertexBuffer readBuffer = new VertexBuffer();
+      DataBuffer readBuffer = new DataBuffer();
       // We read into a temporary buffer with a zero offset.
       // We use the offset later to place in the destination buffer.
       readBuffer.Read(reader, 0, count);

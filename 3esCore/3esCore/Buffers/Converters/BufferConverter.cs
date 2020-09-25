@@ -7,13 +7,13 @@ using System.IO;
 namespace Tes.Buffers.Converters
 {
   /// <summary>
-  /// Interface for converting from <c>IList</c> wrapped in a <c><see cref="VertexBuffer"/></c>.
+  /// Interface for converting from <c>IList</c> wrapped in a <c><see cref="DataBuffer"/></c>.
   /// </summary>
   /// <remarks>
   /// The interface consists of a series of <c>Get&lt;Type&gt;()</c> and <c>GetRange()</c> functions.
-  /// As this the converter operates with the internals of a <c><see cref="VertexBuffer"/></c>, the supported source
+  /// As this the converter operates with the internals of a <c><see cref="DataBuffer"/></c>, the supported source
   /// list arguments will generally be simple types, or of known types with data channels. See
-  /// <see cref="VertexBuffer"/> for details on how index and count arguments are treated.
+  /// <see cref="DataBuffer"/> for details on how index and count arguments are treated.
   /// </remarks>
   internal interface BufferConverter
   {

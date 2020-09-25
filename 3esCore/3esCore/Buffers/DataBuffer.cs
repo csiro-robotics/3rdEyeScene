@@ -10,14 +10,14 @@ using Tes.Net;
 namespace Tes.Buffers
 {
   /// <summary>
-  /// A <c>VertexBuffer</c> is used as a data abstraction for adapting data buffers into a form which can be consumed
+  /// A <c>DataBuffer</c> is used as a data abstraction for adapting data buffers into a form which can be consumed
   /// by <c>Tes</c> code.
   /// </summary>
   ///
   /// <remarks>
-  /// The <c>VertexBuffer</c> supports wrapping array and <c>List&lt;T&gt;</c> containers containing either built in
+  /// The <c>DataBuffer</c> supports wrapping array and <c>List&lt;T&gt;</c> containers containing either built in
   /// data types (except for <c>bool</c>) or <see cref="Vector2"/> and <see cref="Vector3"/> data types. This is to
-  /// support adapting user buffers for use in <c>Tes</c>. The <c>VertexBuffer</c> can then be used to write to or
+  /// support adapting user buffers for use in <c>Tes</c>. The <c>DataBuffer</c> can then be used to write to or
   /// extract data from a <see cref="PacketBuffer"/>.
   ///
   /// The data abstraction supports wrapping buffers with multiple data channels, such as a <c>float</c> array used
@@ -25,14 +25,14 @@ namespace Tes.Buffers
   /// optionally specify a stride value where other data or padding is included in the source buffer. For example, an
   /// array of <c>float</c> of XYZ data with a redundnat W value in between each coordiate (XYZW ordering).
   ///
-  /// The <c>VertexBuffer</c> supports a series of <c>Get&lt;Type&gt;()</c> and <c>GetRange&lt;Type&gt;()</c> functions.
+  /// The <c>DataBuffer</c> supports a series of <c>Get&lt;Type&gt;()</c> and <c>GetRange&lt;Type&gt;()</c> functions.
   /// These <c>Get</c> functions only support built in types, which creates a potential ambiguity in the sematics of
   /// index and count arguments and in the <see cref="Count"/> property.
   ///
-  /// The <c>VertexBuffer</c> treats index values and count arguments (excluding <see cref="Count"/>) as indices and
-  /// count values as if the <c>VertexBuffer</c> contained only built in types with no <see cref="ComponentCount"/>.
+  /// The <c>DataBuffer</c> treats index values and count arguments (excluding <see cref="Count"/>) as indices and
+  /// count values as if the <c>DataBuffer</c> contained only built in types with no <see cref="ComponentCount"/>.
   /// For example, consider a <c>List&lt;Vector3&gt;</c> containing 10 <c>Vector3</c> items wrapped in a
-  /// <c>VertexBuffer</c>. Index and count values given to the <c>Get</c> methods index float elements, rather than
+  /// <c>DataBuffer</c>. Index and count values given to the <c>Get</c> methods index float elements, rather than
   /// <c>Vector3</c> elements. Thus, index 0 maps to Vector3[0].X, index 1 to Vector3[0].Y, index 2 to Vector3[0].Z,
   /// index 3 to Vector3[0].X and so on. Similarly, the extracted count must be a multiple of 3 in order to extract
   /// full <c>Vector3</c> items.
@@ -40,7 +40,7 @@ namespace Tes.Buffers
   /// The <see cref="Count"/> has similar semantics. However, the <see cref="AddressableCount"/> corresponds to the
   /// number of channeled elements which can be addressed in the buffer.<!-- For-->
   /// </remarks>
-  public class VertexBuffer
+  public class DataBuffer
   {
     /// <summary>
     /// Query the number of addressable elements in the buffer.
@@ -84,9 +84,9 @@ namespace Tes.Buffers
     public IList Buffer { get { return _buffer; } }
 
     /// <summary>
-    /// Create VertexBuffer to use with Read methods. The buffer type is set on the first read call.
+    /// Create DataBuffer to use with Read methods. The buffer type is set on the first read call.
     /// </summary>
-    public VertexBuffer()
+    public DataBuffer()
     {
       _buffer = null;
       _internalType = null;
@@ -104,7 +104,7 @@ namespace Tes.Buffers
     /// <param name="converter">Data conerter used to extract data.</param>
     /// <param name="componentCount">Number of data components or data channels.</param>
     /// <param name="elementStride">Number of data channels with padding. Zero for tight packing.</param>
-    internal VertexBuffer(IList sourceBuffer, Type sourceType, BufferConverter converter, int componentCount, int elementStride = 0)
+    internal DataBuffer(IList sourceBuffer, Type sourceType, BufferConverter converter, int componentCount, int elementStride = 0)
     {
       _buffer = sourceBuffer;
       _internalType = sourceType;
@@ -114,36 +114,36 @@ namespace Tes.Buffers
       _readOnly = true;
     }
 
-    public static VertexBuffer Wrap<T>(List<T> list, int componentCount = 1, int elementStride = 0) where T : IConvertible
+    public static DataBuffer Wrap<T>(List<T> list, int componentCount = 1, int elementStride = 0) where T : IConvertible
     {
       BufferConverter converter = ConverterSet.Get(typeof(T));
-      return new VertexBuffer(list, typeof(T), converter, componentCount, elementStride);
+      return new DataBuffer(list, typeof(T), converter, componentCount, elementStride);
     }
 
-    public static VertexBuffer Wrap<T>(T[] list, int componentCount = 1, int elementStride = 0) where T : IConvertible
+    public static DataBuffer Wrap<T>(T[] list, int componentCount = 1, int elementStride = 0) where T : IConvertible
     {
       BufferConverter converter = ConverterSet.Get(typeof(T));
-      return new VertexBuffer(list, typeof(T), converter, componentCount, elementStride);
+      return new DataBuffer(list, typeof(T), converter, componentCount, elementStride);
     }
 
-    public static VertexBuffer Wrap(List<Maths.Vector2> list)
+    public static DataBuffer Wrap(List<Maths.Vector2> list)
     {
-      return new VertexBuffer(list, typeof(Maths.Vector2), ConverterSet.Get(typeof(Maths.Vector2)), 2);
+      return new DataBuffer(list, typeof(Maths.Vector2), ConverterSet.Get(typeof(Maths.Vector2)), 2);
     }
 
-    public static VertexBuffer Wrap(Maths.Vector2[] list)
+    public static DataBuffer Wrap(Maths.Vector2[] list)
     {
-      return new VertexBuffer(list, typeof(Maths.Vector2), ConverterSet.Get(typeof(Maths.Vector2)), 2);
+      return new DataBuffer(list, typeof(Maths.Vector2), ConverterSet.Get(typeof(Maths.Vector2)), 2);
     }
 
-    public static VertexBuffer Wrap(List<Maths.Vector3> list)
+    public static DataBuffer Wrap(List<Maths.Vector3> list)
     {
-      return new VertexBuffer(list, typeof(Maths.Vector3), ConverterSet.Get(typeof(Maths.Vector3)), 3);
+      return new DataBuffer(list, typeof(Maths.Vector3), ConverterSet.Get(typeof(Maths.Vector3)), 3);
     }
 
-    public static VertexBuffer Wrap(Maths.Vector3[] list)
+    public static DataBuffer Wrap(Maths.Vector3[] list)
     {
-      return new VertexBuffer(list, typeof(Maths.Vector3), ConverterSet.Get(typeof(Maths.Vector3)), 3);
+      return new DataBuffer(list, typeof(Maths.Vector3), ConverterSet.Get(typeof(Maths.Vector3)), 3);
     }
 
     public T[] ToArray<T>()

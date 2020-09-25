@@ -393,7 +393,7 @@ namespace Tes.Shapes
     /// <param name="msg">Message details.</param>
     /// <param name="vertices">New vertices read from the message payload.</param>
     /// <returns>True on success.</returns>
-    protected override bool ProcessVertices(MeshComponentMessage msg, int offset, VertexBuffer readBuffer)
+    protected override bool ProcessVertices(MeshComponentMessage msg, int offset, DataBuffer readBuffer)
     {
       Vector3 v = new Vector3();
       for (int i = 0; i < readBuffer.Count; ++i)
@@ -412,7 +412,7 @@ namespace Tes.Shapes
     /// <param name="msg">Message details.</param>
     /// <param name="indices">New 2-byte indices read from the message payload.</param>
     /// <returns>True on success.</returns>
-    protected override bool ProcessIndices(MeshComponentMessage msg, int offset, VertexBuffer readBuffer)
+    protected override bool ProcessIndices(MeshComponentMessage msg, int offset, DataBuffer readBuffer)
     {
       for (int i = 0; i < readBuffer.Count; ++i)
       {
@@ -430,7 +430,7 @@ namespace Tes.Shapes
     /// <remarks>
     /// Colours may be decoded using the <see cref="Colour"/> class.
     /// </remarks>
-    protected override bool ProcessColours(MeshComponentMessage msg, int offset, VertexBuffer readBuffer)
+    protected override bool ProcessColours(MeshComponentMessage msg, int offset, DataBuffer readBuffer)
     {
       EnsureColours();
       for (int i = 0; i < readBuffer.Count; ++i)
@@ -454,7 +454,7 @@ namespace Tes.Shapes
     /// <param name="msg">Message details.</param>
     /// <param name="normals">New normals read from the message payload.</param>
     /// <returns>True on success.</returns>
-    protected override bool ProcessNormals(MeshComponentMessage msg, int offset, VertexBuffer readBuffer)
+    protected override bool ProcessNormals(MeshComponentMessage msg, int offset, DataBuffer readBuffer)
     {
       EnsureNormals();
       Vector3 n = new Vector3();
@@ -481,7 +481,7 @@ namespace Tes.Shapes
     /// <param name="msg">Message details.</param>
     /// <param name="uvs">New uvs read from the message payload.</param>
     /// <returns>True on success.</returns>
-    protected override bool ProcessUVs(MeshComponentMessage msg, int offset, VertexBuffer readBuffer)
+    protected override bool ProcessUVs(MeshComponentMessage msg, int offset, DataBuffer readBuffer)
     {
       EnsureUVs();
       Vector2 uv = new Vector2();

@@ -4,7 +4,7 @@ using System.IO;
 namespace Tes.Buffers
 {
   /// <summary>
-  /// A utility class to handle reading from a 16-bit packed data buffer into a <see cref="VertexBuffer"/>.
+  /// A utility class to handle reading from a 16-bit packed data buffer into a <see cref="DataBuffer"/>.
   /// Assumes the target type is <c>float</c>.
   /// </summary>
   class PackedFloat16Reader : BinaryReader

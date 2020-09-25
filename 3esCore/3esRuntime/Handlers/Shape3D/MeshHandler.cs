@@ -321,7 +321,7 @@ namespace Tes.Handlers.Shape3D
       int count = reader.ReadUInt16();
 
       // Read buffer data.
-      Buffers.VertexBuffer readBuffer = new Buffers.VertexBuffer();
+      Buffers.DataBuffer readBuffer = new Buffers.DataBuffer();
       if (count > 0)
       {
         // We read with a zero ofset into the temporary read buffer.

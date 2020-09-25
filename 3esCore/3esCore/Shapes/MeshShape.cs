@@ -84,8 +84,8 @@ namespace Tes.Shapes
       : base((ushort)Tes.Net.ShapeID.Mesh)
     {
       IsComplex = true;
-      _vertices = VertexBuffer.Wrap(vertices);
-      _indices = VertexBuffer.Wrap(indices) ?? VertexBuffer.Wrap(new int[0]);
+      _vertices = DataBuffer.Wrap(vertices);
+      _indices = DataBuffer.Wrap(indices) ?? DataBuffer.Wrap(new int[0]);
       DrawType = drawType;
       Position = position;
       Rotation = rotation;
@@ -123,8 +123,8 @@ namespace Tes.Shapes
       : base((ushort)Tes.Net.ShapeID.Mesh, id)
     {
       IsComplex = true;
-      _vertices = VertexBuffer.Wrap(vertices);
-      _indices = VertexBuffer.Wrap(indices) ?? VertexBuffer.Wrap(new int[0]);
+      _vertices = DataBuffer.Wrap(vertices);
+      _indices = DataBuffer.Wrap(indices) ?? DataBuffer.Wrap(new int[0]);
       DrawType = drawType;
       Position = position;
       Rotation = rotation;
@@ -164,8 +164,8 @@ namespace Tes.Shapes
       : base((ushort)Tes.Net.ShapeID.Mesh, id, category)
     {
       IsComplex = true;
-      _vertices = VertexBuffer.Wrap(vertices);
-      _indices = VertexBuffer.Wrap(indices) ?? VertexBuffer.Wrap(new int[0]);
+      _vertices = DataBuffer.Wrap(vertices);
+      _indices = DataBuffer.Wrap(indices) ?? DataBuffer.Wrap(new int[0]);
       DrawType = drawType;
       Position = position;
       Rotation = rotation;
@@ -410,12 +410,12 @@ namespace Tes.Shapes
     /// <summary>
     /// Access vertex array.
     /// </summary>
-    public VertexBuffer Vertices { get { return _vertices; } }
+    public DataBuffer Vertices { get { return _vertices; } }
 
     /// <summary>
     /// Optional normals access.
     /// </summary>
-    public VertexBuffer Normals
+    public DataBuffer Normals
     {
       get { return _normals; }
       // set { _normals = value; if (_normals != null) { CalculateNormals = false; } }
@@ -423,13 +423,13 @@ namespace Tes.Shapes
 
     public MeshShape SetNormals(Vector3[] normals)
     {
-      _normals = VertexBuffer.Wrap(normals);
+      _normals = DataBuffer.Wrap(normals);
       return this;
     }
 
     public MeshShape SetNormals(List<Vector3> normals)
     {
-      _normals = VertexBuffer.Wrap(normals);
+      _normals = DataBuffer.Wrap(normals);
       return this;
     }
 
@@ -439,7 +439,7 @@ namespace Tes.Shapes
     /// <param name="normal">The shared normal.</param>
     public MeshShape SetUniformNormal(Vector3 normal)
     {
-      _normals = VertexBuffer.Wrap(new Vector3[] { normal });
+      _normals = DataBuffer.Wrap(new Vector3[] { normal });
       return this;
     }
 
@@ -449,7 +449,7 @@ namespace Tes.Shapes
     /// <remarks>
     /// For points, this clears <see cref="ColourByHeight"/>.
     /// </remarks>
-    public VertexBuffer Colours
+    public DataBuffer Colours
     {
       get { return _colours; }
       // set { ColourByHeight = false; _colours = value; }
@@ -458,14 +458,14 @@ namespace Tes.Shapes
     public MeshShape SetColours(UInt32[] colours)
     {
       ColourByHeight = false;
-      _colours = VertexBuffer.Wrap(colours);
+      _colours = DataBuffer.Wrap(colours);
       return this;
     }
 
     public MeshShape SetColours(List<UInt32> colours)
     {
       ColourByHeight = false;
-      _colours = VertexBuffer.Wrap(colours);
+      _colours = DataBuffer.Wrap(colours);
       return this;
     }
 
@@ -489,7 +489,7 @@ namespace Tes.Shapes
     /// <summary>
     /// Access indices array.
     /// </summary>
-    public VertexBuffer Indices { get { return _indices; } }
+    public DataBuffer Indices { get { return _indices; } }
 
     /// <summary>
     /// Defines the mesh topology.
@@ -528,7 +528,7 @@ namespace Tes.Shapes
       /// <summary>
       /// The buffer being packed.
       /// </summary>
-      public VertexBuffer Buffer;
+      public DataBuffer Buffer;
       /// <summary>
       /// The target data type to packed.
       /// </summary>
@@ -602,7 +602,7 @@ namespace Tes.Shapes
     /// <remarks>Call recursively until zero is returned. Packet does not get finalised here.</remarks>
     public static int WriteData(ushort routingID, uint objectID,
                                 PacketBuffer packet, ref uint progressMarker,
-                                VertexBuffer vertices, VertexBuffer normals, VertexBuffer indices, VertexBuffer colours)
+                                DataBuffer vertices, DataBuffer normals, DataBuffer indices, DataBuffer colours)
     {
       DataMessage msg = new DataMessage();
       msg.ObjectID = objectID;
@@ -711,13 +711,13 @@ namespace Tes.Shapes
 
       if (_vertices == null || _vertices.Count != vertexCount)
       {
-        _vertices = VertexBuffer.Wrap(new Vector3[vertexCount]);
+        _vertices = DataBuffer.Wrap(new Vector3[vertexCount]);
         _vertices.ReadOnly = false;
       }
 
       if (_indices == null || _indices.Count != indexCount)
       {
-        _indices = VertexBuffer.Wrap(new uint[indexCount]);
+        _indices = DataBuffer.Wrap(new uint[indexCount]);
         _indices.ReadOnly = false;
       }
 
@@ -763,7 +763,7 @@ namespace Tes.Shapes
           {
             // If receving just one normal, then we have a single uniform normal for the mesh.
             int normalCount = (offset > 0 || count != 1) ? _vertices.Count : 1;
-            _normals = VertexBuffer.Wrap(new Vector3[normalCount]);
+            _normals = DataBuffer.Wrap(new Vector3[normalCount]);
             _normals.ReadOnly = false;
           }
           _normals.Read(reader, offset, count);
@@ -771,7 +771,7 @@ namespace Tes.Shapes
         case SendDataType.Colours:
           if (_colours == null)
           {
-            _colours = new VertexBuffer();
+            _colours = new DataBuffer();
             _colours.ReadOnly = false;
           }
           _colours.Read(reader, offset, count);
@@ -862,22 +862,22 @@ namespace Tes.Shapes
     /// Vertex data.
     /// </summary>
     // private Vector3[] _vertices;
-    private VertexBuffer _vertices;
+    private DataBuffer _vertices;
     /// <summary>
     /// Normals data. May contain a single normal, in which case it is applied to all vertices (e.g., for voxels).
     /// </summary>
     // private Vector3[] _normals;
-    private VertexBuffer _normals;
+    private DataBuffer _normals;
     /// <summary>
     /// Per vertex colours.
     /// </summary>
     // private UInt32[] _colours;
-    private VertexBuffer _colours;
+    private DataBuffer _colours;
     /// <summary>
     /// Index data.
     /// </summary>
     // private int[] _indices;
-    private VertexBuffer _indices;
+    private DataBuffer _indices;
     /// <summary>
     /// Draw weight: equates to point size or line width.
     /// </summary>

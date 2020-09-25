@@ -378,7 +378,7 @@ namespace Tes.Runtime
       Array.Copy(indices, listStartIndex, _indices, bufferStartIndex, count);
     }
 
-    public void SetIndices(VertexBuffer buffer, int offset)
+    public void SetIndices(DataBuffer buffer, int offset)
     {
       Debug.Assert(0 <= offset && offset + buffer.Count <= IndexCount && buffer.ComponentCount == 1);
 
@@ -493,7 +493,7 @@ namespace Tes.Runtime
       _verticesDirty = true;
     }
 
-    public void SetVertices(VertexBuffer buffer, int offset, bool adjustBounds = false)
+    public void SetVertices(DataBuffer buffer, int offset, bool adjustBounds = false)
     {
       Debug.Assert(0 <= offset && offset + buffer.Count <= VertexCount && buffer.ComponentCount == 3);
       Vector3 v = new Vector3();
@@ -602,7 +602,7 @@ namespace Tes.Runtime
       _normalsDirty = true;
     }
 
-    public void SetNormals(VertexBuffer buffer, int offset)
+    public void SetNormals(DataBuffer buffer, int offset)
     {
       if (_normals == null)
       {
@@ -685,7 +685,7 @@ namespace Tes.Runtime
       _coloursDirty = true;
     }
 
-    public void SetColours(VertexBuffer buffer, int offset)
+    public void SetColours(DataBuffer buffer, int offset)
     {
       if (_colours == null)
       {
@@ -764,7 +764,7 @@ namespace Tes.Runtime
       _uvsDirty = true;
     }
 
-    public void SetUVs(VertexBuffer buffer, int offset)
+    public void SetUVs(DataBuffer buffer, int offset)
     {
       if (_uvs == null)
       {

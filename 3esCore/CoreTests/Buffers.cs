@@ -18,14 +18,14 @@ namespace Tes.CoreTests
 {
   public class Buffers
   {
-    private VertexBuffer TestPacktised(VertexBuffer referenceBuffer, DataStreamType sendType, double quantisationUnit = 1e-1)
+    private DataBuffer TestPacktised(DataBuffer referenceBuffer, DataStreamType sendType, double quantisationUnit = 1e-1)
     {
       // Prepare the packet buffer.
       // Keep a relatively small size to ensure we need more than one cycle.
       PacketBuffer packet = new PacketBuffer(16 * 1024);
 
       // Create a receiving buffer.
-      VertexBuffer recvBuffer = new VertexBuffer();
+      DataBuffer recvBuffer = new DataBuffer();
 
       // Start write/read cycle.
       int packetCapacity = packet.Data.Length;
@@ -108,7 +108,7 @@ namespace Tes.CoreTests
       return recvBuffer;
     }
 
-    private void TestReadSByte<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, sbyte> compare)
+    private void TestReadSByte<T>(DataBuffer buffer, List<T> reference, Action<int, List<T>, sbyte> compare)
     {
       List<sbyte> readItems = new List<sbyte>();
       buffer.GetRange(readItems, 0, buffer.AddressableCount);
@@ -121,7 +121,7 @@ namespace Tes.CoreTests
       }
     }
 
-    private void TestReadByte<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, byte> compare)
+    private void TestReadByte<T>(DataBuffer buffer, List<T> reference, Action<int, List<T>, byte> compare)
     {
       List<byte> readItems = new List<byte>();
       buffer.GetRange(readItems, 0, buffer.AddressableCount);
@@ -134,7 +134,7 @@ namespace Tes.CoreTests
       }
     }
 
-    private void TestReadInt16<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, short> compare)
+    private void TestReadInt16<T>(DataBuffer buffer, List<T> reference, Action<int, List<T>, short> compare)
     {
       List<short> readItems = new List<short>();
       buffer.GetRange(readItems, 0, buffer.AddressableCount);
@@ -147,7 +147,7 @@ namespace Tes.CoreTests
       }
     }
 
-    private void TestReadUInt16<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, ushort> compare)
+    private void TestReadUInt16<T>(DataBuffer buffer, List<T> reference, Action<int, List<T>, ushort> compare)
     {
       List<ushort> readItems = new List<ushort>();
       buffer.GetRange(readItems, 0, buffer.AddressableCount);
@@ -160,7 +160,7 @@ namespace Tes.CoreTests
       }
     }
 
-    private void TestReadInt32<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, int> compare)
+    private void TestReadInt32<T>(DataBuffer buffer, List<T> reference, Action<int, List<T>, int> compare)
     {
       List<int> readItems = new List<int>();
       buffer.GetRange(readItems, 0, buffer.AddressableCount);
@@ -173,7 +173,7 @@ namespace Tes.CoreTests
       }
     }
 
-    private void TestReadUInt32<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, uint> compare)
+    private void TestReadUInt32<T>(DataBuffer buffer, List<T> reference, Action<int, List<T>, uint> compare)
     {
       List<uint> readItems = new List<uint>();
       buffer.GetRange(readItems, 0, buffer.AddressableCount);
@@ -186,7 +186,7 @@ namespace Tes.CoreTests
       }
     }
 
-    private void TestReadInt64<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, long> compare)
+    private void TestReadInt64<T>(DataBuffer buffer, List<T> reference, Action<int, List<T>, long> compare)
     {
       List<long> readItems = new List<long>();
       buffer.GetRange(readItems, 0, buffer.AddressableCount);
@@ -199,7 +199,7 @@ namespace Tes.CoreTests
       }
     }
 
-    private void TestReadUInt64<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, ulong> compare)
+    private void TestReadUInt64<T>(DataBuffer buffer, List<T> reference, Action<int, List<T>, ulong> compare)
     {
       List<ulong> readItems = new List<ulong>();
       buffer.GetRange(readItems, 0, buffer.AddressableCount);
@@ -212,7 +212,7 @@ namespace Tes.CoreTests
       }
     }
 
-    private void TestReadSingle<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, float> compare)
+    private void TestReadSingle<T>(DataBuffer buffer, List<T> reference, Action<int, List<T>, float> compare)
     {
       List<float> readItems = new List<float>();
       buffer.GetRange(readItems, 0, buffer.AddressableCount);
@@ -225,7 +225,7 @@ namespace Tes.CoreTests
       }
     }
 
-    private void TestReadDouble<T>(VertexBuffer buffer, List<T> reference, Action<int, List<T>, double> compare)
+    private void TestReadDouble<T>(DataBuffer buffer, List<T> reference, Action<int, List<T>, double> compare)
     {
       List<double> readItems = new List<double>();
       buffer.GetRange(readItems, 0, buffer.AddressableCount);
@@ -247,7 +247,7 @@ namespace Tes.CoreTests
         reference.Add(i);
       }
 
-      VertexBuffer buffer = VertexBuffer.Wrap(reference);
+      DataBuffer buffer = DataBuffer.Wrap(reference);
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i], val));
@@ -259,7 +259,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
 
-      buffer = VertexBuffer.Wrap(reference.ToArray());
+      buffer = DataBuffer.Wrap(reference.ToArray());
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i], val));
@@ -271,7 +271,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
 
-      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      DataBuffer referenceBuffer = DataBuffer.Wrap(reference);
       TestPacktised(referenceBuffer, DataStreamType.Int8);
     }
 
@@ -284,7 +284,7 @@ namespace Tes.CoreTests
         reference.Add(i);
       }
 
-      VertexBuffer buffer = VertexBuffer.Wrap(reference);
+      DataBuffer buffer = DataBuffer.Wrap(reference);
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i], val));
@@ -296,7 +296,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
 
-      buffer = VertexBuffer.Wrap(reference.ToArray());
+      buffer = DataBuffer.Wrap(reference.ToArray());
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i], val));
@@ -308,7 +308,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
 
-      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      DataBuffer referenceBuffer = DataBuffer.Wrap(reference);
       TestPacktised(referenceBuffer, DataStreamType.UInt8);
     }
 
@@ -321,7 +321,7 @@ namespace Tes.CoreTests
         reference.Add(i);
       }
 
-      VertexBuffer buffer = VertexBuffer.Wrap(reference);
+      DataBuffer buffer = DataBuffer.Wrap(reference);
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i], val));
@@ -333,7 +333,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
 
-      buffer = VertexBuffer.Wrap(reference.ToArray());
+      buffer = DataBuffer.Wrap(reference.ToArray());
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i], val));
@@ -345,7 +345,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
 
-      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      DataBuffer referenceBuffer = DataBuffer.Wrap(reference);
       TestPacktised(referenceBuffer, DataStreamType.Int16);
     }
 
@@ -358,7 +358,7 @@ namespace Tes.CoreTests
         reference.Add(i);
       }
 
-      VertexBuffer buffer = VertexBuffer.Wrap(reference);
+      DataBuffer buffer = DataBuffer.Wrap(reference);
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i], val));
@@ -370,7 +370,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
 
-      buffer = VertexBuffer.Wrap(reference.ToArray());
+      buffer = DataBuffer.Wrap(reference.ToArray());
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i], val));
@@ -382,7 +382,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
 
-      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      DataBuffer referenceBuffer = DataBuffer.Wrap(reference);
       TestPacktised(referenceBuffer, DataStreamType.UInt16);
     }
 
@@ -395,7 +395,7 @@ namespace Tes.CoreTests
         reference.Add(i);
       }
 
-      VertexBuffer buffer = VertexBuffer.Wrap(reference);
+      DataBuffer buffer = DataBuffer.Wrap(reference);
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i], val));
@@ -407,7 +407,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
 
-      buffer = VertexBuffer.Wrap(reference.ToArray());
+      buffer = DataBuffer.Wrap(reference.ToArray());
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i], val));
@@ -419,7 +419,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
 
-      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      DataBuffer referenceBuffer = DataBuffer.Wrap(reference);
       TestPacktised(referenceBuffer, DataStreamType.Int32);
     }
 
@@ -432,7 +432,7 @@ namespace Tes.CoreTests
         reference.Add(i);
       }
 
-      VertexBuffer buffer = VertexBuffer.Wrap(reference);
+      DataBuffer buffer = DataBuffer.Wrap(reference);
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i], val));
@@ -444,7 +444,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
 
-      buffer = VertexBuffer.Wrap(reference.ToArray());
+      buffer = DataBuffer.Wrap(reference.ToArray());
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i], val));
@@ -456,7 +456,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
 
-      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      DataBuffer referenceBuffer = DataBuffer.Wrap(reference);
       TestPacktised(referenceBuffer, DataStreamType.UInt32);
     }
 
@@ -469,7 +469,7 @@ namespace Tes.CoreTests
         reference.Add(i);
       }
 
-      VertexBuffer buffer = VertexBuffer.Wrap(reference);
+      DataBuffer buffer = DataBuffer.Wrap(reference);
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i], val));
@@ -481,7 +481,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
 
-      buffer = VertexBuffer.Wrap(reference.ToArray());
+      buffer = DataBuffer.Wrap(reference.ToArray());
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i], val));
@@ -493,7 +493,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
 
-      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      DataBuffer referenceBuffer = DataBuffer.Wrap(reference);
       TestPacktised(referenceBuffer, DataStreamType.Float32);
       TestPacktised(referenceBuffer, DataStreamType.PackedFloat16, 2.5f);
     }
@@ -507,7 +507,7 @@ namespace Tes.CoreTests
         reference.Add(i);
       }
 
-      VertexBuffer buffer = VertexBuffer.Wrap(reference);
+      DataBuffer buffer = DataBuffer.Wrap(reference);
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i], val));
@@ -519,7 +519,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
 
-      buffer = VertexBuffer.Wrap(reference.ToArray());
+      buffer = DataBuffer.Wrap(reference.ToArray());
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i], val));
@@ -531,7 +531,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i], val));
 
-      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      DataBuffer referenceBuffer = DataBuffer.Wrap(reference);
       TestPacktised(referenceBuffer, DataStreamType.Float64);
       TestPacktised(referenceBuffer, DataStreamType.PackedFloat32, 2.5);
     }
@@ -545,7 +545,7 @@ namespace Tes.CoreTests
         reference.Add(new Vector2(i, 0.5f * i));
       }
 
-      VertexBuffer buffer = VertexBuffer.Wrap(reference);
+      DataBuffer buffer = DataBuffer.Wrap(reference);
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i / 2][i % 2], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i / 2][i % 2], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i / 2][i % 2], val));
@@ -557,7 +557,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i / 2][i % 2], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i / 2][i % 2], val));
 
-      buffer = VertexBuffer.Wrap(reference.ToArray());
+      buffer = DataBuffer.Wrap(reference.ToArray());
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i / 2][i % 2], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i / 2][i % 2], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i / 2][i % 2], val));
@@ -579,7 +579,7 @@ namespace Tes.CoreTests
         reference.Add(new Vector3(i, 0.5f * i, -0.5f * i));
       }
 
-      VertexBuffer buffer = VertexBuffer.Wrap(reference);
+      DataBuffer buffer = DataBuffer.Wrap(reference);
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i / 3][i % 3], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i / 3][i % 3], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i / 3][i % 3], val));
@@ -591,7 +591,7 @@ namespace Tes.CoreTests
       TestReadSingle(buffer, reference, (i, refList, val) => Assert.Equal((float)refList[i / 3][i % 3], val));
       TestReadDouble(buffer, reference, (i, refList, val) => Assert.Equal((double)refList[i / 3][i % 3], val));
 
-      buffer = VertexBuffer.Wrap(reference.ToArray());
+      buffer = DataBuffer.Wrap(reference.ToArray());
       TestReadSByte(buffer, reference, (i, refList, val) => Assert.Equal((sbyte)refList[i / 3][i % 3], val));
       TestReadByte(buffer, reference, (i, refList, val) => Assert.Equal((byte)refList[i / 3][i % 3], val));
       TestReadInt16(buffer, reference, (i, refList, val) => Assert.Equal((short)refList[i / 3][i % 3], val));
@@ -617,7 +617,7 @@ namespace Tes.CoreTests
         reference.Add(value);
       }
       // Wrap the buffer.
-      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      DataBuffer referenceBuffer = DataBuffer.Wrap(reference);
       TestPacktised(referenceBuffer, DataStreamType.Int8);
       TestPacktised(referenceBuffer, DataStreamType.UInt8);
 
@@ -658,11 +658,11 @@ namespace Tes.CoreTests
         reference.Add(new Vector3(i, 0.5f * i, -0.5f * i));
       }
 
-      // Wrap into a VertexBuffer
-      VertexBuffer referenceBuffer = VertexBuffer.Wrap(reference);
+      // Wrap into a DataBuffer
+      DataBuffer referenceBuffer = DataBuffer.Wrap(reference);
       // Test unpacking into various formats.
       // Pack/unpack as is.
-      VertexBuffer recvBuffer = TestPacktised(referenceBuffer, DataStreamType.Float32);
+      DataBuffer recvBuffer = TestPacktised(referenceBuffer, DataStreamType.Float32);
       Assert.Equal(reference.Count, recvBuffer.Count);
       Assert.Equal(3, recvBuffer.ComponentCount);
       // Pack using doubles

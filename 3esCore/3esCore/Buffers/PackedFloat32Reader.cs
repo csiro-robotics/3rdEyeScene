@@ -4,7 +4,7 @@ using System.IO;
 namespace Tes.Buffers
 {
   /// <summary>
-  /// A utility class to handle reading from a 32-bit packed data buffer into a <see cref="VertexBuffer"/>.
+  /// A utility class to handle reading from a 32-bit packed data buffer into a <see cref="DataBuffer"/>.
   /// Assumes the target type is <c>double</c>.
   /// </summary>
   class PackedFloat32Reader : BinaryReader
