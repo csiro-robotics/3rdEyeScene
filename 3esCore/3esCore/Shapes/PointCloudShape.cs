@@ -182,20 +182,10 @@ namespace Tes.Shapes
 
       uint cloudID = reader.ReadUInt32();
       uint indexCount = reader.ReadUInt32();
+      PointScale = reader.ReadSingle();
 
       PointCloud = new PlaceholderMesh(cloudID);
       _indices = (indexCount > 0) ? new uint[indexCount] : null;
-
-      if (packet.Header.VersionMajor != 0 || packet.Header.VersionMajor == 0 && packet.Header.VersionMinor >= 2)
-      {
-        PointScale = reader.ReadSingle();
-      }
-      else
-      {
-       // Legacy support
-        byte pointSize = reader.ReadByte();
-        PointScale = (float)pointSize;
-      }
 
       return true;
     }

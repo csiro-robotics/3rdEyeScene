@@ -29,14 +29,15 @@ namespace Tes.Net
     public byte CameraID;
 
     /// <summary>
-    /// Padding/reserved. Must be zero.
+    /// Flags. Currently must be zero as the only valid flag is the doulbe precision indicator (value 1), which is not
+    /// supported this structure. All values are floats.
     /// </summary>
-    public byte Reserved1;
+    public byte Flags;
 
     /// <summary>
     /// Padding/reserved. Must be zero.
     /// </summary>
-    public ushort Reserved2;
+    public ushort Reserved;
 
     /// <summary>
     /// Position X coordinate.
@@ -106,8 +107,8 @@ namespace Tes.Net
     public bool Read(BinaryReader reader)
     {
       CameraID = reader.ReadByte();
-      Reserved1 = reader.ReadByte();
-      Reserved2 = reader.ReadUInt16();
+      Flags = reader.ReadByte();
+      Reserved = reader.ReadUInt16();
       X = reader.ReadSingle();
       Y = reader.ReadSingle();
       Z = reader.ReadSingle();
@@ -131,8 +132,8 @@ namespace Tes.Net
     public bool Write(PacketBuffer packet)
     {
       packet.WriteBytes(new byte[] { CameraID }, true);
-      packet.WriteBytes(new byte[] { Reserved1 }, true);
-      packet.WriteBytes(BitConverter.GetBytes(Reserved2), true);
+      packet.WriteBytes(new byte[] { Flags }, true);
+      packet.WriteBytes(BitConverter.GetBytes(Reserved), true);
       packet.WriteBytes(BitConverter.GetBytes(X), true);
       packet.WriteBytes(BitConverter.GetBytes(Y), true);
       packet.WriteBytes(BitConverter.GetBytes(Z), true);

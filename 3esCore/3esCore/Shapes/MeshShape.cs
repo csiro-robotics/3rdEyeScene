@@ -400,10 +400,10 @@ namespace Tes.Shapes
     /// </remarks>
     public float DrawScale
     {
-      get { return _drawWeight; }
+      get { return _drawScale; }
       set
       {
-        _drawWeight = value;
+        _drawScale = value;
       }
     }
 
@@ -514,8 +514,8 @@ namespace Tes.Shapes
       count = _indices.Count;
       packet.WriteBytes(BitConverter.GetBytes(count), true);
       byte drawType = (byte)DrawType;
+      packet.WriteBytes(BitConverter.GetBytes(_drawScale), true);
       packet.WriteBytes(new byte[] { drawType }, false);
-      packet.WriteBytes(BitConverter.GetBytes(_drawWeight), true);
 
       return true;
     }
@@ -705,9 +705,9 @@ namespace Tes.Shapes
 
       vertexCount = reader.ReadUInt32();
       indexCount = reader.ReadUInt32();
+      _drawScale = reader.ReadSingle();
       drawType = reader.ReadByte();
       DrawType = (MeshDrawType)drawType;
-      _drawWeight = reader.ReadSingle();
 
       if (_vertices == null || _vertices.Count != vertexCount)
       {
@@ -881,6 +881,6 @@ namespace Tes.Shapes
     /// <summary>
     /// Draw weight: equates to point size or line width.
     /// </summary>
-    private float _drawWeight = 0.0f;
+    private float _drawScale = 0.0f;
   }
 }

@@ -274,6 +274,7 @@ namespace Tes.Handlers.Shape3D
     {
       int vertexCount = reader.ReadInt32();
       int indexCount = reader.ReadInt32();
+      float drawScale = reader.ReadSingle();
       MeshDrawType drawType = (MeshDrawType)reader.ReadByte();
 
       RenderMesh mesh = new RenderMesh(drawType, vertexCount, indexCount);
@@ -281,18 +282,8 @@ namespace Tes.Handlers.Shape3D
       {
         Mesh = mesh,
         CalculateNormals = (msg.Flags & (ushort)MeshShapeFlag.CalculateNormals) != 0,
-        DrawScale = 0.0f
+        DrawScale = drawScale
       };
-
-      if (packet.Header.VersionMajor == 0 && packet.Header.VersionMinor == 1)
-      {
-        // Legacy handling.
-        meshEntry.DrawScale = 0.0f;
-      }
-      else
-      {
-        meshEntry.DrawScale = reader.ReadSingle();
-      }
 
       cache.SetShapeDataByIndex(shapeIndex, meshEntry);
 

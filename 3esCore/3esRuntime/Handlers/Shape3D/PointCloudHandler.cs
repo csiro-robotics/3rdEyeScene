@@ -160,16 +160,16 @@ namespace Tes.Handlers.Shape3D
         points.Material.SetColor("_BackColour", Color.white);
         switch (CoordinateFrameUtil.AxisIndex(ServerInfo.CoordinateFrame, 2))
         {
-        case 0:
-          points.Material.EnableKeyword("WITH_COLOURS_RANGE_X");
-          break;
-        case 1:
-          points.Material.EnableKeyword("WITH_COLOURS_RANGE_Y");
-          break;
-        default:
-        case 2:
-          points.Material.EnableKeyword("WITH_COLOURS_RANGE_Z");
-          break;
+          case 0:
+            points.Material.EnableKeyword("WITH_COLOURS_RANGE_X");
+            break;
+          case 1:
+            points.Material.EnableKeyword("WITH_COLOURS_RANGE_Y");
+            break;
+          default:
+          case 2:
+            points.Material.EnableKeyword("WITH_COLOURS_RANGE_Z");
+            break;
         }
       }
 
@@ -251,16 +251,7 @@ namespace Tes.Handlers.Shape3D
       pointsComp.MeshID = reader.ReadUInt32();
       // Read the number of indices (zero implies show entire mesh).
       pointsComp.IndexCount = reader.ReadUInt32();
-
-      if (packet.Header.VersionMajor == 0 && packet.Header.VersionMinor == 1)
-      {
-        // Legacy support.
-        pointsComp.PointScale = (float)reader.ReadByte();
-      }
-      else
-      {
-        pointsComp.PointScale = reader.ReadSingle();
-      }
+      pointsComp.PointScale = reader.ReadSingle();
 
       cache.SetShapeDataByIndex(shapeIndex, pointsComp);
 
@@ -307,7 +298,7 @@ namespace Tes.Handlers.Shape3D
 
       pointsComp.IndicesDirty = true;
 
-      if (pointsComp.IndexCount != 0 &&  offset + count >= pointsComp.IndexCount)
+      if (pointsComp.IndexCount != 0 && offset + count >= pointsComp.IndexCount)
       {
         // Done. Register for the mesh.
         RegisterForMesh(pointsComp);
