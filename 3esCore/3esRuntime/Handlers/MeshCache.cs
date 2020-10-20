@@ -731,7 +731,7 @@ namespace Tes.Handlers
       {
         // Calculate bounds padding used to cater for voxel rendering.
         Vector3 boundsPadding = meshEntry.Mesh.BoundsPadding;
-        for (int i = offset; offset < meshEntry.Mesh.Normals.Length; ++i)
+        for (int i = offset; i < meshEntry.Mesh.Normals.Length && i < offset + count; ++i)
         {
           // Bounds padding used to cater for voxel rendering.
           Vector3 n = meshEntry.Mesh.Normals[i];

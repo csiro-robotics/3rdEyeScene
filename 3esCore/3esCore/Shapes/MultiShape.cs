@@ -8,13 +8,27 @@ namespace Tes.Shapes
   public class MultiShape : Shape
   {
     /// <summary>
-    /// Maximum number of shapes in a multi-shape packet. Limited by packet size.
+    /// Maximum number of shapes in a multi-shape packet when using single precision attributes. Half for double
+    /// precision. Limited by packet size.
     /// </summary>
-    public static readonly int BlockCountLimit = 1024;
+    public static readonly int BlockCountLimitSingle = 1024;
     /// <summary>
     /// Maximum number of shapes in a multi-shape.
     /// </summary>
     public static readonly int ShapeCountLimit = 0xffff;
+
+    /// <summary>
+    /// Maximum number of shapes in a multi-shape packet for this multi-shape. Modified the
+    /// <see cref="ObjectFlag.DoublePrecision"/> value.
+    /// </summary>
+    public int BlockCountLimit
+    {
+      get
+      {
+        return (((Data.Flags & (ushort)ObjectFlag.DoublePrecision) != 0)) ?
+          BlockCountLimitSingle / 2 : BlockCountLimitSingle;
+      }
+    }
 
     public MultiShape(Shape[] shapes, Vector3 position, Quaternion rotation, Vector3 scale)
       : base(shapes[0].RoutingID, shapes[0].ID, shapes[0].Category)
@@ -40,6 +54,12 @@ namespace Tes.Shapes
       _data.Attributes.ScaleY = scale.Y;
       _data.Attributes.ScaleZ = scale.Z;
       _data.Flags |= (ushort)ObjectFlag.MultiShape;
+      // Match double precision flag to the first shape (all should be the same)
+      _data.Flags &= (ushort)(~ObjectFlag.DoublePrecision);
+      if ((shapes[0].Data.Flags & (ushort)ObjectFlag.DoublePrecision) != 0)
+      {
+        _data.Flags |= (ushort)ObjectFlag.DoublePrecision;
+      }
     }
 
     public MultiShape(Shape[] shapes, Vector3 position, Quaternion rotation)
