@@ -50,8 +50,8 @@ namespace Tes.Handlers
     /// </summary>
     public ShapeHandler()
     {
-      _transientCache = new ShapeCache(128, true);
-      _shapeCache = new ShapeCache(128, false);
+      _transientCache = new ShapeCache(8 * 1024, true);
+      _shapeCache = new ShapeCache(8 * 1024, false);
       SolidMaterialName = MaterialLibrary.OpaqueInstanced;
       WireframeMaterialName = MaterialLibrary.WireframeInstanced;
       TransparentMaterialName = MaterialLibrary.TransparentInstanced;
