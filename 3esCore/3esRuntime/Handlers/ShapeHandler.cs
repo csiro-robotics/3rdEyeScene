@@ -834,6 +834,18 @@ namespace Tes.Handlers
           return new Error(ErrorCode.MalformedMessage, parentShape.ObjectID);
         }
 
+        // HACK FIX: handle transparency in some of the shapes. A full fix requires that the client sends an
+        // ObjectFlag field (16-bit flags) for each shape allowing transparency and wireframe (at least) to be set for
+        // each item.
+        Maths.Colour colour = new Maths.Colour(multiShape.Attributes.Colour);
+        multiShape.Flags &= (ushort)(~ObjectFlag.Transparent);
+
+        if (colour.A < 255)
+        {
+          // Have alpha. Enable the flag.
+          multiShape.Flags |= (ushort)ObjectFlag.Transparent;
+        }
+
         multiChainHead = CreateShape(cache, multiShape, multiChainHead, parentTransform);
       }
 
