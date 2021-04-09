@@ -238,4 +238,4 @@ void releaseTes()
 }
 ```
 
-Additional documentation can be found at [https://data61.github.io/3rdEyeScene/](https://data61.github.io/3rdEyeScene/)
+Additional documentation can be found at [csiro-robotics.github.io/3rdEyeScene/](https://csiro-robotics.github.io/3rdEyeScene/)
