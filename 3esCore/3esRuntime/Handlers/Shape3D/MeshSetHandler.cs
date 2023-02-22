@@ -155,6 +155,19 @@ namespace Tes.Handlers.Shape3D
           material.SetColor("_BackColour", new Maths.Colour(shape.Attributes.Colour).ToUnity32());
         }
 
+        // Handle draw scale using brute force.
+        if (mesh.DrawScale > 0)
+        {
+          if (material.HasProperty("_PointSize"))
+          {
+            material.SetFloat("_PointSize", mesh.DrawScale);
+          }
+          if (material.HasProperty("_Scale"))
+          {
+            material.SetFloat("_Scale", mesh.DrawScale);
+          }
+        }
+
         // Bind vertices and draw.
         material.SetBuffer("_Vertices", mesh.VertexBuffer);
 

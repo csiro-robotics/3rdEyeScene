@@ -27,6 +27,23 @@ namespace Tes.Shapes
     byte DrawType { get; }
 
     /// <summary>
+    /// Controls the draw scale for the mesh resource.
+    /// </summary>
+    /// <remarks>
+    /// The draw scale semantics depend on the <see cref="DrawType"/>.
+    ///
+    /// <list type="bullet">
+    /// <item><c>DtPoints</c> point size.</item>
+    /// <item><c>DtLines</c> line width.</item>
+    /// <item><c>DtTriangles</c> no effect.</item>
+    /// <item><c>DtVoxels</c> voxel size (cube edge length).</item>
+    /// </list>
+    ///
+    /// A zero value implies using the default viewer value.
+    /// </remarks>
+    float DrawScale { get; }
+
+    /// <summary>
     /// Defines the byte size used by indices in this mesh.
     /// </summary>
     /// <value>The size of each index value in bytes.</value>

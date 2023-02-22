@@ -420,8 +420,8 @@ namespace Tes.CoreTests
       {
         Assert.NotNull(mesh.UVs());
 
-        var refUVs= reference.UVs();
-        var meshUVs= mesh.UVs();
+        var refUVs = reference.UVs();
+        var meshUVs = mesh.UVs();
 
         Assert.Equal(refUVs.Length, meshUVs.Length);
 
@@ -561,60 +561,6 @@ namespace Tes.CoreTests
         set.AddPart(meshes[i], transform);
       }
       ShapeTestFramework.TestShape(set, create, ValidateMeshSetShape);
-    }
-
-    public void ValidatePointCloudShape(Shape shapeArg, Shape referenceArg, Dictionary<ulong, Resource> resources)
-    {
-      ShapeTestFramework.ValidateShape(shapeArg, referenceArg, resources);
-      PointCloudShape shape = (PointCloudShape)shapeArg;
-      PointCloudShape reference = (PointCloudShape)referenceArg;
-
-      Assert.Equal(reference.PointScale, shape.PointScale);
-      Assert.NotNull(reference.PointCloud);
-      Assert.NotNull(shape.PointCloud);
-
-      Assert.Equal(reference.PointCloud.ID, shape.PointCloud.ID);
-
-      // Resolve the mesh resource.
-      Resource resource;
-      Assert.True(resources.TryGetValue(shape.PointCloud.UniqueKey(), out resource));
-      // Remember, resource will be a SimpleMesh, not a PointCloud.
-      MeshResource cloud = (MeshResource)resource;
-      ValidateMesh(cloud, reference.PointCloud);
-    }
-
-    [Fact]
-    public void PointCloudTest()
-    {
-      List<Vector3> vertices = new List<Vector3>();
-      List<Vector3> normals = new List<Vector3>();
-      List<int> indices = new List<int>();
-      uint[] colours;
-      Common.MakeHiResSphere(vertices, indices, normals);
-
-      // Build per vertex colours with colour cycling.
-      colours = new uint[vertices.Count];
-      for (int i = 0; i < colours.Length; ++i)
-      {
-        colours[i] = Colour.Cycle(i).Value;
-      }
-
-      PointCloud cloud = new PointCloud(1, vertices.Count);
-      cloud.AddPoints(vertices);
-      cloud.AddNormals(normals);
-      cloud.AddColours(colours);
-
-      ShapeTestFramework.CreateShapeFunction create = () => { return new PointCloudShape(); };
-      ShapeTestFramework.TestShape(new PointCloudShape(cloud, 41, 1, 8), create, ValidatePointCloudShape);
-
-      // Run a cloud with an indexed sub-set.
-      uint[] indexedSubSet = new uint[vertices.Count / 2];
-      for (uint i = 0; i < indexedSubSet.Length; ++i)
-      {
-        indexedSubSet[i] = i;
-      }
-
-      ShapeTestFramework.TestShape(new PointCloudShape(cloud, 41, 1, 8).SetIndices(indexedSubSet), create, ValidatePointCloudShape);
     }
   }
 }

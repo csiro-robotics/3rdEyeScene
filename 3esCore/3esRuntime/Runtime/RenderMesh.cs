@@ -17,6 +17,12 @@ namespace Tes.Runtime
       set { _drawType = value; }
     }
 
+    public float DrawScale
+    {
+      get { return _drawScale; }
+      set { _drawScale = value; }
+    }
+
     public MeshTopology Topology
     {
       get
@@ -974,5 +980,6 @@ namespace Tes.Runtime
     private int _vertexCount = 0;
     private int _indexCount = 0;
     private MeshDrawType _drawType = MeshDrawType.Triangles;
+    private float _drawScale = 0.0f;
   }
 }

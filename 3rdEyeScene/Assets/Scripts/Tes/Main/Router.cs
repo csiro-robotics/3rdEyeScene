@@ -96,19 +96,19 @@ namespace Tes.Main
         {
           switch (netThread.Status)
           {
-          case NetworkThreadStatus.None:
-            return RouterMode.Idle;
-          case NetworkThreadStatus.Connecting:
-          case NetworkThreadStatus.Reconnecting:
-            return RouterMode.Connecting;
-          case NetworkThreadStatus.Connected:
-            if (_recordingWriter != null)
-            {
-              return RouterMode.Recording;
-            }
-            return RouterMode.Connected;
-          default:
-            break;
+            case NetworkThreadStatus.None:
+              return RouterMode.Idle;
+            case NetworkThreadStatus.Connecting:
+            case NetworkThreadStatus.Reconnecting:
+              return RouterMode.Connecting;
+            case NetworkThreadStatus.Connected:
+              if (_recordingWriter != null)
+              {
+                return RouterMode.Recording;
+              }
+              return RouterMode.Connected;
+            default:
+              break;
           }
         }
 
@@ -302,7 +302,7 @@ namespace Tes.Main
                 return Enum.GetName(enumType, value);
               }
             }
-            catch (InvalidCastException )
+            catch (InvalidCastException)
             {
               // Not sure why I'm getting this cast exception. Oddly, it trips
               // when value and id are not equal, but not when they are equal.
@@ -316,6 +316,11 @@ namespace Tes.Main
       if (handler != null)
       {
         return handler.Name;
+      }
+
+      if (_deprecatedHandlers.ContainsKey(id))
+      {
+        return _deprecatedHandlers[id];
       }
 
       return id.ToString();
@@ -640,6 +645,9 @@ namespace Tes.Main
       }
 
       Log.AddTarget(new LogAdaptor());
+
+      // Build deprecation list.
+      _deprecatedHandlers[(ushort)ShapeID.DeprecatedPointCloud] = "PointCloudShape(deprecated)";
     }
 
     /// <summary>
@@ -884,22 +892,22 @@ namespace Tes.Main
       {
         switch ((ControlMessageID)packet.Header.MessageID)
         {
-        case ControlMessageID.EndFrame:
-        case ControlMessageID.ForceFrameFlush:
-        case ControlMessageID.Reset:
-          // Noop. Already handled when dequeued.
-          break;
-        case ControlMessageID.CoordinateFrame:
-          if (Scene != null && Scene.Root != null)
-          {
-            Scene.Frame = (CoordinateFrame)message.Value32;
-          }
-          break;
-        case ControlMessageID.Keyframe:
-          GenerateKeyframe(message.Value32, !catchingUp);
-          break;
-        default:
-          break;
+          case ControlMessageID.EndFrame:
+          case ControlMessageID.ForceFrameFlush:
+          case ControlMessageID.Reset:
+            // Noop. Already handled when dequeued.
+            break;
+          case ControlMessageID.CoordinateFrame:
+            if (Scene != null && Scene.Root != null)
+            {
+              Scene.Frame = (CoordinateFrame)message.Value32;
+            }
+            break;
+          case ControlMessageID.Keyframe:
+            GenerateKeyframe(message.Value32, !catchingUp);
+            break;
+          default:
+            break;
         }
       }
       else
@@ -1523,5 +1531,9 @@ namespace Tes.Main
     /// Playback speed scaling.
     /// </summary>
     private float _playbackSpeed = 1.0f;
+    /// <summary>
+    /// Stores routing IDs of deprecated handers with the name of what used to be handled.
+    /// </summary>
+    private Dictionary<ushort, string> _deprecatedHandlers = new Dictionary<ushort, string>();
   }
 }

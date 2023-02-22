@@ -107,6 +107,7 @@ namespace Tes.Handlers
         Transform = transform;
         Tint = Maths.ColourExt.FromUnity(details.Tint).Value;
         DrawType = (byte)mesh.DrawType;
+        DrawScale = mesh.DrawScale;
         // TODO: (KS) track this flag. Mind you, the normals will have been calculated by now...
         CalculateNormals = false;//Details.Builder.CalculateNormals;
 
@@ -502,8 +503,15 @@ namespace Tes.Handlers
         return new Error(ErrorCode.UnsupportedFeature, msg.DrawType);
       }
 
+      float drawScale = 0;
+      if ((msg.Flags & (ushort)MeshCreateFlag.DrawScale) != 0u)
+      {
+        drawScale = reader.ReadSingle();
+      }
+
       MeshDetails meshEntry = new MeshDetails();
       RenderMesh renderMesh = new RenderMesh((MeshDrawType)msg.DrawType, (int)msg.VertexCount, (int)msg.IndexCount);
+      renderMesh.DrawScale = drawScale;
       meshEntry.Mesh = renderMesh;
 
       meshEntry.ID = msg.MeshID;

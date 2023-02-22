@@ -206,7 +206,7 @@ namespace Tes.IO
     /// <summary>
     /// The current minor version number for a 3rd Eye Scene packet.
     /// </summary>
-    public static readonly UInt16 PacketVersionMinor = (UInt16)0x3u;
+    public static readonly UInt16 PacketVersionMinor = (UInt16)0x4u;
 
     /// <summary>
     /// The minimum (major) version number which can be read by this library.

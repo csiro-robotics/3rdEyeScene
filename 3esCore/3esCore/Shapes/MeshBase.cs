@@ -49,6 +49,23 @@ namespace Tes.Shapes
     }
 
     /// <summary>
+    /// Controls the draw scale for the mesh resource.
+    /// </summary>
+    /// <remarks>
+    /// The draw scale semantics depend on the <see cref="DrawType"/>.
+    ///
+    /// <list type="bullet">
+    /// <item><c>DtPoints</c> point size.</item>
+    /// <item><c>DtLines</c> line width.</item>
+    /// <item><c>DtTriangles</c> no effect.</item>
+    /// <item><c>DtVoxels</c> voxel size (cube edge length).</item>
+    /// </list>
+    ///
+    /// A zero value implies using the default viewer value.
+    /// </remarks>
+    public float DrawScale { get; set; }
+
+    /// <summary>
     /// Flag the mesh to calculate normals at the client when none are provided here?
     /// </summary>
     public bool CalculateNormals { get; set; }
@@ -218,6 +235,7 @@ namespace Tes.Shapes
     /// <returns>Zero on success.</returns>
     public int Create(PacketBuffer packet)
     {
+      float drawScale = DrawScale;
       MeshCreateMessage msg = new MeshCreateMessage();
       msg.Attributes.SetFromTransform(Transform);
       msg.Attributes.Colour = Tint;
@@ -227,8 +245,19 @@ namespace Tes.Shapes
       msg.IndexCount = IndexCount();
       msg.DrawType = DrawType;
 
+      if (drawScale > 0)
+      {
+        msg.Flags |= (ushort)MeshCreateFlag.DrawScale;
+      }
+
       packet.Reset((ushort)RoutingID.Mesh, MeshCreateMessage.MessageID);
       msg.Write(packet);
+
+      if (drawScale > 0)
+      {
+        packet.WriteBytes(BitConverter.GetBytes(drawScale), true);
+      }
+
       return 0;
     }
 
@@ -380,6 +409,15 @@ namespace Tes.Shapes
       if (!msg.Read(reader))
       {
         return false;
+      }
+
+      if ((msg.Flags & (ushort)MeshCreateFlag.DrawScale) != 0)
+      {
+        // Read draw scale as well.
+        DrawScale = reader.ReadSingle();
+      }
+      {
+        DrawScale = 0;
       }
 
       return ProcessCreate(msg);

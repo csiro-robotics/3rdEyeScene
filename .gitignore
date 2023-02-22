@@ -17,3 +17,5 @@ build*/
 3esCore/doc/
 3esCore/packages/
 *.user
+
+3rdEyeScene/Logs/

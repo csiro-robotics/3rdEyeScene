@@ -14,6 +14,13 @@ namespace Tes.Net
     /// Indicates the use of double precision floating point values.
     /// </summary>
     DoublePrecision = (1 << 0),
+    /// <summary>
+    /// Draw scale is present in the creation message
+    /// </summary>
+    /// <remarks>
+    /// This is a float32 value immediately following the creation message.
+    /// </remarks>
+    DrawScale = (1 << 1),
   };
 
   /// <summary>

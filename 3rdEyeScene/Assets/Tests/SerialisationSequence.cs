@@ -47,7 +47,7 @@ public class SerialisationSequence
     Default = Position | Rotation | Scale | Colour
   }
 
-  public ushort TestPort { get; set; }  =35035;
+  public ushort TestPort { get; set; } = 35035;
   public float ConnectWaitTime { get; set; } = 5.0f;
   public float StreamWaitTime { get; set; } = 1.0f;
   public CoordinateFrame ServerCoordinateFrame { get; set; } = CoordinateFrame.XYZ;
@@ -75,7 +75,6 @@ public class SerialisationSequence
 
     _specialShapeValidation.Add(typeof(MeshShape), ValidateMeshShape);
     _specialShapeValidation.Add(typeof(MeshSet), ValidateMeshSet);
-    _specialShapeValidation.Add(typeof(PointCloudShape), ValidateCloud);
     _specialShapeValidation.Add(typeof(Text3D), ValidateText3D);
 
     _specialValidation.Add(typeof(Text2D), ValidateText2D);
@@ -149,7 +148,7 @@ public class SerialisationSequence
     yield return null;
 
     // Delay a frame to ensure data propagation (in case we have script execution order issues).
-    Debug.Assert(server.UpdateFrame(Time.deltaTime) >= 0);;
+    Debug.Assert(server.UpdateFrame(Time.deltaTime) >= 0); ;
     Debug.Log("Delayed");
     yield return null;
 
@@ -287,7 +286,6 @@ public class SerialisationSequence
       // Explicit instantiation for:
       // - MeshShape
       // - MeshSet
-      // - PointCloudShape
       // - Text2D
       // - Text3D
       // ( Categories)
@@ -295,7 +293,6 @@ public class SerialisationSequence
       {
         typeof(MeshShape),
         typeof(MeshSet),
-        typeof(PointCloudShape),
         typeof(Text2D),
         typeof(Text3D)
       };
@@ -407,8 +404,8 @@ public class SerialisationSequence
 
   Shape CreateCloud(uint id, MeshResource mesh)
   {
-    PointCloudShape cloud = new PointCloudShape(mesh, id);
-    cloud.ID = id;
+    MeshSet cloud = new MeshSet(id, 0);
+    cloud.AddPart(mesh);
     cloud.Position = new Tes.Maths.Vector3((float)id);
     return cloud;
   }
@@ -670,7 +667,7 @@ public class SerialisationSequence
         ok = false;
       }
     }
-    if (meshEntry.Mesh.IndexCount >0)
+    if (meshEntry.Mesh.IndexCount > 0)
     {
       ok = ValidateIndices("Index", meshEntry.Mesh.Indices, meshShapeReference.Indices.UnpackInt32Array()) && ok;
     }
@@ -755,26 +752,6 @@ public class SerialisationSequence
         }
       }
     }
-
-    return ok;
-  }
-
-  bool ValidateCloud(Shape shape, Shape referenceShape, MessageHandler handler)
-  {
-    PointCloudHandler cloudHandler = (PointCloudHandler)handler;
-    PointsComponent pointsData = cloudHandler.ShapeCache.GetShapeData<PointsComponent>(shape.ID);
-    PointCloudShape cloudReference = (PointCloudShape)referenceShape;
-
-    if (pointsData == null)
-    {
-      Debug.LogError("Unable to resolve point cloud data.");
-      return false;
-    }
-
-    bool ok = true;
-
-    // Only validate vertices.
-    ok = ValidateVectors("Point", pointsData.Mesh.Mesh.Vertices, cloudReference.PointCloud.Vertices()) && ok;
 
     return ok;
   }
