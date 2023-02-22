@@ -2,7 +2,7 @@
 
 This page describes how to build the 3esCore solution. This solution provides core 3es functionality for .Net projects including for the Unity 3D 3rdEyeScene client.
 
-# Pre-requisites
+## Pre-requisites
 
 - A .Net build system, recommended:
   - [Visual Studio for Windows or Mac](https://visualstudio.microsoft.com/) (not Visual Studio Code) compatible with the .Net 4.61 framework
@@ -13,7 +13,7 @@ This page describes how to build the 3esCore solution. This solution provides co
   - Minimum version: `2019.3`
 - [Python 3](https://www.python.org/) recommended for `unity-marshal.py`
 
-# Build instructions
+## Build instructions
 
 - Ensure the path to your Unity Engine DLL is set in the environment variable `UNITY_DLL_PATH` and set as shown below
   - Windows: typically `C:\Program Files\Unity\Hub\Editor\<Unity-version>\Editor\Data\Managed`
@@ -31,13 +31,13 @@ This page describes how to build the 3esCore solution. This solution provides co
     - Find the 3esRuntime.DLL. This will be under the `net461` directory for Visual Studio builds.
     - Copy the 3esRuntime.DLL, all other DLLs in the same folder and all .PDB files with the of the same name into the 3rdEyeScene Unity project, under `Assets/plugins`.
 
-## Visual Studio
+### Visual Studio
 
 - Open `3esCore.sln`
 - Select the build configuration (e.g., Release, Any CPU)
 - Select Build All in the menus
 
-## Visual Studio Code
+### Visual Studio Code
 
 A tasks.json file has been provided for building in Visual Studio Code using the `dotnet core`. This includes the following tasks:
 
@@ -51,7 +51,7 @@ A tasks.json file has been provided for building in Visual Studio Code using the
 - `marshal Release` : build and marshal the release assemblies for use by the 3rdEyeScene Unity project. Requires a `python` available on the path.
 - `marshal Debug` : build and marshal the debug assemblies for use by the 3rdEyeScene Unity project. Requires a `python` available on the path.
 
-## Command line dotnet build
+### Command line dotnet build
 
 - Open a command prompt
 - Ensure the `dotnet` command is available on the path by running `dotnet --info`
@@ -69,13 +69,13 @@ A tasks.json file has been provided for building in Visual Studio Code using the
 
 Note: If you receive an error message like the one quoted below (`MSB4126`), then you may need to change the environment variable `PLATFORM`. Either clear this variable or set it explicitly to `"Any CPU"`.
 
-```
+```txt
 ...\3esCore.sln.metaproj : error MSB4126: The specified solution configuration "Debug|x64" is invalid. Please specify a valid solution configuration using the Configuration and Platform properties (e.g. MSBuild.exe Solution.sln /p:Configuration=Debug /p:Platform="Any CPU") or leave those properties blank to use the default solution configuration. [D:\Users\Kazys\source\3rdEyeScene\3esCore\3esCore.sln]
     0 Warning(s)
     1 Error(s)
 ```
 
-### Running utilities ###
+#### Running utilities
 
 The utility programs may be executed using the `dotnet` command followed by the path of the utility DLL. For example, use `dotnet <path>/3esrec.dll` to run 3esrec.
 
@@ -88,7 +88,7 @@ It is possible to build executable programs using the publish commands listed ab
 - MacOS (bash shell):
   - `dotnet publish -f netcoreapp2.2 -c Release -o $PWD/build/Release -r osx-x64`
 
-# Notes on build setup
+## Notes on build setup
 
 This section highlights some issues encountered in setting up the build for cross platform development and explains why things are as they are.
 

@@ -118,6 +118,7 @@ namespace Tes.Shapes
       packet.WriteBytes(BitConverter.GetBytes((ushort)_parts.Count), true);
 
       ObjectAttributes partAttributes = new ObjectAttributes();
+      bool writeDoublePrecision = (_data.Flags & (ushort)ObjectFlag.DoublePrecision) != 0;
       for (int i = 0; i < _parts.Count; ++i)
       {
         uint partId = (_parts[i].Resource != null) ? (uint)_parts[i].Resource.ID : 0;
@@ -126,7 +127,7 @@ namespace Tes.Shapes
         partAttributes.Color = _parts[i].Colour.Value;
 
         packet.WriteBytes(BitConverter.GetBytes(partId), true);
-        partAttributes.Write(packet);
+        partAttributes.Write(packet, writeDoublePrecision);
       }
 
       return true;
@@ -158,12 +159,13 @@ namespace Tes.Shapes
       {
         uint meshId;
         ObjectAttributes partAttributes = new ObjectAttributes();
+        bool readDoublePrecision = (_data.Flags & (ushort)ObjectFlag.DoublePrecision) != 0;
 
         for (int i = 0; i < partCount; ++i)
         {
           meshId = reader.ReadUInt32();
 
-          if (!partAttributes.Read(reader))
+          if (!partAttributes.Read(reader, readDoublePrecision))
           {
             return false;
           }

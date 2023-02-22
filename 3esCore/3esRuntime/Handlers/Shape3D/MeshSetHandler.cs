@@ -155,6 +155,19 @@ namespace Tes.Handlers.Shape3D
           material.SetColor("_BackColour", new Maths.Colour(shape.Attributes.Colour).ToUnity32());
         }
 
+        // Handle draw scale using brute force.
+        if (mesh.DrawScale > 0)
+        {
+          if (material.HasProperty("_PointSize"))
+          {
+            material.SetFloat("_PointSize", mesh.DrawScale);
+          }
+          if (material.HasProperty("_Scale"))
+          {
+            material.SetFloat("_Scale", mesh.DrawScale);
+          }
+        }
+
         // Bind vertices and draw.
         material.SetBuffer("_Vertices", mesh.VertexBuffer);
 
@@ -240,11 +253,12 @@ namespace Tes.Handlers.Shape3D
       parts.MaterialOverrides = new Material[meshPartCount];
       parts.ObjectFlags = (ObjectFlag)msg.Flags;
 
+      ObjectAttributes attributes = new ObjectAttributes();
+      bool readDoublePrecision = (msg.Flags & (ushort)ObjectFlag.DoublePrecision) != 0;
       for (ushort i = 0; i < meshPartCount; ++i)
       {
         parts.MeshIDs[i] = reader.ReadUInt32();
-        ObjectAttributes attributes = new ObjectAttributes();
-        if (!attributes.Read(reader))
+        if (!attributes.Read(reader, readDoublePrecision))
         {
           return new Error(ErrorCode.MalformedMessage, (int)ObjectMessageID.Create);
         }

@@ -13,17 +13,21 @@ namespace Tes.Net
     /// </summary>
     None = 0,
     /// <summary>
+    /// Indicates <see cref="ObjectAttributes"/> is in double precision.
+    /// </summary>
+    DoublePrecision = (1 << 0),
+    /// <summary>
     /// Shape should be rendered using wireframe rendering.
     /// </summary>
-    Wireframe = (1 << 0),
+    Wireframe = (1 << 1),
     /// <summary>
     /// Shape is transparent. Colour should include an appropriate alpha value.
     /// </summary>
-    Transparent = (1 << 1),
+    Transparent = (1 << 2),
     /// <summary>
     /// Shape used a two sided shader (triangle culling disabled).
     /// </summary>
-    TwoSided = (1 << 2),
+    TwoSided = (1 << 3),
     /// <summary>
     /// Shape creation should replace any pre-exiting shape with the same object ID.
     /// </summary>
@@ -31,11 +35,11 @@ namespace Tes.Net
     /// Normally duplicate shape creation messages are not allowed. This flag allows a duplicate shape ID
     /// (non-transient) by replacing the previous shape.
     /// </remarks>
-    Replace = (1 << 3),
+    Replace = (1 << 4),
     /// <summary>
     /// Creating multiple shapes in one message.
     /// </summary>
-    MultiShape = (1 << 4),
+    MultiShape = (1 << 5),
     /// <summary>
     /// Do not reference count resources or queue resources for sending.
     /// </summary>
@@ -49,7 +53,7 @@ namespace Tes.Net
     /// This should always be used when using the <c>Replace</c> flag as reference counting can only be maintained with
     /// proper create/destroy command pairs.
     /// </remarks>
-    SkipResources = (1 << 5),
+    SkipResources = (1 << 6),
     /// <summary>
     /// User flags start here.
     /// </summary>

@@ -8,12 +8,17 @@
       "command": "dotnet",
       "args": [
         "build",
-        "-c", "${input:build_config}",
+        "-c",
+        "${input:build_config}",
         "-property:GenerateFullPaths=true"
       ],
       "type": "shell",
       "presentation": {
         "reveal": "silent"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
       },
       "problemMatcher": "$msCompile"
     },
@@ -23,31 +28,43 @@
       "windows": {
         "args": [
           "publish",
-          "-f", "netcoreapp2.2",
-          "-c", "${input:build_config}",
-          "-o", "${workspaceFolder}\\build\\${input:build_config}",
+          "-f",
+          "netcoreapp2.2",
+          "-c",
+          "${input:build_config}",
+          "-o",
+          "${workspaceFolder}\\build\\${input:build_config}",
           "-property:GenerateFullPaths=true",
-          "-r", "win10-x64"
+          "-r",
+          "win10-x64"
         ]
       },
       "linux": {
         "args": [
           "publish",
-          "-f", "netcoreapp2.2",
-          "-c", "${input:build_config}",
-          "-o", "${workspaceFolder}/build/${input:build_config}",
+          "-f",
+          "netcoreapp2.2",
+          "-c",
+          "${input:build_config}",
+          "-o",
+          "${workspaceFolder}/build/${input:build_config}",
           "-property:GenerateFullPaths=true",
-          "-r", "linux-x64"
+          "-r",
+          "linux-x64"
         ]
       },
       "osx": {
         "args": [
           "publish",
-          "-f", "netcoreapp2.2",
-          "-c", "${input:build_config}",
-          "-o", "${workspaceFolder}/build/${input:build_config}",
+          "-f",
+          "netcoreapp2.2",
+          "-c",
+          "${input:build_config}",
+          "-o",
+          "${workspaceFolder}/build/${input:build_config}",
           "-property:GenerateFullPaths=true",
-          "-r", "osx-x64"
+          "-r",
+          "osx-x64"
         ]
       },
       "type": "shell",
@@ -79,7 +96,10 @@
     {
       "id": "build_config",
       "type": "pickString",
-      "options": [ "Debug", "Release" ],
+      "options": [
+        "Debug",
+        "Release"
+      ],
       "default": "Debug",
       "description": "Build configuration selection."
     }

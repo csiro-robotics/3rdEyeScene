@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Tes.Buffers;
 using Tes.Maths;
 using Tes.Net;
 
@@ -312,7 +313,7 @@ namespace Tes.Shapes
     /// </summary>
     /// <param name="msg">The message to read.</param>
     /// <returns>True on success</returns>
-    /// 
+    ///
     protected override bool ProcessCreate(MeshCreateMessage msg)
     {
       if (ID != msg.MeshID)
@@ -392,11 +393,15 @@ namespace Tes.Shapes
     /// <param name="msg">Message details.</param>
     /// <param name="vertices">New vertices read from the message payload.</param>
     /// <returns>True on success.</returns>
-    protected override bool ProcessVertices(MeshComponentMessage msg, Vector3[] vertices)
+    protected override bool ProcessVertices(MeshComponentMessage msg, int offset, DataBuffer readBuffer)
     {
-      for (int i = 0; i < msg.Count; ++i)
+      Vector3 v = new Vector3();
+      for (int i = 0; i < readBuffer.Count; ++i)
       {
-        SetVertex(i + (int)msg.Offset, vertices[i]);
+        v.X = readBuffer.GetSingle(i * readBuffer.ComponentCount + 0);
+        v.Y = readBuffer.GetSingle(i * readBuffer.ComponentCount + 1);
+        v.Z = readBuffer.GetSingle(i * readBuffer.ComponentCount + 2);
+        SetVertex(i + offset, v);
       }
       return true;
     }
@@ -407,26 +412,11 @@ namespace Tes.Shapes
     /// <param name="msg">Message details.</param>
     /// <param name="indices">New 2-byte indices read from the message payload.</param>
     /// <returns>True on success.</returns>
-    protected override bool ProcessIndices(MeshComponentMessage msg, ushort[] indices)
+    protected override bool ProcessIndices(MeshComponentMessage msg, int offset, DataBuffer readBuffer)
     {
-      for (int i = 0; i < msg.Count; ++i)
+      for (int i = 0; i < readBuffer.Count; ++i)
       {
-        SetIndex(i + (int)msg.Offset, indices[i]);
-      }
-      return true;
-    }
-
-    /// <summary>
-    /// Process data for a <see cref="MeshMessageType.Index"/> message when receiving 4-byte indices.
-    /// </summary>
-    /// <param name="msg">Message details.</param>
-    /// <param name="indices">New 4-byte indices read from the message payload.</param>
-    /// <returns>True on success.</returns>
-    protected override bool ProcessIndices(MeshComponentMessage msg, int[] indices)
-    {
-      for (int i = 0; i < msg.Count; ++i)
-      {
-        SetIndex(i + (int)msg.Offset, indices[i]);
+        SetIndex(i + offset, readBuffer.GetInt32(i));
       }
       return true;
     }
@@ -440,18 +430,19 @@ namespace Tes.Shapes
     /// <remarks>
     /// Colours may be decoded using the <see cref="Colour"/> class.
     /// </remarks>
-    protected override bool ProcessColours(MeshComponentMessage msg, uint[] colours)
+    protected override bool ProcessColours(MeshComponentMessage msg, int offset, DataBuffer readBuffer)
     {
       EnsureColours();
-      for (int i = 0; i < msg.Count; ++i)
+      for (int i = 0; i < readBuffer.Count; ++i)
       {
-        if (_colours.Count < i + (int)msg.Offset)
+        uint colour = readBuffer.GetUInt32(i);
+        if (_colours.Count < i + offset)
         {
-          _colours[i + (int)msg.Offset] = colours[i];
+          _colours[i + offset] = colour;
         }
         else
         {
-          _colours.Add(colours[i]);
+          _colours.Add(colour);
         }
       }
       return true;
@@ -463,18 +454,22 @@ namespace Tes.Shapes
     /// <param name="msg">Message details.</param>
     /// <param name="normals">New normals read from the message payload.</param>
     /// <returns>True on success.</returns>
-    protected override bool ProcessNormals(MeshComponentMessage msg, Vector3[] normals)
+    protected override bool ProcessNormals(MeshComponentMessage msg, int offset, DataBuffer readBuffer)
     {
       EnsureNormals();
-      for (int i = 0; i < msg.Count; ++i)
+      Vector3 n = new Vector3();
+      for (int i = 0; i < readBuffer.Count; ++i)
       {
-        if (_normals.Count < i + (int)msg.Offset)
+        n.X = readBuffer.GetSingle(i * readBuffer.ComponentCount + 0);
+        n.Y = readBuffer.GetSingle(i * readBuffer.ComponentCount + 1);
+        n.Z = readBuffer.GetSingle(i * readBuffer.ComponentCount + 2);
+        if (_normals.Count < i + offset)
         {
-          _normals[i + (int)msg.Offset] = normals[i];
+          _normals[i + offset] = n;
         }
         else
         {
-          _normals.Add(normals[i]);
+          _normals.Add(n);
         }
       }
       return true;
@@ -486,18 +481,21 @@ namespace Tes.Shapes
     /// <param name="msg">Message details.</param>
     /// <param name="uvs">New uvs read from the message payload.</param>
     /// <returns>True on success.</returns>
-    protected override bool ProcessUVs(MeshComponentMessage msg, Vector2[] uvs)
+    protected override bool ProcessUVs(MeshComponentMessage msg, int offset, DataBuffer readBuffer)
     {
       EnsureUVs();
-      for (int i = 0; i < msg.Count; ++i)
+      Vector2 uv = new Vector2();
+      for (int i = 0; i < readBuffer.Count; ++i)
       {
-        if (_uvs.Count < i + (int)msg.Offset)
+        uv.X = readBuffer.GetSingle(i * readBuffer.ComponentCount + 0);
+        uv.Y = readBuffer.GetSingle(i * readBuffer.ComponentCount + 1);
+        if (_uvs.Count < i + offset)
         {
-          _uvs[i + (int)msg.Offset] = uvs[i];
+          _uvs[i + offset] = uv;
         }
         else
         {
-          _uvs.Add(uvs[i]);
+          _uvs.Add(uv);
         }
       }
       return true;

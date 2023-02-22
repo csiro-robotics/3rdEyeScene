@@ -140,7 +140,7 @@ namespace Tes.IO
     /// <summary>
     /// Default constructor.
     /// </summary>
-    public PacketBuffer() : this(1024) {}
+    public PacketBuffer() : this(1024) { }
 
     /// <summary>
     /// Create a packet with the given initial buffer size.
@@ -189,7 +189,7 @@ namespace Tes.IO
     /// </summary>
     public PacketHeader Header { get { return _header; } }
     /// <summary>
-    /// Returns the number of byte available in the buffer.
+    /// Returns the number of byte currently commited to the buffer.
     /// </summary>
     public int Count { get { return _currentByteCount; } }
 

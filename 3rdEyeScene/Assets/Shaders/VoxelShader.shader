@@ -6,6 +6,7 @@ Shader "Tes/Voxel"
   {
     _Color("Main Colour", Color) = (1, 1, 1, 1)
     _Tint("Tint", Color) = (1, 1, 1, 1)
+    _Scale("Scale", Range(0, 1000)) = 0.1
     _LineWidth("Line Width", Range(1, 16)) = 3.5
   }
 
@@ -30,14 +31,12 @@ Shader "Tes/Voxel"
       struct VertexInput
       {
         float4 vertex : POSITION;
-        float4 halfExtents : NORMAL;
         float4 colour : COLOR;
       };
 
       struct GeometryInput
       {
         float4 pos : POSITION;
-        float3 halfExtents : NORMAL;
         float4 colour : COLOR;
       };
 
@@ -52,6 +51,7 @@ Shader "Tes/Voxel"
       // User properites
       uniform float4 _Color;
       uniform float4 _Tint;
+      uniform float _Scale;
       uniform float _LineWidth;
       StructuredBuffer<float3> _Vertices;
       // Normals used as half-extents. Named normals for input consistency.
@@ -69,7 +69,6 @@ Shader "Tes/Voxel"
       {
         GeometryInput o;
         o.pos = mul(unity_ObjectToWorld, float4(_Vertices[vid], 1));
-        o.halfExtents = _Normals[vid];
         o.colour = _Color * _Tint
           #ifdef WITH_COLOURS
             * _Colours[vid]
@@ -90,7 +89,7 @@ Shader "Tes/Voxel"
         const float MinScale = 1.5f;
         const float ScreenHeight = (_ScreenParams.w - 1.0f);
         // const half3 halfExt = half3(0.05f, 0.05f, 0.05f);
-        const half3 halfExt = p[0].halfExtents;
+        const half3 halfExt = half3(_Scale, _Scale, _Scale);
         float4 verts[8];
         float edgeThreshold[8];
 
@@ -242,8 +241,7 @@ Shader "Tes/Voxel"
       {
         FragmentInput fin;
         const float3 voxelCentre = p[0].pos;
-        //const half3 halfExt = half3(0.05f, 0.05f, 0.05f);// p[0].halfExtents;
-        const half3 halfExt = p[0].halfExtents;
+        const half3 halfExt = half3(_Scale, _Scale,_Scale);
         float3 vert;
 
         fin.colour = p[0].colour;

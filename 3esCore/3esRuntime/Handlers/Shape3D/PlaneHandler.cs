@@ -38,7 +38,7 @@ namespace Tes.Handlers.Shape3D
 
       // Rotation component is a normal vector. Need to generate a rotation.
       Vector3 up = Vector3.up;
-      Vector3 normalDir = new Vector3(attributes.RotationX, attributes.RotationY, attributes.RotationZ);
+      Vector3 normalDir = new Vector3((float)attributes.RotationX, (float)attributes.RotationY, (float)attributes.RotationZ);
       Quaternion rotation = Quaternion.identity;
       float dotProduct = Vector3.Dot(up, normalDir);
       if (dotProduct != -1.0f)
@@ -54,11 +54,11 @@ namespace Tes.Handlers.Shape3D
         rotation = Quaternion.AngleAxis(180.0f, Vector3.forward);
       }
 
-      transform.SetColumn(3, new Vector4(attributes.X, attributes.Y, attributes.Z, 1.0f));
+      transform.SetColumn(3, new Vector4((float)attributes.X, (float)attributes.Y, (float)attributes.Z, 1.0f));
       var pureRotation = Matrix4x4.Rotate(rotation);
-      transform.SetColumn(0, pureRotation.GetColumn(0) * attributes.ScaleX);
-      transform.SetColumn(1, pureRotation.GetColumn(1) * attributes.ScaleX);
-      transform.SetColumn(2, pureRotation.GetColumn(2) * attributes.ScaleZ);
+      transform.SetColumn(0, pureRotation.GetColumn(0) * (float)attributes.ScaleX);
+      transform.SetColumn(1, pureRotation.GetColumn(1) * (float)attributes.ScaleX);
+      transform.SetColumn(2, pureRotation.GetColumn(2) * (float)attributes.ScaleZ);
     }
   }
 }

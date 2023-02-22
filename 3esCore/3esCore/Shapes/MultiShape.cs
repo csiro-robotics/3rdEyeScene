@@ -8,13 +8,27 @@ namespace Tes.Shapes
   public class MultiShape : Shape
   {
     /// <summary>
-    /// Maximum number of shapes in a multi-shape packet. Limited by packet size.
+    /// Maximum number of shapes in a multi-shape packet when using single precision attributes. Half for double
+    /// precision. Limited by packet size.
     /// </summary>
-    public static readonly int BlockCountLimit = 1024;
+    public static readonly int BlockCountLimitSingle = 1024;
     /// <summary>
     /// Maximum number of shapes in a multi-shape.
     /// </summary>
     public static readonly int ShapeCountLimit = 0xffff;
+
+    /// <summary>
+    /// Maximum number of shapes in a multi-shape packet for this multi-shape. Modified the
+    /// <see cref="ObjectFlag.DoublePrecision"/> value.
+    /// </summary>
+    public int BlockCountLimit
+    {
+      get
+      {
+        return (((Data.Flags & (ushort)ObjectFlag.DoublePrecision) != 0)) ?
+          BlockCountLimitSingle / 2 : BlockCountLimitSingle;
+      }
+    }
 
     public MultiShape(Shape[] shapes, Vector3 position, Quaternion rotation, Vector3 scale)
       : base(shapes[0].RoutingID, shapes[0].ID, shapes[0].Category)
@@ -40,16 +54,22 @@ namespace Tes.Shapes
       _data.Attributes.ScaleY = scale.Y;
       _data.Attributes.ScaleZ = scale.Z;
       _data.Flags |= (ushort)ObjectFlag.MultiShape;
+      // Match double precision flag to the first shape (all should be the same)
+      _data.Flags &= (ushort)(~ObjectFlag.DoublePrecision);
+      if ((shapes[0].Data.Flags & (ushort)ObjectFlag.DoublePrecision) != 0)
+      {
+        _data.Flags |= (ushort)ObjectFlag.DoublePrecision;
+      }
     }
 
     public MultiShape(Shape[] shapes, Vector3 position, Quaternion rotation)
-      : this(shapes, position, rotation, Vector3.One) {}
+      : this(shapes, position, rotation, Vector3.One) { }
 
     public MultiShape(Shape[] shapes, Vector3 position)
-      : this(shapes, position, Quaternion.Identity, Vector3.One) {}
+      : this(shapes, position, Quaternion.Identity, Vector3.One) { }
 
     public MultiShape(Shape[] shapes)
-      : this(shapes, Vector3.Zero, Quaternion.Identity, Vector3.One) {}
+      : this(shapes, Vector3.Zero, Quaternion.Identity, Vector3.One) { }
 
     public override bool WriteCreate(PacketBuffer packet)
     {
@@ -64,10 +84,11 @@ namespace Tes.Shapes
       packet.WriteBytes(BitConverter.GetBytes(itemCount), true);
       packet.WriteBytes(BitConverter.GetBytes(blockCount), true);
 
+      bool writeDoublePrecision = (_data.Flags & (ushort)ObjectFlag.DoublePrecision) != 0;
       // Write the multi-shape attributes.
       for (int i = 0; i < blockCount; ++i)
       {
-        if (!_shapes[i].GetAttributes().Write(packet))
+        if (!_shapes[i].GetAttributes().Write(packet, writeDoublePrecision))
         {
           return false;
         }
@@ -95,9 +116,10 @@ namespace Tes.Shapes
 
       packet.WriteBytes(BitConverter.GetBytes(blockCount), true);
 
+      bool writeDoublePrecision = (_data.Flags & (ushort)ObjectFlag.DoublePrecision) != 0;
       for (uint i = 0; i < blockCount; ++i)
       {
-        if (!_shapes[itemOffset + i].GetAttributes().Write(packet))
+        if (!_shapes[itemOffset + i].GetAttributes().Write(packet, writeDoublePrecision))
         {
           return -1;
         }

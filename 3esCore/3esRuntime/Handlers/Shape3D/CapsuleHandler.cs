@@ -41,7 +41,7 @@ namespace Tes.Handlers.Shape3D
       // Work out which mesh set we are rendering from the parent call: solid or wireframe. We could also look at
       // the first CreateMessage flags.
       Mesh[] meshes =
-        (shapes.Count > 0 && (shapes[0].Flags & (ushort)ObjectFlag.Wireframe) != 0)  ? _wireframeMeshes : _solidMeshes;
+        (shapes.Count > 0 && (shapes[0].Flags & (ushort)ObjectFlag.Wireframe) != 0) ? _wireframeMeshes : _solidMeshes;
       CategoriesState categories = this.CategoriesState;
 
       // Handle instancing block size limits.
@@ -103,15 +103,15 @@ namespace Tes.Handlers.Shape3D
     /// </summary>
     protected override void DecodeTransform(ObjectAttributes attributes, out Matrix4x4 transform)
     {
-      float radius = attributes.ScaleX;
-      float length = attributes.ScaleZ;
+      float radius = (float)attributes.ScaleX;
+      float length = (float)attributes.ScaleZ;
       float cylinderLength = Mathf.Max(0.0f, length - 2.0f * radius);
 
       transform = Matrix4x4.identity;
 
       Vector3 scale = new Vector3(radius, radius, cylinderLength);
-      transform.SetColumn(3, new Vector4(attributes.X, attributes.Y, attributes.Z, 1.0f));
-      var pureRotation = Matrix4x4.Rotate(new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW));
+      transform.SetColumn(3, new Vector4((float)attributes.X, (float)attributes.Y, (float)attributes.Z, 1.0f));
+      var pureRotation = Matrix4x4.Rotate(new Quaternion((float)attributes.RotationX, (float)attributes.RotationY, (float)attributes.RotationZ, (float)attributes.RotationW));
       transform.SetColumn(0, pureRotation.GetColumn(0) * radius);
       transform.SetColumn(1, pureRotation.GetColumn(1) * radius);
       transform.SetColumn(2, pureRotation.GetColumn(2) * cylinderLength);

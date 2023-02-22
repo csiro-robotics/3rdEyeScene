@@ -29,6 +29,10 @@ namespace Tes.Net
     /// </summary>
     public uint IndexCount;
     /// <summary>
+    /// <see cref="MeshCreateFlag"/> values.
+    /// </summary>
+    public ushort Flags;
+    /// <summary>
     /// Redefines the mesh topology. See <see cref="MeshDrawType"/>.
     /// </summary>
     public byte DrawType;
@@ -47,8 +51,10 @@ namespace Tes.Net
       MeshID = reader.ReadUInt32();
       VertexCount = reader.ReadUInt32();
       IndexCount = reader.ReadUInt32();
+      Flags = reader.ReadUInt16();
       DrawType = reader.ReadByte();
-      return Attributes.Read(reader);
+      bool readDoublePrecision = ((Flags & (ushort)MeshCreateFlag.DoublePrecision) != 0);
+      return Attributes.Read(reader, readDoublePrecision);
     }
 
     /// <summary>
@@ -62,7 +68,8 @@ namespace Tes.Net
       packet.WriteBytes(BitConverter.GetBytes(VertexCount), true);
       packet.WriteBytes(BitConverter.GetBytes(IndexCount), true);
       packet.WriteBytes(BitConverter.GetBytes(DrawType), true);
-      return Attributes.Write(packet);
+      bool writeDoublePrecision = ((Flags & (ushort)MeshCreateFlag.DoublePrecision) != 0);
+      return Attributes.Write(packet, writeDoublePrecision);
     }
   }
 }

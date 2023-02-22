@@ -48,9 +48,9 @@ namespace Tes.Net
     /// </summary>
     MeshSet,
     /// <summary>
-    /// <see cref="Shapes.PointCloudShape"/>
+    /// Deprecated. Not in use.
     /// </summary>
-    PointCloud,
+    DeprecatedPointCloud,
     /// <summary>
     /// <see cref="Shapes.Text3D"/>
     /// </summary>

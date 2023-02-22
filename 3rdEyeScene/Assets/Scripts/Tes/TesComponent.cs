@@ -107,7 +107,6 @@ public class TesComponent : Router
     Handlers.Register(new StarHandler());
     Handlers.Register(new MeshHandler());
     Handlers.Register(new MeshSetHandler(meshCache));
-    Handlers.Register(new PointCloudHandler(meshCache));
     Handlers.Register(new PoseHandler());
     Handlers.Register(new Text2DHandler());
     Text3DHandler text3DHandler = new Text3DHandler();
@@ -133,7 +132,7 @@ public class TesComponent : Router
         "host*.dll",
         "System.*.dll"
       };
-      Handlers.LoadPlugins(loadPath, Plugins, excludeList, new object[] {});
+      Handlers.LoadPlugins(loadPath, Plugins, excludeList, new object[] { });
     }
 
     InitialiseHandlers();
@@ -196,38 +195,38 @@ public class TesComponent : Router
   {
     switch (Mode)
     {
-    case RouterMode.Recording:
-      StopRecording();
-      break;
-    case RouterMode.Idle: // For record on start.
-    case RouterMode.Connected:
-    case RouterMode.Connecting:
-      SaveFileDialog saveDlg = new SaveFileDialog(new TrueFileSystem(), FileDialogUI, CommonDialogUIs.FindGlobalUI<MessageBoxUI>());
-      saveDlg.InitialDirectory = LastBrowseLocation;
-      saveDlg.Filter = FileFilter;
-      saveDlg.DefaultExt = "3es";
-      saveDlg.AddExtension = true;
-      saveDlg.AllowNative = UISettings.Instance.NativeDialogs;
-      _inputStack.SetLayerEnabled("Dialogs", true);
-      // Input
-      saveDlg.ShowDialog(delegate(CommonDialog dialog, DialogResult result)
-      {
-        _inputStack.SetLayerEnabled("Dialogs", false);
-        SaveFileDialog dlg = dialog as SaveFileDialog;
-        if (result == DialogResult.OK && dlg != null)
+      case RouterMode.Recording:
+        StopRecording();
+        break;
+      case RouterMode.Idle: // For record on start.
+      case RouterMode.Connected:
+      case RouterMode.Connecting:
+        SaveFileDialog saveDlg = new SaveFileDialog(new TrueFileSystem(), FileDialogUI, CommonDialogUIs.FindGlobalUI<MessageBoxUI>());
+        saveDlg.InitialDirectory = LastBrowseLocation;
+        saveDlg.Filter = FileFilter;
+        saveDlg.DefaultExt = "3es";
+        saveDlg.AddExtension = true;
+        saveDlg.AllowNative = UISettings.Instance.NativeDialogs;
+        _inputStack.SetLayerEnabled("Dialogs", true);
+        // Input
+        saveDlg.ShowDialog(delegate (CommonDialog dialog, DialogResult result)
         {
-          string recordFile = dlg.FileName;
-          LastBrowseLocation = System.IO.Path.GetDirectoryName(recordFile);
-          if (!string.IsNullOrEmpty(recordFile))
+          _inputStack.SetLayerEnabled("Dialogs", false);
+          SaveFileDialog dlg = dialog as SaveFileDialog;
+          if (result == DialogResult.OK && dlg != null)
           {
-            StartRecording(recordFile);
+            string recordFile = dlg.FileName;
+            LastBrowseLocation = System.IO.Path.GetDirectoryName(recordFile);
+            if (!string.IsNullOrEmpty(recordFile))
+            {
+              StartRecording(recordFile);
+            }
           }
-        }
-      });
-      break;
-    default:
-      Stop();
-      break;
+        });
+        break;
+      default:
+        Stop();
+        break;
     }
   }
 

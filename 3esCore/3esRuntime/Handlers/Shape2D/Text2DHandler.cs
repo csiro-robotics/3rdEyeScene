@@ -295,36 +295,36 @@ namespace Tes.Handlers.Shape2D
     {
       switch ((ObjectMessageID)packet.Header.MessageID)
       {
-      default:
-      case ObjectMessageID.Null:
-        return new Error(ErrorCode.InvalidMessageID, packet.Header.MessageID);
+        default:
+        case ObjectMessageID.Null:
+          return new Error(ErrorCode.InvalidMessageID, packet.Header.MessageID);
 
-      case ObjectMessageID.Create:
-        // Read the create message details.
-        CreateMessage create = new CreateMessage();
-        if (!create.Read(reader))
-        {
-          return new Error(ErrorCode.InvalidContent, packet.Header.MessageID);
-        }
-        return HandleMessage(create, packet, reader);
+        case ObjectMessageID.Create:
+          // Read the create message details.
+          CreateMessage create = new CreateMessage();
+          if (!create.Read(reader))
+          {
+            return new Error(ErrorCode.InvalidContent, packet.Header.MessageID);
+          }
+          return HandleMessage(create, packet, reader);
 
-      case ObjectMessageID.Update:
-        // Read the create message details.
-        UpdateMessage update = new UpdateMessage();
-        if (!update.Read(reader))
-        {
-          return new Error(ErrorCode.InvalidContent, packet.Header.MessageID);
-        }
-        return HandleMessage(update, packet, reader);
+        case ObjectMessageID.Update:
+          // Read the create message details.
+          UpdateMessage update = new UpdateMessage();
+          if (!update.Read(reader))
+          {
+            return new Error(ErrorCode.InvalidContent, packet.Header.MessageID);
+          }
+          return HandleMessage(update, packet, reader);
 
-      case ObjectMessageID.Destroy:
-        // Read the create message details.
-        DestroyMessage destroy = new DestroyMessage();
-        if (!destroy.Read(reader))
-        {
-          return new Error(ErrorCode.InvalidContent, packet.Header.MessageID);
-        }
-        return HandleMessage(destroy);
+        case ObjectMessageID.Destroy:
+          // Read the create message details.
+          DestroyMessage destroy = new DestroyMessage();
+          if (!destroy.Read(reader))
+          {
+            return new Error(ErrorCode.InvalidContent, packet.Header.MessageID);
+          }
+          return HandleMessage(destroy);
       }
     }
 
@@ -443,7 +443,7 @@ namespace Tes.Handlers.Shape2D
       text.ID = msg.ObjectID;
       text.ObjectFlags = msg.Flags;
       text.Category = msg.Category;
-      text.Position = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
+      text.Position = new Vector3((float)msg.Attributes.X, (float)msg.Attributes.Y, (float)msg.Attributes.Z);
       text.Colour = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
 
       // Read the text.
@@ -490,7 +490,7 @@ namespace Tes.Handlers.Shape2D
       TextEntry text = new TextEntry();
       text.ID = msg.ObjectID;
       text.ObjectFlags = msg.Flags;
-      text.Position = new Vector3(msg.Attributes.X, msg.Attributes.Y, msg.Attributes.Z);
+      text.Position = new Vector3((float)msg.Attributes.X, (float)msg.Attributes.Y, (float)msg.Attributes.Z);
       text.Colour = Maths.ColourExt.ToUnity32(new Maths.Colour(msg.Attributes.Colour));
 
       // Read the text.

@@ -1,6 +1,8 @@
 using System;
 using Xunit;
 
+#pragma warning disable xUnit1013
+
 namespace Tes.TestSupport
 {
   /// <summary>
@@ -19,9 +21,9 @@ namespace Tes.TestSupport
     /// This is essentially an approximate equality assertion. This should be used for all floating point equality
     /// assertions to cater for floating point error.
     /// </remarks>
-    public static void Near(float actual, float expected, float epsilon)
+    public static void Near(float expected, float actual, float epsilon)
     {
-      Near((double)actual, (double)expected, (double)epsilon);
+      Near((double)expected, (double)actual, (double)epsilon);
     }
 
     /// <summary>
@@ -35,7 +37,7 @@ namespace Tes.TestSupport
     /// This is essentially an approximate equality assertion. This should be used for all floating point equality
     /// assertions to cater for floating point error.
     /// </remarks>
-    public static void Near(double actual, double expected, double epsilon)
+    public static void Near(double expected, double actual, double epsilon)
     {
       Assert.True(Math.Abs(actual - expected) <= epsilon);
     }
@@ -50,3 +52,5 @@ namespace Tes.TestSupport
     }
   }
 }
+
+#pragma warning restore xUnit1013

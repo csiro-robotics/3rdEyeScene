@@ -26,18 +26,6 @@ namespace Tes.Net
     /// ID of the target mesh.
     /// </summary>
     public uint MeshID;
-    /// <summary>
-    /// Starting index offset for this data block.
-    /// </summary>
-    public uint Offset;
-    /// <summary>
-    /// Reserved: must be zero.
-    /// </summary>
-    public uint Reserved;
-    /// <summary>
-    /// Number of elements.
-    /// </summary>
-    public ushort Count;
 
     /// <summary>
     /// Returns type byte size this structure.
@@ -53,9 +41,6 @@ namespace Tes.Net
     public bool Read(BinaryReader reader)
     {
       MeshID = reader.ReadUInt32();
-      Offset = reader.ReadUInt32();
-      Reserved = reader.ReadUInt32();
-      Count = reader.ReadUInt16();
       return true;
     }
 
@@ -67,9 +52,6 @@ namespace Tes.Net
     public bool Write(PacketBuffer packet)
     {
       packet.WriteBytes(BitConverter.GetBytes(MeshID), true);
-      packet.WriteBytes(BitConverter.GetBytes(Offset), true);
-      packet.WriteBytes(BitConverter.GetBytes(Reserved), true);
-      packet.WriteBytes(BitConverter.GetBytes(Count), true);
       return true;
     }
   }

@@ -226,8 +226,8 @@ namespace Tes.Handlers
         PacketBuffer packet = new PacketBuffer(256);
         CameraMessage msg = new CameraMessage();
         Vector3 v = Vector3.zero;
-        msg.Reserved1 = 0;
-        msg.Reserved2 = 0;
+        msg.Flags = 0;
+        msg.Reserved = 0;
         foreach (CameraInfo camera in _cameras.Values)
         {
           ++info.PersistentCount;

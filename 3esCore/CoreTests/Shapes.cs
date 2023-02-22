@@ -9,6 +9,8 @@ using Tes.Maths;
 using Tes.Shapes;
 using Tes.TestSupport;
 
+#pragma warning disable xUnit1013
+
 namespace Tes.CoreTests
 {
   public class Shapes
@@ -170,16 +172,23 @@ namespace Tes.CoreTests
       if (reference.Vertices != null)
       {
         Assert.NotNull(shape.Vertices);
-        Assert.Equal(reference.Vertices.Length, shape.Vertices.Length);
+        Assert.Equal(reference.Vertices.Count, shape.Vertices.Count);
         bool verticesMatch = true;
-        for (int i = 0; i < shape.Vertices.Length; ++i)
+        Vector3 vref = new Vector3();
+        Vector3 vread = new Vector3();
+        for (int i = 0; i < shape.Vertices.Count; ++i)
         {
-          if (reference.Vertices[i] != shape.Vertices[i])
+          vref.X = reference.Vertices.GetSingle(i * 3 + 0);
+          vref.Y = reference.Vertices.GetSingle(i * 3 + 0);
+          vref.Z = reference.Vertices.GetSingle(i * 3 + 0);
+          vread.X = shape.Vertices.GetSingle(i * 3 + 0);
+          vread.Y = shape.Vertices.GetSingle(i * 3 + 0);
+          vread.Z = shape.Vertices.GetSingle(i * 3 + 0);
+          if (vref != vread)
           {
             verticesMatch = false;
             _output.WriteLine("vertex mismatch [{0}] : ({1},{2},{3}) != ({4},{5},{6})",
-                                  i, reference.Vertices[i].X, reference.Normals[i].Y, reference.Normals[i].Z,
-                                  shape.Normals[i].X, shape.Normals[i].Y, shape.Normals[i].Z);
+                                  i, vref.X, vref.Y, vref.Z, vread.X, vread.Y, vread.Z);
           }
         }
 
@@ -189,18 +198,24 @@ namespace Tes.CoreTests
       if (reference.Normals != null)
       {
         Assert.NotNull(shape.Normals);
-        Assert.Equal(reference.Normals.Length, shape.Normals.Length);
+        Assert.Equal(reference.Normals.Count, shape.Normals.Count);
         bool normalsMatch = true;
-        for (int i = 0; i < shape.Normals.Length; ++i)
+        Vector3 nref = new Vector3();
+        Vector3 nread = new Vector3();
+        for (int i = 0; i < shape.Normals.Count; ++i)
         {
-          if (reference.Normals[i].X != shape.Normals[i].X ||
-              reference.Normals[i].Y != shape.Normals[i].Y ||
-              reference.Normals[i].Z != shape.Normals[i].Z)
+          nref.X = reference.Normals.GetSingle(i * 3 + 0);
+          nref.Y = reference.Normals.GetSingle(i * 3 + 0);
+          nref.Z = reference.Normals.GetSingle(i * 3 + 0);
+          nread.X = shape.Normals.GetSingle(i * 3 + 0);
+          nread.Y = shape.Normals.GetSingle(i * 3 + 0);
+          nread.Z = shape.Normals.GetSingle(i * 3 + 0);
+
+          if (nref.X != nread.X || nref.Y != nread.Y || nref.Z != nread.Z)
           {
             normalsMatch = false;
             _output.WriteLine("normal mismatch [{0}] : ({1},{2},{3}) != ({4},{5},{6})",
-                                  i, reference.Normals[i].X, reference.Normals[i].Y, reference.Normals[i].Z,
-                                  shape.Normals[i].X, shape.Normals[i].Y, shape.Normals[i].Z);
+                                  i, nref.X, nref.Y, nref.Z, nread.X, nread.Y, nread.Z);
           }
         }
 
@@ -210,14 +225,16 @@ namespace Tes.CoreTests
       if (reference.Colours != null)
       {
         Assert.NotNull(shape.Colours);
-        Assert.Equal(reference.Colours.Length, shape.Colours.Length);
+        Assert.Equal(reference.Colours.Count, shape.Colours.Count);
         bool coloursMatch = true;
-        for (int i = 0; i < shape.Colours.Length; ++i)
+        for (int i = 0; i < shape.Colours.Count; ++i)
         {
-          if (reference.Colours[i] != shape.Colours[i])
+          uint cref = reference.Colours.GetUInt32(i);
+          uint cread = shape.Colours.GetUInt32(i);
+          if (cref != cread)
           {
             _output.WriteLine("colour mismatch [{0}] : 0x{1} != 0x{2}",
-                                  i, reference.Colours[i].ToString("x"), shape.Colours[i].ToString("x"));
+                                  i, cref.ToString("x"), cread.ToString("x"));
             coloursMatch = false;
           }
         }
@@ -228,14 +245,15 @@ namespace Tes.CoreTests
       if (reference.Indices != null)
       {
         Assert.NotNull(shape.Indices);
-        Assert.Equal(reference.Indices.Length, shape.Indices.Length);
+        Assert.Equal(reference.Indices.Count, shape.Indices.Count);
         bool indicesMatch = true;
-        for (int i = 0; i < shape.Indices.Length; ++i)
+        for (int i = 0; i < shape.Indices.Count; ++i)
         {
-          if (reference.Indices[i] != shape.Indices[i])
+          uint iref = reference.Indices.GetUInt32(i);
+          uint iread = shape.Indices.GetUInt32(i);
+          if (iref != iread)
           {
-            _output.WriteLine("index mismatch [{0}] : {1} != {2}",
-                                  i, reference.Indices[i], shape.Indices[i]);
+            _output.WriteLine("index mismatch [{0}] : {1} != {2}", i, iref, iread);
             indicesMatch = false;
           }
         }
@@ -285,15 +303,15 @@ namespace Tes.CoreTests
       ShapeTestFramework.TestShape(new MeshShape(Net.MeshDrawType.Triangles, vertices.ToArray(), indices.ToArray(), 42, 1, new Vector3(1.2f, 2.3f, 3.4f), new Quaternion(Vector3.One.Normalised, 15.0f * (float)Math.PI / 180.0f), new Vector3(1, 2, 3)), create, ValidateMeshShape);
 
       // Validate with normals.
-      ShapeTestFramework.TestShape(new MeshShape(Net.MeshDrawType.Triangles, vertices.ToArray(), indices.ToArray()) { Normals = normals.ToArray() }, create, ValidateMeshShape);
+      ShapeTestFramework.TestShape(new MeshShape(Net.MeshDrawType.Triangles, vertices.ToArray(), indices.ToArray()).SetNormals(normals), create, ValidateMeshShape);
       ShapeTestFramework.TestShape(new MeshShape(Net.MeshDrawType.Voxels, vertices.ToArray()).SetUniformNormal(Vector3.One), create, ValidateMeshShape);
 
       // Try with colours.
-      ShapeTestFramework.TestShape(new MeshShape(Net.MeshDrawType.Points, vertices.ToArray()) { Colours = colours }, create, ValidateMeshShape);
+      ShapeTestFramework.TestShape(new MeshShape(Net.MeshDrawType.Points, vertices.ToArray()).SetColours(colours), create, ValidateMeshShape);
 
       // And one with the lot.
       ShapeTestFramework.TestShape(new MeshShape(Net.MeshDrawType.Triangles, vertices.ToArray(), indices.ToArray())
-      { Normals = normals.ToArray(), Colours = colours }, create, ValidateMeshShape);
+        .SetNormals(normals).SetColours(colours), create, ValidateMeshShape);
     }
 
     public void ValidateMesh(MeshResource mesh, MeshResource reference)
@@ -307,31 +325,42 @@ namespace Tes.CoreTests
       Assert.Equal(reference.VertexCount(), mesh.VertexCount());
       Assert.Equal(reference.IndexCount(), mesh.IndexCount());
 
-      if (mesh.VertexCount() > 0)
+      if (reference.VertexCount() > 0)
       {
         Assert.NotNull(reference.Vertices());
         Assert.NotNull(mesh.Vertices());
 
+        var refVerts = reference.Vertices();
+        var meshVerts = mesh.Vertices();
+
+        Assert.Equal(refVerts.Length, meshVerts.Length);
+
         Vector3 refv, meshv;
         for (int i = 0; i < mesh.VertexCount(); ++i)
         {
-          refv = reference.Vertices()[i];
-          meshv = mesh.Vertices()[i];
+          refv = refVerts[i];
+          meshv = meshVerts[i];
           Assert.Equal(refv.X, meshv.X);
           Assert.Equal(refv.Y, meshv.Y);
           Assert.Equal(refv.Z, meshv.Z);
         }
       }
 
-      if (mesh.IndexCount() > 0)
+      if (reference.IndexCount() > 0)
       {
         if (reference.IndexSize == 2)
         {
+          Assert.NotNull(reference.Indices2());
           Assert.NotNull(mesh.Indices2());
 
-          for (int i = 0; i < mesh.IndexCount(); ++i)
+          var refInds = reference.Indices4();
+          var meshInds = mesh.Indices4();
+
+          Assert.Equal(refInds.Length, meshInds.Length);
+
+          for (int i = 0; i < meshInds.Length; ++i)
           {
-            Assert.Equal(reference.Indices2()[i], mesh.Indices2()[i]);
+            Assert.Equal(refInds[i], meshInds[i]);
           }
         }
         else
@@ -339,47 +368,68 @@ namespace Tes.CoreTests
           Assert.NotNull(reference.Indices4());
           Assert.NotNull(mesh.Indices4());
 
-          for (int i = 0; i < mesh.IndexCount(); ++i)
+          var refInds = reference.Indices4();
+          var meshInds = mesh.Indices4();
+
+          Assert.Equal(refInds.Length, meshInds.Length);
+
+          for (int i = 0; i < meshInds.Length; ++i)
           {
-            Assert.Equal(reference.Indices4()[i], mesh.Indices4()[i]);
+            Assert.Equal(refInds[i], meshInds[i]);
           }
         }
       }
 
-      if (mesh.Normals() != null)
+      if (reference.Normals() != null)
       {
         Assert.NotNull(mesh.Normals());
+        Assert.NotNull(mesh.Normals());
+
+        var refNormals = reference.Normals();
+        var meshNormals = mesh.Normals();
+
+        Assert.Equal(refNormals.Length, meshNormals.Length);
 
         Vector3 refn, meshn;
         for (int i = 0; i < mesh.VertexCount(); ++i)
         {
-          refn = reference.Normals()[i];
-          meshn = mesh.Normals()[i];
+          refn = refNormals[i];
+          meshn = meshNormals[i];
           Assert.Equal(refn.X, meshn.X);
           Assert.Equal(refn.Y, meshn.Y);
           Assert.Equal(refn.Z, meshn.Z);
         }
       }
 
-      if (mesh.Colours() != null)
+      if (reference.Colours() != null)
       {
         Assert.NotNull(mesh.Colours());
 
+        var refColours = reference.Colours();
+        var meshColours = mesh.Colours();
+
+        Assert.Equal(refColours.Length, meshColours.Length);
+
         for (int i = 0; i < mesh.VertexCount(); ++i)
         {
-          Assert.Equal(reference.Colours()[i], mesh.Colours()[i]);
+          Assert.Equal(refColours[i], meshColours[i]);
         }
       }
 
-      if (mesh.UVs() != null)
+      if (reference.UVs() != null)
       {
         Assert.NotNull(mesh.UVs());
+
+        var refUVs = reference.UVs();
+        var meshUVs = mesh.UVs();
+
+        Assert.Equal(refUVs.Length, meshUVs.Length);
 
         Vector2 refuv, meshuv;
         for (int i = 0; i < mesh.VertexCount(); ++i)
         {
-          refuv = reference.UVs()[i];
-          meshuv = mesh.UVs()[i];
+          refuv = refUVs[i];
+          meshuv = meshUVs[i];
           Assert.Equal(refuv.X, meshuv.X);
           Assert.Equal(refuv.Y, meshuv.Y);
         }
@@ -512,59 +562,7 @@ namespace Tes.CoreTests
       }
       ShapeTestFramework.TestShape(set, create, ValidateMeshSetShape);
     }
-
-    public void ValidatePointCloudShape(Shape shapeArg, Shape referenceArg, Dictionary<ulong, Resource> resources)
-    {
-      ShapeTestFramework.ValidateShape(shapeArg, referenceArg, resources);
-      PointCloudShape shape = (PointCloudShape)shapeArg;
-      PointCloudShape reference = (PointCloudShape)referenceArg;
-
-      Assert.Equal(reference.PointScale, shape.PointScale);
-      Assert.NotNull(reference.PointCloud);
-      Assert.NotNull(shape.PointCloud);
-
-      Assert.Equal(reference.PointCloud.ID, shape.PointCloud.ID);
-
-      // Resolve the mesh resource.
-      Resource resource;
-      Assert.True(resources.TryGetValue(shape.PointCloud.UniqueKey(), out resource));
-      // Remember, resource will be a SimpleMesh, not a PointCloud.
-      MeshResource cloud = (MeshResource)resource;
-      ValidateMesh(cloud, reference.PointCloud);
-    }
-
-    [Fact]
-    public void PointCloudTest()
-    {
-      List<Vector3> vertices = new List<Vector3>();
-      List<Vector3> normals = new List<Vector3>();
-      List<int> indices = new List<int>();
-      uint[] colours;
-      Common.MakeHiResSphere(vertices, indices, normals);
-
-      // Build per vertex colours with colour cycling.
-      colours = new uint[vertices.Count];
-      for (int i = 0; i < colours.Length; ++i)
-      {
-        colours[i] = Colour.Cycle(i).Value;
-      }
-
-      PointCloud cloud = new PointCloud(1, vertices.Count);
-      cloud.AddPoints(vertices);
-      cloud.AddNormals(normals);
-      cloud.AddColours(colours);
-
-      ShapeTestFramework.CreateShapeFunction create = () => { return new PointCloudShape(); };
-      ShapeTestFramework.TestShape(new PointCloudShape(cloud, 41, 1, 8), create, ValidatePointCloudShape);
-
-      // Run a cloud with an indexed sub-set.
-      uint[] indexedSubSet = new uint[vertices.Count / 2];
-      for (uint i = 0; i < indexedSubSet.Length; ++i)
-      {
-        indexedSubSet[i] = i;
-      }
-
-      ShapeTestFramework.TestShape(new PointCloudShape(cloud, 41, 1, 8).SetIndices(indexedSubSet), create, ValidatePointCloudShape);
-    }
   }
 }
+
+#pragma warning restore xUnit1013

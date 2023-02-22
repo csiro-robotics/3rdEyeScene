@@ -50,8 +50,8 @@ namespace Tes.Handlers
     /// </summary>
     public ShapeHandler()
     {
-      _transientCache = new ShapeCache(128, true);
-      _shapeCache = new ShapeCache(128, false);
+      _transientCache = new ShapeCache(8 * 1024, true);
+      _shapeCache = new ShapeCache(8 * 1024, false);
       SolidMaterialName = MaterialLibrary.OpaqueInstanced;
       WireframeMaterialName = MaterialLibrary.WireframeInstanced;
       TransparentMaterialName = MaterialLibrary.TransparentInstanced;
@@ -398,62 +398,62 @@ namespace Tes.Handlers
     {
       switch ((ObjectMessageID)messageID)
       {
-      default:
-      case ObjectMessageID.Null:
-        return new Error(ErrorCode.InvalidMessageID, messageID);
+        default:
+        case ObjectMessageID.Null:
+          return new Error(ErrorCode.InvalidMessageID, messageID);
 
-      case ObjectMessageID.Create:
-        // Read the create message details.
-        CreateMessage create = new CreateMessage();
-        if (!create.Read(reader))
-        {
-          return new Error(ErrorCode.InvalidContent, messageID);
-        }
-        if (!FilterMessage(messageID, create.ObjectID, create.Category))
-        {
-          return new Error();
-        }
-        return HandleMessage(create, packet, reader);
+        case ObjectMessageID.Create:
+          // Read the create message details.
+          CreateMessage create = new CreateMessage();
+          if (!create.Read(reader))
+          {
+            return new Error(ErrorCode.InvalidContent, messageID);
+          }
+          if (!FilterMessage(messageID, create.ObjectID, create.Category))
+          {
+            return new Error();
+          }
+          return HandleMessage(create, packet, reader);
 
-      case ObjectMessageID.Update:
-        // Read the create message details.
-        UpdateMessage update = new UpdateMessage();
-        if (!update.Read(reader))
-        {
-          return new Error(ErrorCode.InvalidContent, messageID);
-        }
-        if (!FilterMessage(messageID, update.ObjectID, 0))
-        {
-          return new Error();
-        }
-        return HandleMessage(update, packet, reader);
+        case ObjectMessageID.Update:
+          // Read the create message details.
+          UpdateMessage update = new UpdateMessage();
+          if (!update.Read(reader))
+          {
+            return new Error(ErrorCode.InvalidContent, messageID);
+          }
+          if (!FilterMessage(messageID, update.ObjectID, 0))
+          {
+            return new Error();
+          }
+          return HandleMessage(update, packet, reader);
 
-      case ObjectMessageID.Destroy:
-        // Read the create message details.
-        DestroyMessage destroy = new DestroyMessage();
-        if (!destroy.Read(reader))
-        {
-          return new Error(ErrorCode.InvalidContent, messageID);
-        }
-        if (!FilterMessage(messageID, destroy.ObjectID, 0))
-        {
-          return new Error();
-        }
-        // No additional payload allowed.
-        return HandleMessage(destroy);
+        case ObjectMessageID.Destroy:
+          // Read the create message details.
+          DestroyMessage destroy = new DestroyMessage();
+          if (!destroy.Read(reader))
+          {
+            return new Error(ErrorCode.InvalidContent, messageID);
+          }
+          if (!FilterMessage(messageID, destroy.ObjectID, 0))
+          {
+            return new Error();
+          }
+          // No additional payload allowed.
+          return HandleMessage(destroy);
 
-      case ObjectMessageID.Data:
-        // Read the create message details.
-        DataMessage data = new DataMessage();
-        if (!data.Read(reader))
-        {
-          return new Error(ErrorCode.InvalidContent, messageID);
-        }
-        if (!FilterMessage(messageID, data.ObjectID, 0))
-        {
-          return new Error();
-        }
-        return HandleMessage(data, packet, reader);
+        case ObjectMessageID.Data:
+          // Read the create message details.
+          DataMessage data = new DataMessage();
+          if (!data.Read(reader))
+          {
+            return new Error(ErrorCode.InvalidContent, messageID);
+          }
+          if (!FilterMessage(messageID, data.ObjectID, 0))
+          {
+            return new Error();
+          }
+          return HandleMessage(data, packet, reader);
       }
 
       //return new Error();
@@ -498,7 +498,7 @@ namespace Tes.Handlers
       Matrix4x4 transform = Matrix4x4.identity;
       DecodeTransform(shape.Attributes, out transform);
       int index = cache.CreateShape(shape, transform, multiShapeChainIndex);
-      cache.SetParentTransformByIndex( index, parentTransform);
+      cache.SetParentTransformByIndex(index, parentTransform);
       return index;
     }
 
@@ -522,9 +522,10 @@ namespace Tes.Handlers
     {
       transform = Matrix4x4.identity;
 
-      Vector3 scale = new Vector3(attributes.ScaleX, attributes.ScaleY, attributes.ScaleZ);
-      transform.SetColumn(3, new Vector4(attributes.X, attributes.Y, attributes.Z, 1.0f));
-      var pureRotation = Matrix4x4.Rotate(new Quaternion(attributes.RotationX, attributes.RotationY, attributes.RotationZ, attributes.RotationW));
+      Vector3 scale = new Vector3((float)attributes.ScaleX, (float)attributes.ScaleY, (float)attributes.ScaleZ);
+      transform.SetColumn(3, new Vector4((float)attributes.X, (float)attributes.Y, (float)attributes.Z, 1.0f));
+      var pureRotation = Matrix4x4.Rotate(new Quaternion((float)attributes.RotationX, (float)attributes.RotationY,
+                                                         (float)attributes.RotationZ, (float)attributes.RotationW));
       transform.SetColumn(0, pureRotation.GetColumn(0) * scale.x);
       transform.SetColumn(1, pureRotation.GetColumn(1) * scale.y);
       transform.SetColumn(2, pureRotation.GetColumn(2) * scale.z);
@@ -637,7 +638,7 @@ namespace Tes.Handlers
         updateTransform = true;
       }
       else
-        {
+      {
         if ((flags & (ushort)UpdateFlag.Position) != 0)
         {
           shape.Attributes.X = msg.Attributes.X;
@@ -825,11 +826,24 @@ namespace Tes.Handlers
       multiShape.ObjectID = ShapeCache.MultiShapeID;
 
       // Read each shape attributes.
+      bool readDoublePrecision = (parentShape.Flags & (ushort)ObjectFlag.DoublePrecision) != 0;
       for (uint i = 0; i < blockItemCount; ++i)
       {
-        if (!multiShape.Attributes.Read(reader))
+        if (!multiShape.Attributes.Read(reader, readDoublePrecision))
         {
           return new Error(ErrorCode.MalformedMessage, parentShape.ObjectID);
+        }
+
+        // HACK FIX: handle transparency in some of the shapes. A full fix requires that the client sends an
+        // ObjectFlag field (16-bit flags) for each shape allowing transparency and wireframe (at least) to be set for
+        // each item.
+        Maths.Colour colour = new Maths.Colour(multiShape.Attributes.Colour);
+        multiShape.Flags &= (ushort)(~ObjectFlag.Transparent);
+
+        if (colour.A < 255)
+        {
+          // Have alpha. Enable the flag.
+          multiShape.Flags |= (ushort)ObjectFlag.Transparent;
         }
 
         multiChainHead = CreateShape(cache, multiShape, multiChainHead, parentTransform);

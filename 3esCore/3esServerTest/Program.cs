@@ -85,7 +85,7 @@ namespace Tes
       return mesh;
     }
 
-    static Shapes.MeshResource CreateTestCloud(Ids ids)
+    static Shapes.MeshBase CreateTestCloud(Ids ids)
     {
       Shapes.PointCloud cloud = new Shapes.PointCloud(ids.NextMeshId++, 8);  // Considered a Mesh for ID purposes.
 
@@ -293,7 +293,7 @@ namespace Tes
           Colour.Colours[(int)PredefinedColour.White].Value, Colour.Colours[(int)PredefinedColour.White].Value, Colour.Colours[(int)PredefinedColour.White].Value,
         };
         Shapes.MeshShape triangles = new Shapes.MeshShape(MeshDrawType.Triangles, triangleSet, ids.NextShapeId++);
-        triangles.Colours = colours;
+        triangles.SetColours(colours);
         shapes.Add(triangles);
         // if (!noMove)
         // {
@@ -334,7 +334,7 @@ namespace Tes
           Colour.Colours[(int)PredefinedColour.White].Value
         };
         Shapes.MeshShape points = new Shapes.MeshShape(MeshDrawType.Points, pts, ids.NextShapeId++);
-        points.Colours = colours;
+        points.SetColours(colours);
         shapes.Add(points);
         // if (!noMove)
         // {
@@ -344,20 +344,10 @@ namespace Tes
 
       if (allShapes || HaveOption("cloud", args) || HaveOption("cloudpart", args))
       {
-        Shapes.MeshResource cloud = CreateTestCloud(ids);
-        Shapes.PointCloudShape points = new Shapes.PointCloudShape(cloud, ids.NextShapeId++, (byte)16);
-        if (HaveOption("cloudpart", args))
-        {
-          // Partial indexing.
-          List<uint> partialIndices = new List<uint>();
-          uint nextIndex = 0;
-          for (int i = 0; i < partialIndices.Count; ++i)
-          {
-            partialIndices.Add(nextIndex);
-            nextIndex += 2;
-          }
-          points.SetIndices(partialIndices.ToArray());
-        }
+        Shapes.MeshBase cloud = CreateTestCloud(ids);
+        cloud.DrawScale = 16.0f;
+        Shapes.MeshSet points = new Shapes.MeshSet(ids.NextShapeId++);
+        points.AddPart(cloud);
         shapes.Add(points);
         resources.Add(cloud);
         // if (!noMove)
